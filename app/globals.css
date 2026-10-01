@@ -1,0 +1,130 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+    scroll-padding-top: 5rem;
+  }
+
+  body {
+    @apply bg-crema text-carbon font-sans antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-display;
+  }
+
+  h1,
+  h2 {
+    @apply text-balance;
+  }
+
+  :focus-visible {
+    outline: 3px solid theme("colors.terracota.DEFAULT");
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+
+  .bg-marino-900 :focus-visible,
+  .bg-marino :focus-visible {
+    outline-color: theme("colors.neon");
+  }
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .eyebrow {
+    @apply text-xs font-semibold uppercase tracking-eyebrow;
+  }
+
+  .btn {
+    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-6 text-[0.95rem] font-semibold transition-[background-color,color,box-shadow,transform] duration-200 active:scale-[0.98];
+  }
+
+  .btn-primary {
+    @apply btn bg-marino text-crema shadow-card hover:bg-marino-700 hover:shadow-lift;
+  }
+
+  .btn-secondary {
+    @apply btn border border-carbon/15 bg-crema text-carbon hover:border-carbon/30 hover:bg-white;
+  }
+
+  .btn-ghost-light {
+    @apply btn border border-crema/30 text-crema hover:bg-crema/10;
+  }
+
+  .link-underline {
+    @apply underline decoration-1 underline-offset-4 transition-colors hover:decoration-2;
+  }
+
+  /* Secciones bajo el pliegue: el navegador no las maqueta ni pinta hasta que se
+     acercan al viewport (reduce mucho el trabajo del primer render en móvil). */
+  .cv-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 900px;
+  }
+
+  /* Motivo de marca: baldosa hexagonal del suelo del local. */
+  .hex-pattern {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='48' viewBox='0 0 56 48'%3E%3Cpath d='M14 0h28l14 24-14 24H14L0 24z' fill='none' stroke='%231E3557' stroke-opacity='.09' stroke-width='1.5'/%3E%3C/svg%3E");
+    background-size: 56px 48px;
+  }
+}
+
+/* Revelado al hacer scroll sin JavaScript: animaciones ligadas al scroll donde el
+   navegador las soporta; en el resto el contenido aparece directamente. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      animation: reveal-in linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 55%;
+    }
+
+    .parallax-soft {
+      animation: parallax-y linear both;
+      animation-timeline: view();
+      animation-range: cover 0% cover 100%;
+    }
+  }
+}
+
+@keyframes reveal-in {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes parallax-y {
+  from {
+    transform: translateY(-6%) scale(1.08);
+  }
+  to {
+    transform: translateY(6%) scale(1.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
