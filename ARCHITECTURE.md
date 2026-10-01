@@ -53,20 +53,24 @@ siquiera llega al navegador.
 - **Aditivas**: cero `ALTER`/`DROP` sobre objetos existentes; no afectan a ningún otro tenant.
 - **Reversibles**: `supabase/rollback/*.down.sql` (ejecutar en orden inverso).
 - **Seed separado**: `supabase/seed/la_ofi_tenant.sql` (solo la fila de `public.clientes`, idempotente)
-  y, opcional, `la_ofi_carta_desayunos_instagram.sql` (carta real de tostadas publicada en
-  Instagram, sin alérgenos inventados; ejecutar solo cuando el propietario la confirme).
+  y, opcional, `la_ofi_carta_publicada.sql` (carta publicada en internet: tostadas de
+  Instagram y "Para picotear" de una foto de la carta, sin alérgenos inventados; ejecutar cuando el
+  propietario la confirme).
 - **Probadas** sin Docker ni coste con **PGlite** (Postgres real en WASM): `npm test` levanta una
   réplica mínima del núcleo de la plataforma (`supabase/tests/platform-stub.sql`, funciones copiadas
   literalmente de producción) y verifica aislamiento entre tenants, RLS (anon / staff del tenant /
-  usuario sin tenant), borradores, validaciones, idempotencia de seeds y reversión limpia (18 tests).
+  usuario sin tenant), borradores, validaciones, idempotencia de seeds y reversión limpia (18 tests de base de datos, 30 en total).
 
 Alérgenos: se reutiliza el `text[]` existente de `restaurant.productos` con los nombres en castellano
 que ya usa la base (`gluten`, `crustáceos`, `frutos de cáscara`…). `src/lib/allergens.ts` los
 normaliza a las 14 claves del Reglamento UE 1169/2011. No hace falta cambiar el esquema.
 
 Horario: mismo formato que Palomita (`public.settings`, key `horario`, valor `hjson:[…7 días…]`,
-leído con la RPC existente `get_horario_publico`). Sin horario por defecto: el de La Ofi no está
-confirmado.
+leído con la RPC existente `get_horario_publico`). Si no hay valor en Supabase se usa el publicado en
+Google (`HORARIO_INTERNET` en `src/lib/horario.ts`), con los días dudosos como "Consultar".
+
+Menú del día: además de primeros/segundos/postres, `menu_dia_platos.tipo` admite `plato` para el
+formato "plato del día a elegir" que usa La Ofi.
 
 ## 3. Frontend
 

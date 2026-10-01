@@ -3,7 +3,7 @@
 Checklist para la visita al restaurante. Lo marcado con ⚠️ bloquea el paso a producción.
 
 ## Autorizaciones
-- [ ] ⚠️ Autorización por escrito para usar en la web sus fotos y vídeos de Instagram (@laofiparke) y Google Business
+- [x] Autorización para usar sus fotos (confirmada por LocalIA el 2026-10-01) — archivar por escrito
 - [ ] ¿Se puede nombrar en la web al chef o al propietario? (la prensa cita al chef Carlos Toro)
 
 ## Fotos y vídeo (originales, máxima calidad)
@@ -23,14 +23,14 @@ Checklist para la visita al restaurante. Lo marcado con ⚠️ bloquea el paso a
 ## Datos del negocio
 - [ ] ⚠️ Teléfono de reservas: confirmar **946 36 64 79** (el de Google) y configurarlo en `NEXT_PUBLIC_CONTACT_PHONE`. Hoy la demo usa **628 40 97 81**, número de pruebas de LocalIA.
 - [ ] WhatsApp (si lo usan para reservas)
-- [ ] ⚠️ Horario confirmado por día (desayunos, comidas, cenas, fines de semana). Hay 4 versiones contradictorias en internet.
+- [ ] Horario: se publica el de Google (L–J 7:30–17:00, V 7:30–00:00, D cerrado). ⚠️ Falta el **sábado** (dato erróneo en internet) y confirmar el resto.
 - [ ] Email de contacto
 - [ ] Aforos para publicarlos: comedor (¿70?), terraza cubierta (¿220?), parking (¿220 plazas?)
 
 ## Carta y menús
-- [ ] ⚠️ Carta completa con precios y **alérgenos** (los 14 del Reglamento UE 1169/2011) por plato
-- [ ] ¿Siguen vigentes los precios de la carta de tostadas publicada en Instagram? (seed opcional `supabase/seed/la_ofi_carta_desayunos_instagram.sql`)
-- [ ] Menú del día: precio, qué incluye (pan, bebida, postre o café), días y horario
+- [ ] ⚠️ Carta completa con precios y **alérgenos** (los 14 del Reglamento UE 1169/2011) por plato. Hoy se publica lo encontrado en internet: tostadas (con precios de Instagram), "Para picotear" (sin precios, de una foto de 2025) y especialidades de brasa citadas por Deia.
+- [ ] Confirmar precios de las tostadas y de "Para picotear" (seed opcional `supabase/seed/la_ofi_carta_publicada.sql`)
+- [ ] Plato del día: confirmar **8,90 €** con bebida, pan y postre (dato de opiniones de clientes), días y horario
 - [ ] Quién lo actualizará cada día (persona y usuario para el futuro /admin)
 
 ## Eventos

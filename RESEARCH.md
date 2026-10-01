@@ -84,12 +84,14 @@ https://www.deia.eus/gastronomia/2025/09/13/genero-local-temporada-marcan-pauta-
 | Vinculación local | Socios-colaboradores del Club de Fútbol de Derio. | Deia | probable |
 | Personas | Chef: Carlos Toro; el propietario atiende la sala. | AVDG | no verificado → **no se publica** (nombres de personas sin autorización) |
 | Tipos de cocina en directorios | "Chilean, South American, Spanish, Grill, Cafe". | Restaurant Guru, Tripadvisor | no verificado (categoría automática del directorio) |
-| Precio medio | "~10 €" (AVDG); "10–20 € por persona" (Restaurant Guru); "8,90 €" en un plato citado por un directorio. | Varias | no verificado → **no se publica ningún precio** |
+| Precio medio | "~10 €" (AVDG); "10–20 € por persona" (Restaurant Guru). | Varias | no se publica |
+| Plato del día | **8,90 €** con bebida, pan y postre, a elegir entre seis platos (ej.: secreto con patatas, arroz caldoso de presa ibérica, pasta con crema de calabaza, muslo de pollo asado con patatas). | menu-world.com (agregador de reseñas, sin fecha; resumido por el buscador; la página devuelve 403) — coherente con Deia (plato del día a elegir entre varias opciones) | probable — **se publica marcado "Según clientes · confirmar en el local"** por indicación de LocalIA |
+| Carta "Para picotear" | Tabla de ibérico, paletilla ibérica, queso de la casa, croquetas variadas (6 und), puerros a la parrilla sobre salsa de hongos, espárragos a la parrilla sobre mahonesa de aguacate, pimientos del país (12 und), pulpo a la parrilla, gambas al ajillo (10 und), morcilla a la brasa. Precios ilegibles (cortados en la foto). | Foto de la carta subida por un usuario a Restaurant Guru "hace un año": https://menu02.restaurantguru.com/m8/menu-Restaurante-La-Ofi-7n7.jpg | probable — se publica sin precios, marcado "Según carta" |
 
 Fuente secundaria: **Academia Vasca de Gastronomía (AVDG)**, "La Ofi en Derio-Zamudio", 18/03/2025 —
 https://academiavascadegastronomia.com/la-ofi-en-derio-zamudio/
 
-## 6. Horario — CONTRADICTORIO, no se publica
+## 6. Horario
 
 | Fuente | Horario |
 |---|---|
@@ -99,9 +101,13 @@ https://academiavascadegastronomia.com/la-ofi-en-derio-zamudio/
 | Google Business (vista limitada, 2026-10-01, jueves) | "Abierto · Cierre: 17:00" (solo el día de la consulta) |
 | Tripadvisor | No disponible |
 
-Cuatro versiones incompatibles. **Se deja pendiente** (estado "Horario: consúltanos por teléfono")
-hasta que el propietario lo confirme. Se cargará desde `public.settings` (`get_horario_publico`),
-editable desde el futuro `/admin`.
+**Decisión (2026-10-01, por indicación de LocalIA: publicar lo más reciente de internet):** se
+publica el horario de Restaurant Guru, que replica la ficha de Google y coincide con Google
+Business en el día comprobado (jueves, cierre 17:00): **L–J 7:30–17:00 · V 7:30–00:00 · D cerrado**.
+El sábado aparece como "11:22–00:00", dato evidentemente erróneo: se muestra **"Consultar"** y no
+entra en el JSON-LD. Fuente del JSON-LD de Restaurant Guru: `openingHoursSpecification`.
+En la web se acompaña de "Horario publicado en Google". Cuando haya horario en
+`public.settings` (editable desde `/admin`), sustituye automáticamente a este.
 
 ## 7. Valoraciones y reseñas
 
@@ -140,7 +146,7 @@ fotos utilizables de pintxos/tortillas. Se diseñará en consecuencia (ver plan)
 ## 10. Preguntas abiertas para el propietario
 
 1. Confirmar 946 36 64 79 como teléfono de reservas (es el de Google). ¿Tiene WhatsApp?
-2. Horario real por día (barra/desayunos, comidas, cenas, fines de semana).
+2. Horario del **sábado** (el publicado en internet es erróneo) y confirmar el resto.
 3. Precio del plato/menú del día y qué incluye. ¿Siguen vigentes los precios de la carta de tostadas de Instagram?
 4. Calendario del tardeo mensual y otros eventos (música en directo, partidos).
 5. Logo en SVG/PNG y fotos/vídeos originales (Instagram).

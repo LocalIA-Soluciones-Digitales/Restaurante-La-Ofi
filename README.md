@@ -101,8 +101,8 @@ Lee antes `ARCHITECTURE.md` §1–2 y el `ARCHITECTURE.md` de Palomita-Bar.
 - `supabase/rollback/` — reversión de cada migración (ejecutar en orden inverso).
 - `supabase/seed/la_ofi_tenant.sql` — alta del tenant (una fila en `public.clientes`, sin datos
   inventados). Devuelve `cliente_id` y `site_key`.
-- `supabase/seed/la_ofi_carta_desayunos_instagram.sql` — opcional, carta real de tostadas publicada
-  en Instagram; ejecutar solo cuando el propietario confirme precios.
+- `supabase/seed/la_ofi_carta_publicada.sql` — opcional, carta publicada en internet (tostadas de
+  Instagram con precios y "Para picotear" sin precios); ejecutar cuando el propietario la confirme.
 - `supabase/tests/` — réplica mínima de la plataforma + tests (`npm test`).
 
 Para aplicarlas: primero `npm test`. Después, en una **rama de Supabase** (Branching) o con

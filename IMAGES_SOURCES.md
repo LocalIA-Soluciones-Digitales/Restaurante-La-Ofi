@@ -3,18 +3,21 @@
 Consulta y descarga: **2026-10-01**. Todas las imágenes están en `public/images/`, recortadas y
 exportadas a WebP (q86). `next/image` sirve automáticamente AVIF/WebP en varios tamaños.
 
-**Estado global: DEMO.** Ninguna imagen tiene todavía autorización del propietario. Antes de pasar a
-producción hay que (1) obtener la autorización por escrito para las oficiales y (2) sustituir todas
-las de terceros por fotos originales del restaurante.
+**Autorización (2026-10-01):** LocalIA confirma autorización del restaurante para usar sus fotos
+(las publicadas por La Ofi en Instagram y Google Business). Conviene archivarla por escrito.
+Las fotos de **terceros** (prensa y clientes) no son del restaurante: esa autorización no cubre sus
+derechos, así que siguen marcadas para sustituir antes de producción. Las 6 últimas publicaciones
+de Instagram (las más recientes accesibles sin sesión) ya están todas incorporadas salvo un repost
+del C.F. Derio.
 
 | Archivo | Origen (URL) | Tipo | Autor | Estado |
 |---|---|---|---|---|
-| `eventos/salon-celebracion-noche.webp` (1170×776) | Google Maps, ficha "Restaurante La Ofi", foto subida por el propietario (ene 2024): `https://lh3.googleusercontent.com/grass-cs/ACvplmMx7_OzZJvFhwFMPpSipCbJoWCO3sdCilJrtQw-GWLjeLsXonovLLFXMDr_4hgRLI3mdt7qZgARIGmDCQf5qjYLtSK-1gaMe_xw9We0H0D8JJ9V_Mbap1pV4RQm06XTyBqRD9Pnuw=s2400` (recortada la franja central del formato story) | **Oficial del restaurante** | Restaurante La Ofi | oficial – pendiente de autorización |
-| `carta/carta-tostadas-desayuno.webp` (1080²) | Instagram @laofiparke, embed público `https://www.instagram.com/laofiparke/embed/` (publicación "7 dias 8 tostadas hoy Americana…") | **Oficial del restaurante** | @laofiparke | oficial – pendiente de autorización |
-| `pintxos/tostada-bonita.webp` (1080²) | Instagram @laofiparke, embed público (publicación "…hoy la bonita…") | **Oficial del restaurante** | @laofiparke | oficial – pendiente de autorización |
-| `pintxos/tostada-revuelta.webp` (1080²) | Instagram @laofiparke, embed público (publicación "…hoy la REVUELTA…") | **Oficial del restaurante** | @laofiparke | oficial – pendiente de autorización |
-| `pintxos/tostada-salmon.webp` (1080×960) | Instagram @laofiparke, embed público (publicación "…Hoy SALMON…"; recortado el rótulo superior) | **Oficial del restaurante** | @laofiparke | oficial – pendiente de autorización |
-| `pintxos/tostada-burrata.webp` (1080²) | Instagram @laofiparke, embed público (publicación "…os presentamos a la BURRATA…") | **Oficial del restaurante** | @laofiparke | oficial – pendiente de autorización |
+| `eventos/salon-celebracion-noche.webp` (1170×776) | Google Maps, ficha "Restaurante La Ofi", foto subida por el propietario (ene 2024): `https://lh3.googleusercontent.com/grass-cs/ACvplmMx7_OzZJvFhwFMPpSipCbJoWCO3sdCilJrtQw-GWLjeLsXonovLLFXMDr_4hgRLI3mdt7qZgARIGmDCQf5qjYLtSK-1gaMe_xw9We0H0D8JJ9V_Mbap1pV4RQm06XTyBqRD9Pnuw=s2400` (recortada la franja central del formato story) | **Oficial del restaurante** | Restaurante La Ofi | oficial – **autorizada** (LocalIA, 2026-10-01) |
+| `carta/carta-tostadas-desayuno.webp` (1080²) | Instagram @laofiparke, embed público `https://www.instagram.com/laofiparke/embed/` (publicación "7 dias 8 tostadas hoy Americana…") | **Oficial del restaurante** | @laofiparke | oficial – **autorizada** (LocalIA, 2026-10-01) |
+| `pintxos/tostada-bonita.webp` (1080²) | Instagram @laofiparke, embed público (publicación "…hoy la bonita…") | **Oficial del restaurante** | @laofiparke | oficial – **autorizada** (LocalIA, 2026-10-01) |
+| `pintxos/tostada-revuelta.webp` (1080²) | Instagram @laofiparke, embed público (publicación "…hoy la REVUELTA…") | **Oficial del restaurante** | @laofiparke | oficial – **autorizada** (LocalIA, 2026-10-01) |
+| `pintxos/tostada-salmon.webp` (1080×960) | Instagram @laofiparke, embed público (publicación "…Hoy SALMON…"; recortado el rótulo superior) | **Oficial del restaurante** | @laofiparke | oficial – **autorizada** (LocalIA, 2026-10-01) |
+| `pintxos/tostada-burrata.webp` (1080²) | Instagram @laofiparke, embed público (publicación "…os presentamos a la BURRATA…") | **Oficial del restaurante** | @laofiparke | oficial – **autorizada** (LocalIA, 2026-10-01) |
 | `hero/comedor-ratan-avdg.webp` (858×651) | Academia Vasca de Gastronomía: `https://academiavascadegastronomia.com/wp-content/uploads/2025/03/La-Ofi-Derio-Zamudio.png` (parece captura de Instagram del local; la misma foto está en parke.eus) | Tercero | AVDG (origen probable: el restaurante) | **DEMO – sustituir antes de producción** |
 | `local/barra-deia.webp` (544×495) | Deia, 13/09/2025: `https://estaticosgn-cdn.deia.eus/clip/3781ab02-9aff-451d-a5d9-d77cb8c92895_16-9-aspect-ratio_default_0.jpg` (mitad izquierda) | Tercero (prensa) | Itziar Acereda / Deia | **DEMO – sustituir antes de producción** |
 | `carta/pulpo-brasa-deia.webp` (880×495) | Deia: `https://estaticosgn-cdn.deia.eus/clip/38ef1331-a427-45fd-8585-2e53a795cad8_16-9-aspect-ratio_default_0.jpg` | Tercero (prensa) | Itziar Acereda / Deia | **DEMO – sustituir antes de producción** |
