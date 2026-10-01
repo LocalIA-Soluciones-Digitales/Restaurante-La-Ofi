@@ -3,9 +3,14 @@
 -- Hacer copia antes si hay datos. No afecta a ningún otro proyecto: todo vive en
 -- el schema laofi salvo las RPC public.laofi_*, que se eliminan aquí.
 -- La fila de public.clientes (seed) se conserva; borrarla aparte si procede.
-drop function if exists public.laofi_get_carta(uuid);
-drop function if exists public.laofi_get_menu_dia(uuid, date);
-drop function if exists public.laofi_get_eventos(uuid, boolean);
-drop function if exists public.laofi_get_evento(uuid, text);
-drop function if exists public.laofi_get_horario(uuid);
+-- Todas las RPC public.laofi_* (las de esta migración y las de las posteriores).
+do $$
+declare f regprocedure;
+begin
+  for f in select p.oid::regprocedure from pg_proc p
+           where p.pronamespace = 'public'::regnamespace and p.proname like 'laofi\_%' loop
+    execute format('drop function if exists %s', f);
+  end loop;
+end;
+$$;
 drop schema if exists laofi cascade;

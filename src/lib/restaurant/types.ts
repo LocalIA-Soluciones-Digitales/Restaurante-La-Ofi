@@ -4,6 +4,44 @@
 
 // --- Respuestas de las RPC públicas ----------------------------------------
 
+export type FuenteNutricion = "restaurante" | "ejemplo";
+export type Etiqueta =
+  | "casero"
+  | "temporada"
+  | "brasa"
+  | "recomendado"
+  | "vegetariano"
+  | "vegano"
+  | "sin_gluten"
+  | "para_picar"
+  | "picante"
+  | "nuevo";
+export type MomentoCarta = "desayuno" | "mediodia" | "tarde";
+export type Estacion = "cocina" | "barra";
+
+export interface NutricionRpc {
+  calorias: number | null;
+  proteinas_g: number | null;
+  carbohidratos_g: number | null;
+  grasas_g: number | null;
+  fuente: FuenteNutricion;
+}
+
+export interface ModificadorOpcion {
+  id: string;
+  nombre: string;
+  precio_extra_centimos: number;
+}
+
+export interface Modificador {
+  id: string;
+  nombre: string;
+  tipo: "unico" | "multiple";
+  obligatorio: boolean;
+  max_opciones: number | null;
+  opciones: ModificadorOpcion[];
+}
+
 export interface CartaProducto {
   id: string;
   nombre: string;
@@ -14,6 +52,18 @@ export interface CartaProducto {
   /** Claves normalizadas de los 14 alérgenos UE (p. ej. "frutos_cascara"). */
   alergenos: string[];
   destacado: boolean;
+  // Campos de la carta extendida (migración 20261002100000). Opcionales para
+  // seguir funcionando contra una base de datos sin esa migración aplicada.
+  imagenes?: string[];
+  video_url?: string | null;
+  alergenos_confirmados?: boolean;
+  ingredientes?: string[];
+  nutricion?: NutricionRpc | null;
+  etiquetas?: Etiqueta[];
+  momento?: MomentoCarta[];
+  estacion?: Estacion;
+  maridaje?: string | null;
+  modificadores?: Modificador[];
 }
 
 export interface CartaCategoria {
@@ -86,14 +136,36 @@ export interface ImagenRef {
   alt: string;
 }
 
+export interface Nutricion {
+  calorias: number | null;
+  proteinas: number | null;
+  carbohidratos: number | null;
+  grasas: number | null;
+  fuente: FuenteNutricion;
+}
+
 export interface CartaItem {
   id: string;
   nombre: string;
   descripcion: string | null;
   precioCentimos: number | null;
+  /** Foto principal (la primera de `imagenes`). */
   imagen: ImagenRef | null;
+  imagenes: ImagenRef[];
+  video: string | null;
   alergenos: string[];
+  /** false = los alérgenos aún no están confirmados por el restaurante. */
+  alergenosConfirmados: boolean;
   destacado: boolean;
+  ingredientes: string[];
+  /** null = sin dato: la web no muestra la sección (nunca "0 kcal"). */
+  nutricion: Nutricion | null;
+  etiquetas: Etiqueta[];
+  /** Vacío = se sirve todo el día. */
+  momento: MomentoCarta[];
+  estacion: Estacion;
+  maridaje: string | null;
+  modificadores: Modificador[];
   fuente: Fuente;
 }
 

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { IMAGES } from "@/lib/images";
 import { AllergenLegend } from "@/components/menu/AllergenLegend";
-import { CartaView } from "@/components/menu/CartaView";
+import { CartaInteractiva } from "@/components/carta/CartaInteractiva";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { JsonLd } from "@/components/ui/JsonLd";
 import { PageHero } from "@/components/ui/PageHero";
@@ -40,7 +40,7 @@ export default async function CartaPage() {
         image={IMAGES.tostadaBurrata}
         compact
       />
-      <div className="container-page py-10 sm:py-14">
+      <div className="container-page pb-16 pt-0 sm:pb-24">
         {state.status === "empty" ? (
           <EmptyState title="Carta en preparación" icon="utensils">
             Muy pronto podrás consultar aquí la carta completa con precios y alérgenos. Mientras tanto, llámanos al{" "}
@@ -50,7 +50,7 @@ export default async function CartaPage() {
             .
           </EmptyState>
         ) : (
-          <CartaView secciones={state.data} />
+          <CartaInteractiva secciones={state.data} />
         )}
         <div className="mt-16">
           <AllergenLegend />

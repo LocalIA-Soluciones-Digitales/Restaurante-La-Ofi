@@ -1,4 +1,5 @@
 import "server-only";
+import { itemDesdeRpc } from "@/lib/carta";
 import { SHOW_DEMO_CONTENT } from "@/lib/env";
 import { hoyEnMadrid } from "@/lib/format";
 import { DEMO_CARTA, DEMO_EVENTOS, DEMO_MENU_DIA } from "@/lib/restaurant/demo-content";
@@ -27,16 +28,7 @@ export async function getCartaContent(): Promise<ContentState<CartaSeccion[]>> {
       slug: c.slug,
       nombre: c.nombre,
       nota: c.descripcion ?? undefined,
-      items: c.productos.map((p) => ({
-        id: p.id,
-        nombre: p.nombre,
-        descripcion: p.descripcion,
-        precioCentimos: p.precio_centimos,
-        imagen: p.imagen_url ? { src: p.imagen_url, alt: p.nombre } : null,
-        alergenos: p.alergenos,
-        destacado: p.destacado,
-        fuente: "supabase" as const,
-      })),
+      items: c.productos.map((p) => itemDesdeRpc(p)),
     }))
     .filter((s) => s.items.length > 0);
   if (secciones.length > 0) return { status: "real", data: secciones };
