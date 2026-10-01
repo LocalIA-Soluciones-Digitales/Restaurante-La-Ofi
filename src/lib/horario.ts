@@ -1,11 +1,19 @@
-// Formato de horario compartido con Palomita-Bar: public.settings (key "horario")
-// guarda "hjson:" + JSON de 7 días, editable desde /admin/configuracion.
-// Si Supabase no tiene horario, se usa el publicado en internet (ver HORARIO_INTERNET).
+// Horario de La Ofi. Fuente: tabla laofi.horario (RPC laofi_get_horario),
+// editable desde el futuro /admin. Si aún no hay filas, se usa el publicado en
+// internet (HORARIO_INTERNET).
 
 export type DiaHorario = { abierto: boolean; desde: string; hasta: string };
 
 /** null = día sin dato fiable (se muestra "Consultar" y no entra en el JSON-LD). */
 export type Semana = (DiaHorario | null)[];
+
+/** Fila tal como la devuelve laofi_get_horario (dia 1 = lunes … 7 = domingo). */
+export interface HorarioDiaBd {
+  dia: number;
+  estado: "abierto" | "cerrado" | "consultar";
+  desde: string | null;
+  hasta: string | null;
+}
 
 /**
  * Horario publicado en internet a 2026-10-01: Restaurant Guru (sincronizado con la
@@ -28,34 +36,24 @@ export interface HorarioResuelto {
   fuente: "supabase" | "internet";
 }
 
-/** Horario de Supabase (editable desde /admin) o, si no hay, el publicado en internet. */
-export function resolverHorario(valorBd: string | null | undefined): HorarioResuelto {
-  const bd = parseHorario(valorBd);
-  return bd ? { semana: bd, fuente: "supabase" } : { semana: HORARIO_INTERNET, fuente: "internet" };
-}
-
 const DIAS_SEMANA = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"] as const;
-
 const DIA_SCHEMA_ORG = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"] as const;
 
-const MARCA_JSON = "hjson:";
-const HHMM = /^\d{2}:\d{2}$/;
-
-function esDiaValido(dia: unknown): dia is DiaHorario {
-  if (!dia || typeof dia !== "object") return false;
-  const d = dia as Record<string, unknown>;
-  return typeof d.abierto === "boolean" && typeof d.desde === "string" && typeof d.hasta === "string" && HHMM.test(d.desde) && HHMM.test(d.hasta);
+/** Convierte las filas de BD en una semana de lunes a domingo (días ausentes = "Consultar"). */
+export function semanaDesdeBd(filas: readonly HorarioDiaBd[]): Semana {
+  return DIAS_SEMANA.map((_, i) => {
+    const fila = filas.find((f) => f.dia === i + 1);
+    if (!fila || fila.estado === "consultar") return null;
+    if (fila.estado === "cerrado") return { abierto: false, desde: "00:00", hasta: "00:00" };
+    return fila.desde && fila.hasta ? { abierto: true, desde: fila.desde, hasta: fila.hasta } : null;
+  });
 }
 
-export function parseHorario(valor: string | null | undefined): DiaHorario[] | null {
-  if (!valor || !valor.startsWith(MARCA_JSON)) return null;
-  try {
-    const dias = JSON.parse(valor.slice(MARCA_JSON.length)) as unknown;
-    if (!Array.isArray(dias) || dias.length !== 7 || !dias.every(esDiaValido)) return null;
-    return dias;
-  } catch {
-    return null;
-  }
+/** Horario de Supabase o, si no hay filas, el publicado en internet. */
+export function resolverHorario(filas: readonly HorarioDiaBd[] | null | undefined): HorarioResuelto {
+  return filas && filas.length > 0
+    ? { semana: semanaDesdeBd(filas), fuente: "supabase" }
+    : { semana: HORARIO_INTERNET, fuente: "internet" };
 }
 
 /** Agrupa días consecutivos con el mismo horario: "Lunes a jueves: 07:30 – 17:00". */

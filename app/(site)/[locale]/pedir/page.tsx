@@ -3,13 +3,12 @@ import Link from "next/link";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Icon } from "@/components/ui/Icon";
 import { href, type Locale } from "@/lib/i18n";
-import { validarMesa } from "@/lib/restaurant/queries";
 import { pageMetadata } from "@/lib/seo";
 import { SITE } from "@/lib/site";
 
 // Destino de los QR de mesa (/pedir?mesa=<identificador>). V1: solo preparado.
-// Siguiente fase: portar CartProvider/PedirExperience/CartDrawer de Palomita-Bar
-// y llamar a crear_pedido_restaurant (ver ARCHITECTURE.md §5).
+// Siguiente fase: tablas laofi.mesas/pedidos en el schema propio, RPC laofi_* y
+// la experiencia de carrito portada de Palomita-Bar (ver ARCHITECTURE.md §5).
 export const dynamic = "force-dynamic";
 
 type Props = {
@@ -27,8 +26,7 @@ const IDENTIFICADOR_VALIDO = /^[A-Za-z0-9_-]{1,64}$/;
 export default async function PedirPage({ params, searchParams }: Props) {
   const { locale } = await params;
   const { mesa } = await searchParams;
-  const mesaValida = mesa && IDENTIFICADOR_VALIDO.test(mesa) ? await validarMesa(mesa) : null;
-  const etiqueta = mesaValida ? (mesaValida.nombre ?? `Mesa ${mesaValida.numero}`) : null;
+  const etiqueta = mesa && IDENTIFICADOR_VALIDO.test(mesa) ? `Mesa ${mesa}` : null;
 
   return (
     <div className="container-page max-w-2xl pb-20 pt-32 sm:pt-40">

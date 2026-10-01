@@ -60,35 +60,3 @@ create function public.is_developer() returns boolean
 language sql stable set search_path to 'public' as $$
   select (auth.jwt() ->> 'email') = any (array['edortadossantos@gmail.com', 'admin@developers.local']);
 $$;
-
--- Schema restaurant con los privilegios por defecto que tiene en producción.
-create schema restaurant;
-grant usage on schema restaurant to authenticated, service_role;
-alter default privileges in schema restaurant grant select, insert, update, delete on tables to authenticated;
-alter default privileges in schema restaurant grant all on tables to service_role;
-
--- Tablas existentes que usa el seed opcional (subconjunto de columnas).
-create table restaurant.categorias (
-  id uuid primary key default gen_random_uuid(),
-  cliente_id uuid not null references public.clientes(id),
-  nombre text not null,
-  slug text not null,
-  orden integer not null default 0,
-  created_at timestamptz not null default now(),
-  tipo text
-);
-create table restaurant.productos (
-  id uuid primary key default gen_random_uuid(),
-  cliente_id uuid not null references public.clientes(id),
-  categoria_id uuid references restaurant.categorias(id),
-  nombre text not null,
-  descripcion text,
-  precio_centimos integer not null default 0,
-  imagen_url text,
-  disponible boolean not null default true,
-  destacado boolean not null default false,
-  alergenos text[] not null default '{}',
-  orden integer not null default 0,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);

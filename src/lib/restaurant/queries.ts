@@ -1,13 +1,13 @@
 import "server-only";
+import type { HorarioDiaBd } from "@/lib/horario";
 import { getSiteKey, getSupabase } from "@/lib/supabase/client";
-import type { Categoria, Evento, Mesa, MenuDia, Producto } from "@/lib/restaurant/types";
+import type { CartaCategoria, Evento, MenuDia } from "@/lib/restaurant/types";
 
-// Mismo patrón que Palomita-Bar: el frontend solo llama a RPC públicas
-// SECURITY DEFINER que resuelven el tenant desde la site_key dentro de Postgres.
-// Nunca se hace SELECT directo sobre restaurant.* ni se envía un cliente_id.
-// Cada función devuelve null si Supabase no está configurado o la RPC falla
-// (p. ej. migraciones de La Ofi aún sin aplicar): quien llama decide si mostrar
-// un estado vacío o contenido de ejemplo.
+// Los datos de La Ofi viven en su propio schema (`laofi`), sin compartir tablas
+// con otros proyectos. La web solo llama a las RPC públicas `laofi_*`, que validan
+// en Postgres que la site_key es la de La Ofi; nunca hace SELECT directo ni envía
+// ningún id de tenant. Cada función devuelve null si Supabase no está configurado
+// o la RPC falla: quien llama decide si mostrar contenido de referencia o vacío.
 
 async function rpc<T>(fn: string, args: Record<string, unknown> = {}): Promise<T | null> {
   const supabase = getSupabase();
@@ -22,33 +22,25 @@ async function rpc<T>(fn: string, args: Record<string, unknown> = {}): Promise<T
   }
 }
 
-export function getCategorias(): Promise<Categoria[] | null> {
-  return rpc<Categoria[]>("get_categorias_publica");
+/** Carta completa: categorías visibles con sus productos disponibles. */
+export function getCarta(): Promise<CartaCategoria[] | null> {
+  return rpc<CartaCategoria[]>("laofi_get_carta");
 }
 
-export function getCarta(): Promise<Producto[] | null> {
-  return rpc<Producto[]>("get_carta_publica");
-}
-
-export function getHorario(): Promise<string | null> {
-  return rpc<string>("get_horario_publico");
+export function getHorario(): Promise<HorarioDiaBd[] | null> {
+  return rpc<HorarioDiaBd[]>("laofi_get_horario");
 }
 
 /** Menú del día publicado para una fecha (YYYY-MM-DD, horario de Madrid). */
 export function getMenuDia(fecha: string): Promise<MenuDia | null> {
-  return rpc<MenuDia>("get_menu_dia_publico", { p_fecha: fecha });
+  return rpc<MenuDia>("laofi_get_menu_dia", { p_fecha: fecha });
 }
 
-/** Eventos publicados; por defecto solo los que no han pasado. */
+/** Eventos publicados; por defecto solo los de hoy en adelante. */
 export function getEventos(incluirPasados = false): Promise<Evento[] | null> {
-  return rpc<Evento[]>("get_eventos_publicos", { p_incluir_pasados: incluirPasados });
+  return rpc<Evento[]>("laofi_get_eventos", { p_incluir_pasados: incluirPasados });
 }
 
 export function getEvento(slug: string): Promise<Evento | null> {
-  return rpc<Evento>("get_evento_publico", { p_slug: slug });
-}
-
-/** Valida el identificador de una mesa (QR). RPC existente del schema restaurant. */
-export function validarMesa(identificador: string): Promise<Mesa | null> {
-  return rpc<Mesa>("validar_mesa", { p_identificador: identificador });
+  return rpc<Evento>("laofi_get_evento", { p_slug: slug });
 }

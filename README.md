@@ -72,7 +72,7 @@ Todas documentadas en [`.env.example`](./.env.example).
 | `NEXT_PUBLIC_WHATSAPP` | vacío | Si el negocio lo confirma |
 | `NEXT_PUBLIC_SUPABASE_URL` | opcional | `https://ukhfaphloxlszomccgde.supabase.co` |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | opcional | Clave anon/publishable (Supabase → Project Settings → API) |
-| `NEXT_PUBLIC_LAOFI_SITE_KEY` | opcional | `site_key` devuelto por el seed del tenant |
+| `LAOFI_SITE_KEY` (solo servidor, secreta) | opcional | `site_key` devuelto por el seed del tenant |
 
 **Nunca** pongas la `service_role` ni claves de Stripe en variables `NEXT_PUBLIC_*`. V1 no las necesita.
 
@@ -94,21 +94,20 @@ Todas documentadas en [`.env.example`](./.env.example).
 
 ## Supabase
 
-Lee antes `ARCHITECTURE.md` §1–2 y el `ARCHITECTURE.md` de Palomita-Bar.
+La Ofi usa el proyecto Supabase compartido de LocalIA, pero **todos sus datos están en un schema
+propio, `laofi`**, sin tablas compartidas con otros proyectos. Detalle y barreras de aislamiento en
+`ARCHITECTURE.md` §1–2.
 
-- `supabase/migrations/` — 3 migraciones **aditivas** (menú del día, eventos y RPC públicas). **No
-  están aplicadas.** No las apliques en producción sin revisarlas.
-- `supabase/rollback/` — reversión de cada migración (ejecutar en orden inverso).
-- `supabase/seed/la_ofi_tenant.sql` — alta del tenant (una fila en `public.clientes`, sin datos
-  inventados). Devuelve `cliente_id` y `site_key`.
-- `supabase/seed/la_ofi_carta_publicada.sql` — opcional, carta publicada en internet (tostadas de
-  Instagram con precios y "Para picotear" sin precios); ejecutar cuando el propietario la confirme.
-- `supabase/tests/` — réplica mínima de la plataforma + tests (`npm test`).
+- `supabase/migrations/` — schema `laofi` (tablas, RLS, índices) y RPC públicas `laofi_get_*`.
+  **Aplicadas** el 2026-10-01.
+- `supabase/seed/la_ofi_tenant.sql` — alta en `public.clientes` (aplicado). Devuelve la `site_key`.
+- `supabase/seed/la_ofi_contenido_publicado.sql` — carta y horario publicados en internet (aplicado).
+- `supabase/rollback/20261001150000_laofi.down.sql` — elimina todo lo de La Ofi sin tocar otros proyectos.
+- `supabase/tests/` — réplica mínima de la plataforma + tests con PGlite (`npm test`).
 
-Para aplicarlas: primero `npm test`. Después, en una **rama de Supabase** (Branching) o con
-Supabase CLI en local (`supabase db reset`), y solo entonces en el proyecto compartido (SQL Editor o
-`supabase db push`), revisando `get_advisors` antes y después. Luego ejecuta el seed del tenant y
-copia el `site_key` a `NEXT_PUBLIC_LAOFI_SITE_KEY` en Vercel.
+Cambios futuros de esquema: nueva migración en `supabase/migrations/`, `npm test`, aplicarla y revisar
+los advisors de Supabase. El contenido (carta, menú del día, eventos, horario) se edita directamente
+en las tablas de `laofi` (SQL Editor) hasta que exista `/admin`.
 
 ## De demo a producción
 
@@ -116,8 +115,8 @@ copia el `site_key` a `NEXT_PUBLIC_LAOFI_SITE_KEY` en Vercel.
 2. **Imágenes**: sustituir todas las de terceros listadas en [`IMAGES_SOURCES.md`](./IMAGES_SOURCES.md)
    y tener por escrito la autorización de las oficiales. Regenerar `public/og/la-ofi-og.jpg` y los iconos con el logo real.
 3. **Teléfono**: `NEXT_PUBLIC_CONTACT_PHONE=946366479` (o el que confirme el propietario).
-4. **Datos**: aplicar migraciones, ejecutar el seed, configurar las variables de Supabase y cargar
-   carta, menú del día, eventos y horario reales.
+4. **Datos**: completar alérgenos y precios en `laofi.productos`, confirmar el horario (sábado) y
+   cargar menús del día y eventos reales.
 5. **Legales**: rellenar los `[Pendiente: …]` de `/aviso-legal` y `/privacidad`.
 6. **Flags**: `NEXT_PUBLIC_IS_DEMO=false` y `NEXT_PUBLIC_SHOW_DEMO_CONTENT=false`; `NEXT_PUBLIC_SITE_URL` con el dominio final.
 7. **Dominio**: añadirlo en Vercel → Settings → Domains. Redeploy.
