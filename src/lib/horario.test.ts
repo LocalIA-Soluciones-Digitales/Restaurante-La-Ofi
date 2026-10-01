@@ -1,35 +1,31 @@
 import { describe, expect, it } from "vitest";
-import { HORARIO_INTERNET, agruparHorario, horarioSchemaOrg, parseHorario, resolverHorario } from "@/lib/horario";
+import { HORARIO_INTERNET, agruparHorario, horarioSchemaOrg, resolverHorario, type HorarioDiaBd } from "@/lib/horario";
 
-const semana = [
-  ...Array.from({ length: 4 }, () => ({ abierto: true, desde: "07:30", hasta: "17:00" })),
-  { abierto: true, desde: "07:30", hasta: "23:59" },
-  { abierto: true, desde: "11:00", hasta: "23:59" },
-  { abierto: false, desde: "00:00", hasta: "00:00" },
+const filas: HorarioDiaBd[] = [
+  ...[1, 2, 3, 4].map((dia) => ({ dia, estado: "abierto" as const, desde: "07:30", hasta: "17:00" })),
+  { dia: 5, estado: "abierto", desde: "07:30", hasta: "00:00" },
+  { dia: 6, estado: "abierto", desde: "11:00", hasta: "00:00" },
+  { dia: 7, estado: "cerrado", desde: null, hasta: null },
 ];
 
 describe("horario", () => {
-  it("lee el formato hjson: de public.settings (compatible con Palomita)", () => {
-    expect(parseHorario(`hjson:${JSON.stringify(semana)}`)).toHaveLength(7);
-  });
-
-  it("rechaza valores sin marca, incompletos o mal formados", () => {
-    expect(parseHorario(null)).toBeNull();
-    expect(parseHorario("L-V 9:00-17:00")).toBeNull();
-    expect(parseHorario(`hjson:${JSON.stringify(semana.slice(0, 6))}`)).toBeNull();
-    expect(parseHorario(`hjson:${JSON.stringify([{ abierto: true, desde: "7", hasta: "17:00" }, ...semana.slice(1)])}`)).toBeNull();
-  });
-
-  it("agrupa días consecutivos con el mismo horario", () => {
-    expect(agruparHorario(semana)).toEqual([
+  it("convierte las filas de laofi.horario en una semana agrupada", () => {
+    const r = resolverHorario(filas);
+    expect(r.fuente).toBe("supabase");
+    expect(agruparHorario(r.semana)).toEqual([
       { dias: "Lunes a jueves", horas: "07:30 – 17:00" },
-      { dias: "Viernes", horas: "07:30 – 23:59" },
-      { dias: "Sábado", horas: "11:00 – 23:59" },
+      { dias: "Viernes", horas: "07:30 – 00:00" },
+      { dias: "Sábado", horas: "11:00 – 00:00" },
       { dias: "Domingo", horas: "Cerrado" },
     ]);
   });
 
-  it("sin horario en Supabase usa el publicado en internet y deja el sábado como Consultar", () => {
+  it("los días ausentes o marcados como consultar se muestran como Consultar", () => {
+    const r = resolverHorario([{ dia: 1, estado: "consultar", desde: null, hasta: null }]);
+    expect(agruparHorario(r.semana)).toEqual([{ dias: "Lunes a domingo", horas: "Consultar" }]);
+  });
+
+  it("sin filas en Supabase usa el publicado en internet y deja el sábado como Consultar", () => {
     const r = resolverHorario(null);
     expect(r.fuente).toBe("internet");
     expect(agruparHorario(r.semana)).toEqual([

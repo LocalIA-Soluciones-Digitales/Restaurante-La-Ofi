@@ -1,15 +1,14 @@
-// /admin — SOLO PREPARADO. El panel se construirá reutilizando el de Palomita-Bar
-// (Supabase Auth + RPC de admin con p_cliente_id + RLS por tenant). El modelo de
-// datos ya permite gestionar todo lo de esta lista sin rehacer nada (ver
-// ARCHITECTURE.md §6). Esta página no expone datos ni requiere sesión.
+// /admin — SOLO PREPARADO. Se construirá con Supabase Auth sobre el schema propio
+// laofi: la RLS ya limita la escritura a LocalIA y al staff de La Ofi
+// (laofi.es_gestor()). Esta página no expone datos ni requiere sesión.
 
 const MODULOS = [
-  { nombre: "Menú del día", tabla: "restaurant.menus_dia · menu_dia_platos" },
-  { nombre: "Carta, precios, fotos y disponibilidad", tabla: "restaurant.categorias · productos" },
-  { nombre: "Eventos", tabla: "restaurant.eventos" },
-  { nombre: "Reservas", tabla: "restaurant.reservas (compartida)" },
-  { nombre: "Pedidos desde mesa y cocina", tabla: "restaurant.pedidos · pedido_items · mesas" },
-  { nombre: "Horario", tabla: "public.settings (key = horario)" },
+  { nombre: "Menú del día", tabla: "laofi.menus_dia · laofi.menu_dia_platos" },
+  { nombre: "Carta, precios, fotos y disponibilidad", tabla: "laofi.categorias · laofi.productos" },
+  { nombre: "Eventos", tabla: "laofi.eventos" },
+  { nombre: "Horario", tabla: "laofi.horario" },
+  { nombre: "Reservas", tabla: "laofi.reservas (siguiente fase)" },
+  { nombre: "Pedidos desde mesa y cocina", tabla: "laofi.mesas · laofi.pedidos (siguiente fase)" },
 ];
 
 export default function AdminPage() {

@@ -1,29 +1,28 @@
-// Tipos del vertical "restaurant" de LocalIA. Las filas de BD siguen exactamente
-// el schema compartido (mismos nombres que Palomita-Bar); los "view models" son
-// lo que pintan los componentes, independientes de si el dato viene de Supabase
-// o del contenido de ejemplo de la demo.
+// Tipos de La Ofi. Las "filas" son lo que devuelven las RPC públicas laofi_* del
+// schema propio `laofi`; los "view models" son lo que pintan los componentes,
+// independientes de si el dato viene de Supabase o del contenido de referencia.
 
-// --- Filas de base de datos (RPC públicas) ---------------------------------
+// --- Respuestas de las RPC públicas ----------------------------------------
 
-export interface Categoria {
+export interface CartaProducto {
   id: string;
-  nombre: string;
-  slug: string;
-  tipo: "comida" | "bebida";
-  orden: number;
-}
-
-export interface Producto {
-  id: string;
-  categoria_id: string | null;
   nombre: string;
   descripcion: string | null;
-  precio_centimos: number;
+  /** null = "Consultar precio". */
+  precio_centimos: number | null;
   imagen_url: string | null;
-  disponible: boolean;
-  destacado: boolean;
+  /** Claves normalizadas de los 14 alérgenos UE (p. ej. "frutos_cascara"). */
   alergenos: string[];
-  orden: number;
+  destacado: boolean;
+}
+
+export interface CartaCategoria {
+  id: string;
+  slug: string;
+  nombre: string;
+  descripcion: string | null;
+  tipo: "comida" | "bebida";
+  productos: CartaProducto[];
 }
 
 export type TipoPlato = "primero" | "segundo" | "postre" | "plato";
@@ -134,17 +133,8 @@ export interface EventoView {
 }
 
 // --- Preparado para fases siguientes (pedido en mesa, reservas, pagos) -------
-// Mismo contrato que las RPC de Palomita-Bar (validar_mesa, crear_pedido_restaurant,
-// crear_reserva_publica). Ver ARCHITECTURE.md §5.
-
-export interface Mesa {
-  id: string;
-  numero: string;
-  nombre: string | null;
-  identificador: string;
-  activa: boolean;
-  capacidad: number;
-}
+// Mismo contrato funcional que Palomita-Bar, pero con tablas propias en el schema
+// laofi (mesas, pedidos, reservas) cuando se construyan. Ver ARCHITECTURE.md §5.
 
 export type EstadoPedido = "RECEIVED" | "ACCEPTED" | "PREPARING" | "READY" | "DELIVERED" | "CANCELLED";
 export type PaymentMethod = "ONLINE" | "LOCAL";

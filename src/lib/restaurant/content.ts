@@ -2,7 +2,7 @@ import "server-only";
 import { SHOW_DEMO_CONTENT } from "@/lib/env";
 import { hoyEnMadrid } from "@/lib/format";
 import { DEMO_CARTA, DEMO_EVENTOS, DEMO_MENU_DIA } from "@/lib/restaurant/demo-content";
-import { getCarta, getCategorias, getEvento, getEventos, getMenuDia } from "@/lib/restaurant/queries";
+import { getCarta, getEvento, getEventos, getMenuDia } from "@/lib/restaurant/queries";
 import type {
   CartaSeccion,
   ContentState,
@@ -20,31 +20,26 @@ function fallback<T>(demo: T): ContentState<T> {
 }
 
 export async function getCartaContent(): Promise<ContentState<CartaSeccion[]>> {
-  const [categorias, productos] = await Promise.all([getCategorias(), getCarta()]);
-  if (categorias && productos && productos.length > 0) {
-    const secciones = [...categorias]
-      .sort((a, b) => a.orden - b.orden)
-      .map((c) => ({
-        id: c.id,
-        slug: c.slug,
-        nombre: c.nombre,
-        items: productos
-          .filter((p) => p.categoria_id === c.id && p.disponible)
-          .sort((a, b) => a.orden - b.orden)
-          .map((p) => ({
-            id: p.id,
-            nombre: p.nombre,
-            descripcion: p.descripcion,
-            precioCentimos: p.precio_centimos > 0 ? p.precio_centimos : null,
-            imagen: p.imagen_url ? { src: p.imagen_url, alt: p.nombre } : null,
-            alergenos: p.alergenos ?? [],
-            destacado: p.destacado,
-            fuente: "supabase" as const,
-          })),
-      }))
-      .filter((s) => s.items.length > 0);
-    if (secciones.length > 0) return { status: "real", data: secciones };
-  }
+  const carta = await getCarta();
+  const secciones: CartaSeccion[] = (carta ?? [])
+    .map((c) => ({
+      id: c.id,
+      slug: c.slug,
+      nombre: c.nombre,
+      nota: c.descripcion ?? undefined,
+      items: c.productos.map((p) => ({
+        id: p.id,
+        nombre: p.nombre,
+        descripcion: p.descripcion,
+        precioCentimos: p.precio_centimos,
+        imagen: p.imagen_url ? { src: p.imagen_url, alt: p.nombre } : null,
+        alergenos: p.alergenos,
+        destacado: p.destacado,
+        fuente: "supabase" as const,
+      })),
+    }))
+    .filter((s) => s.items.length > 0);
+  if (secciones.length > 0) return { status: "real", data: secciones };
   return fallback(DEMO_CARTA);
 }
 

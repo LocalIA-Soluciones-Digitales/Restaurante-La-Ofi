@@ -6,7 +6,7 @@
 -- ningún otro dato inventado: ese contenido lo cargará el restaurante desde /admin.
 -- Idempotente (on conflict do nothing). NO EJECUTAR EN PRODUCCIÓN sin revisión.
 --
--- Tras ejecutarlo, copiar el site_key devuelto a NEXT_PUBLIC_LAOFI_SITE_KEY
+-- Tras ejecutarlo, copiar el site_key devuelto a LAOFI_SITE_KEY
 -- (Vercel → Settings → Environment Variables) y el id a NEXT_PUBLIC_LAOFI_CLIENTE_ID
 -- cuando se construya /admin.
 -- =============================================================================

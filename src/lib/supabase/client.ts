@@ -18,5 +18,5 @@ export function getSupabase(): SupabaseClient | null {
 }
 
 export function getSiteKey(): string | null {
-  return process.env.NEXT_PUBLIC_LAOFI_SITE_KEY || null;
+  return process.env.LAOFI_SITE_KEY || null;
 }
