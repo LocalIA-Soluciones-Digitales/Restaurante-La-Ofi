@@ -34,7 +34,7 @@ export function resolverHorario(valorBd: string | null | undefined): HorarioResu
   return bd ? { semana: bd, fuente: "supabase" } : { semana: HORARIO_INTERNET, fuente: "internet" };
 }
 
-export const DIAS_SEMANA = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"] as const;
+const DIAS_SEMANA = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"] as const;
 
 const DIA_SCHEMA_ORG = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"] as const;
 

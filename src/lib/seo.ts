@@ -3,7 +3,7 @@ import { IS_DEMO, SITE_URL } from "@/lib/env";
 import { ENABLED_LOCALES, HTML_LANG, type Locale } from "@/lib/i18n";
 import { SITE } from "@/lib/site";
 
-export const OG_IMAGE = "/og/la-ofi-og.jpg";
+const OG_IMAGE = "/og/la-ofi-og.jpg";
 
 interface PageSeo {
   locale: Locale;

@@ -30,7 +30,16 @@ function Platos({ platos, detalle }: { platos: MenuDiaPlato[]; detalle: boolean 
  * encargado lo publique cada mañana desde el futuro /admin
  * (restaurant.menus_dia + restaurant.menu_dia_platos).
  */
-export function MenuDelDia({ state, detalle = false }: { state: ContentState<MenuDiaView>; detalle?: boolean }) {
+export function MenuDelDia({
+  state,
+  detalle = false,
+  headingLevel: Heading = "h3",
+}: {
+  state: ContentState<MenuDiaView>;
+  detalle?: boolean;
+  /** h3 dentro de una sección con h2 (home); h2 directamente bajo el h1 de la página. */
+  headingLevel?: "h2" | "h3";
+}) {
   if (state.status === "empty") {
     return (
       <EmptyState title="El menú de hoy aún no está publicado" icon="clock">
@@ -56,7 +65,7 @@ export function MenuDelDia({ state, detalle = false }: { state: ContentState<Men
         {GRUPOS.map((g) =>
           menu[g.key].length > 0 ? (
             <section key={g.key} aria-label={g.label}>
-              <h3 className="eyebrow text-oliva">{g.label}</h3>
+              <Heading className="eyebrow font-sans text-oliva">{g.label}</Heading>
               <Platos platos={menu[g.key]} detalle={detalle} />
             </section>
           ) : null,

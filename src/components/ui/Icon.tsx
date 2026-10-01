@@ -6,7 +6,6 @@ const PATHS = {
   menu: "M4 7h16M4 12h16M4 17h10",
   close: "M6 6l12 12M18 6 6 18",
   arrow: "M5 12h14m-5-5 5 5-5 5",
-  external: "M14 5h5v5M19 5l-8 8M18 14v4a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h4",
   instagram:
     "M7 3h10a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4Zm5 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm5.5-9.5h.01",
   coffee: "M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V9Zm12 1h1.5a2.5 2.5 0 0 1 0 5H16M8 3v3M12 3v3",
@@ -17,14 +16,11 @@ const PATHS = {
   calendar: "M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm-1 5h16M8 3v4m8-4v4",
   clock: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0-13v4l3 2",
   utensils: "M7 3v8m-3-8v5a3 3 0 0 0 6 0V3M7 11v10m10-18c-2 1-3 4-3 7h3v11",
-  glass: "M8 3h8l-1 7a3 3 0 0 1-6 0L8 3Zm4 10v7m-4 0h8",
   flame: "M12 21a6 6 0 0 0 6-6c0-4-3-6-4-10-2 2-3 4-3 6-1-1-2-2-2-3-2 2-3 4-3 7a6 6 0 0 0 6 6Z",
   music: "M9 18V6l11-2v12M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm11-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z",
-  info: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0-10v6m0-9h.01",
   check: "m5 12 5 5L20 7",
   whatsapp:
     "M4 20l1.3-3.9A8 8 0 1 1 8 19l-4 1Zm5-11c0 3 3 6 6 6l1.5-1.5-2-1-1 1c-1-.5-2-1.5-2.5-2.5l1-1-1-2L9 9Z",
-  search: "M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14Zm5-2 4 4",
   chevronLeft: "m15 5-7 7 7 7",
   chevronRight: "m9 5 7 7-7 7",
   egg: "M12 21c-4 0-6.5-2.8-6.5-6.6C5.5 9.6 8.5 3 12 3s6.5 6.6 6.5 11.4c0 3.8-2.5 6.6-6.5 6.6Z",
@@ -32,7 +28,8 @@ const PATHS = {
 
 export type IconName = keyof typeof PATHS;
 
-export function Icon({ name, className = "h-5 w-5", title }: { name: IconName; className?: string; title?: string }) {
+/** Icono decorativo: el texto accesible lo aporta siempre el elemento que lo contiene. */
+export function Icon({ name, className = "h-5 w-5" }: { name: IconName; className?: string }) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -42,10 +39,8 @@ export function Icon({ name, className = "h-5 w-5", title }: { name: IconName; c
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
-      aria-hidden={title ? undefined : true}
-      role={title ? "img" : undefined}
+      aria-hidden="true"
     >
-      {title ? <title>{title}</title> : null}
       <path d={PATHS[name]} />
     </svg>
   );
