@@ -17,7 +17,7 @@ values (
   'restaurante-la-ofi',
   'web',
   'activo',
-  'Derio (Parque Tecnológico de Bizkaia, edificio 502). Vertical restaurant. Alta en modo DEMO pendiente de autorización del propietario.'
+  'Derio (Parque Tecnológico de Bizkaia, edificio 502). Vertical restaurant. Alta en modo DEMO (web aún no publicada en el dominio definitivo).'
 )
 on conflict (slug) do nothing;
 

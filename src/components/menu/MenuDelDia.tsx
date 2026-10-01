@@ -5,6 +5,7 @@ import { formatCentimos, formatearFechaLarga } from "@/lib/format";
 import type { ContentState, MenuDiaPlato, MenuDiaView } from "@/lib/restaurant/types";
 
 const GRUPOS = [
+  { key: "platos", label: "A elegir" },
   { key: "primeros", label: "Primeros" },
   { key: "segundos", label: "Segundos" },
   { key: "postres", label: "Postres" },
@@ -43,15 +44,15 @@ export function MenuDelDia({ state, detalle = false }: { state: ContentState<Men
     <article className="relative overflow-hidden rounded-[2rem] border border-carbon/10 bg-white shadow-card">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-dashed border-carbon/15 bg-arena/60 px-6 py-5 sm:px-8">
         <div>
-          <p className="eyebrow text-terracota">Menú del día</p>
+          <p className="eyebrow text-terracota">{menu.platos.length > 0 ? "Plato del día" : "Menú del día"}</p>
           <p className="mt-1 font-display text-2xl capitalize text-carbon">
-            {menu.fecha ? formatearFechaLarga(menu.fecha) : "Hoy"}
+            {menu.fecha ? formatearFechaLarga(menu.fecha) : "Entre semana"}
           </p>
         </div>
         <SourceBadge fuente={menu.fuente} />
       </div>
 
-      <div className="grid gap-8 px-6 py-7 sm:px-8 md:grid-cols-3">
+      <div className={`grid gap-8 px-6 py-7 sm:px-8 ${menu.platos.length > 0 ? "" : "md:grid-cols-3"}`}>
         {GRUPOS.map((g) =>
           menu[g.key].length > 0 ? (
             <section key={g.key} aria-label={g.label}>

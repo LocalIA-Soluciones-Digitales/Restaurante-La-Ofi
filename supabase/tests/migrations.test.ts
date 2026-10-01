@@ -50,14 +50,14 @@ describe("seed del tenant", () => {
     expect(laOfi.site_key).toMatch(/^[0-9a-f-]{36}$/);
   });
 
-  it("la carta opcional de desayunos inserta 9 tostadas sin alérgenos inventados y no duplica", async () => {
-    await db.exec(read("seed/la_ofi_carta_desayunos_instagram.sql"));
-    await db.exec(read("seed/la_ofi_carta_desayunos_instagram.sql"));
+  it("la carta publicada opcional inserta 19 platos sin alérgenos inventados y no duplica", async () => {
+    await db.exec(read("seed/la_ofi_carta_publicada.sql"));
+    await db.exec(read("seed/la_ofi_carta_publicada.sql"));
     const r = await one<{ n: number; sin_alergenos: boolean }>(
       "select count(*)::int as n, bool_and(alergenos = '{}') as sin_alergenos from restaurant.productos where cliente_id = $1",
       [laOfi.id],
     );
-    expect(r).toEqual({ n: 9, sin_alergenos: true });
+    expect(r).toEqual({ n: 19, sin_alergenos: true });
   });
 });
 
@@ -70,19 +70,20 @@ describe("menú del día", () => {
     );
     await db.query(
       `insert into restaurant.menu_dia_platos (cliente_id, menu_id, tipo, nombre, alergenos, orden) values
-        ($1, $2, 'primero', 'Ensalada', '{}', 1), ($1, $2, 'segundo', 'Merluza', '{pescado}', 1), ($1, $2, 'postre', 'Flan', '{huevo,lácteos}', 1)`,
+        ($1, $2, 'primero', 'Ensalada', '{}', 1), ($1, $2, 'segundo', 'Merluza', '{pescado}', 1), ($1, $2, 'postre', 'Flan', '{huevo,lácteos}', 1),
+        ($1, $2, 'plato', 'Secreto con patatas', '{}', 1)`,
       [laOfi.id, id],
     );
     await db.query(`insert into restaurant.menus_dia (cliente_id, fecha, precio_centimos) values ($1, ${hoy}, 999)`, [otro.id]);
   });
 
-  it("devuelve el menú de hoy del tenant con sus platos", async () => {
+  it("devuelve el menú de hoy del tenant con sus platos (incluido el plato del día a elegir)", async () => {
     const { m } = await one<{ m: { precio_centimos: number; platos: unknown[] } }>(
       "select public.get_menu_dia_publico($1) as m",
       [laOfi.site_key],
     );
     expect(m.precio_centimos).toBe(1450);
-    expect(m.platos).toHaveLength(3);
+    expect(m.platos).toHaveLength(4);
   });
 
   it("no devuelve nada con una site_key inventada", async () => {

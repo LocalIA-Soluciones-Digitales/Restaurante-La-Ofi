@@ -26,7 +26,7 @@ export interface Producto {
   orden: number;
 }
 
-export type TipoPlato = "primero" | "segundo" | "postre";
+export type TipoPlato = "primero" | "segundo" | "postre" | "plato";
 
 export interface MenuDiaPlato {
   id: string;
@@ -68,9 +68,10 @@ export interface Evento {
 
 // --- Procedencia del contenido ---------------------------------------------
 
-/** supabase = dato real del tenant · instagram/prensa = dato real publicado por el
- * negocio o la prensa, pendiente de confirmar · ejemplo = ilustrativo, no real. */
-export type Fuente = "supabase" | "instagram" | "prensa" | "ejemplo";
+/** supabase = dato real del tenant · instagram/prensa/opiniones/carta = dato real
+ * publicado en internet (por el negocio, la prensa, clientes o una foto de la carta),
+ * pendiente de confirmar · ejemplo = ilustrativo, no real. */
+export type Fuente = "supabase" | "instagram" | "prensa" | "opiniones" | "carta" | "ejemplo";
 
 export type ContentState<T> =
   | { status: "real"; data: T }
@@ -108,6 +109,8 @@ export interface MenuDiaView {
   precioCentimos: number | null;
   incluye: string[];
   notas: string | null;
+  /** Plato del día a elegir (tipo "plato"). */
+  platos: MenuDiaPlato[];
   primeros: MenuDiaPlato[];
   segundos: MenuDiaPlato[];
   postres: MenuDiaPlato[];

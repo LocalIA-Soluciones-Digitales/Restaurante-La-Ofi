@@ -35,7 +35,9 @@ create table if not exists restaurant.menu_dia_platos (
   id uuid primary key default gen_random_uuid(),
   cliente_id uuid not null references public.clientes(id) on delete cascade,
   menu_id uuid not null,
-  tipo text not null check (tipo in ('primero', 'segundo', 'postre')),
+  -- primero/segundo/postre = menú del día clásico; plato = "plato del día" a elegir
+  -- entre varias opciones (formato que usa La Ofi entre semana).
+  tipo text not null check (tipo in ('primero', 'segundo', 'postre', 'plato')),
   nombre text not null check (length(btrim(nombre)) > 0),
   descripcion text,
   -- Mismo formato que restaurant.productos.alergenos (14 alérgenos UE en castellano).
@@ -47,7 +49,7 @@ create table if not exists restaurant.menu_dia_platos (
 );
 
 comment on table restaurant.menu_dia_platos is
-  'Platos (primeros, segundos, postres) de un menú del día. El tenant debe coincidir con el del menú (FK compuesta).';
+  'Platos (primeros, segundos, postres o platos del día a elegir) de un menú del día. El tenant debe coincidir con el del menú (FK compuesta).';
 
 create index if not exists menu_dia_platos_menu_idx on restaurant.menu_dia_platos (menu_id, tipo, orden);
 

@@ -14,7 +14,7 @@ import terrazaCarpa from "../../public/images/local/terraza-carpa-rg.webp";
 import mapa from "../../public/images/local/mapa-la-ofi-osm.webp";
 
 // Procedencia completa de cada archivo en IMAGES_SOURCES.md.
-// oficial = publicada por el propio restaurante (Instagram / Google Business), pendiente de autorización.
+// oficial = publicada por el propio restaurante (Instagram / Google Business), uso autorizado (2026-10-01).
 // tercero = prensa o directorio, SOLO DEMO: sustituir antes de producción.
 export type ImageKind = "oficial" | "tercero" | "generada";
 
