@@ -5,6 +5,7 @@ import { BottomBar } from "@/components/layout/BottomBar";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { mainNav } from "@/components/layout/nav";
+import { SmoothScroll } from "@/components/motion/SmoothScroll";
 import { JsonLd } from "@/components/ui/JsonLd";
 import { getDictionary } from "@/i18n/dictionaries";
 import { IS_DEMO, SITE_URL } from "@/lib/env";
@@ -74,14 +75,19 @@ export default async function LocaleLayout({
           {t.common.saltarContenido}
         </a>
         {IS_DEMO ? null : <JsonLd data={restaurantJsonLd(semana)} />}
+        <SmoothScroll />
         <Header
           homeHref={href(locale)}
+          pedirHref={href(locale, "/pedir")}
+          reservarHref={href(locale, "/reservar")}
           items={items}
           phoneHref={SITE.phone.href}
           phoneDisplay={SITE.phone.display}
           directionsHref={SITE.maps.directions}
           labels={{
             reservar: t.cta.reservar,
+            pedir: t.cta.pedir,
+            llamar: t.cta.llamar,
             abrirMenu: t.cta.abrirMenu,
             cerrarMenu: t.cta.cerrarMenu,
             comoLlegar: t.cta.comoLlegar,
@@ -93,9 +99,10 @@ export default async function LocaleLayout({
         <Footer locale={locale} items={items} />
         <BottomBar
           cartaHref={href(locale, "/carta")}
-          phoneHref={SITE.phone.href}
+          pedirHref={href(locale, "/pedir")}
+          reservarHref={href(locale, "/reservar")}
           directionsHref={SITE.maps.directions}
-          labels={{ carta: t.nav.carta, reservar: t.cta.reservar, comoLlegar: t.cta.comoLlegar }}
+          labels={{ carta: t.nav.carta, pedir: t.cta.pedir, reservar: t.cta.reservar, comoLlegar: t.cta.comoLlegar }}
         />
       </body>
     </html>

@@ -10,15 +10,18 @@ import { useDialogA11y } from "@/hooks/useDialogA11y";
 
 interface Props {
   homeHref: string;
+  pedirHref: string;
+  reservarHref: string;
   items: NavItem[];
   phoneHref: string;
   phoneDisplay: string;
-  labels: { reservar: string; abrirMenu: string; cerrarMenu: string; comoLlegar: string };
+  labels: { reservar: string; pedir: string; llamar: string; abrirMenu: string; cerrarMenu: string; comoLlegar: string };
   directionsHref: string;
 }
 
-export function Header({ homeHref, items, phoneHref, phoneDisplay, labels, directionsHref }: Props) {
+export function Header({ homeHref, pedirHref, reservarHref, items, phoneHref, phoneDisplay, labels, directionsHref }: Props) {
   const [scrolled, setScrolled] = useState(false);
+  const [overHero, setOverHero] = useState(false);
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
@@ -29,6 +32,13 @@ export function Header({ homeHref, items, phoneHref, phoneDisplay, labels, direc
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Sobre una cabecera de foto/vídeo oscura (data-header="light") el texto va en claro.
+  useEffect(() => {
+    setOverHero(Boolean(document.querySelector('[data-header="light"]')));
+  }, [pathname]);
+
+  const light = overHero && !scrolled;
+
   const isActive = (itemHref: string) =>
     !itemHref.includes("#") && (itemHref === homeHref ? pathname === homeHref : pathname.startsWith(itemHref));
 
@@ -37,11 +47,11 @@ export function Header({ homeHref, items, phoneHref, phoneDisplay, labels, direc
     <header
       className={`fixed inset-x-0 top-0 z-40 transition-[background-color,box-shadow,backdrop-filter] duration-300 ${
         scrolled ? "bg-crema/90 shadow-[0_1px_0_rgb(43_39_34/0.08)] backdrop-blur-md" : "bg-transparent"
-      }`}
+      } ${light ? "text-crema" : "text-carbon"}`}
     >
       <div className="container-page flex h-[4.5rem] items-center justify-between gap-4">
         <Link href={homeHref} className="rounded-lg">
-          <Logo />
+          <Logo light={light} />
         </Link>
 
         <nav aria-label="Principal" className="hidden lg:block">
@@ -51,7 +61,9 @@ export function Header({ homeHref, items, phoneHref, phoneDisplay, labels, direc
                 <Link
                   href={item.href}
                   aria-current={isActive(item.href) ? "page" : undefined}
-                  className="rounded-full px-3 py-2 text-sm font-medium text-carbon transition-colors hover:bg-carbon/5 aria-[current=page]:text-terracota"
+                  className={`rounded-full px-3 py-2 text-sm font-medium transition-colors ${
+                    light ? "text-crema hover:bg-crema/10 aria-[current=page]:text-neon" : "text-carbon hover:bg-carbon/5 aria-[current=page]:text-terracota"
+                  }`}
                 >
                   {item.label}
                 </Link>
@@ -61,13 +73,22 @@ export function Header({ homeHref, items, phoneHref, phoneDisplay, labels, direc
         </nav>
 
         <div className="flex items-center gap-2">
-          <a href={phoneHref} className="btn-primary hidden min-h-11 px-5 text-sm sm:inline-flex" aria-label={`${labels.reservar}: llamar al ${phoneDisplay}`}>
-            <Icon name="phone" className="h-4 w-4" />
+          <Link
+            href={pedirHref}
+            className={`btn hidden min-h-11 border px-4 text-sm sm:inline-flex ${light ? "border-crema/30 text-crema hover:bg-crema/10" : "border-carbon/15 text-carbon hover:bg-white"}`}
+          >
+            <Icon name="bag" className="h-4 w-4" />
+            {labels.pedir}
+          </Link>
+          <Link href={reservarHref} className={`${light ? "btn-light" : "btn-primary"} hidden min-h-11 px-5 text-sm sm:inline-flex`}>
+            <Icon name="calendar" className="h-4 w-4" />
             {labels.reservar}
-          </a>
+          </Link>
           <button
             type="button"
-            className="grid h-11 w-11 place-items-center rounded-full border border-carbon/15 bg-crema/80 text-carbon lg:hidden"
+            className={`grid h-11 w-11 place-items-center rounded-full border lg:hidden ${
+              light ? "border-crema/30 bg-carbon/20 text-crema backdrop-blur" : "border-carbon/15 bg-crema/80 text-carbon"
+            }`}
             aria-expanded={open}
             aria-controls="menu-movil"
             onClick={() => setOpen(true)}
@@ -87,6 +108,8 @@ export function Header({ homeHref, items, phoneHref, phoneDisplay, labels, direc
           phoneHref={phoneHref}
           phoneDisplay={phoneDisplay}
           directionsHref={directionsHref}
+          pedirHref={pedirHref}
+          reservarHref={reservarHref}
           labels={labels}
         />
       ) : null}
@@ -101,6 +124,8 @@ function MobileMenu({
   phoneHref,
   phoneDisplay,
   directionsHref,
+  pedirHref,
+  reservarHref,
   labels,
 }: {
   items: NavItem[];
@@ -109,6 +134,8 @@ function MobileMenu({
   phoneHref: string;
   phoneDisplay: string;
   directionsHref: string;
+  pedirHref: string;
+  reservarHref: string;
   labels: Props["labels"];
 }) {
   const ref = useDialogA11y<HTMLDivElement>(onClose);
@@ -150,9 +177,19 @@ function MobileMenu({
           ))}
         </ul>
         <div className="mt-8 grid gap-3">
-          <a href={phoneHref} className="btn-primary w-full">
+          <div className="grid grid-cols-2 gap-3">
+            <Link href={reservarHref} onClick={onClose} className="btn-primary w-full">
+              <Icon name="calendar" className="h-4 w-4" />
+              {labels.reservar}
+            </Link>
+            <Link href={pedirHref} onClick={onClose} className="btn-secondary w-full">
+              <Icon name="bag" className="h-4 w-4" />
+              {labels.pedir}
+            </Link>
+          </div>
+          <a href={phoneHref} className="btn-secondary w-full">
             <Icon name="phone" className="h-4 w-4" />
-            {labels.reservar} · {phoneDisplay}
+            {labels.llamar} · {phoneDisplay}
           </a>
           <a href={directionsHref} target="_blank" rel="noopener noreferrer" className="btn-secondary w-full">
             <Icon name="pin" className="h-4 w-4" />

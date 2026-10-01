@@ -2,14 +2,16 @@ import type { Metadata } from "next";
 import { CartaPreview } from "@/components/home/CartaPreview";
 import { EventosSection } from "@/components/home/EventosSection";
 import { GaleriaSection } from "@/components/home/GaleriaSection";
-import { Hero } from "@/components/home/Hero";
+import { VideoHero } from "@/components/home/VideoHero";
 import { Intro } from "@/components/home/Intro";
 import { MenuHoy } from "@/components/home/MenuHoy";
 import { Momentos } from "@/components/home/Momentos";
 import { Tostadas } from "@/components/home/Tostadas";
 import { Ubicacion } from "@/components/home/Ubicacion";
 import { getDictionary } from "@/i18n/dictionaries";
-import { resolverHorario } from "@/lib/horario";
+import { estadoAhora, resolverHorario } from "@/lib/horario";
+import { href } from "@/lib/i18n";
+import { franjaDelDia } from "@/lib/media";
 import type { Locale } from "@/lib/i18n";
 import { getCartaContent, getEventosContent, getMenuDiaContent } from "@/lib/restaurant/content";
 import { getHorario } from "@/lib/restaurant/queries";
@@ -39,9 +41,17 @@ export default async function HomePage({ params }: Params) {
     getHorario(),
   ]);
 
+  const resuelto = resolverHorario(horario);
+
   return (
     <>
-      <Hero locale={locale} t={t} />
+      <VideoHero
+        franjaInicial={franjaDelDia()}
+        estadoInicial={estadoAhora(resuelto.semana)}
+        semana={resuelto.semana}
+        links={{ carta: href(locale, "/carta"), pedir: href(locale, "/pedir"), reservar: href(locale, "/reservar") }}
+        labels={{ verCarta: t.cta.verCarta, pedir: t.cta.pedir, reservar: t.cta.reservar }}
+      />
       <Intro />
       <Momentos locale={locale} />
       <MenuHoy locale={locale} t={t} state={menu} />
@@ -49,7 +59,7 @@ export default async function HomePage({ params }: Params) {
       <CartaPreview locale={locale} t={t} state={carta} />
       <EventosSection locale={locale} t={t} state={eventos} />
       <GaleriaSection locale={locale} />
-      <Ubicacion t={t} horario={resolverHorario(horario)} />
+      <Ubicacion t={t} horario={resuelto} />
     </>
   );
 }
