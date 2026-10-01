@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { IMAGES } from "@/lib/images";
 import { AllergenLegend } from "@/components/menu/AllergenLegend";
 import { CartaView } from "@/components/menu/CartaView";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -36,6 +37,8 @@ export default async function CartaPage() {
         eyebrow="Carta"
         title="Nuestra carta"
         lead="Desayunos, pintxos, brasa y cocina de temporada. Pregunta por el pescado del día: depende del mercado."
+        image={IMAGES.tostadaBurrata}
+        compact
       />
       <div className="container-page py-10 sm:py-14">
         {state.status === "empty" ? (

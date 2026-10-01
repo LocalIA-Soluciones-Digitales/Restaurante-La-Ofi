@@ -9,6 +9,8 @@ const RUTAS: { path: string; priority: number; changeFrequency: "daily" | "weekl
   { path: "", priority: 1, changeFrequency: "daily" },
   { path: "/menu-del-dia", priority: 0.9, changeFrequency: "daily" },
   { path: "/carta", priority: 0.9, changeFrequency: "weekly" },
+  { path: "/espacios", priority: 0.7, changeFrequency: "monthly" },
+  { path: "/empresas", priority: 0.7, changeFrequency: "monthly" },
   { path: "/eventos", priority: 0.7, changeFrequency: "weekly" },
   { path: "/galeria", priority: 0.5, changeFrequency: "monthly" },
   { path: "/contacto", priority: 0.7, changeFrequency: "yearly" },

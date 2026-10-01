@@ -45,6 +45,8 @@ export interface MenuDia {
   postre_o_cafe: boolean;
   notas: string | null;
   disponible: boolean;
+  /** Última edición (ISO). Lo devuelve laofi_get_menu_dia desde la migración de carta extendida. */
+  updated_at?: string | null;
   platos: MenuDiaPlato[];
 }
 
@@ -108,6 +110,8 @@ export interface MenuDiaView {
   precioCentimos: number | null;
   incluye: string[];
   notas: string | null;
+  /** Hora de la última actualización desde /admin (solo datos reales). */
+  actualizadoEn: string | null;
   /** Plato del día a elegir (tipo "plato"). */
   platos: MenuDiaPlato[];
   primeros: MenuDiaPlato[];

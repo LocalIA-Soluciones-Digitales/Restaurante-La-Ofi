@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { VIDEOS } from "@/lib/media";
+import { IMAGES } from "@/lib/images";
 import { EventCard } from "@/components/eventos/EventCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Icon } from "@/components/ui/Icon";
@@ -42,6 +44,9 @@ export default async function EventosPage({ params }: Params) {
         eyebrow="Eventos"
         title="En La Ofi siempre pasa algo"
         lead="Tardeos, partidos en pantalla grande y celebraciones a medida: bautizos, comuniones, postbodas o comidas de empresa."
+        image={IMAGES.salonNoche}
+        ambiente={VIDEOS.ambienteNeon}
+        noche
       />
       <div className="container-page py-10 sm:py-14">
         {state.status === "empty" ? (

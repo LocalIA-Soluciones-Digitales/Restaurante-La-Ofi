@@ -77,6 +77,7 @@ export function franjaDelDia(ahora: Date = new Date()): Franja {
 export interface HeroEscena {
   franja: Franja;
   eyebrow: string;
+  /** Líneas del titular (saltos explícitos: el texto no se recoloca al cargar la fuente). */
   titulo: string[];
   lead: string;
   /** Vídeo real del momento si existe; si no, la foto con Ken Burns. */
@@ -92,7 +93,7 @@ export const HERO_ESCENAS: Record<Franja, HeroEscena> = {
   manana: {
     franja: "manana",
     eyebrow: "Buenos días desde el Parque",
-    titulo: ["El", "café", "de", "las", "7:30"],
+    titulo: ["El café", "de las 7:30"],
     lead: "Tostadas de pan de masa madre, pintxos recién hechos en la barra y el primer café antes de subir a la oficina.",
     video: VIDEOS.heroManana,
     ambiente: VIDEOS.ambienteVapor,
@@ -102,7 +103,7 @@ export const HERO_ESCENAS: Record<Franja, HeroEscena> = {
   mediodia: {
     franja: "mediodia",
     eyebrow: "Mediodía en La Ofi",
-    titulo: ["Bajar", "a", "comer", "sin", "pensarlo"],
+    titulo: ["Bajar", "a comer", "sin pensarlo"],
     lead: "Plato del día casero, cocina a la brasa y producto de temporada de los baserris de alrededor.",
     video: VIDEOS.heroMediodia,
     ambiente: null,
@@ -112,7 +113,7 @@ export const HERO_ESCENAS: Record<Franja, HeroEscena> = {
   noche: {
     franja: "noche",
     eyebrow: "Tarde y tardeo",
-    titulo: ["Punto", "de", "encuentro", "y", "buen", "rollo"],
+    titulo: ["Punto de", "encuentro", "y buen rollo"],
     lead: "Brasa, terraza cubierta y el neón encendido: la tarde en La Ofi se alarga sola.",
     video: VIDEOS.heroNoche,
     ambiente: VIDEOS.ambienteNeon,

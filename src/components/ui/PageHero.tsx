@@ -61,7 +61,7 @@ export function PageHero({
         )}
         {ambiente && !video ? (
           <div className={`absolute inset-0 ${noche ? "opacity-50 mix-blend-screen" : "opacity-40 mix-blend-soft-light"}`}>
-            <AmbientVideo video={ambiente} threshold={0.01} showPoster={false} />
+            <AmbientVideo video={ambiente} threshold={0.01} showPoster={false} afterLoadMs={1500} />
           </div>
         ) : null}
         <div className={`absolute inset-0 bg-gradient-to-t ${noche ? "from-noche via-noche/60 to-noche/25" : "from-marino-900 via-marino-900/55 to-carbon/20"}`} />

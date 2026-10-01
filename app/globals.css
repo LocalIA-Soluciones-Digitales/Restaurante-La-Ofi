@@ -84,8 +84,10 @@
     background-size: 56px 48px;
   }
 
-  /* Grano fotográfico leve: SVG de ruido en línea, sin peticiones. */
+  /* Grano fotográfico leve: SVG de ruido en línea, sin peticiones. Solo en
+     escritorio: rasterizar el filtro de ruido es caro en móviles modestos. */
   .grain::after {
+    display: none;
     content: "";
     position: absolute;
     inset: 0;
@@ -93,6 +95,12 @@
     opacity: 0.09;
     mix-blend-mode: overlay;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  @media (min-width: 1024px) {
+    .grain::after {
+      display: block;
+    }
   }
 
   /* Secciones de tarde/noche: marino casi negro con el neón del rótulo. */
@@ -210,6 +218,33 @@
   }
   to {
     transform: translateY(0) rotate(0);
+  }
+}
+
+/* Móvil: sin máscara, fundido corto. Chrome no cuenta como LCP un texto que
+   está tapado por la máscara, y en móvil el titular del hero ES el LCP. */
+@media (max-width: 1023px) {
+  .word-mask {
+    clip-path: none;
+    animation: none;
+  }
+
+  .word-mask > span {
+    animation: word-fade 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: calc(var(--i, 0) * 40ms);
+  }
+}
+
+/* Opacidad inicial > 0 a propósito: Chrome no registra como LCP un texto pintado
+   con opacidad 0 y el fundido (en el compositor) no genera un nuevo "paint". */
+@keyframes word-fade {
+  from {
+    opacity: 0.12;
+    transform: translateY(0.18em);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 

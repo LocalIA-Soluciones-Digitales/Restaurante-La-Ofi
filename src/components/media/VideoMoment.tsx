@@ -33,7 +33,7 @@ export function VideoMoment({
   const fuentes = video ? videoSources(video) : null;
 
   return (
-    <section aria-labelledby={id} className="grain relative isolate flex min-h-[78svh] items-center justify-center overflow-hidden bg-[#0a0604] text-crema sm:min-h-[90svh]">
+    <section aria-labelledby={id} className="cv-auto grain relative isolate flex min-h-[78svh] items-center justify-center overflow-hidden bg-[#0a0604] text-crema sm:min-h-[90svh]">
       {playing && fuentes ? (
         <video className="absolute inset-0 h-full w-full object-cover" poster={fuentes.poster} controls autoPlay playsInline aria-label={video!.label}>
           {fuentes.sources.map((s) => (

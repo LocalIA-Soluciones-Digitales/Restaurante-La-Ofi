@@ -82,7 +82,7 @@ export function VideoHero({ franjaInicial, estadoInicial, semana, links, labels 
             )}
             {e.ambiente && !e.video ? (
               <div className={`absolute inset-0 ${e.noche ? "opacity-45 mix-blend-screen" : "opacity-35 mix-blend-soft-light"}`}>
-                <AmbientVideo video={e.ambiente} threshold={0.01} showPoster={false} />
+                <AmbientVideo video={e.ambiente} threshold={0.01} showPoster={false} afterLoadMs={1500} />
               </div>
             ) : null}
           </div>
@@ -107,8 +107,9 @@ export function VideoHero({ franjaInicial, estadoInicial, semana, links, labels 
 
         <h1 id="hero-title" className="mt-5" key={franja}>
           <WordReveal
-            lines={[escena.titulo.join(" ")]}
-            className="display-xl block max-w-[11ch]"
+            lines={escena.titulo}
+            nowrapLines
+            className="display-xl block"
             wordClassName={noche ? "neon-text" : ""}
             delayMs={150}
           />

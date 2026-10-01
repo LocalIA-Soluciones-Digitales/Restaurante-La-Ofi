@@ -1,4 +1,5 @@
 import type { CSSProperties, ElementType } from "react";
+import { ReplayOnView } from "@/components/motion/ReplayOnView";
 
 /**
  * Titular con revelado por palabras (cada palabra sube desde una máscara), el
@@ -12,19 +13,25 @@ export function WordReveal({
   className = "",
   delayMs = 0,
   wordClassName = "",
+  replayOnView = false,
+  nowrapLines = false,
 }: {
   lines: string[];
   as?: ElementType;
   className?: string;
   delayMs?: number;
   wordClassName?: string;
+  /** Para titulares bajo el pliegue: la animación se relanza al entrar en pantalla. */
+  replayOnView?: boolean;
+  /** Cada línea en una sola línea (saltos explícitos; evita el CLS al cambiar de fuente). */
+  nowrapLines?: boolean;
 }) {
   let i = 0;
-  return (
+  const content = (
     <Tag className={className}>
       <span className="sr-only">{lines.join(" ")}</span>
       {lines.map((line, li) => (
-        <span key={li} aria-hidden="true" className="block">
+        <span key={li} aria-hidden="true" className={nowrapLines ? "block whitespace-nowrap" : "block"}>
           {line.split(" ").map((word, wi, arr) => {
             const style = { "--i": i++, "--d": `${delayMs}ms` } as CSSProperties;
             return (
@@ -42,4 +49,5 @@ export function WordReveal({
       ))}
     </Tag>
   );
+  return replayOnView ? <ReplayOnView className="block">{content}</ReplayOnView> : content;
 }

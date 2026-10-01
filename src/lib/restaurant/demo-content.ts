@@ -101,6 +101,7 @@ export const DEMO_MENU_DIA: MenuDiaView = {
   fecha: null,
   precioCentimos: 890,
   incluye: ["Bebida", "Pan", "Postre"],
+  actualizadoEn: null,
   notas: "Precio e incluidos según opiniones de clientes en internet: confírmalos en el local. Los platos son ejemplos de días anteriores; cada día el encargado publicará aquí el plato del día.",
   platos: [
     { id: "d1", tipo: "plato", nombre: "Secreto con patatas", descripcion: null, alergenos: [], orden: 1 },

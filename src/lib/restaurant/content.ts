@@ -55,6 +55,7 @@ function menuDiaView(menu: MenuDia): MenuDiaView {
     precioCentimos: menu.precio_centimos,
     incluye,
     notas: menu.notas,
+    actualizadoEn: menu.updated_at ?? null,
     platos: porTipo("plato"),
     primeros: porTipo("primero"),
     segundos: porTipo("segundo"),
