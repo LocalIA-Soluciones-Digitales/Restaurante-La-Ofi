@@ -2,27 +2,29 @@ import { MapEmbed } from "@/components/map/MapEmbed";
 import { Icon } from "@/components/ui/Icon";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import type { Dictionary } from "@/i18n/dictionaries";
-import { agruparHorario, type DiaHorario } from "@/lib/horario";
+import { agruparHorario, type HorarioResuelto } from "@/lib/horario";
 import { IMAGES } from "@/lib/images";
 import { SITE } from "@/lib/site";
 
-export function Horario({ semana }: { semana: DiaHorario[] | null }) {
-  if (!semana) {
-    return <p className="text-sm text-carbon-muted">Horario pendiente de publicar: llámanos y te lo confirmamos.</p>;
-  }
+export function Horario({ horario }: { horario: HorarioResuelto }) {
   return (
-    <dl className="grid gap-1 text-sm">
-      {agruparHorario(semana).map((g) => (
-        <div key={g.dias} className="flex justify-between gap-6">
-          <dt className="text-carbon-muted">{g.dias}</dt>
-          <dd className="font-medium text-carbon">{g.horas}</dd>
-        </div>
-      ))}
-    </dl>
+    <div>
+      <dl className="grid gap-1 text-sm">
+        {agruparHorario(horario.semana).map((g) => (
+          <div key={g.dias} className="flex justify-between gap-6">
+            <dt className="text-carbon-muted">{g.dias}</dt>
+            <dd className="font-medium text-carbon">{g.horas}</dd>
+          </div>
+        ))}
+      </dl>
+      {horario.fuente === "internet" ? (
+        <p className="mt-2 text-xs text-carbon-muted">Horario publicado en Google. Si vienes en festivo, llámanos antes.</p>
+      ) : null}
+    </div>
   );
 }
 
-export function Ubicacion({ t, semana, headingLevel = "h2" }: { t: Dictionary; semana: DiaHorario[] | null; headingLevel?: "h1" | "h2" }) {
+export function Ubicacion({ t, horario, headingLevel = "h2" }: { t: Dictionary; horario: HorarioResuelto; headingLevel?: "h1" | "h2" }) {
   return (
     <section id="ubicacion" aria-labelledby="ubicacion-title" className="cv-auto bg-arena py-20 sm:py-28">
       <div className="container-page grid gap-10 lg:grid-cols-[1fr_1.3fr] lg:items-center">
@@ -54,7 +56,7 @@ export function Ubicacion({ t, semana, headingLevel = "h2" }: { t: Dictionary; s
             <div className="flex gap-3">
               <Icon name="clock" className="mt-0.5 h-5 w-5 shrink-0 text-terracota" />
               <div className="flex-1">
-                <Horario semana={semana} />
+                <Horario horario={horario} />
               </div>
             </div>
           </address>

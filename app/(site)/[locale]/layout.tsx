@@ -8,7 +8,7 @@ import { mainNav } from "@/components/layout/nav";
 import { JsonLd } from "@/components/ui/JsonLd";
 import { getDictionary } from "@/i18n/dictionaries";
 import { IS_DEMO, SITE_URL } from "@/lib/env";
-import { parseHorario } from "@/lib/horario";
+import { resolverHorario } from "@/lib/horario";
 import { ENABLED_LOCALES, HTML_LANG, href, isEnabledLocale } from "@/lib/i18n";
 import { restaurantJsonLd } from "@/lib/restaurant/jsonld";
 import { getHorario } from "@/lib/restaurant/queries";
@@ -62,7 +62,7 @@ export default async function LocaleLayout({
 
   const t = getDictionary(locale);
   const items = mainNav(locale, t);
-  const semana = IS_DEMO ? null : parseHorario(await getHorario());
+  const semana = IS_DEMO ? null : resolverHorario(await getHorario()).semana;
 
   return (
     <html lang={HTML_LANG[locale]} className={`${display.variable} ${sans.variable}`}>

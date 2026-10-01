@@ -1,12 +1,12 @@
 import { SITE_URL } from "@/lib/env";
-import { horarioSchemaOrg, type DiaHorario } from "@/lib/horario";
+import { horarioSchemaOrg, type Semana } from "@/lib/horario";
 import { SITE } from "@/lib/site";
 import type { CartaSeccion, EventoView } from "@/lib/restaurant/types";
 
 // JSON-LD solo con datos verificados. Menu y Event se generan únicamente a
 // partir de datos reales de Supabase (nunca del contenido de ejemplo).
 
-export function restaurantJsonLd(semana: DiaHorario[] | null) {
+export function restaurantJsonLd(semana: Semana | null) {
   return {
     "@context": "https://schema.org",
     "@type": "Restaurant",

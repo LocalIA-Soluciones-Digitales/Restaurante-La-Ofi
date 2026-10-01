@@ -9,7 +9,7 @@ import { Momentos } from "@/components/home/Momentos";
 import { Tostadas } from "@/components/home/Tostadas";
 import { Ubicacion } from "@/components/home/Ubicacion";
 import { getDictionary } from "@/i18n/dictionaries";
-import { parseHorario } from "@/lib/horario";
+import { resolverHorario } from "@/lib/horario";
 import type { Locale } from "@/lib/i18n";
 import { getCartaContent, getEventosContent, getMenuDiaContent } from "@/lib/restaurant/content";
 import { getHorario } from "@/lib/restaurant/queries";
@@ -49,7 +49,7 @@ export default async function HomePage({ params }: Params) {
       <CartaPreview locale={locale} t={t} state={carta} />
       <EventosSection locale={locale} t={t} state={eventos} />
       <GaleriaSection locale={locale} />
-      <Ubicacion t={t} semana={parseHorario(horario)} />
+      <Ubicacion t={t} horario={resolverHorario(horario)} />
     </>
   );
 }

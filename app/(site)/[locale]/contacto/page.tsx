@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Ubicacion } from "@/components/home/Ubicacion";
 import { getDictionary } from "@/i18n/dictionaries";
-import { parseHorario } from "@/lib/horario";
+import { resolverHorario } from "@/lib/horario";
 import type { Locale } from "@/lib/i18n";
 import { getHorario } from "@/lib/restaurant/queries";
 import { pageMetadata } from "@/lib/seo";
@@ -25,7 +25,7 @@ export default async function ContactoPage({ params }: Params) {
   const horario = await getHorario();
   return (
     <div className="pt-[4.5rem]">
-      <Ubicacion t={getDictionary(locale)} semana={parseHorario(horario)} headingLevel="h1" />
+      <Ubicacion t={getDictionary(locale)} horario={resolverHorario(horario)} headingLevel="h1" />
     </div>
   );
 }

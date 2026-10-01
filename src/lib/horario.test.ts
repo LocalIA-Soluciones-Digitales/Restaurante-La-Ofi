@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { agruparHorario, parseHorario } from "@/lib/horario";
+import { HORARIO_INTERNET, agruparHorario, horarioSchemaOrg, parseHorario, resolverHorario } from "@/lib/horario";
 
 const semana = [
   ...Array.from({ length: 4 }, () => ({ abierto: true, desde: "07:30", hasta: "17:00" })),
@@ -27,5 +27,20 @@ describe("horario", () => {
       { dias: "Sábado", horas: "11:00 – 23:59" },
       { dias: "Domingo", horas: "Cerrado" },
     ]);
+  });
+
+  it("sin horario en Supabase usa el publicado en internet y deja el sábado como Consultar", () => {
+    const r = resolverHorario(null);
+    expect(r.fuente).toBe("internet");
+    expect(agruparHorario(r.semana)).toEqual([
+      { dias: "Lunes a jueves", horas: "07:30 – 17:00" },
+      { dias: "Viernes", horas: "07:30 – 00:00" },
+      { dias: "Sábado", horas: "Consultar" },
+      { dias: "Domingo", horas: "Cerrado" },
+    ]);
+  });
+
+  it("el JSON-LD omite los días sin dato y los cerrados", () => {
+    expect(horarioSchemaOrg(HORARIO_INTERNET).map((d) => d.dayOfWeek)).toEqual(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]);
   });
 });
