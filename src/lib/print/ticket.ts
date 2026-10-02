@@ -137,14 +137,16 @@ export function cuentaHTML(c: Cuenta): string {
   return `<!doctype html><html><head><meta charset="utf-8"><title>Cuenta ${esc(c.etiqueta)}</title><style>${BASE}
     .meta { font-size: 12px; margin-top: 6px; line-height: 1.5; }
     table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 6px; }
-    td { padding: 2px 0; vertical-align: top; } td:first-child { width: 12%; } .r { text-align: right; white-space: nowrap; }
+    td { padding: 2px 0; vertical-align: top; } .r { text-align: right; white-space: nowrap; }
+    /* Columna estrecha solo para la cantidad de las líneas: en las tablas de IVA o pagos partía "Base 10%". */
+    .lineas td:first-child { width: 12%; }
     .tot { display: flex; justify-content: space-between; font-size: 18px; font-weight: bold; margin-top: 6px; padding-top: 6px; border-top: 1.5px solid #000; }
     .p { font-size: 11px; text-align: center; margin-top: 12px; }
     .tbai { margin-top: 12px; text-align: center; } .tbai img { width: 34mm; height: 34mm; } .tbai .id { font-size: 9px; word-break: break-all; }
   </style></head><body>
     ${cabecera(c.fiscal)}<hr class="s"/>
     <div class="meta"><b>${esc(c.etiqueta)}</b><br/>${c.camarero ? `Le atendió: ${esc(c.camarero)}<br/>` : ""}${fechaHora()}<br/>Factura simplificada</div>
-    <table>${filas}</table><hr/>
+    <table class="lineas">${filas}</table><hr/>
     ${descuento > 0 ? `<table><tr><td>Descuento</td><td class="r">-${formatCentimos(descuento)}</td></tr></table>` : ""}
     <table>${iva.map((x) => `<tr><td>Base ${x.tipo}%</td><td class="r">${formatCentimos(x.base)}</td></tr><tr><td>IVA ${x.tipo}%</td><td class="r">${formatCentimos(x.cuota)}</td></tr>`).join("")}</table>
     <div class="tot"><span>TOTAL</span><span>${formatCentimos(total)}</span></div>
