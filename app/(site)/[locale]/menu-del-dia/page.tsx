@@ -40,7 +40,7 @@ export default async function MenuDelDiaPage({ params }: Params) {
         compact
       />
       <div className="container-page grid gap-12 py-10 sm:py-14 lg:grid-cols-[1.4fr_0.6fr]">
-        <MenuDelDia state={state} detalle headingLevel="h2" />
+        <MenuDelDia state={state} detalle live headingLevel="h2" />
         <aside className="space-y-4">
           <div className="rounded-[1.75rem] bg-marino p-6 text-crema">
             <p className="font-display text-2xl">¿Venís en grupo?</p>

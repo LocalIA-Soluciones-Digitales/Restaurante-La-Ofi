@@ -73,3 +73,9 @@ export function aCentimos(texto: string): number | null {
 export function aEuros(centimos: number | null | undefined): string {
   return centimos === null || centimos === undefined ? "" : (centimos / 100).toFixed(2).replace(".", ",");
 }
+
+/** Primer error de varias acciones del panel (para páginas que cargan varias cosas a la vez). */
+export function primerError(...resultados: ({ ok: true } | { ok: false; error: string })[]): string | null {
+  for (const r of resultados) if (!r.ok) return r.error;
+  return null;
+}

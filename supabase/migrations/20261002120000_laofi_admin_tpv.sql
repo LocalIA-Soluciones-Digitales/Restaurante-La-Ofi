@@ -337,6 +337,7 @@ as $$
   )
   select jsonb_build_object(
     'mesa', (select jsonb_build_object('numero', numero, 'nombre', nombre, 'comensales', comensales) from m),
+    'pedido_ids', coalesce((select jsonb_agg(id) from ped), '[]'::jsonb),
     'lineas', coalesce((select jsonb_agg(jsonb_build_object('nombre', i.nombre, 'cantidad', i.cantidad,
                           'precio_unitario_centimos', i.precio_unitario_centimos, 'iva_pct', i.iva_pct, 'invitacion', i.invitacion)
                         order by i.created_at)

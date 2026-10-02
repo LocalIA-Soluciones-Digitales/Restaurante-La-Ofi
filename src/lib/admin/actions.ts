@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { inicioDe } from "@/lib/admin/roles";
 import { obtenerSesionAdmin, supabaseStaff } from "@/lib/admin/session";
@@ -55,6 +56,23 @@ export async function salir() {
   redirect("/admin/login");
 }
 
+/** La web pública es ISR (5 min): tras editar desde el panel se regenera al momento. */
+const PAGINAS: Record<string, string[]> = {
+  categorias: ["/es/carta", "/es/pedir", "/es"],
+  productos: ["/es/carta", "/es/pedir", "/es"],
+  modificadores: ["/es/carta", "/es/pedir"],
+  modificador_opciones: ["/es/carta", "/es/pedir"],
+  menus_dia: ["/es/menu-del-dia", "/es"],
+  menu_dia_platos: ["/es/menu-del-dia", "/es"],
+  eventos: ["/es/eventos", "/es"],
+  horario: ["/es", "/es/contacto"],
+};
+
+function revalidar(tabla: string) {
+  for (const ruta of PAGINAS[tabla] ?? []) revalidatePath(ruta);
+  if (tabla === "eventos") revalidatePath("/[locale]/eventos/[slug]", "page");
+}
+
 // --- CRUD genérico (lista blanca en Postgres) ---------------------------------------
 
 export async function listar<T>(tabla: string, filtro: Record<string, unknown> = {}) {
@@ -62,11 +80,21 @@ export async function listar<T>(tabla: string, filtro: Record<string, unknown> =
 }
 
 export async function guardar<T>(tabla: string, fila: Record<string, unknown>) {
-  return staff<T>("laofi_admin_guardar", { p_tabla: tabla, p_fila: fila });
+  const r = await staff<T>("laofi_admin_guardar", { p_tabla: tabla, p_fila: fila });
+  if (r.ok) revalidar(tabla);
+  return r;
 }
 
 export async function borrar(tabla: string, id: string) {
-  return staff<null>("laofi_admin_borrar", { p_tabla: tabla, p_id: id });
+  const r = await staff<null>("laofi_admin_borrar", { p_tabla: tabla, p_id: id });
+  if (r.ok) revalidar(tabla);
+  return r;
+}
+
+export async function guardarMenuDia<T>(menu: Record<string, unknown>) {
+  const r = await staff<T>("laofi_admin_guardar_menu_dia", { p: menu });
+  if (r.ok) revalidar("menus_dia");
+  return r;
 }
 
 // --- Salón, cocina, TPV, caja -----------------------------------------------------------

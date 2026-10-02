@@ -28,7 +28,9 @@ const sans = Figtree({
   display: "swap",
 });
 
-export const dynamicParams = false;
+// Sin `dynamicParams = false`: con él, la revalidación bajo demanda desde /admin
+// deja las páginas en 404 (NoFallbackError de Next 15). Un idioma no publicado ya
+// da 404 abajo (isEnabledLocale) y el middleware lo redirige antes.
 
 export function generateStaticParams() {
   return ENABLED_LOCALES.map((locale) => ({ locale }));

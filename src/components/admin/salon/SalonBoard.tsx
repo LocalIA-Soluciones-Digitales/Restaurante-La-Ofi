@@ -22,6 +22,7 @@ const Plano3D = dynamic(() => import("@/components/admin/salon/Plano3D"), {
 
 interface CuentaMesa {
   mesa: { numero: string; nombre: string | null; comensales: number };
+  pedido_ids: string[];
   lineas: { nombre: string; cantidad: number; precio_unitario_centimos: number; iva_pct: number; invitacion: boolean }[];
   descuento_centimos: number;
   total_centimos: number;
@@ -100,9 +101,21 @@ export function SalonBoard({ inicial, rol, fiscal }: { inicial: SalonData; rol: 
     return r.data;
   };
 
-  const imprimirCuenta = (c: CuentaMesa) =>
+  const imprimirCuenta = async (c: CuentaMesa) => {
+    // TicketBAI (si está activo): emite o recupera la factura y añade su QR al ticket.
+    const tbai = c.pedido_ids.length
+      ? ((await fetch("/api/ticketbai/emitir", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pedidoIds: c.pedido_ids, mesaId: mesa?.id }),
+        })
+          .then((r) => r.json())
+          .catch(() => null)) as { habilitado: boolean; identificativo: string | null; qrDataUrl: string | null; duplicado: boolean; error: string | null } | null)
+      : null;
+    if (tbai?.habilitado && tbai.error) setError(`TicketBAI: ${tbai.error}`);
     imprimirHTML(
       cuentaHTML({
+        ticketBai: tbai?.identificativo && tbai.qrDataUrl ? { identificativo: tbai.identificativo, qrDataUrl: tbai.qrDataUrl, duplicado: tbai.duplicado } : null,
         etiqueta: c.mesa.nombre ?? `Mesa ${c.mesa.numero}`,
         camarero: c.camarero,
         fiscal,
@@ -111,6 +124,7 @@ export function SalonBoard({ inicial, rol, fiscal }: { inicial: SalonData; rol: 
         lineas: c.lineas.map((l) => ({ cantidad: l.cantidad, nombre: l.nombre, precioUnitarioCentimos: l.precio_unitario_centimos, ivaPct: Number(l.iva_pct), invitacion: l.invitacion })),
       }),
     );
+  };
 
   const resumen = useMemo(() => {
     const cuenta = (e: string) => data.mesas.filter((m) => estadoMesa(m) === e).length;
@@ -201,7 +215,7 @@ export function SalonBoard({ inicial, rol, fiscal }: { inicial: SalonData; rol: 
             }}
             onImprimir={async () => {
               const c = await cuenta();
-              if (c) imprimirCuenta(c);
+              if (c) await imprimirCuenta(c);
             }}
           />
         )}
@@ -211,7 +225,7 @@ export function SalonBoard({ inicial, rol, fiscal }: { inicial: SalonData; rol: 
         <CobroModal
           titulo={`Cobrar ${mesa.nombre ?? `mesa ${mesa.numero}`}`}
           pendiente={cobro.pendiente_centimos}
-          onImprimir={() => imprimirCuenta(cobro)}
+          onImprimir={() => void imprimirCuenta(cobro)}
           onClose={() => {
             setCobro(null);
             void recargar();

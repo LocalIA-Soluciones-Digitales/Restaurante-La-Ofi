@@ -21,7 +21,10 @@ interface Estado {
   siteKey: string;
 }
 
-let estado: Promise<Estado> | null = null;
+// En `next start`, cada grupo de rutas lleva su propio runtime de módulos: el
+// estado se guarda en globalThis para que la web pública y /admin compartan la
+// MISMA base de datos en memoria dentro del proceso.
+const global = globalThis as typeof globalThis & { __laofiPglite?: Promise<Estado> };
 
 const raiz = (...p: string[]) => path.join(process.cwd(), "supabase", ...p);
 const leer = (...p: string[]) => readFileSync(raiz(...p), "utf8");
@@ -48,8 +51,8 @@ async function crear(): Promise<Estado> {
 }
 
 function obtener(): Promise<Estado> {
-  if (!estado) estado = crear();
-  return estado;
+  global.__laofiPglite ??= crear();
+  return global.__laofiPglite;
 }
 
 export interface RpcResult<T> {
