@@ -8,10 +8,10 @@ import { Modal } from "@/components/admin/Modal";
 import { Plano2D } from "@/components/admin/salon/Plano2D";
 import { Aviso, botonPeligro, botonPrimario, botonSecundario, card, input } from "@/components/admin/ui";
 import { Icon } from "@/components/ui/Icon";
-import { accionMesa, cobrar, guardar, rpcAdmin, salon } from "@/lib/admin/actions";
+import { accionMesa, cobrar, rpcAdmin, salon } from "@/lib/admin/actions";
 import { minutosDesde, posicionesPorDefecto } from "@/lib/admin/plano";
 import type { Rol } from "@/lib/admin/roles";
-import { ESTADO_MESA, estadoMesa, type EstadoMesa, type MesaSalon, type PersonaStaff, type ReservaDia, type SalonData } from "@/lib/admin/types";
+import { ESTADO_MESA, estadoMesa, type EstadoMesa, type MesaSalon, type ReservaDia, type SalonData } from "@/lib/admin/types";
 import { formatCentimos, hoyEnMadrid } from "@/lib/format";
 import { cuentaHTML, imprimirHTML, type DatosFiscales } from "@/lib/print/ticket";
 import { escucharLaofi } from "@/lib/supabase/browser";
@@ -75,14 +75,12 @@ export function SalonBoard({
   rol,
   fiscal,
   yo,
-  staff,
   reservasIniciales,
 }: {
   inicial: SalonData;
   rol: Rol;
   fiscal: DatosFiscales;
   yo: string;
-  staff: PersonaStaff[];
   reservasIniciales: ReservaDia[];
 }) {
   const [data, setData] = useState(inicial);
@@ -295,8 +293,7 @@ export function SalonBoard({
   const panel = mesa ? (
     <PanelMesa
       mesa={mesa}
-      gestiona={gestiona}
-      staff={staff}
+      yo={yo}
       comensales={comensales}
       setComensales={setComensales}
       nota={nota}
@@ -311,11 +308,6 @@ export function SalonBoard({
       onSentarReserva={async (r) => {
         const res = await rpcAdmin("laofi_admin_reserva_estado", { p_id: r.id, p_estado: "SENTADA" });
         if (!res.ok) return setError(res.error);
-        await recargar();
-      }}
-      onAsignarCamarero={async (id) => {
-        const r = await guardar("mesas", { id: mesa.id, camarero_id: id });
-        if (!r.ok) return setError(r.error);
         await recargar();
       }}
       onUnir={() => setUniendo(uniendo ? null : [])}
@@ -355,10 +347,9 @@ export function SalonBoard({
           <button
             type="button"
             aria-pressed={soloMias}
-            disabled={misMesas.size === 0 && !soloMias}
-            title={misMesas.size === 0 ? "No tienes mesas asignadas (se asignan por zona o por mesa)" : undefined}
+            title="Las mesas que has abierto tú (o en las que tomaste la primera comanda)"
             onClick={() => cambiarSoloMias(!soloMias)}
-            className={`${botonSecundario} aria-pressed:border-transparent aria-pressed:bg-[theme(colors.marino.DEFAULT)] aria-pressed:text-crema disabled:opacity-40`}
+            className={`${botonSecundario} aria-pressed:border-transparent aria-pressed:bg-[theme(colors.marino.DEFAULT)] aria-pressed:text-crema`}
           >
             <Icon name="users" className="h-4 w-4" />
             Mis mesas{misMesas.size ? ` (${misMesas.size})` : ""}
@@ -450,7 +441,13 @@ export function SalonBoard({
             </button>
           </Aviso>
         ) : null}
-        {soloMias && misMesas.size > 0 ? <p className="mb-2 text-xs font-semibold text-carbon-muted dark:text-crema/60">Mostrando tus {misMesas.size} mesas; el resto se ve atenuado.</p> : null}
+        {soloMias ? (
+          <p className="mb-2 text-xs font-semibold text-carbon-muted dark:text-crema/60">
+            {misMesas.size
+              ? `Mostrando ${misMesas.size === 1 ? "tu mesa" : `tus ${misMesas.size} mesas`} (las que has abierto); el resto se ve atenuado.`
+              : "Aún no tienes mesas: serán tuyas las que abras al sentar a los clientes o al tomar su primera comanda."}
+          </p>
+        ) : null}
 
         <div className="relative mt-2">
           {vista === "2d" ? (
@@ -461,7 +458,7 @@ export function SalonBoard({
               multiSeleccion={uniendo ?? []}
               editar={editar}
               filtro={filtro}
-              mias={soloMias && misMesas.size ? misMesas : null}
+              mias={soloMias ? misMesas : null}
               reservaPersonas={asignando?.personas ?? null}
               onSelect={(id) => void seleccionar(id)}
               onMover={async (id, p) => {
@@ -841,8 +838,7 @@ function FinServicio({
 
 function PanelMesa({
   mesa,
-  gestiona,
-  staff,
+  yo,
   comensales,
   setComensales,
   nota,
@@ -853,7 +849,6 @@ function PanelMesa({
   onAccion,
   onServir,
   onSentarReserva,
-  onAsignarCamarero,
   onUnir,
   onConfirmarUnion,
   onCambiar,
@@ -861,8 +856,7 @@ function PanelMesa({
   onImprimir,
 }: {
   mesa: MesaSalon;
-  gestiona: boolean;
-  staff: PersonaStaff[];
+  yo: string;
   comensales: number;
   setComensales: (n: number) => void;
   nota: string;
@@ -873,7 +867,6 @@ function PanelMesa({
   onAccion: (a: string, d?: Record<string, unknown>) => Promise<void>;
   onServir: () => Promise<void>;
   onSentarReserva: (r: ReservaDia) => Promise<void>;
-  onAsignarCamarero: (id: string | null) => Promise<void>;
   onUnir: () => void;
   onConfirmarUnion: () => Promise<void>;
   onCambiar: () => void;
@@ -896,7 +889,8 @@ function PanelMesa({
           {mesa.sesion ? ` · QR: ${mesa.sesion.modo === "SEPARADO" ? `cada uno lo suyo (${mesa.sesion.participantes})` : "juntos"}` : ""}
         </p>
         <p className="mt-1 text-sm">
-          <span className="text-carbon-muted dark:text-crema/60">Atiende:</span> <span className="font-semibold">{mesa.camarero ?? "sin asignar"}</span>
+          <span className="text-carbon-muted dark:text-crema/60">Atiende:</span>{" "}
+          <span className="font-semibold">{mesa.camarero_id === yo ? "tú" : (mesa.camarero ?? (mesa.ocupada && mesa.camarero_id ? "otro compañero" : "nadie todavía"))}</span>
         </p>
         {mesa.bloqueada && mesa.bloqueo_motivo ? <p className="mt-1 text-sm">Bloqueada: {mesa.bloqueo_motivo}</p> : null}
       </div>
@@ -1028,28 +1022,6 @@ function PanelMesa({
         ) : null}
       </div>
 
-      {gestiona && staff.length ? (
-        <label className="grid gap-1.5 text-sm">
-          <span className="font-semibold">Camarero/a de esta mesa</span>
-          <select
-            value=""
-            onChange={(e) => void onAsignarCamarero(e.target.value === "zona" ? null : e.target.value)}
-            className={input}
-          >
-            <option value="" disabled>
-              {mesa.camarero ? `Ahora: ${mesa.camarero} · cambiar…` : "Asignar…"}
-            </option>
-            <option value="zona">El de su zona</option>
-            {staff
-              .filter((s) => s.activo)
-              .map((s) => (
-                <option key={s.user_id} value={s.user_id}>
-                  {s.nombre}
-                </option>
-              ))}
-          </select>
-        </label>
-      ) : null}
 
       <label className="grid gap-1.5 text-sm">
         <span className="font-semibold">Nota de la mesa</span>

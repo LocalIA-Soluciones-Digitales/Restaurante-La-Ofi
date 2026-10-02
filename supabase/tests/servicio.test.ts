@@ -110,10 +110,39 @@ describe("ocupaciones y fin de servicio", () => {
   });
 });
 
+describe("«Mis mesas» sin asignar a nadie (20261002150000)", () => {
+  let libre: string;
+  const camareroDe = async (id: string) =>
+    (await como<{ mesas: MesaSalon[] }>("admin", "laofi_admin_salon")).mesas.find((m) => m.id === id)!.camarero_id;
+
+  beforeAll(async () => {
+    const { id: z } = await t.one<{ id: string }>("insert into laofi.zonas (slug, nombre, tipo) values ('terraza', 'Terraza', 'terraza') returning id");
+    ({ id: libre } = await t.one<{ id: string }>("insert into laofi.mesas (numero, zona_id) values ('T1', $1) returning id", [z]));
+  });
+
+  it("la mesa es de quien la abre y deja de serlo al liberarla", async () => {
+    expect(await camareroDe(libre)).toBeNull();
+    await como("camarero", "laofi_admin_mesa", libre, "sentar", JSON.stringify({ comensales: 2 }));
+    expect(await camareroDe(libre)).toBe(CAMARERO);
+    // Otro compañero que añade comensales no se la queda.
+    await como("admin", "laofi_admin_mesa", libre, "comensales", JSON.stringify({ comensales: 3 }));
+    expect(await camareroDe(libre)).toBe(CAMARERO);
+    await como("camarero", "laofi_admin_mesa", libre, "liberar", JSON.stringify({ forzar: true }));
+    expect(await camareroDe(libre)).toBeNull();
+  });
+
+  it("si se abre desde el TPV, es de quien toma la primera comanda", async () => {
+    await como("camarero", "laofi_admin_crear_pedido", JSON.stringify({ tipo: "MESA", mesa_id: libre, items: [{ producto_id: croquetas, cantidad: 1 }] }));
+    expect(await camareroDe(libre)).toBe(CAMARERO);
+    await como("camarero", "laofi_admin_mesa", libre, "liberar", JSON.stringify({ forzar: true }));
+  });
+});
+
 describe("reversión", () => {
   it("deja el salón como en la migración anterior", async () => {
     const otra = await crearBd();
     await revertirHasta(otra.db, "20261002140000");
+    expect((await otra.one<{ n: number }>("select count(*)::int as n from information_schema.columns where table_schema = 'laofi' and column_name = 'abierta_por'")).n).toBe(0);
     const { cols } = await otra.one<{ cols: number }>(
       "select count(*)::int as cols from information_schema.columns where table_schema = 'laofi' and column_name = 'camarero_id'",
     );

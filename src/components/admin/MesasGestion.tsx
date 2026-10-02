@@ -5,7 +5,7 @@ import { useState, type CSSProperties } from "react";
 import { Aviso, botonPeligro, botonPrimario, botonSecundario, card, input } from "@/components/admin/ui";
 import { Icon } from "@/components/ui/Icon";
 import { accionMesa, borrar, guardar } from "@/lib/admin/actions";
-import type { MesaSalon, PersonaStaff, Zona } from "@/lib/admin/types";
+import type { MesaSalon, Zona } from "@/lib/admin/types";
 
 const TIPOS: Zona["tipo"][] = ["barra", "comedor", "despacho", "terraza", "otra"];
 const FORMAS: MesaSalon["forma"][] = ["cuadrada", "redonda", "rectangular", "taburete"];
@@ -39,20 +39,7 @@ function slugify(s: string) {
  * con capacidad y forma, QR por mesa (ver, descargar, regenerar si un QR impreso
  * se filtra) e impresión en lote.
  */
-export function MesasGestion({ zonas: z0, mesas: m0, qrs, staff = [] }: { zonas: Zona[]; mesas: MesaSalon[]; qrs: Record<string, string>; staff?: PersonaStaff[] }) {
-  const equipo = staff.filter((p) => p.activo);
-  /** Asignar camarero/a (zona o mesa): «Mis mesas» en el salón y sus avisos en «Hoy». */
-  // Función (no componente) para que el select no se vuelva a montar al guardar.
-  const selectorCamarero = ({ valor, vacio, onCambio, etiqueta, className = "h-10 rounded-lg bg-transparent" }: { valor: string | null | undefined; vacio: string; onCambio: (id: string | null) => void; etiqueta: string; className?: string }) => (
-    <select aria-label={etiqueta} defaultValue={valor ?? ""} onChange={(e) => onCambio(e.target.value || null)} className={className}>
-      <option value="">{vacio}</option>
-      {equipo.map((p) => (
-        <option key={p.user_id} value={p.user_id}>
-          {p.nombre}
-        </option>
-      ))}
-    </select>
-  );
+export function MesasGestion({ zonas: z0, mesas: m0, qrs }: { zonas: Zona[]; mesas: MesaSalon[]; qrs: Record<string, string> }) {
   const ordenarZonas = (l: Zona[]) => [...l].sort((a, b) => a.orden - b.orden || a.nombre.localeCompare(b.nombre, "es"));
   const [zonas, setZonas] = useState(() => ordenarZonas(z0));
   // Copia de lo guardado: para marcar cambios sin guardar y descartarlos al bloquear.
@@ -98,7 +85,7 @@ export function MesasGestion({ zonas: z0, mesas: m0, qrs, staff = [] }: { zonas:
   ].filter((g) => g.id || g.mesas.length);
   const plazas = (l: MesaSalon[]) => l.filter((m) => m.activa).reduce((s, m) => s + m.capacidad, 0);
   // Columnas de la fila de mesa en escritorio (en móvil cada mesa es una tarjeta).
-  const columnas = { "--cols": `3.25rem minmax(7rem,1.4fr) minmax(7rem,1fr) 4.5rem minmax(7rem,1fr)${equipo.length ? " minmax(8rem,1fr)" : ""} 4.5rem auto` } as CSSProperties;
+  const columnas = { "--cols": `3.25rem minmax(7rem,1.4fr) minmax(7rem,1fr) 4.5rem minmax(7rem,1fr) 4.5rem auto` } as CSSProperties;
   const etiquetaMovil = "text-[0.7rem] font-semibold uppercase tracking-wider text-carbon-muted dark:text-crema/55 md:sr-only";
   const campoMesa = "h-10 w-full rounded-lg border border-carbon/10 bg-white px-2 dark:border-crema/10 dark:bg-noche-3 md:border-transparent md:bg-transparent md:hover:border-carbon/15 md:dark:bg-transparent md:dark:hover:border-crema/15";
 
@@ -184,18 +171,6 @@ export function MesasGestion({ zonas: z0, mesas: m0, qrs, staff = [] }: { zonas:
                         </label>
                       ))}
                     </div>
-                    {equipo.length ? (
-                      <label className="grid gap-1 text-xs font-semibold">
-                        Camarero/a
-                        {selectorCamarero({
-                          etiqueta: `Camarero de ${z.nombre}`,
-                          valor: z.camarero_id,
-                          vacio: "Sin asignar",
-                          className: input,
-                          onCambio: async (id) => res(await guardar("zonas", { id: z.id, camarero_id: id }), `Zona «${z.nombre}»: camarero/a guardado.`),
-                        })}
-                      </label>
-                    ) : null}
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
@@ -326,7 +301,6 @@ export function MesasGestion({ zonas: z0, mesas: m0, qrs, staff = [] }: { zonas:
                     <span>Zona</span>
                     <span>Cap.</span>
                     <span>Forma</span>
-                    {equipo.length ? <span>Camarero/a</span> : null}
                     <span>Activa</span>
                     <span className="text-right">QR</span>
                   </div>
@@ -355,7 +329,7 @@ export function MesasGestion({ zonas: z0, mesas: m0, qrs, staff = [] }: { zonas:
                           </label>
                         </div>
                         <div className="grid grid-cols-2 gap-2 md:contents">
-                          <label className={`grid gap-1 ${equipo.length ? "" : "max-md:col-span-2"}`}>
+                          <label className="grid gap-1 max-md:col-span-2">
                             <span className={etiquetaMovil}>Zona</span>
                             <select defaultValue={m.zona_id ?? ""} onChange={async (e) => guardarMesa(m, { zona_id: e.target.value || null }, `Mesa ${m.numero} movida de zona.`)} className={campoMesa}>
                               <option value="">Sin zona</option>
@@ -389,18 +363,6 @@ export function MesasGestion({ zonas: z0, mesas: m0, qrs, staff = [] }: { zonas:
                               ))}
                             </select>
                           </label>
-                          {equipo.length ? (
-                            <label className="grid gap-1">
-                              <span className={etiquetaMovil}>Camarero/a</span>
-                              {selectorCamarero({
-                                etiqueta: `Camarero de la mesa ${m.numero}`,
-                                valor: m.camarero_id,
-                                vacio: "El de su zona",
-                                className: campoMesa,
-                                onCambio: async (id) => res(await guardar("mesas", { id: m.id, camarero_id: id }), `Mesa ${m.numero}: camarero/a guardado.`),
-                              })}
-                            </label>
-                          ) : null}
                         </div>
                         <div className="flex items-center justify-between gap-3 border-t border-carbon/10 pt-3 dark:border-crema/10 md:contents">
                           <label className="inline-flex min-h-10 cursor-pointer items-center gap-2 text-sm font-semibold">
