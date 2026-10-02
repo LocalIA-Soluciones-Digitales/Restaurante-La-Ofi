@@ -23,10 +23,21 @@ export function Horario({ horario }: { horario: HorarioResuelto }) {
   );
 }
 
-export function Ubicacion({ t, horario, headingLevel = "h2" }: { t: Dictionary; horario: HorarioResuelto; headingLevel?: "h1" | "h2" }) {
+export function Ubicacion({
+  t,
+  horario,
+  headingLevel = "h2",
+  mapPriority = false,
+}: {
+  t: Dictionary;
+  horario: HorarioResuelto;
+  headingLevel?: "h1" | "h2";
+  /** En /contacto el mapa es lo más grande de la primera pantalla en escritorio. */
+  mapPriority?: boolean;
+}) {
   const Heading = headingLevel;
   return (
-    <section id="ubicacion" aria-labelledby="ubicacion-title" className="section bg-papel-2">
+    <section id="ubicacion" aria-labelledby="ubicacion-title" className="cv-auto section bg-papel-2">
       <div className="container-wide grid gap-12 lg:grid-cols-12 lg:gap-16">
         <div className="lg:col-span-5">
           <p className="kicker text-brasa">Cómo llegar</p>
@@ -84,7 +95,7 @@ export function Ubicacion({ t, horario, headingLevel = "h2" }: { t: Dictionary; 
           </div>
         </div>
         <div className="lg:col-span-7">
-          <MapEmbed image={IMAGES.mapa.src} alt={IMAGES.mapa.alt} embedUrl={SITE.maps.embed} credit={IMAGES.mapa.credit} />
+          <MapEmbed image={IMAGES.mapa.src} alt={IMAGES.mapa.alt} embedUrl={SITE.maps.embed} credit={IMAGES.mapa.credit} priority={mapPriority} />
         </div>
       </div>
     </section>

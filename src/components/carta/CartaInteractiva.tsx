@@ -57,7 +57,16 @@ export function CartaInteractiva({
       const el = document.getElementById(s.slug);
       if (el) io.observe(el);
     });
-    return () => io.disconnect();
+    // Por encima de la primera categoría ninguna cruza la franja: activa la primera.
+    const primera = conItems[0] ? document.getElementById(conItems[0].slug) : null;
+    const onScroll = () => {
+      if (primera && primera.getBoundingClientRect().top > 170) setActiva(conItems[0]!.slug);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      io.disconnect();
+      window.removeEventListener("scroll", onScroll);
+    };
   }, [conItems]);
 
   // La categoría activa siempre visible en la barra horizontal.
@@ -86,7 +95,7 @@ export function CartaInteractiva({
         value={filtros.texto}
         onChange={(e) => set({ texto: e.target.value })}
         placeholder="Buscar plato o ingrediente"
-        className={`h-11 w-full border border-carbon/20 bg-white pl-10 pr-4 text-base text-carbon placeholder:text-carbon-muted/80 focus:border-carbon focus:outline-none ${editorial ? "rounded-md" : "rounded-full"}`}
+        className={`h-11 w-full border border-carbon/20 bg-white pl-10 pr-4 text-base text-carbon placeholder:text-carbon-muted focus:border-carbon focus:outline-none ${editorial ? "rounded-md" : "rounded-full"}`}
       />
     </label>
   );
@@ -141,7 +150,7 @@ export function CartaInteractiva({
                       href={`#${s.slug}`}
                       data-slug={s.slug}
                       aria-current={activa === s.slug ? "true" : undefined}
-                      className="relative inline-flex min-h-[3.25rem] items-center text-[0.95rem] font-medium text-carbon/60 transition-colors hover:text-carbon aria-[current=true]:text-carbon after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:scale-x-0 after:bg-brasa after:transition-transform aria-[current=true]:after:scale-x-100"
+                      className="relative inline-flex min-h-[3.25rem] items-center text-[0.95rem] font-medium text-carbon-muted transition-colors hover:text-carbon aria-[current=true]:text-carbon after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:scale-x-0 after:bg-brasa after:transition-transform aria-[current=true]:after:scale-x-100"
                     >
                       {s.nombre}
                     </a>

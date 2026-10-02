@@ -6,7 +6,7 @@ import { href, type Locale } from "@/lib/i18n";
 /** Empresas del Parque y celebraciones: foto real del salón + servicios en lista, no en tarjetas. */
 export function EmpresasHome({ locale }: { locale: Locale }) {
   return (
-    <section aria-labelledby="empresas-title" className="section bg-papel-2">
+    <section aria-labelledby="empresas-title" className="cv-auto section bg-papel-2">
       <div className="container-wide grid gap-10 lg:grid-cols-12 lg:items-center lg:gap-16">
         <figure className="lg:order-2 lg:col-span-6">
           <div className="reveal-photo photo-hover relative aspect-[4/5] overflow-hidden bg-papel-3 sm:aspect-[3/2]">

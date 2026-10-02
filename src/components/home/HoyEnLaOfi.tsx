@@ -24,43 +24,40 @@ export function HoyEnLaOfi({ locale, menu, horario }: { locale: Locale; menu: Co
             Lo que hay hoy, antes de salir de la oficina
           </h2>
 
-          <dl className="mt-8 border-t border-tinta-line">
-            <div className={fila}>
+          <ul className="mt-8 border-t border-tinta-line">
+            <li className={fila}>
               <Icon name="clock" className="mt-0.5 h-5 w-5 shrink-0 text-brasa" />
               <div>
-                <dt className="sr-only">Abierto</dt>
-                <dd>
-                  <EstadoAhora semana={horario.semana} inicial={estadoAhora(horario.semana)} className="text-base text-carbon" />
-                  <p className="mt-1 text-sm text-carbon-muted">
-                    {hoy ? `Hoy: ${hoy}` : "Hoy: consulta el horario por teléfono"} ·{" "}
-                    <Link href={href(locale, "/contacto")} className="underline underline-offset-4 hover:text-carbon">
-                      horario completo
-                    </Link>
-                  </p>
-                </dd>
+                <EstadoAhora semana={horario.semana} inicial={estadoAhora(horario.semana)} className="text-base text-carbon" />
+                <p className="mt-1 text-sm text-carbon-muted">
+                  {hoy ? `Hoy: ${hoy}` : "Hoy: consulta el horario por teléfono"} ·{" "}
+                  <Link href={href(locale, "/contacto")} className="underline underline-offset-4 hover:text-carbon">
+                    horario completo
+                  </Link>
+                </p>
               </div>
-            </div>
-            <div className={fila}>
+            </li>
+            <li className={fila}>
               <Icon name="pin" className="mt-0.5 h-5 w-5 shrink-0 text-brasa" />
               <div>
-                <dt className="font-medium text-carbon">Edificio 502 del Parque Tecnológico</dt>
-                <dd className="mt-1 text-sm text-carbon-muted">
+                <p className="font-medium text-carbon">Edificio 502 del Parque Tecnológico</p>
+                <p className="mt-1 text-sm text-carbon-muted">
                   {SITE.address.street}, {SITE.address.locality}. Aparcamiento para 220 coches.
-                </dd>
+                </p>
               </div>
-            </div>
-            <div className={fila}>
+            </li>
+            <li className={fila}>
               <Icon name="phone" className="mt-0.5 h-5 w-5 shrink-0 text-brasa" />
               <div>
-                <dt className="font-medium text-carbon">Para grupos o dudas, llámanos</dt>
-                <dd className="mt-1 text-sm">
+                <p className="font-medium text-carbon">Para grupos o dudas, llámanos</p>
+                <p className="mt-1 text-sm">
                   <a href={SITE.phone.href} className="font-semibold text-carbon underline decoration-carbon/30 underline-offset-4 hover:decoration-brasa">
                     {SITE.phone.display}
                   </a>
-                </dd>
+                </p>
               </div>
-            </div>
-          </dl>
+            </li>
+          </ul>
 
           <div className="mt-8 flex flex-wrap gap-3">
             <Link href={href(locale, "/reservar?para=hoy")} className="btn-primary">

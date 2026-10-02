@@ -27,7 +27,7 @@ export function PlatosQueApetecen({ locale, carta }: { locale: Locale; carta: Co
   const fuente = lista[0]!.item.fuente;
 
   return (
-    <section aria-labelledby="platos-title" className="section overflow-hidden bg-crema">
+    <section aria-labelledby="platos-title" className="cv-auto section overflow-hidden bg-crema">
       <div className="container-wide">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div>

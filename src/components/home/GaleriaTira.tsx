@@ -16,7 +16,7 @@ const TIRA: { img: ImageKey; w: string; aspect: string }[] = [
 
 export function GaleriaTira({ locale }: { locale: Locale }) {
   return (
-    <section aria-labelledby="galeria-title" className="section overflow-hidden bg-crema pt-0 sm:pt-0">
+    <section aria-labelledby="galeria-title" className="cv-auto section overflow-hidden bg-crema pt-0 sm:pt-0">
       <div className="container-wide flex flex-wrap items-end justify-between gap-6">
         <h2 id="galeria-title" className="t-h3 text-carbon">
           Más de La Ofi

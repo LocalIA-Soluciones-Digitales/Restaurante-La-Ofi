@@ -25,9 +25,11 @@ interface Props {
  */
 export function HeroOfi({ franjaInicial, estadoInicial, semana, links, labels }: Props) {
   const [franja, setFranja] = useState<Franja>(franjaInicial);
-  // Capas montadas: la inicial al llegar; las otras tras la carga, para que el
-  // cambio de momento sea un fundido y no un hueco mientras descarga la foto.
+  // Capas montadas: solo la inicial al cargar (nada compite con el LCP). Las
+  // demás se montan al apuntar o enfocar su botón, así la foto ya está bajando
+  // cuando se pulsa y el cambio es un fundido, no un hueco.
   const [montadas, setMontadas] = useState<Franja[]>([franjaInicial]);
+  const precargar = (f: Franja) => setMontadas((m) => (m.includes(f) ? m : [...m, f]));
 
   useEffect(() => {
     const real = franjaDelDia();
@@ -35,12 +37,10 @@ export function HeroOfi({ franjaInicial, estadoInicial, semana, links, labels }:
       setFranja(real);
       setMontadas((m) => (m.includes(real) ? m : [...m, real]));
     }
-    const id = window.setTimeout(() => setMontadas(MOMENTOS_HERO.map((m) => m.franja)), 3500);
-    return () => window.clearTimeout(id);
   }, [franjaInicial]);
 
   const elegir = (f: Franja) => {
-    setMontadas((m) => (m.includes(f) ? m : [...m, f]));
+    precargar(f);
     setFranja(f);
   };
 
@@ -68,7 +68,6 @@ export function HeroOfi({ franjaInicial, estadoInicial, semana, links, labels }:
                       sizes="(min-width: 1024px) 58vw, 100vw"
                       priority={m.franja === franjaInicial}
                       decorative={!activa}
-                      quality={80}
                       imgClassName="motion-safe:animate-kenburns"
                     />
                   </div>
@@ -135,7 +134,9 @@ export function HeroOfi({ franjaInicial, estadoInicial, semana, links, labels }:
                 type="button"
                 aria-pressed={franja === m.franja}
                 onClick={() => elegir(m.franja)}
-                className="relative min-h-11 text-sm font-medium text-carbon/60 transition-colors hover:text-carbon aria-pressed:text-carbon after:absolute after:inset-x-0 after:-top-[17px] after:h-0.5 after:scale-x-0 after:bg-brasa after:transition-transform aria-pressed:after:scale-x-100"
+                onPointerEnter={() => precargar(m.franja)}
+                onFocus={() => precargar(m.franja)}
+                className="relative min-h-11 text-sm font-medium text-carbon-muted transition-colors hover:text-carbon aria-pressed:text-carbon after:absolute after:inset-x-0 after:-top-[17px] after:h-0.5 after:scale-x-0 after:bg-brasa after:transition-transform aria-pressed:after:scale-x-100"
               >
                 {m.label}
               </button>

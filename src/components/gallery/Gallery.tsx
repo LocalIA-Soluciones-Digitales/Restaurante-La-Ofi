@@ -44,7 +44,7 @@ export function Gallery({
               type="button"
               aria-pressed={filtro === c.key}
               onClick={() => setFiltro(c.key)}
-              className="relative min-h-11 text-sm font-medium text-carbon/60 transition-colors hover:text-carbon aria-pressed:text-carbon after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:scale-x-0 after:bg-brasa after:transition-transform aria-pressed:after:scale-x-100"
+              className="relative min-h-11 text-sm font-medium text-carbon-muted transition-colors hover:text-carbon aria-pressed:text-carbon after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:scale-x-0 after:bg-brasa after:transition-transform aria-pressed:after:scale-x-100"
             >
               {c.label}
             </button>

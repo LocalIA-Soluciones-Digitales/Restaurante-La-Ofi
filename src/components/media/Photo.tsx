@@ -41,9 +41,24 @@ export function Photo({
   } = getImageProps({ ...common, src: data.src, sizes });
   const mobileSet = mobile ? getImageProps({ ...common, src: mobile, sizes: "100vw" }).props.srcSet : undefined;
 
+  const mobileMedia = `(max-width: ${mobileBelow - 1}px)`;
+
   return (
     <picture className={`absolute inset-0 block ${className}`}>
-      {mobileSet ? <source media={`(max-width: ${mobileBelow - 1}px)`} srcSet={mobileSet} sizes="100vw" /> : null}
+      {/* LCP: precarga en <head> (React 19 sube los <link>) solo del recorte que
+          corresponde a la pantalla; <picture> sola se descubre tarde. */}
+      {priority && mobileSet ? <link rel="preload" as="image" imageSrcSet={mobileSet} imageSizes="100vw" media={mobileMedia} fetchPriority="high" /> : null}
+      {priority ? (
+        <link
+          rel="preload"
+          as="image"
+          imageSrcSet={desktopSet}
+          imageSizes={sizes}
+          media={mobileSet ? `(min-width: ${mobileBelow}px)` : undefined}
+          fetchPriority="high"
+        />
+      ) : null}
+      {mobileSet ? <source media={mobileMedia} srcSet={mobileSet} sizes="100vw" /> : null}
       <source srcSet={desktopSet} sizes={sizes} />
       {/* eslint-disable-next-line jsx-a11y/alt-text -- alt viene en rest */}
       <img

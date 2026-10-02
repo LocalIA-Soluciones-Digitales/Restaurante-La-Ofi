@@ -41,7 +41,7 @@ const PASOS: Paso[] = [
 /** "Un día en La Ofi": el concepto de la marca contado con fotos reales y horas reales. */
 export function UnDia() {
   return (
-    <section aria-labelledby="dia-title" className="section overflow-hidden bg-marino-900 text-crema">
+    <section aria-labelledby="dia-title" className="cv-auto section overflow-hidden bg-marino-900 text-crema">
       <div className="container-wide">
         <div className="grid gap-6 lg:grid-cols-12 lg:items-end">
           <div className="lg:col-span-7">
@@ -58,7 +58,7 @@ export function UnDia() {
             return (
               <li key={p.hora} className="w-[74vw] max-w-[20rem] shrink-0 snap-start lg:w-auto lg:max-w-none">
                 <div className="flex items-center gap-3 border-t border-crema/20 pt-4">
-                  <span aria-hidden="true" className="text-xs tabular-nums text-crema/50">
+                  <span aria-hidden="true" className="text-xs tabular-nums text-crema/70">
                     0{i + 1}
                   </span>
                   <p className="font-display text-3xl tabular-nums text-crema">{p.hora}</p>
@@ -67,7 +67,7 @@ export function UnDia() {
                   <div className={`reveal-photo relative overflow-hidden bg-noche-3 ${i % 2 === 0 ? "aspect-[4/5]" : "aspect-[4/5] lg:mt-12"}`}>
                     <Photo img={p.img} sizes="(min-width: 1024px) 22vw, 74vw" mobileBelow={0} />
                   </div>
-                  {img.kind === "tercero" ? <figcaption className="mt-2 text-[0.68rem] text-crema/45">Foto: {img.credit}</figcaption> : null}
+                  {img.kind === "tercero" ? <figcaption className="mt-2 text-[0.68rem] text-crema/70">Foto: {img.credit}</figcaption> : null}
                 </figure>
                 <h3 className="t-h3 mt-5 text-crema">{p.titulo}</h3>
                 <p className="mt-2 text-[0.95rem] leading-relaxed text-crema/70">{p.texto}</p>

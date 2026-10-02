@@ -10,7 +10,7 @@ import { IMAGES } from "@/lib/images";
 export function LaBrasa({ locale }: { locale: Locale }) {
   const foto = IMAGES.pulpoBrasa;
   return (
-    <section aria-labelledby="brasa-title" className="section bg-crema">
+    <section aria-labelledby="brasa-title" className="cv-auto section bg-crema">
       <div className="container-wide grid gap-10 lg:grid-cols-12 lg:items-start lg:gap-16">
         <figure className="lg:sticky lg:top-24 lg:col-span-7">
           <div className="reveal-photo photo-hover relative aspect-[4/5] overflow-hidden bg-papel-3 sm:aspect-[16/11] lg:aspect-[6/5]">

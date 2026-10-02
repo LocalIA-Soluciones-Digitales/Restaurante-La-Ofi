@@ -18,7 +18,7 @@ Documentación: [`ARCHITECTURE.md`](./ARCHITECTURE.md) · [`RESEARCH.md`](./RESE
 
 - Next.js 15.5 (App Router) + React 19 + TypeScript estricto + Tailwind CSS 3.4
 - Supabase (Postgres + RLS + Auth para el staff) — acceso solo por RPC (`src/lib/supabase/rpc.ts`)
-- Stripe Checkout (confirmación por webhook), GSAP y Lenis bajo demanda, three/R3F solo en `/admin`
+- Stripe Checkout (confirmación por webhook), three/R3F solo en `/admin`. Sin librerías de animación en la web pública: CSS (scroll-driven) y transiciones
 - Vitest + PGlite (tests de utilidades, migraciones y seguridad sin Docker)
 - Vercel
 
@@ -53,8 +53,8 @@ Sin variables de Supabase la web funciona igual: muestra contenido de ejemplo (s
 
 | Ruta | Estado |
 |---|---|
-| `/es` | Home "Un día en La Ofi": hero en vídeo según la hora, historia, menú de hoy, especialidades, espacios, empresas, vinos, eventos |
-| `/es/carta` | Carta interactiva: búsqueda, filtros, 14 alérgenos, nutrición (si la aporta el restaurante), modificadores y cesta |
+| `/es` | Home: hero editorial con comida real (la foto cambia con la hora), «Hoy en La Ofi» (abierto, menú del día y precio, reservar, llegar), platos con foto, «Un día en La Ofi», brasa, local, empresas, galería y cómo llegar |
+| `/es/carta` | Carta editorial (lista tipográfica, foto del plato al señalarlo): búsqueda y filtros tras «Buscar y filtrar», 14 alérgenos, nutrición (si la aporta el restaurante). En `/pedir`, tarjetas con cesta |
 | `/es/pedir`, `/es/pedido/[id]` | Pedido en mesa por QR (cuenta compartida, "cada uno lo suyo"), recogida por franja, pedido de grupo; estado en vivo |
 | `/es/reservar` | Reserva online si está activada en `/admin/configuracion`; si no, teléfono |
 | `/es/espacios`, `/es/empresas` | Comedor, terraza y El Despacho; comidas de empresa |

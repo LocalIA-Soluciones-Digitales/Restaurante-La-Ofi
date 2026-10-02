@@ -19,8 +19,7 @@ const display = Fraunces({
   subsets: ["latin"],
   variable: "--font-display",
   display: "swap",
-  // Tamaño óptico: el trazo se afina en titulares y se abre en cuerpo de carta.
-  axes: ["opsz"],
+  // Cursiva real para los acentos editoriales (sin eje óptico: pesa la mitad).
   style: ["normal", "italic"],
 });
 

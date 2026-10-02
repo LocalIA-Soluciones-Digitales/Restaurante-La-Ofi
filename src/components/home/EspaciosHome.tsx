@@ -9,7 +9,7 @@ function Pie({ img, children }: { img: ImageKey; children: React.ReactNode }) {
   return (
     <figcaption className="mt-3">
       {children}
-      {i.kind === "tercero" ? <span className="mt-1 block text-[0.68rem] text-carbon-muted/80">Foto: {i.credit}</span> : null}
+      {i.kind === "tercero" ? <span className="mt-1 block text-[0.68rem] text-carbon-muted">Foto: {i.credit}</span> : null}
     </figcaption>
   );
 }
@@ -17,7 +17,7 @@ function Pie({ img, children }: { img: ImageKey; children: React.ReactNode }) {
 /** El local, en fotos: comedor, barra y terraza. Que se vea dónde te vas a sentar. */
 export function EspaciosHome({ locale }: { locale: Locale }) {
   return (
-    <section aria-labelledby="espacios-title" className="section bg-crema">
+    <section aria-labelledby="espacios-title" className="cv-auto section bg-crema">
       <div className="container-wide">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div>

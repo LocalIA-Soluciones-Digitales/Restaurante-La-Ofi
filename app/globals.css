@@ -72,7 +72,7 @@
 
   /* Enlace de texto con flecha: la acción secundaria por defecto. */
   .link-arrow {
-    @apply inline-flex items-center gap-2 font-semibold text-carbon underline decoration-carbon/30 decoration-1 underline-offset-[6px] transition-[text-decoration-color,color] hover:decoration-brasa;
+    @apply inline-flex min-h-11 items-center gap-2 font-semibold text-carbon underline decoration-carbon/30 decoration-1 underline-offset-[6px] transition-[text-decoration-color,color] hover:decoration-brasa;
   }
 
   /* --- Escala tipográfica editorial (Fraunces + Figtree) ------------------ */
@@ -107,6 +107,13 @@
 
   .section {
     @apply py-20 sm:py-28;
+  }
+
+  /* Secciones bajo el pliegue: el navegador no las maqueta ni pinta hasta que se
+     acercan al viewport (mucho menos trabajo de estilo y layout en la carga). */
+  .cv-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 900px;
   }
 
   .container-wide {

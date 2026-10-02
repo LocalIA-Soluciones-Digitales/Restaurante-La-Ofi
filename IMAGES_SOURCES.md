@@ -25,11 +25,27 @@ del C.F. Derio.
 | `local/rotulo-neon-rg.webp` (630×395) | Restaurant Guru: `https://img02.restaurantguru.com/caa7-design-Restaurante-La-Ofi.jpg` (cuadrante inferior, sin la mascota superpuesta) | Tercero (foto de cliente) | Desconocido | **DEMO – sustituir antes de producción** |
 | `local/terraza-carpa-rg.webp` (408×245) | Restaurant Guru: `https://img02.restaurantguru.com/c35f-Restaurante-La-Ofi-Derio-interior-1.jpg` (cuadrante superior derecho) | Tercero (foto de cliente) | Desconocido | **DEMO – sustituir antes de producción** |
 | `local/mapa-la-ofi-osm.webp` (1200×760) | Generado con teselas de `tile.openstreetmap.org` (z16) + marcador propio | Generada | © OpenStreetMap contributors (ODbL) — atribución visible en la web | Válida para producción (mantener la atribución) |
-| `public/og/la-ofi-og.jpg` (1200×630) | Composición propia con `hero/comedor-ratan-avdg.webp` | Generada | — | **DEMO – regenerar con foto oficial** |
+| `public/og/la-ofi-og.jpg` (1200×630) | Composición propia con dos fotos oficiales editadas: tostada de burrata y salón de noche | Generada | — | Válida (solo fotos oficiales autorizadas) |
 | `app/icon.svg`, `app/apple-icon.png`, `public/icons/*` | Monograma provisional "lo" | Generada | LocalIA | Provisional – sustituir por el logo oficial |
 
 **Placeholders de marca** (sin foto, con textura hexagonal y la etiqueta "Foto pendiente"): tortilla
 (home → "Para cada momento" y sección de tostadas) y pintxos de la barra. Nunca se usan fotos de stock.
+
+## Versiones editadas para la web (`public/images/ed/`)
+
+Desde el rediseño gastronómico (2026-10-02) la web sirve versiones **reveladas** de las fotos de
+la tabla anterior, generadas con `python scripts/editar-fotos.py` a partir de los originales (que no
+se tocan). Solo revelado, sin añadir ni quitar nada de la escena: balance de blancos parcial
+(corrige p. ej. la dominante magenta del salón de noche), curvas y contraste suaves, color,
+máscara de enfoque y reescalado Lanczos moderado (×1,3–1,6) en las que se ven grandes. No es
+recuperación de detalle: los originales de 1080 px de Instagram siguen siendo el límite de calidad.
+
+Cada foto lleva además un recorte vertical 4:5 para móvil (`*-m.webp`, plato o espacio centrado) y
+un punto focal (`FOCUS` en `src/lib/images.ts`). Al sustituir una foto: dejar el original en su
+carpeta, añadir su línea en `FOTOS` del script, ejecutarlo y apuntar `src/lib/images.ts` a `ed/`.
+
+Las fotos de plato se asocian a su plato de la carta en `src/lib/carta-fotos.ts` (solo ese plato,
+en esa sección). Una foto subida desde `/admin` para el plato tiene prioridad.
 
 ## Vídeo
 
