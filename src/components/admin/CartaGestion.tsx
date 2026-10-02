@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Modal } from "@/components/admin/Modal";
+import { AvisoFlotante } from "@/components/admin/AvisoFlotante";
 import { Aviso, aCentimos, aEuros, botonPeligro, botonPrimario, botonSecundario, card, input } from "@/components/admin/ui";
 import { AllergenIcon } from "@/components/menu/AllergenIcon";
 import { Icon } from "@/components/ui/Icon";
@@ -115,7 +116,7 @@ export function CartaGestion(props: { categorias: CategoriaBd[]; productos: Prod
           </button>
         ))}
       </div>
-      {aviso ? <Aviso tono={aviso.tono}>{aviso.texto}</Aviso> : null}
+      <AvisoFlotante aviso={aviso} onCerrar={() => setAviso(null)} />
 
       {tab === "productos" ? (
         <section className={`${card} p-4`}>
