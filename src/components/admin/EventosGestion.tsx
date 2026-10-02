@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Modal } from "@/components/admin/Modal";
+import { AvisoFlotante } from "@/components/admin/AvisoFlotante";
 import { Aviso, aCentimos, aEuros, botonPeligro, botonPrimario, card, input } from "@/components/admin/ui";
 import { Icon } from "@/components/ui/Icon";
 import { borrar, guardar } from "@/lib/admin/actions";
@@ -48,7 +49,7 @@ export function EventosGestion({ inicial }: { inicial: EventoBd[] }) {
           Nuevo evento
         </button>
       </div>
-      {aviso ? <Aviso tono={aviso.tono}>{aviso.texto}</Aviso> : null}
+      <AvisoFlotante aviso={aviso} onCerrar={() => setAviso(null)} />
       <ul className="grid gap-3 md:grid-cols-2">
         {eventos.length === 0 ? <li className="opacity-60">Todavía no hay eventos.</li> : null}
         {eventos.map((e) => (

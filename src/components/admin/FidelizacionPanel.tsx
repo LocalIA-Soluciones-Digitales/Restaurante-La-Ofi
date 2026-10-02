@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Aviso, botonPrimario, botonSecundario, card, input } from "@/components/admin/ui";
+import { AvisoFlotante } from "@/components/admin/AvisoFlotante";
+import { botonPrimario, botonSecundario, card, input } from "@/components/admin/ui";
 import { Icon } from "@/components/ui/Icon";
 import { borrar, guardar } from "@/lib/admin/actions";
 
@@ -66,7 +67,7 @@ export function FidelizacionPanel({ activa: a0, reglas: r0, premios: p0, comensa
           </span>
         </label>
       </section>
-      {aviso ? <Aviso tono={aviso.tono}>{aviso.texto}</Aviso> : null}
+      <AvisoFlotante aviso={aviso} onCerrar={() => setAviso(null)} />
 
       <section className={`${card} p-5`}>
         <h2 className="font-display text-2xl">Reglas</h2>

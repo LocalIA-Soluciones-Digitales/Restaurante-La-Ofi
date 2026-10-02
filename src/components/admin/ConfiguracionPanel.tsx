@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { Aviso, botonPrimario, card, input } from "@/components/admin/ui";
+import { AvisoFlotante } from "@/components/admin/AvisoFlotante";
+import { botonPrimario, card, input } from "@/components/admin/ui";
 import { guardar } from "@/lib/admin/actions";
 
 export interface Ajuste {
@@ -62,11 +63,7 @@ export function ConfiguracionPanel({ ajustes, horario, ticketbai }: { ajustes: A
 
   return (
     <div className="grid gap-4 xl:grid-cols-2">
-      {aviso ? (
-        <div className="xl:col-span-2">
-          <Aviso tono={aviso.tono}>{aviso.texto}</Aviso>
-        </div>
-      ) : null}
+      <AvisoFlotante aviso={aviso} onCerrar={() => setAviso(null)} />
 
       <Seccion titulo="Horario" texto="Se publica en la web (cabecera, contacto, «Abierto ahora» y Google). Mientras no lo guardes, se usa el publicado en internet.">
         {dias.map((d, i) => (
