@@ -4,7 +4,7 @@ import { Html, OrbitControls } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { useMemo } from "react";
 import * as THREE from "three";
-import { posicionesPorDefecto, tamanoMesa } from "@/lib/admin/plano";
+import { posicionesPorDefecto, puestosMesa, tamanoMesa } from "@/lib/admin/plano";
 import { ESTADO_MESA, estadoMesa, type MesaSalon, type Zona } from "@/lib/admin/types";
 
 // Plano 3D del salón (react-three-fiber). Se construye a partir de los datos
@@ -328,27 +328,11 @@ function ChillOut({ z }: { z: Zona }) {
 
 /** Sillas alrededor de una mesa según su forma y capacidad. */
 function Sillas({ forma, capacidad, ancho, fondo, color }: { forma: MesaSalon["forma"]; capacidad: number; ancho: number; fondo: number; color: string }) {
-  const n = Math.min(capacidad, 12);
-  const puestos = useMemo(() => {
-    const out: { x: number; z: number; rot: number }[] = [];
-    if (forma === "rectangular") {
-      const porLado = Math.ceil(n / 2);
-      for (let i = 0; i < n; i++) {
-        const lado = i < porLado ? -1 : 1;
-        const k = i < porLado ? i : i - porLado;
-        const total = i < porLado ? porLado : n - porLado;
-        out.push({ x: -ancho / 2 + (ancho * (k + 0.5)) / total, z: lado * (fondo / 2 + 0.22), rot: lado === -1 ? 0 : Math.PI });
-      }
-    } else {
-      const r = Math.max(ancho, fondo) / 2 + 0.22;
-      const giro = forma === "cuadrada" ? Math.PI / 4 : 0;
-      for (let i = 0; i < n; i++) {
-        const a = giro + (2 * Math.PI * i) / n;
-        out.push({ x: Math.cos(a) * r, z: Math.sin(a) * r, rot: -a - Math.PI / 2 });
-      }
-    }
-    return out;
-  }, [forma, n, ancho, fondo]);
+  // Respaldo (z local negativo) mirando hacia fuera de la mesa.
+  const puestos = useMemo(
+    () => puestosMesa(forma, capacidad, ancho, fondo, 0.22).map((p) => ({ x: p.x, z: p.y, rot: -p.rot - Math.PI / 2 })),
+    [forma, capacidad, ancho, fondo],
+  );
   const taburete = forma === "taburete";
   return (
     <>

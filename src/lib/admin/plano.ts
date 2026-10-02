@@ -39,6 +39,33 @@ export function tamanoMesa(m: Pick<MesaSalon, "forma" | "capacidad">): { w: numb
   return { w: base, h: base };
 }
 
+/**
+ * Puestos (sillas) alrededor de una mesa, en las mismas unidades que `ancho` y
+ * `fondo` (el plano 2D usa el viewBox y el 3D metros de escena). `rot` es el
+ * ángulo en radianes hacia el que mira el respaldo (fuera de la mesa).
+ */
+export function puestosMesa(forma: MesaSalon["forma"], capacidad: number, ancho: number, fondo: number, separacion: number) {
+  const n = Math.min(capacidad, 12);
+  const out: { x: number; y: number; rot: number }[] = [];
+  if (forma === "rectangular") {
+    const arriba = Math.ceil(n / 2);
+    for (let i = 0; i < n; i++) {
+      const lado = i < arriba ? -1 : 1;
+      const k = i < arriba ? i : i - arriba;
+      const total = i < arriba ? arriba : n - arriba;
+      out.push({ x: -ancho / 2 + (ancho * (k + 0.5)) / total, y: lado * (fondo / 2 + separacion), rot: lado === -1 ? -Math.PI / 2 : Math.PI / 2 });
+    }
+    return out;
+  }
+  // Cuadrada: una silla en el centro de cada lado; redonda y taburetes, en círculo.
+  const r = Math.max(ancho, fondo) / 2 + separacion;
+  for (let i = 0; i < n; i++) {
+    const a = -Math.PI / 2 + (2 * Math.PI * i) / n;
+    out.push({ x: Math.cos(a) * r, y: Math.sin(a) * r, rot: a });
+  }
+  return out;
+}
+
 export function minutosDesde(iso: string | null, ahora = Date.now()): number | null {
   return iso ? Math.max(0, Math.floor((ahora - new Date(iso).getTime()) / 60000)) : null;
 }
