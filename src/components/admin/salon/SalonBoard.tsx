@@ -10,7 +10,7 @@ import { Icon } from "@/components/ui/Icon";
 import { accionMesa, cobrar, rpcAdmin, salon } from "@/lib/admin/actions";
 import { minutosDesde } from "@/lib/admin/plano";
 import type { Rol } from "@/lib/admin/roles";
-import { ESTADO_MESA, estadoMesa, type MesaSalon, type SalonData } from "@/lib/admin/types";
+import { ESTADO_MESA, estadoMesa, type EstadoMesa, type MesaSalon, type SalonData } from "@/lib/admin/types";
 import { formatCentimos } from "@/lib/format";
 import { cuentaHTML, imprimirHTML, type DatosFiscales } from "@/lib/print/ticket";
 import { escucharLaofi } from "@/lib/supabase/browser";
@@ -40,6 +40,7 @@ export function SalonBoard({ inicial, rol, fiscal }: { inicial: SalonData; rol: 
   const [data, setData] = useState(inicial);
   const [vista, setVista] = useState<"2d" | "3d">("2d");
   const [editar, setEditar] = useState(false);
+  const [filtro, setFiltro] = useState<EstadoMesa | null>(null);
   const [sel, setSel] = useState<string | null>(null);
   const [uniendo, setUniendo] = useState<string[] | null>(null);
   const [cambiando, setCambiando] = useState(false);
@@ -126,10 +127,17 @@ export function SalonBoard({ inicial, rol, fiscal }: { inicial: SalonData; rol: 
     );
   };
 
-  const resumen = useMemo(() => {
-    const cuenta = (e: string) => data.mesas.filter((m) => estadoMesa(m) === e).length;
-    return { libres: cuenta("libre"), ocupadas: data.mesas.filter((m) => m.ocupada).length, avisos: data.mesas.filter((m) => m.aviso_camarero || m.pide_cuenta).length };
+  // Contadores por estado (sirven de leyenda y de filtro). "Avisos" reúne a las
+  // mesas que piden la cuenta y a las que llaman al camarero.
+  const conteo = useMemo(() => {
+    const c = Object.fromEntries(Object.keys(ESTADO_MESA).map((e) => [e, 0])) as Record<EstadoMesa, number>;
+    for (const m of data.mesas) {
+      if (m.aviso_camarero && !m.pide_cuenta) c.cuenta++;
+      c[estadoMesa(m)]++;
+    }
+    return c;
   }, [data]);
+  const comensalesSentados = useMemo(() => data.mesas.reduce((s, m) => s + (m.ocupada ? m.comensales : 0), 0), [data]);
 
   return (
     <div className="grid gap-4 xl:grid-cols-[1fr_22rem]">
@@ -148,9 +156,35 @@ export function SalonBoard({ inicial, rol, fiscal }: { inicial: SalonData; rol: 
               {editar ? "Terminar de mover" : "Mover mesas"}
             </button>
           ) : null}
-          <p className="ml-auto text-sm text-carbon-muted dark:text-crema/60">
-            {resumen.libres} libres · {resumen.ocupadas} ocupadas{resumen.avisos ? ` · ${resumen.avisos} avisos` : ""}
+          <p className="ml-auto text-sm font-semibold tabular-nums text-carbon-muted dark:text-crema/60">
+            {comensalesSentados} comensales sentados
           </p>
+        </div>
+
+        {/* Estados con contador: pulsar uno resalta esas mesas en el plano. */}
+        <div role="group" aria-label="Filtrar mesas por estado" className="mb-3 flex flex-wrap gap-2">
+          {(Object.entries(ESTADO_MESA) as [EstadoMesa, (typeof ESTADO_MESA)[EstadoMesa]][]).map(([clave, e]) => {
+            const n = conteo[clave];
+            const activo = filtro === clave;
+            const urgente = clave === "cuenta" && n > 0;
+            return (
+              <button
+                key={clave}
+                type="button"
+                aria-pressed={activo}
+                disabled={n === 0 && !activo}
+                onClick={() => setFiltro(activo ? null : clave)}
+                className={`inline-flex min-h-10 items-center gap-2 rounded-full border px-3.5 text-sm font-semibold transition disabled:opacity-40 ${
+                  activo ? "border-transparent text-crema shadow-card" : "border-carbon/15 bg-white text-carbon dark:border-crema/15 dark:bg-noche-2 dark:text-crema"
+                } ${urgente && !activo ? "motion-safe:animate-pulse border-neon-deep" : ""}`}
+                style={activo ? { background: e.color, color: clave === "limpiar" ? "#2B2722" : undefined } : undefined}
+              >
+                <span className="h-2.5 w-2.5 rounded-full" style={{ background: activo ? "#fff" : e.color }} />
+                {clave === "cuenta" ? "Avisos" : e.label}
+                <span className="tabular-nums opacity-80">{n}</span>
+              </button>
+            );
+          })}
         </div>
 
         {uniendo ? <Aviso tono="info">Toca las mesas que quieres unir a {mesa?.nombre ?? `la mesa ${mesa?.numero}`} y pulsa «Unir».</Aviso> : null}
@@ -164,6 +198,7 @@ export function SalonBoard({ inicial, rol, fiscal }: { inicial: SalonData; rol: 
               seleccion={sel}
               multiSeleccion={uniendo ?? []}
               editar={editar}
+              filtro={filtro}
               onSelect={(id) => void seleccionar(id)}
               onMover={async (id, pos) => {
                 setData((d) => ({ ...d, mesas: d.mesas.map((m) => (m.id === id ? { ...m, pos_x: pos.x, pos_y: pos.y } : m)) }));
@@ -175,14 +210,12 @@ export function SalonBoard({ inicial, rol, fiscal }: { inicial: SalonData; rol: 
             <Plano3D zonas={data.zonas} mesas={data.mesas} seleccion={sel} onSelect={(id) => void seleccionar(id)} />
           )}
         </div>
-        <ul className="mt-3 flex flex-wrap gap-3 text-xs" aria-label="Leyenda">
-          {Object.values(ESTADO_MESA).map((e) => (
-            <li key={e.label} className="flex items-center gap-1.5">
-              <span className="h-3 w-3 rounded-full" style={{ background: e.color }} />
-              {e.label}
-            </li>
-          ))}
-        </ul>
+        {vista === "2d" && !editar ? (
+          <p className="mt-2 text-xs text-carbon-muted dark:text-crema/60">
+            <span className="font-semibold">€</span> pide la cuenta · <span className="font-semibold">!</span> llama al camarero · <span className="font-semibold">i</span> tiene nota · borde
+            discontinuo naranja: más de 90 min sentados · debajo de cada mesa, lo pendiente de cobro o la reserva próxima.
+          </p>
+        ) : null}
         {data.mesas.length === 0 ? (
           <Aviso tono="info">
             Todavía no hay mesas. {gestiona ? <Link href="/admin/mesas" className="underline">Créalas en «Mesas y QR»</Link> : "Pide a un encargado que las cree."}
