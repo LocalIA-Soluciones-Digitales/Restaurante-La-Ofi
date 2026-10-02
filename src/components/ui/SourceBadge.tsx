@@ -8,15 +8,19 @@ const LABELS: Record<Exclude<Fuente, "supabase">, { text: string; title: string 
   carta: { text: "Según carta", title: "Platos de una foto de la carta publicada por un cliente (2025). Precio en el local" },
 };
 
-/** Marca visual obligatoria para todo contenido que no viene de los datos reales del tenant. */
+/**
+ * Marca obligatoria para todo contenido que no viene de los datos reales del
+ * tenant. Discreta (texto con filete), para que no compita con la comida, pero
+ * siempre visible y con la explicación completa para lectores de pantalla.
+ */
 export function SourceBadge({ fuente, className = "" }: { fuente: Fuente; className?: string }) {
   if (fuente === "supabase") return null;
   const { text, title } = LABELS[fuente];
-  const tone = fuente === "ejemplo" ? "bg-terracota text-crema" : "bg-oliva text-crema";
+  const tone = fuente === "ejemplo" ? "border-brasa/50 text-brasa" : "border-oliva/40 text-oliva";
   return (
     <span
       title={title}
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[0.7rem] font-semibold uppercase tracking-wider ${tone} ${className}`}
+      className={`inline-flex items-center border-b border-dotted px-0.5 text-[0.68rem] font-semibold uppercase tracking-[0.14em] ${tone} ${className}`}
     >
       {text}
       <span className="sr-only">: {title}</span>

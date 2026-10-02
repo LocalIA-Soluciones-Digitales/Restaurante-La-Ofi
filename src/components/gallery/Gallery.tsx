@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { AmbientVideo } from "@/components/media/AmbientVideo";
 import { Icon } from "@/components/ui/Icon";
 import { useDialogA11y } from "@/hooks/useDialogA11y";
+import type { CategoriaGaleria } from "@/lib/gallery";
 import { videoSources, type VideoAsset } from "@/lib/media";
 
 export interface GalleryImage {
@@ -13,28 +14,57 @@ export interface GalleryImage {
   credit: string;
   /** Clip corto REAL del local (se reproduce en bucle en la rejilla y con controles en el visor). */
   video?: VideoAsset | null;
+  categoria?: CategoriaGaleria;
 }
 
-/** Galería editorial en columnas + lightbox accesible (teclado, foco, Escape, flechas). */
-export function Gallery({ images, sizes = "(min-width: 1024px) 33vw, 50vw" }: { images: GalleryImage[]; sizes?: string }) {
+/**
+ * Galería editorial en columnas (cada foto con su proporción, sin recortes),
+ * filtro opcional por categoría y lightbox accesible (teclado, foco, Escape, flechas).
+ */
+export function Gallery({
+  images,
+  sizes = "(min-width: 1024px) 33vw, 50vw",
+  categorias,
+}: {
+  images: GalleryImage[];
+  sizes?: string;
+  categorias?: { key: CategoriaGaleria; label: string }[];
+}) {
   const [active, setActive] = useState<number | null>(null);
+  const [filtro, setFiltro] = useState<CategoriaGaleria | null>(null);
+  const visibles = filtro ? images.filter((i) => i.categoria === filtro) : images;
 
   return (
     <>
-      <ul className="columns-2 gap-3 sm:gap-5 lg:columns-3">
-        {images.map((img, i) => (
-          <li key={img.src.src} className="reveal mb-3 break-inside-avoid sm:mb-5">
+      {categorias ? (
+        <div role="group" aria-label="Filtrar fotos" className="mb-8 flex flex-wrap gap-6 border-b border-tinta-line">
+          {[{ key: null, label: "Todas" } as const, ...categorias].map((c) => (
+            <button
+              key={c.label}
+              type="button"
+              aria-pressed={filtro === c.key}
+              onClick={() => setFiltro(c.key)}
+              className="relative min-h-11 text-sm font-medium text-carbon/60 transition-colors hover:text-carbon aria-pressed:text-carbon after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:scale-x-0 after:bg-brasa after:transition-transform aria-pressed:after:scale-x-100"
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
+      <ul className="columns-2 gap-3 sm:gap-6 lg:columns-3">
+        {visibles.map((img, i) => (
+          <li key={img.src.src} className="mb-3 break-inside-avoid sm:mb-6">
             <button
               type="button"
               onClick={() => setActive(i)}
-              className="group relative block w-full overflow-hidden rounded-[1.25rem] bg-arena shadow-card"
+              className="photo-hover group relative block w-full overflow-hidden bg-papel-3"
             >
               <Image
                 src={img.src}
                 alt={img.alt}
                 sizes={sizes}
                 placeholder="blur"
-                className="h-auto w-full transition-transform duration-700 ease-out group-hover:scale-105"
+                className="h-auto w-full"
               />
               {img.video ? (
                 <span className="absolute inset-0">
@@ -50,7 +80,7 @@ export function Gallery({ images, sizes = "(min-width: 1024px) 33vw, 50vw" }: { 
         ))}
       </ul>
       {active !== null ? (
-        <Lightbox images={images} index={active} onChange={setActive} onClose={() => setActive(null)} />
+        <Lightbox images={visibles} index={active} onChange={setActive} onClose={() => setActive(null)} />
       ) : null}
     </>
   );
@@ -118,7 +148,7 @@ function Lightbox({
             ))}
           </video>
         ) : (
-          <Image src={img.src} alt={img.alt} sizes="100vw" className="h-auto max-h-full w-auto max-w-full rounded-xl object-contain" />
+          <Image src={img.src} alt={img.alt} sizes="100vw" className="h-auto max-h-full w-auto max-w-full object-contain" />
         )}
       </figure>
       <div className="flex items-center justify-between gap-4">

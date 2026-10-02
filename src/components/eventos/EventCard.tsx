@@ -9,81 +9,81 @@ import { SITE } from "@/lib/site";
 import type { EstadoEvento, EventoView } from "@/lib/restaurant/types";
 
 const ESTADO: Record<EstadoEvento, { label: string; className: string }> = {
-  proximo: { label: "Próximo", className: "bg-oliva-soft text-oliva" },
-  agotado: { label: "Agotado", className: "bg-terracota-soft text-terracota" },
-  finalizado: { label: "Finalizado", className: "bg-arena text-carbon-muted" },
-  cancelado: { label: "Cancelado", className: "bg-carbon text-crema" },
+  proximo: { label: "Próximo", className: "text-ok" },
+  agotado: { label: "Agotado", className: "text-brasa" },
+  finalizado: { label: "Finalizado", className: "text-carbon-muted" },
+  cancelado: { label: "Cancelado", className: "text-carbon-muted line-through" },
 };
 
+/** Evento como pieza editorial: fecha grande, foto real y texto; sin tarjeta. */
 export function EventCard({ evento, locale }: { evento: EventoView; locale: Locale }) {
   const fecha = evento.fecha ? formatearFechaCorta(evento.fecha) : null;
   const estado = ESTADO[evento.estado];
   const detalle = evento.slug && evento.fuente === "supabase" ? href(locale, `/eventos/${evento.slug}`) : null;
 
   return (
-    <article className="group flex h-full flex-col overflow-hidden rounded-[1.75rem] bg-crema text-carbon shadow-lift">
-      <div className="relative aspect-[16/10] overflow-hidden">
+    <article className="group grid gap-6 border-t border-tinta-line pt-8 md:grid-cols-12 md:gap-10">
+      <div className="flex items-start gap-5 md:col-span-2 md:block">
+        {fecha ? (
+          <p className="leading-none">
+            <span className="block font-display text-5xl tabular-nums text-carbon">{fecha.dia}</span>
+            <span className="kicker mt-2 block text-brasa">{fecha.mes}</span>
+          </p>
+        ) : (
+          <p className="kicker text-brasa">Fecha por anunciar</p>
+        )}
+      </div>
+
+      <div className="photo-hover relative aspect-[16/10] overflow-hidden bg-papel-3 md:col-span-5">
         {evento.imagen ? (
           <Image
             src={evento.imagen.src}
             alt={evento.imagen.alt}
             fill
-            sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-            className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+            sizes="(min-width: 768px) 40vw, 100vw"
+            className="object-cover"
           />
         ) : (
           <BrandPlaceholder label={evento.tipo} icon="music" />
         )}
-        <div className="absolute left-4 top-4 grid h-16 w-16 place-items-center rounded-2xl bg-crema text-center shadow-card">
-          {fecha ? (
-            <span className="leading-none">
-              <span className="block font-display text-2xl text-marino">{fecha.dia}</span>
-              <span className="text-[0.7rem] font-semibold uppercase tracking-wider text-terracota">{fecha.mes}</span>
-            </span>
-          ) : (
-            <span className="px-1 text-[0.7rem] font-semibold uppercase leading-tight text-carbon">Fecha por anunciar</span>
-          )}
-        </div>
-        <SourceBadge fuente={evento.fuente} className="absolute right-4 top-4" />
       </div>
 
-      <div className="flex flex-1 flex-col p-6">
-        <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
-          <span className="eyebrow text-terracota">{evento.tipo}</span>
-          <span className={`rounded-full px-2 py-0.5 ${estado.className}`}>{estado.label}</span>
+      <div className="md:col-span-5">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+          <span className="kicker text-carbon-muted">{evento.tipo}</span>
+          <span className={`text-xs font-semibold ${estado.className}`}>{estado.label}</span>
+          <SourceBadge fuente={evento.fuente} />
         </div>
-        <h3 className="mt-3 text-2xl leading-tight">{evento.titulo}</h3>
-        <p className="mt-2 flex-1 text-sm leading-relaxed text-carbon-muted">{evento.descripcion}</p>
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 text-sm">
-          <span className="flex items-center gap-3 text-carbon-muted">
-            {evento.hora ? (
-              <span className="inline-flex items-center gap-1">
-                <Icon name="clock" className="h-4 w-4" />
-                {evento.hora.slice(0, 5)}
-              </span>
-            ) : null}
-            {evento.precioCentimos !== null ? (
-              <span className="font-semibold text-marino">
-                {evento.precioCentimos === 0 ? "Entrada libre" : formatCentimos(evento.precioCentimos)}
-              </span>
-            ) : null}
-          </span>
+        <h3 className="t-h3 mt-3 text-carbon">{evento.titulo}</h3>
+        <p className="mt-3 text-[0.95rem] leading-relaxed text-carbon-muted">{evento.descripcion}</p>
+        <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm">
+          {evento.hora ? (
+            <span className="inline-flex items-center gap-1.5 text-carbon">
+              <Icon name="clock" className="h-4 w-4 text-brasa" />
+              {evento.hora.slice(0, 5)}
+            </span>
+          ) : null}
+          {evento.precioCentimos !== null ? (
+            <span className="font-semibold text-carbon">
+              {evento.precioCentimos === 0 ? "Entrada libre" : formatCentimos(evento.precioCentimos)}
+            </span>
+          ) : null}
           {evento.estado === "proximo" ? (
             <a
               href={evento.enlaceReserva ?? SITE.phone.href}
               {...(evento.enlaceReserva ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-              className="inline-flex items-center gap-1 font-semibold text-terracota hover:underline"
+              className="link-arrow"
             >
               {evento.enlaceReserva ? "Reservar plaza" : "Pregúntanos"}
               <Icon name="arrow" className="h-4 w-4" />
             </a>
           ) : null}
+          {detalle ? (
+            <Link href={detalle} className="link-arrow">
+              Ver detalles<span className="sr-only"> de {evento.titulo}</span>
+            </Link>
+          ) : null}
         </div>
-        {detalle ? (
-          <Link href={detalle} className="mt-4 text-sm font-semibold text-marino underline-offset-4 hover:underline">
-            Ver detalles<span className="sr-only"> de {evento.titulo}</span>
-          </Link>
-        ) : null}
       </div>
     </article>
   );

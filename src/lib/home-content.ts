@@ -188,3 +188,48 @@ export const EMPRESAS: ServicioEmpresa[] = [
 ];
 
 export type ImagenEditorial = { src: StaticImageData; alt: string; credit: string };
+
+// --- Hero: "un día en La Ofi" -------------------------------------------------
+// Cada momento cambia solo la foto y una línea de contexto: la identidad (titular,
+// colores, botones) es la misma todo el día. Todo lo que se afirma es verificable:
+// tostadas 9:00–11:30 (carta publicada), plato del día L–V (Deia), viernes hasta
+// medianoche (horario publicado).
+
+export interface MomentoHero {
+  franja: "manana" | "mediodia" | "noche";
+  label: string;
+  /** Línea de contexto bajo el titular. */
+  nota: string;
+  principal: ImageKey;
+  /** Foto secundaria (espacio) que acompaña al plato. */
+  detalle: ImageKey;
+  /** Pie de la foto principal. */
+  pie: string;
+}
+
+export const MOMENTOS_HERO: MomentoHero[] = [
+  {
+    franja: "manana",
+    label: "Mañana",
+    nota: "Café desde las 7:30 y tostadas de pan de masa madre de 9:00 a 11:30.",
+    principal: "tostadaBurrata",
+    detalle: "rotuloNeon",
+    pie: "Tostada de burrata, melocotón a la plancha y jamón ibérico",
+  },
+  {
+    franja: "mediodia",
+    label: "Mediodía",
+    nota: "Plato del día de lunes a viernes y cocina a la brasa.",
+    principal: "pulpoBrasa",
+    detalle: "comedorRatan",
+    pie: "Pulpo a la parrilla con patata y pimentón",
+  },
+  {
+    franja: "noche",
+    label: "Tarde",
+    nota: "Terraza cubierta, tardeos y, los viernes, abierto hasta medianoche.",
+    principal: "salonNoche",
+    detalle: "terrazaNoche",
+    pie: "El salón de La Ofi, de celebración",
+  },
+];

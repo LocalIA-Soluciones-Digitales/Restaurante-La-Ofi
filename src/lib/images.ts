@@ -1,17 +1,27 @@
 import type { StaticImageData } from "next/image";
-import comedorRatan from "../../public/images/hero/comedor-ratan-avdg.webp";
-import salonNoche from "../../public/images/eventos/salon-celebracion-noche.webp";
-import cartaTostadas from "../../public/images/carta/carta-tostadas-desayuno.webp";
-import pulpoBrasa from "../../public/images/carta/pulpo-brasa-deia.webp";
-import tostadaBonita from "../../public/images/pintxos/tostada-bonita.webp";
-import tostadaRevuelta from "../../public/images/pintxos/tostada-revuelta.webp";
-import tostadaSalmon from "../../public/images/pintxos/tostada-salmon.webp";
-import tostadaBurrata from "../../public/images/pintxos/tostada-burrata.webp";
-import barra from "../../public/images/local/barra-deia.webp";
-import terrazaNoche from "../../public/images/local/terraza-noche-deia.webp";
-import rotuloNeon from "../../public/images/local/rotulo-neon-rg.webp";
-import terrazaCarpa from "../../public/images/local/terraza-carpa-rg.webp";
+import comedorRatan from "../../public/images/ed/comedor-ratan-avdg.webp";
+import salonNoche from "../../public/images/ed/salon-celebracion-noche.webp";
+import cartaTostadas from "../../public/images/ed/carta-tostadas-desayuno.webp";
+import pulpoBrasa from "../../public/images/ed/pulpo-brasa-deia.webp";
+import tostadaBonita from "../../public/images/ed/tostada-bonita.webp";
+import tostadaRevuelta from "../../public/images/ed/tostada-revuelta.webp";
+import tostadaSalmon from "../../public/images/ed/tostada-salmon.webp";
+import tostadaBurrata from "../../public/images/ed/tostada-burrata.webp";
+import barra from "../../public/images/ed/barra-deia.webp";
+import terrazaNoche from "../../public/images/ed/terraza-noche-deia.webp";
+import rotuloNeon from "../../public/images/ed/rotulo-neon-rg.webp";
+import terrazaCarpa from "../../public/images/ed/terraza-carpa-rg.webp";
 import mapa from "../../public/images/local/mapa-la-ofi-osm.webp";
+import comedorRatanM from "../../public/images/ed/comedor-ratan-avdg-m.webp";
+import salonNocheM from "../../public/images/ed/salon-celebracion-noche-m.webp";
+import pulpoBrasaM from "../../public/images/ed/pulpo-brasa-deia-m.webp";
+import tostadaBonitaM from "../../public/images/ed/tostada-bonita-m.webp";
+import tostadaRevueltaM from "../../public/images/ed/tostada-revuelta-m.webp";
+import tostadaSalmonM from "../../public/images/ed/tostada-salmon-m.webp";
+import tostadaBurrataM from "../../public/images/ed/tostada-burrata-m.webp";
+import barraM from "../../public/images/ed/barra-deia-m.webp";
+import terrazaNocheM from "../../public/images/ed/terraza-noche-deia-m.webp";
+import rotuloNeonM from "../../public/images/ed/rotulo-neon-rg-m.webp";
 
 // Procedencia completa de cada archivo en IMAGES_SOURCES.md.
 // oficial = publicada por el propio restaurante (Instagram / Google Business), uso autorizado (2026-10-01).
@@ -107,3 +117,42 @@ export const IMAGES = {
 } satisfies Record<string, SiteImage>;
 
 export type ImageKey = keyof typeof IMAGES;
+
+// --- Dirección de arte responsive ------------------------------------------
+// Recortes 4:5 para móvil generados por scripts/editar-fotos.py (plato o espacio
+// centrado) y punto focal para object-position cuando la foto se recorta en CSS.
+
+export const MOBILE_CROPS: Partial<Record<ImageKey, StaticImageData>> = {
+  comedorRatan: comedorRatanM,
+  salonNoche: salonNocheM,
+  pulpoBrasa: pulpoBrasaM,
+  tostadaBonita: tostadaBonitaM,
+  tostadaRevuelta: tostadaRevueltaM,
+  tostadaSalmon: tostadaSalmonM,
+  tostadaBurrata: tostadaBurrataM,
+  barra: barraM,
+  terrazaNoche: terrazaNocheM,
+  rotuloNeon: rotuloNeonM,
+};
+
+/** Punto focal (object-position) de cada foto: lo que no debe perderse al recortar. */
+export const FOCUS: Partial<Record<ImageKey, string>> = {
+  comedorRatan: "60% 55%",
+  salonNoche: "55% 40%",
+  pulpoBrasa: "48% 50%",
+  tostadaBonita: "50% 60%",
+  tostadaRevuelta: "55% 55%",
+  tostadaSalmon: "45% 50%",
+  tostadaBurrata: "52% 50%",
+  barra: "40% 55%",
+  terrazaNoche: "55% 60%",
+  rotuloNeon: "28% 45%",
+  terrazaCarpa: "50% 55%",
+  cartaTostadas: "45% 50%",
+};
+
+/** Clave de una foto propia a partir de su URL (para recuperar foco y recorte). */
+export function imageKeyBySrc(src: string): ImageKey | null {
+  const entry = (Object.entries(IMAGES) as [ImageKey, SiteImage][]).find(([, v]) => v.src.src === src);
+  return entry ? entry[0] : null;
+}

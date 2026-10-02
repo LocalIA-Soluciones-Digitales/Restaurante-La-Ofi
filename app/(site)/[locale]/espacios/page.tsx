@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { EspacioCard } from "@/components/home/EspacioCard";
 import { PlanoEsquema } from "@/components/espacios/PlanoEsquema";
+import { Photo } from "@/components/media/Photo";
 import { Icon } from "@/components/ui/Icon";
 import { PageHero } from "@/components/ui/PageHero";
-import { SectionHeader } from "@/components/ui/SectionHeader";
-import { ESPACIOS } from "@/lib/home-content";
+import { SourceBadge } from "@/components/ui/SourceBadge";
+import { ESPACIOS, type Espacio } from "@/lib/home-content";
 import { href, type Locale } from "@/lib/i18n";
-import { IMAGES } from "@/lib/images";
+import { IMAGES, imageKeyBySrc, type ImageKey } from "@/lib/images";
 import { pageMetadata } from "@/lib/seo";
 
 type Params = { params: Promise<{ locale: Locale }> };
@@ -22,6 +22,15 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   });
 }
 
+// Foto adicional real de algunos espacios (además de la principal).
+const EXTRA: Partial<Record<Espacio["id"], ImageKey>> = { terraza: "terrazaCarpa", barra: "rotuloNeon" };
+
+function cta(e: Espacio, locale: Locale) {
+  if (e.cta === "pedir") return { href: href(locale, "/pedir"), label: "Pedir para recoger" };
+  if (e.cta === "presupuesto") return { href: href(locale, "/empresas#contacto"), label: "Pedir presupuesto" };
+  return { href: href(locale, "/reservar"), label: "Reservar mesa" };
+}
+
 export default async function EspaciosPage({ params }: Params) {
   const { locale } = await params;
   return (
@@ -30,40 +39,78 @@ export default async function EspaciosPage({ params }: Params) {
         id="espacios-title"
         eyebrow="Espacios"
         title="Cuatro sitios en uno"
-        lead="De la barra del desayuno a la terraza del tardeo. Elige dónde: para comer, reunirte o celebrar."
+        lead="La barra del desayuno, el comedor del mediodía, un despacho para reunirse y la terraza para alargar la tarde."
         image={IMAGES.comedorRatan}
       />
-      <div className="container-page py-16 sm:py-24">
-        <h2 className="sr-only">Nuestros espacios</h2>
-        <ul className="grid gap-6 md:grid-cols-2">
-          {ESPACIOS.map((e) => (
-            <li key={e.id} className="reveal">
-              <EspacioCard espacio={e} locale={locale} tall />
-            </li>
-          ))}
-        </ul>
 
-        <section aria-labelledby="plano-title" className="mt-24 grid items-center gap-10 lg:grid-cols-[0.8fr_1.2fr]">
-          <div className="reveal">
-            <SectionHeader
-              id="plano-title"
-              eyebrow="Plano"
-              title="Dónde está cada cosa"
-              lead="El comedor y la barra en el interior, El Despacho como sala privada y la terraza cubierta en el exterior."
-            />
+      <div className="container-wide pb-20 sm:pb-28">
+        <h2 className="sr-only">Nuestros espacios</h2>
+        <ol className="space-y-20 sm:space-y-28">
+          {ESPACIOS.map((e, i) => {
+            const key = e.imagen ? imageKeyBySrc(e.imagen.src.src) : null;
+            const extra = EXTRA[e.id];
+            const accion = cta(e, locale);
+            const par = i % 2 === 1;
+            return (
+              <li key={e.id} className="grid gap-8 border-t border-tinta-line pt-10 lg:grid-cols-12 lg:items-center lg:gap-14">
+                <div className={`lg:col-span-7 ${par ? "lg:order-2" : ""}`}>
+                  {key ? (
+                    <figure>
+                      <div className="reveal-photo photo-hover relative aspect-[4/5] overflow-hidden bg-papel-3 sm:aspect-[3/2]">
+                        <Photo img={key} sizes="(min-width: 1024px) 58vw, 100vw" />
+                      </div>
+                      {e.imagen!.kind === "tercero" ? <figcaption className="mt-2 text-xs text-carbon-muted">Foto: {e.imagen!.credit}</figcaption> : null}
+                    </figure>
+                  ) : (
+                    // Sin foto real de El Despacho todavía: el plano, no una foto inventada.
+                    <div className="bg-papel-2 p-6 sm:p-10">
+                      <PlanoEsquema />
+                    </div>
+                  )}
+                </div>
+                <div className={`lg:col-span-5 ${par ? "lg:order-1" : ""}`}>
+                  <p className="kicker text-brasa">
+                    <span className="tabular-nums">0{i + 1}</span>
+                    {e.aforo ? <span className="text-carbon-muted"> · {e.aforo}</span> : null}
+                  </p>
+                  <h3 className="t-h2 mt-3 text-carbon">{e.nombre}</h3>
+                  <p className="lead mt-4">{e.texto}</p>
+                  <div className="mt-4">
+                    <SourceBadge fuente={e.fuente} />
+                  </div>
+                  {extra ? (
+                    <div className="photo-hover relative mt-8 hidden aspect-[16/10] w-2/3 overflow-hidden bg-papel-3 sm:block">
+                      <Photo img={extra} sizes="24rem" mobileBelow={0} />
+                    </div>
+                  ) : null}
+                  <Link href={accion.href} className="btn-secondary mt-8">
+                    {accion.label}
+                    <Icon name="arrow" className="h-4 w-4" />
+                  </Link>
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+
+        <section aria-labelledby="celebrar-title" className="mt-24 grid gap-8 bg-marino-900 p-6 text-crema sm:p-10 lg:grid-cols-12 lg:items-center lg:gap-14 lg:p-14">
+          <div className="lg:col-span-6">
+            <p className="kicker text-ratan">Celebraciones y empresa</p>
+            <h2 id="celebrar-title" className="t-h2 mt-3">
+              Comidas de empresa, bautizos, comuniones o postbodas
+            </h2>
+            <p className="mt-4 max-w-md text-crema/75">Menús concertados en el comedor privado o en la terraza cubierta. Cuéntanos qué necesitas.</p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href={href(locale, "/reservar")} className="btn-primary">
-                <Icon name="calendar" className="h-4 w-4" />
-                Reservar mesa
+              <Link href={href(locale, "/empresas#contacto")} className="btn-light">
+                Pedir presupuesto
               </Link>
-              <Link href={href(locale, "/empresas#contacto")} className="btn-secondary">
-                <Icon name="briefcase" className="h-4 w-4" />
-                Celebraciones y empresas
+              <Link href={href(locale, "/reservar")} className="btn-ghost-light">
+                Reservar mesa
               </Link>
             </div>
           </div>
-          <div className="reveal">
-            <PlanoEsquema />
+          <div className="relative aspect-[3/2] overflow-hidden lg:col-span-6">
+            <Photo img="salonNoche" sizes="(min-width: 1024px) 45vw, 100vw" mobileBelow={0} />
           </div>
         </section>
       </div>

@@ -4,8 +4,8 @@ import { AllergenIcon } from "@/components/menu/AllergenIcon";
 /** Leyenda accesible de los 14 alérgenos del Reglamento UE 1169/2011. */
 export function AllergenLegend() {
   return (
-    <section aria-labelledby="leyenda-alergenos" className="rounded-3xl border border-carbon/10 bg-white/70 p-5 sm:p-6">
-      <h2 id="leyenda-alergenos" className="text-xl text-carbon">
+    <section aria-labelledby="leyenda-alergenos" className="border-t border-tinta-line pt-10">
+      <h2 id="leyenda-alergenos" className="t-h3 text-carbon">
         Alérgenos
       </h2>
       <p className="mt-2 text-sm text-carbon-muted">
@@ -16,7 +16,7 @@ export function AllergenLegend() {
         {ALERGENOS.map((a) => (
           <div key={a.key} className="flex items-start gap-3">
             <dt className="flex shrink-0 items-center gap-2 font-semibold text-carbon">
-              <span className="grid h-8 w-8 place-items-center rounded-full bg-terracota-soft text-terracota">
+              <span className="grid h-8 w-8 place-items-center rounded-full text-brasa ring-1 ring-brasa/25">
                 <AllergenIcon alergeno={a.key} className="h-5 w-5" />
               </span>
               <span className="w-28 text-sm">{a.label}</span>
