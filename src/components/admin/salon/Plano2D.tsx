@@ -41,6 +41,8 @@ export function Plano2D({
   multiSeleccion,
   editar,
   filtro,
+  mias = null,
+  reservaPersonas = null,
   onSelect,
   onMover,
 }: {
@@ -50,6 +52,10 @@ export function Plano2D({
   multiSeleccion: string[];
   editar: boolean;
   filtro: EstadoMesa | null;
+  /** Con "Mis mesas" activo: las mesas del camarero/a; el resto se atenúa. */
+  mias?: Set<string> | null;
+  /** Mientras se asigna una reserva: resalta las mesas libres con sitio para esas personas. */
+  reservaPersonas?: number | null;
   onSelect: (id: string) => void;
   onMover: (id: string, pos: PosMesa) => void;
 }) {
@@ -146,7 +152,8 @@ export function Plano2D({
         const r = rect(z);
         if (z.tipo === "terraza") {
           const mastiles: [number, number][] = [
-            [0, 0], [r.w / 2, 0], [r.w, 0], [0, r.h], [r.w / 2, r.h], [r.w, r.h], [r.w / 4, r.h / 2], [(3 * r.w) / 4, r.h / 2],
+            [r.w / 4, r.h / 2],
+            [(3 * r.w) / 4, r.h / 2],
           ];
           return (
             <g key={`a-${z.id}`} pointerEvents="none">
@@ -154,10 +161,13 @@ export function Plano2D({
               <ellipse cx={r.x + (3 * r.w) / 4} cy={r.y + r.h / 2} rx={r.w / 3} ry={r.h / 1.6} fill="url(#luzAzul)" />
               {/* Lona de la carpa: contorno y costuras hacia los mástiles */}
               <rect x={r.x + 3} y={r.y + 3} width={r.w - 6} height={r.h - 6} rx="10" fill="none" stroke="#f4f1ff" strokeOpacity=".35" strokeWidth="2" strokeDasharray="10 6" />
-              <path d={`M${r.x} ${r.y}L${r.x + r.w / 4} ${r.y + r.h / 2}L${r.x} ${r.y + r.h}M${r.x + r.w / 2} ${r.y}L${r.x + r.w / 4} ${r.y + r.h / 2}L${r.x + r.w / 2} ${r.y + r.h}L${r.x + (3 * r.w) / 4} ${r.y + r.h / 2}L${r.x + r.w / 2} ${r.y}M${r.x + r.w} ${r.y}L${r.x + (3 * r.w) / 4} ${r.y + r.h / 2}L${r.x + r.w} ${r.y + r.h}`} fill="none" stroke="#f4f1ff" strokeOpacity=".12" strokeWidth="1.5" />
+              <path d={`M${r.x} ${r.y}L${r.x + r.w / 4} ${r.y + r.h / 2}L${r.x} ${r.y + r.h}M${r.x + r.w / 2} ${r.y}L${r.x + r.w / 4} ${r.y + r.h / 2}L${r.x + r.w / 2} ${r.y + r.h}L${r.x + (3 * r.w) / 4} ${r.y + r.h / 2}L${r.x + r.w / 2} ${r.y}M${r.x + r.w} ${r.y}L${r.x + (3 * r.w) / 4} ${r.y + r.h / 2}L${r.x + r.w} ${r.y + r.h}`} fill="none" stroke="#f4f1ff" strokeOpacity=".07" strokeWidth="1.5" />
               <line x1={r.x + 6} y1={r.y + r.h - 3} x2={r.x + r.w - 6} y2={r.y + r.h - 3} stroke="#ffe2b0" strokeWidth="2.5" strokeOpacity=".8" />
               {mastiles.map(([mx, my], i) => (
-                <circle key={i} cx={r.x + mx} cy={r.y + my} r="4.5" fill="#d9dce2" stroke="#0b1424" strokeWidth="1.5" />
+                <g key={i}>
+                  <circle cx={r.x + mx} cy={r.y + my} r="9" fill="#0b1424" fillOpacity=".35" />
+                  <circle cx={r.x + mx} cy={r.y + my} r="4" fill="#b9bfca" />
+                </g>
               ))}
             </g>
           );
@@ -280,17 +290,23 @@ export function Plano2D({
         const taburete = m.forma === "taburete";
         const zona = m.zona_id ? zonaDe.get(m.zona_id) : undefined;
         const exterior = zona?.tipo === "terraza";
-        const atenuada = filtro !== null && filtro !== estado && !(filtro === "cuenta" && m.aviso_camarero);
+        const candidata = reservaPersonas !== null && !m.ocupada && !m.bloqueada && m.capacidad >= reservaPersonas;
+        const atenuada =
+          (filtro !== null && filtro !== estado && !(filtro === "cuenta" && m.aviso_camarero)) ||
+          (mias !== null && !mias.has(m.id)) ||
+          (reservaPersonas !== null && !candidata);
+        const listos = m.listos ?? 0;
         const larga = m.ocupada && min !== null && min >= LARGA;
         const textoMesa = estado === "limpiar" ? "#2B2722" : "#fff";
         const radio = Math.max(w, h) / 2;
         return (
           <g
             key={m.id}
+            data-mesa-id={m.id}
             role="button"
             tabIndex={0}
             aria-pressed={sel}
-            aria-label={`${m.nombre ?? `Mesa ${m.numero}`}: ${est.label}${m.ocupada ? `, ${m.comensales} comensales${min !== null ? `, ${min} minutos` : ""}` : ""}${m.aviso_camarero ? ", llama al camarero" : ""}${m.reserva ? `, reserva ${m.reserva.hora}` : ""}`}
+            aria-label={`${m.nombre ?? `Mesa ${m.numero}`}: ${est.label}${m.ocupada ? `, ${m.comensales} comensales${min !== null ? `, ${min} minutos` : ""}` : ""}${m.aviso_camarero ? ", llama al camarero" : ""}${m.reserva ? `, reserva ${m.reserva.hora}` : ""}${listos ? `, ${listos} platos listos para servir` : ""}`}
             onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onSelect(m.id)}
             onPointerDown={(e) => {
               onSelect(m.id);
@@ -319,6 +335,8 @@ export function Plano2D({
             {(m.aviso_camarero || m.pide_cuenta) && !editar ? (
               <circle cx={cx} cy={cy} r={radio + 22} fill="none" stroke="#C9BBFF" strokeWidth="4" className="motion-safe:animate-pulse" />
             ) : null}
+            {candidata ? <circle cx={cx} cy={cy} r={radio + 20} fill="#56653A" fillOpacity=".18" stroke="#B9E08C" strokeWidth="3" strokeDasharray="6 5" /> : null}
+            {sel ? <circle cx={cx} cy={cy} r={radio + 16} fill="#C9BBFF" fillOpacity=".22" /> : null}
             {larga && !editar ? <circle cx={cx} cy={cy} r={radio + 18} fill="none" stroke="#E0A458" strokeWidth="3" strokeDasharray="5 5" /> : null}
 
             <g transform={`rotate(${Number(m.rotacion ?? 0)} ${cx} ${cy})`} filter="url(#sombra)">
@@ -349,6 +367,16 @@ export function Plano2D({
                     </text>
                   </g>
                 ) : null}
+                {/* Platos listos en cocina/barra para llevar a la mesa */}
+                {listos > 0 ? (
+                  <g transform={`translate(${cx + radio + 4} ${cy + radio - 2})`}>
+                    <circle r="15" fill="#1F9D74" fillOpacity=".35" className="motion-safe:animate-ping" style={{ transformOrigin: "center", transformBox: "fill-box" }} />
+                    <circle r="12" fill="#1F9D74" stroke="#fff" strokeWidth="2" />
+                    <text y="4.5" textAnchor="middle" fontSize="12.5" fontWeight="900" fill="#fff">
+                      {listos}
+                    </text>
+                  </g>
+                ) : null}
                 {/* Nota de la mesa */}
                 {m.nota ? (
                   <g transform={`translate(${cx - radio - 4} ${cy - radio - 4})`}>
@@ -375,12 +403,13 @@ export function Plano2D({
         const r = rect(z);
         const deZona = mesas.filter((m) => m.zona_id === z.id);
         const ocupadas = deZona.filter((m) => m.ocupada).length;
-        const ancho = (deZona.length ? `${z.nombre}  ${ocupadas}/${deZona.length}` : z.nombre).length * 8.8 + 24;
-        const y = z.tipo === "barra" ? r.y + 36 : r.y + 12;
+        const ancho = (deZona.length ? `${z.nombre}  ${ocupadas}/${deZona.length}` : z.nombre).length * 9.6 + 24;
+        // Encima del borde superior de la zona, por fuera; si no cabe, dentro.
+        const y = r.y >= 24 ? r.y - 24 : r.y + 6;
         return (
-          <g key={`n-${z.id}`} pointerEvents="none" transform={`translate(${r.x + 10} ${y})`}>
-            <rect width={ancho} height="28" rx="14" fill="#0B1424" fillOpacity=".82" />
-            <text x="12" y="19.5" fontSize="15" fontWeight="700" fill="#F4F0FF">
+          <g key={`n-${z.id}`} pointerEvents="none" transform={`translate(${r.x + 8} ${y})`}>
+            <rect width={ancho} height="23.5" rx="11.75" fill="#0B1424" fillOpacity=".92" stroke="#F4F0FF" strokeOpacity=".22" />
+            <text x="12" y="17" fontSize="16" fontWeight="700" fill="#F4F0FF">
               {z.nombre}
               {deZona.length ? (
                 <tspan fill={ocupadas ? "#FFB79A" : "#B9C7A0"} fontWeight="800">

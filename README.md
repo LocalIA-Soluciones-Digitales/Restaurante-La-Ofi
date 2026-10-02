@@ -7,8 +7,7 @@ panel `/admin` preparado para TPV. Proyecto de
 multi-tenant compartido con **todos sus datos en el schema propio `laofi`**.
 
 > **Estado: DEMO** para enseñar al propietario. Indexación bloqueada, teléfono de pruebas e imágenes
-> de terceros pendientes de sustituir. Las migraciones del rediseño (`20261002*`) **no están
-> aplicadas** en Supabase. Ver [De demo a producción](#de-demo-a-producción).
+> de terceros pendientes de sustituir. Todas las migraciones están aplicadas en Supabase. Ver [De demo a producción](#de-demo-a-producción).
 
 Documentación: [`ARCHITECTURE.md`](./ARCHITECTURE.md) · [`RESEARCH.md`](./RESEARCH.md) ·
 [`IMAGES_SOURCES.md`](./IMAGES_SOURCES.md) · [`CONTENT_NEEDED.md`](./CONTENT_NEEDED.md) ·
@@ -113,13 +112,14 @@ La Ofi usa el proyecto Supabase compartido de LocalIA, pero **todos sus datos es
 propio, `laofi`**, sin tablas compartidas con otros proyectos. Detalle y barreras de aislamiento en
 `ARCHITECTURE.md` §1–2.
 
-- `supabase/migrations/` — schema `laofi` (tablas, RLS, índices) y RPC `laofi_*`. Las dos primeras
-  **aplicadas** el 2026-10-01; las cuatro del rediseño (`20261002100000`–`130000`: carta extendida,
-  salón y pedidos, admin/TPV, gestión) **pendientes de aplicar** tras confirmación.
+- `supabase/migrations/` — schema `laofi` (tablas, RLS, índices) y RPC `laofi_*`, **todas aplicadas**
+  (las dos primeras el 2026-10-01; carta extendida, salón y pedidos, admin/TPV, gestión y servicio
+  de sala el 2026-10-02).
 - `supabase/seed/la_ofi_tenant.sql` — alta en `public.clientes` (aplicado). Devuelve la `site_key`.
 - `supabase/seed/la_ofi_contenido_publicado.sql` — carta y horario publicados en internet (aplicado).
 - `supabase/seed/la_ofi_carta_enriquecida.sql` — opcional, requiere la carta extendida (no aplicado).
-- `supabase/seed/dev_local.sql` — solo para el backend local; **no** ejecutar en Supabase.
+- `supabase/seed/la_ofi_salon_provisional.sql` — zonas y mesas provisionales según las fotos públicas (aplicado).
+- `supabase/seed/dev_local.sql` — solo para el backend local (incluye un servicio en marcha de prueba); **no** ejecutar en Supabase.
 - `supabase/rollback/*.down.sql` — una reversión por migración; la base elimina todo lo de La Ofi sin tocar otros proyectos.
 - `supabase/tests/` — réplica mínima de la plataforma + tests con PGlite (`npm test`).
 

@@ -13,6 +13,8 @@ export interface Zona {
   alto: number;
   orden: number;
   activa: boolean;
+  /** Camarero/a asignado a la zona (migración 20261002140000). */
+  camarero_id?: string | null;
 }
 
 export interface MesaSalon {
@@ -43,6 +45,32 @@ export interface MesaSalon {
   pide_cuenta: boolean;
   /** Reserva próxima (laofi_admin_salon desde la migración de reservas). */
   reserva?: { nombre: string; hora: string; personas: number } | null;
+  /** Camarero/a de la mesa (el suyo o el de su zona) y platos listos para servir (20261002140000). */
+  camarero_id?: string | null;
+  camarero?: string | null;
+  listos?: number;
+}
+
+/** Reserva tal como la devuelve laofi_admin_reservas (laofi.reserva_json). */
+export interface ReservaDia {
+  id: string;
+  nombre: string;
+  telefono: string;
+  personas: number;
+  fecha: string;
+  hora: string;
+  duracion_min: number;
+  espacio: "mesa" | "despacho" | "evento";
+  estado: "PENDIENTE" | "CONFIRMADA" | "SENTADA" | "CANCELADA" | "NO_SHOW";
+  notas: string | null;
+  mesas: { id: string; numero: string }[];
+}
+
+export interface PersonaStaff {
+  user_id: string;
+  nombre: string;
+  rol: string;
+  activo: boolean;
 }
 
 export interface SalonData {

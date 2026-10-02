@@ -1,12 +1,10 @@
 # Restaurante La Ofi — Arquitectura
 
-Estado (2026-10-02): rama `feat/rediseno-premium` con el **rediseño completo**: web pública
-cinematográfica con vídeo, carta interactiva, cesta y pedidos (mesa por QR, recogida, grupos,
-Stripe), reservas online y `/admin` preparado para TPV (roles, salón 2D/3D, QR, TPV, cocina/KDS,
-impresión, caja, ventas, TicketBAI en andamiaje). En producción (`main`) sigue la V1 con las dos
-primeras migraciones de `laofi` **aplicadas**. Las cuatro migraciones nuevas
-(`20261002100000`–`20261002130000`) están **escritas y probadas en PGlite, sin aplicar** en el
-Supabase compartido: requieren confirmación expresa.
+Estado (2026-10-02): **rediseño completo en producción** (`main`): web pública cinematográfica con
+vídeo, carta interactiva, cesta y pedidos (mesa por QR, recogida, grupos, Stripe), reservas online y
+`/admin` preparado para TPV (roles, salón 2D/3D con servicio de sala, QR, TPV, cocina/KDS,
+impresión, caja, ventas, TicketBAI en andamiaje). Todas las migraciones de `laofi` están
+**aplicadas** en el Supabase compartido (con confirmación expresa del responsable).
 
 ---
 
@@ -67,10 +65,11 @@ en `app/api/stripe/*`, `app/api/ticketbai/*` y el alta de staff).
 |---|---|---|
 | `20261001150000_laofi_schema.sql` | **aplicada** 2026-10-01 | Schema `laofi`, helpers (`cliente_id`, `es_gestor`, `site_key_valida`, `alergenos_validos`), carta, menú del día, eventos y horario con CHECKs, índices, triggers `updated_at`, RLS y permisos. |
 | `20261001150100_laofi_rpc_publicas.sql` | **aplicada** 2026-10-01 | `laofi_get_carta`, `laofi_get_menu_dia`, `laofi_get_eventos`, `laofi_get_evento`, `laofi_get_horario`. |
-| `20261002100000_laofi_carta_extendida.sql` | **sin aplicar** | Nutrición por producto con `nutricion_fuente` obligatoria (solo se muestra si la aporta el restaurante), `alergenos_confirmados`, etiquetas, momento, estación de cocina, IVA, modificadores; `laofi_get_menu_dia` devuelve `updated_at` ("actualizado hoy a las…"). |
-| `20261002110000_laofi_salon_pedidos.sql` | **sin aplicar** | Ajustes, zonas, mesas con token de QR, sesiones de mesa compartidas, participantes, avisos al camarero, grupos de pedido, pedidos/ítems/repartos/historial/pagos, franjas de recogida. RPC públicas de mesa/pedido/grupo y funciones de pago solo para `service_role`. |
-| `20261002120000_laofi_admin_tpv.sql` | **sin aplicar** | Staff con roles, `laofi.mi_rol`/`exigir_rol`, CRUD genérico con lista blanca (`laofi_admin_listar/guardar/borrar`), salón, cuenta de mesa, TPV, cocina por estación, cobro, caja y cierres. |
-| `20261002130000_laofi_gestion.sql` | **sin aplicar** | Reservas (con mesas y comensales), promociones/premios y reseñas (**apagadas** por defecto), TicketBAI (registro encadenado, solo `service_role`), menú del día y ventas para el panel, alta de staff. |
+| `20261002100000_laofi_carta_extendida.sql` | **aplicada** 2026-10-02 | Nutrición por producto con `nutricion_fuente` obligatoria (solo se muestra si la aporta el restaurante), `alergenos_confirmados`, etiquetas, momento, estación de cocina, IVA, modificadores; `laofi_get_menu_dia` devuelve `updated_at` ("actualizado hoy a las…"). |
+| `20261002110000_laofi_salon_pedidos.sql` | **aplicada** 2026-10-02 | Ajustes, zonas, mesas con token de QR, sesiones de mesa compartidas, participantes, avisos al camarero, grupos de pedido, pedidos/ítems/repartos/historial/pagos, franjas de recogida. RPC públicas de mesa/pedido/grupo y funciones de pago solo para `service_role`. |
+| `20261002120000_laofi_admin_tpv.sql` | **aplicada** 2026-10-02 | Staff con roles, `laofi.mi_rol`/`exigir_rol`, CRUD genérico con lista blanca (`laofi_admin_listar/guardar/borrar`), salón, cuenta de mesa, TPV, cocina por estación, cobro, caja y cierres. |
+| `20261002130000_laofi_gestion.sql` | **aplicada** 2026-10-02 | Reservas (con mesas y comensales), promociones/premios y reseñas (**apagadas** por defecto), TicketBAI (registro encadenado, solo `service_role`), menú del día y ventas para el panel, alta de staff. |
+| `20261002140000_laofi_servicio.sql` | **aplicada** 2026-10-02 | Servicio de sala: camarero por zona/mesa («Mis mesas»), platos listos por mesa y `laofi_admin_servir_mesa`, limpieza en bloque (`laofi_admin_limpiar_todas`), historial `laofi.ocupaciones` al liberar mesa e informe `laofi_admin_ocupacion` (rotación y tiempos por zona). |
 
 - **Aditivas**: no modifican objetos de otros proyectos. Cada una tiene su reversión en
   `supabase/rollback/` (`*.down.sql`), probada en PGlite en orden inverso; la base
@@ -83,8 +82,9 @@ en `app/api/stripe/*`, `app/api/ticketbai/*` y el alta de staff).
   (`supabase/tests/platform-stub.sql`, con los permisos por defecto de Supabase) + migraciones, RLS
   por rol, aislamiento con site_key ajena, precios recalculados, repartos, caja, TicketBAI,
   reversiones y auditoría de seguridad.
-- **Para aplicar** (cuando se confirme): las cuatro migraciones en orden, `npm test` antes,
-  advisors de Supabase después, y el seed opcional de carta si se quiere.
+- **Nuevas migraciones**: `npm test` antes, aplicarlas en orden, advisors de Supabase después.
+- **Seed del salón** `la_ofi_salon_provisional.sql` (aplicado): 5 zonas y 31 mesas deducidas de
+  las fotos públicas; se corrigen desde `/admin` cuando llegue el croquis.
 
 Menú del día: `tipo` admite `plato` (plato del día a elegir) además de primero/segundo/postre.
 Horario: si `laofi.horario` estuviera vacío, la web usa el publicado en Google
@@ -155,7 +155,7 @@ Procedencia del contenido (`ContentState`): `real` (Supabase) → `demo` (solo c
 
 ## 5. Pendiente para producción
 
-1. Confirmar y aplicar las cuatro migraciones nuevas (ver §2) y revisar los advisors.
+1. ~~Aplicar las migraciones del rediseño~~ (hecho el 2026-10-02).
 2. Variables en Vercel: `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
    (webhook en `/api/stripe/webhook`).
 3. Dar de alta al staff desde `/admin/staff` (o el dashboard de Supabase) y crear mesas y QR.

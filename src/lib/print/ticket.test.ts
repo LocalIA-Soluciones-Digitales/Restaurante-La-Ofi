@@ -28,4 +28,11 @@ describe("plantillas", () => {
     expect(cuentaHTML({ etiqueta: "Mesa 1", lineas: [] })).not.toContain("NIF");
     expect(cuentaHTML({ etiqueta: "Mesa 1", lineas: [], fiscal: { nif: "B00000000" } })).toContain("NIF: B00000000");
   });
+
+  it("solo estrecha la columna de cantidad en las líneas, no en el desglose de IVA", () => {
+    const html = cuentaHTML({ etiqueta: "Mesa 5", lineas: [{ cantidad: 2, nombre: "Ibérico", precioUnitarioCentimos: 390, ivaPct: 10 }] });
+    expect(html).toContain('<table class="lineas">');
+    expect(html).toContain(".lineas td:first-child");
+    expect(html).not.toContain("} td:first-child");
+  });
 });
