@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { IMAGES } from "@/lib/images";
 import Link from "next/link";
 import { AllergenLegend } from "@/components/menu/AllergenLegend";
 import { MenuDelDia } from "@/components/menu/MenuDelDia";
@@ -35,9 +36,11 @@ export default async function MenuDelDiaPage({ params }: Params) {
         eyebrow="Menú del día"
         title="Hoy en La Ofi"
         lead="Cocina casera para el mediodía: ensalada, cuchara, pasta o arroz, carne, ave o pescado y postre de la casa."
+        image={IMAGES.comedorRatan}
+        compact
       />
       <div className="container-page grid gap-12 py-10 sm:py-14 lg:grid-cols-[1.4fr_0.6fr]">
-        <MenuDelDia state={state} detalle headingLevel="h2" />
+        <MenuDelDia state={state} detalle live headingLevel="h2" />
         <aside className="space-y-4">
           <div className="rounded-[1.75rem] bg-marino p-6 text-crema">
             <p className="font-display text-2xl">¿Venís en grupo?</p>

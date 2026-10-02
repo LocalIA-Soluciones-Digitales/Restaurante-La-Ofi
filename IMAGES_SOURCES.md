@@ -31,9 +31,41 @@ del C.F. Derio.
 **Placeholders de marca** (sin foto, con textura hexagonal y la etiqueta "Foto pendiente"): tortilla
 (home → "Para cada momento" y sección de tostadas) y pintxos de la barra. Nunca se usan fotos de stock.
 
-**Vídeo:** no hay ningún vídeo accesible del restaurante. `src/lib/media.ts` tiene `HERO_VIDEO = null`:
-el hero muestra la foto con movimiento sutil. Cuando haya vídeo real: MP4 H.264 horizontal (~1080p,
-< 4 MB, sin audio) + póster en `public/videos/` y rellenar `HERO_VIDEO`.
+## Vídeo
+
+No hay ningún vídeo accesible del restaurante. Todos los huecos de vídeo real de
+`src/lib/media.ts` (`VIDEOS.heroManana`, `heroMediodia`, `heroNoche`, `brasa`, `pintxos`,
+`platoDia`, `despacho`, `rotulo`) están a `null`: la web muestra la foto y, encima, como mucho una
+capa ambiental abstracta.
+
+### Vídeos generados (abstractos, **no** representan el local)
+
+Generados el 2026-10-02 con `ffmpeg` (filtro procedural `geq` + desenfoque y grano), sin IA de
+imagen, sin partir de ninguna foto y sin mostrar personas, platos ni el restaurante. Solo bruma,
+brasas y vapor de fondo. Marcados `kind: "generado"` en `src/lib/media.ts`.
+
+| Archivo (`public/videos/ambiente/`) | Qué es | Dónde se usa | Estado |
+|---|---|---|---|
+| `neon-haze-{720,1080}.{mp4,webm}` + `-poster.webp` | Bruma de color con brillo de neón | Capa sobre fotos: hero de noche, historia (noche), empresas, eventos, CTA final | **generado** – sustituir por `hero/noche` real |
+| `brasa-ascuas-{720,1080}.{mp4,webm}` + `-poster.webp` | Ascuas y chispas abstractas | Capa sobre fotos: historia (brasa) y momento de vídeo de la brasa en la home | **generado** – sustituir por `brasa/parrilla` real |
+| `vapor-manana-{720,1080}.{mp4,webm}` + `-poster.webp` | Vapor suave | Capa sobre fotos: hero e historia de mañana | **generado** – sustituir por `hero/manana` real |
+
+### Vídeos por grabar (originales del local, 10–20 s, sin audio, 4K o 1080p horizontal)
+
+| Hueco en `VIDEOS` | Plano |
+|---|---|
+| `heroManana` | Café y tostada en barra, luz de mañana |
+| `heroMediodia` | Comedor lleno a mediodía, sillas de ratán |
+| `heroNoche` | Terraza con carpa y rótulo de neón de noche |
+| `brasa` | Parrilla: brasas, pescado o carne al fuego (primer plano) |
+| `pintxos` | Barra con pintxos, mano sirviendo |
+| `platoDia` | Emplatado del plato del día |
+| `despacho` | El Despacho (comedor privado) preparado |
+| `rotulo` | Rótulo de neón encendiéndose |
+
+Al recibirlos: exportar `-720`/`-1080` en MP4 (H.264) y WebM, póster WebP, guardarlos en
+`public/videos/<carpeta>/`, rellenar el hueco en `src/lib/media.ts` con `kind: "real"` y añadirlos a
+esta tabla.
 
 ## Fuentes descartadas (calidad o acceso)
 

@@ -82,3 +82,64 @@ export function horarioSchemaOrg(semana: Semana) {
       closes: dia.hasta,
     }));
 }
+
+// --- Estado en tiempo real ("Abierto ahora · cierra a las 17:00") ------------
+
+/** Día ISO (0 = lunes … 6 = domingo) y minutos desde medianoche en Madrid. */
+export function ahoraEnMadrid(ahora: Date = new Date()): { dia: number; minutos: number } {
+  const partes = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Madrid",
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(ahora);
+  const valor = (t: string) => partes.find((p) => p.type === t)?.value ?? "";
+  const dia = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].indexOf(valor("weekday"));
+  return { dia, minutos: Number(valor("hour")) * 60 + Number(valor("minute")) };
+}
+
+function aMinutos(hhmm: string): number {
+  const [h = "0", m = "0"] = hhmm.split(":");
+  return Number(h) * 60 + Number(m);
+}
+
+/** Cierre en minutos; "00:00" (o anterior a la apertura) = medianoche del mismo día. */
+function cierreMinutos(dia: DiaHorario): number {
+  const hasta = aMinutos(dia.hasta);
+  return hasta <= aMinutos(dia.desde) ? 24 * 60 : hasta;
+}
+
+const hora = (hhmm: string) => (hhmm === "00:00" ? "medianoche" : `las ${hhmm.replace(/^0/, "")}`);
+
+export interface EstadoAhora {
+  /** null = no se sabe (día "Consultar"): no se afirma nada. */
+  abierto: boolean | null;
+  texto: string;
+}
+
+/** Estado del local ahora mismo según el horario resuelto. Nunca inventa: los
+ * días sin dato fiable devuelven "Consulta el horario". */
+export function estadoAhora(semana: Semana, ahora: Date = new Date()): EstadoAhora {
+  const { dia, minutos } = ahoraEnMadrid(ahora);
+  const hoy = semana[dia];
+  if (hoy === undefined || hoy === null) return { abierto: null, texto: "Consulta el horario de hoy" };
+
+  if (hoy.abierto) {
+    const desde = aMinutos(hoy.desde);
+    const hasta = cierreMinutos(hoy);
+    if (minutos >= desde && minutos < hasta) return { abierto: true, texto: `Abierto ahora · cierra a ${hora(hoy.hasta)}` };
+    if (minutos < desde) return { abierto: false, texto: `Cerrado · abre hoy a ${hora(hoy.desde)}` };
+  }
+
+  // Siguiente apertura conocida en los próximos 7 días.
+  for (let i = 1; i <= 7; i++) {
+    const d = semana[(dia + i) % 7];
+    if (d === null || d === undefined) return { abierto: false, texto: "Cerrado ahora" };
+    if (d.abierto) {
+      const cuando = i === 1 ? "mañana" : `el ${["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"][(dia + i) % 7]}`;
+      return { abierto: false, texto: `Cerrado · abre ${cuando} a ${hora(d.desde)}` };
+    }
+  }
+  return { abierto: false, texto: "Cerrado ahora" };
+}

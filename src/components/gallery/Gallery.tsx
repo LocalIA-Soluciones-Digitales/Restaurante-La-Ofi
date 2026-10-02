@@ -2,13 +2,17 @@
 
 import Image, { type StaticImageData } from "next/image";
 import { useCallback, useEffect, useState } from "react";
+import { AmbientVideo } from "@/components/media/AmbientVideo";
 import { Icon } from "@/components/ui/Icon";
 import { useDialogA11y } from "@/hooks/useDialogA11y";
+import { videoSources, type VideoAsset } from "@/lib/media";
 
 export interface GalleryImage {
   src: StaticImageData;
   alt: string;
   credit: string;
+  /** Clip corto REAL del local (se reproduce en bucle en la rejilla y con controles en el visor). */
+  video?: VideoAsset | null;
 }
 
 /** Galería editorial en columnas + lightbox accesible (teclado, foco, Escape, flechas). */
@@ -32,7 +36,15 @@ export function Gallery({ images, sizes = "(min-width: 1024px) 33vw, 50vw" }: { 
                 placeholder="blur"
                 className="h-auto w-full transition-transform duration-700 ease-out group-hover:scale-105"
               />
-              <span className="sr-only">Ampliar foto</span>
+              {img.video ? (
+                <span className="absolute inset-0">
+                  <AmbientVideo video={img.video} />
+                  <span className="absolute bottom-3 right-3 grid h-9 w-9 place-items-center rounded-full bg-carbon/60 text-crema backdrop-blur">
+                    <Icon name="play" className="h-4 w-4" />
+                  </span>
+                </span>
+              ) : null}
+              <span className="sr-only">{img.video ? "Ver vídeo" : "Ampliar foto"}</span>
             </button>
           </li>
         ))}
@@ -90,7 +102,24 @@ function Lightbox({
         </button>
       </div>
       <figure className="relative my-4 flex min-h-0 flex-1 items-center justify-center">
-        <Image src={img.src} alt={img.alt} sizes="100vw" className="h-auto max-h-full w-auto max-w-full rounded-xl object-contain" />
+        {img.video ? (
+          <video
+            key={img.video.base}
+            controls
+            autoPlay
+            muted
+            playsInline
+            poster={videoSources(img.video).poster}
+            aria-label={img.video.label || img.alt}
+            className="max-h-full max-w-full rounded-xl"
+          >
+            {videoSources(img.video).sources.map((src) => (
+              <source key={src.src} src={src.src} type={src.type} media={src.media} />
+            ))}
+          </video>
+        ) : (
+          <Image src={img.src} alt={img.alt} sizes="100vw" className="h-auto max-h-full w-auto max-w-full rounded-xl object-contain" />
+        )}
       </figure>
       <div className="flex items-center justify-between gap-4">
         <button type="button" onClick={() => go(-1)} className={navBtn}>

@@ -60,3 +60,8 @@ create function public.is_developer() returns boolean
 language sql stable set search_path to 'public' as $$
   select (auth.jwt() ->> 'email') = any (array['edortadossantos@gmail.com', 'admin@developers.local']);
 $$;
+
+-- Igual que en Supabase: toda función nueva de public es ejecutable por anon y
+-- authenticated salvo que se revoque explícitamente (hallazgo de Palomita §16.3).
+-- Así los tests de seguridad detectan cualquier REVOKE olvidado.
+alter default privileges in schema public grant execute on functions to anon, authenticated, service_role;

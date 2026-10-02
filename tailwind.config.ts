@@ -5,6 +5,9 @@ import type { Config } from "tailwindcss";
 // jardín vertical y lavanda del rótulo de neón "la ofi" (solo de noche).
 const config: Config = {
   content: ["./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
+  // Modo oscuro solo donde se pide (panel /admin y pantalla de cocina): la web
+  // pública no lo usa. data-theme="dark" en cualquier ancestro.
+  darkMode: ["selector", '[data-theme="dark"]'],
   theme: {
     extend: {
       colors: {
@@ -16,7 +19,9 @@ const config: Config = {
         oliva: { DEFAULT: "#56653A", soft: "#E3E5CF" },
         terracota: { DEFAULT: "#96442B", soft: "#F2DCCF" },
         carbon: { DEFAULT: "#2B2722", muted: "#5E554B" },
-        neon: "#C9BBFF",
+        neon: { DEFAULT: "#C9BBFF", soft: "#E4DCFF", deep: "#8E7CF0" },
+        // Modo noche (tarde/eventos): azul de la barra casi negro + neón lavanda.
+        noche: { DEFAULT: "#0B1424", 2: "#111E33", 3: "#1A2944" },
       },
       fontFamily: {
         display: ["var(--font-display)", "Georgia", "serif"],
@@ -41,10 +46,54 @@ const config: Config = {
           "0%": { opacity: "0", transform: "translateY(14px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
+        // Revelado de titulares por palabras (máscara + subida), estilo Amway.
+        "word-up": {
+          "0%": { transform: "translateY(105%) rotate(2deg)" },
+          "100%": { transform: "translateY(0) rotate(0)" },
+        },
+        marquee: {
+          "0%": { transform: "translate3d(0,0,0)" },
+          "100%": { transform: "translate3d(-50%,0,0)" },
+        },
+        // Parpadeo sutil de tubo de neón: casi siempre encendido, dos micro-cortes.
+        "neon-flicker": {
+          "0%, 18%, 22%, 25%, 53%, 57%, 100%": { opacity: "1" },
+          "20%, 24%, 55%": { opacity: "0.55" },
+        },
+        "neon-on": {
+          "0%": { opacity: "0.15", filter: "blur(1px)" },
+          "10%": { opacity: "0.9" },
+          "14%": { opacity: "0.3" },
+          "22%, 100%": { opacity: "1", filter: "blur(0)" },
+        },
+        "scroll-cue": {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(8px)" },
+        },
+        "bump": {
+          "0%": { transform: "scale(1)" },
+          "40%": { transform: "scale(1.18)" },
+          "100%": { transform: "scale(1)" },
+        },
+        "sheet-up": {
+          "0%": { transform: "translateY(100%)" },
+          "100%": { transform: "translateY(0)" },
+        },
       },
       animation: {
         kenburns: "kenburns 22s ease-out both",
         "fade-up": "fade-up 0.8s cubic-bezier(0.22,1,0.36,1) both",
+        "word-up": "word-up 1.1s cubic-bezier(0.16,1,0.3,1) both",
+        marquee: "marquee 38s linear infinite",
+        "neon-flicker": "neon-flicker 7s linear infinite",
+        "neon-on": "neon-on 1.6s ease-out both",
+        "scroll-cue": "scroll-cue 1.8s ease-in-out infinite",
+        bump: "bump 0.35s cubic-bezier(0.22,1,0.36,1)",
+        "sheet-up": "sheet-up 0.42s cubic-bezier(0.32,0.72,0,1) both",
+      },
+      transitionTimingFunction: {
+        "out-expo": "cubic-bezier(0.16,1,0.3,1)",
+        drawer: "cubic-bezier(0.32,0.72,0,1)",
       },
     },
   },

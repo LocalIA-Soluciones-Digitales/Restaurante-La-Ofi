@@ -49,7 +49,7 @@ export default async function EventoPage({ params }: Params) {
         <h1 className="mt-3 text-5xl leading-tight text-carbon">{evento.titulo}</h1>
         <ul className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-carbon-muted">
           {evento.fecha ? (
-            <li className="inline-flex items-center gap-2 capitalize">
+            <li className="inline-flex items-center gap-2 first-letter:uppercase">
               <Icon name="calendar" className="h-5 w-5" />
               {formatearFechaLarga(evento.fecha)}
             </li>

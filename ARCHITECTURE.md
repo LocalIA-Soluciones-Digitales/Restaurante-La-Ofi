@@ -1,9 +1,12 @@
 # Restaurante La Ofi — Arquitectura
 
-Estado (2026-10-01): **V1 demo en producción** (https://restaurante-la-ofi.vercel.app). Web pública
-completa. Carta y horario se leen de Supabase (schema propio `laofi`, **aplicado**); menú del día y
-eventos también, con caída a contenido de referencia marcado mientras no haya registros. Pedidos
-desde mesa, Stripe, reservas online y `/admin` están **preparados**, sin lógica completa.
+Estado (2026-10-02): rama `feat/rediseno-premium` con el **rediseño completo**: web pública
+cinematográfica con vídeo, carta interactiva, cesta y pedidos (mesa por QR, recogida, grupos,
+Stripe), reservas online y `/admin` preparado para TPV (roles, salón 2D/3D, QR, TPV, cocina/KDS,
+impresión, caja, ventas, TicketBAI en andamiaje). En producción (`main`) sigue la V1 con las dos
+primeras migraciones de `laofi` **aplicadas**. Las cuatro migraciones nuevas
+(`20261002100000`–`20261002130000`) están **escritas y probadas en PGlite, sin aplicar** en el
+Supabase compartido: requieren confirmación expresa.
 
 ---
 
@@ -12,117 +15,152 @@ desde mesa, Stripe, reservas online y `/admin` están **preparados**, sin lógic
 La Ofi es un tenant del proyecto Supabase compartido de LocalIA (`ukhfaphloxlszomccgde`), pero con
 **todas sus tablas en un schema propio, `laofi`**: ningún dato suyo vive en tablas compartidas con
 otros proyectos (Palomita y Bar La Osa comparten `restaurant`; Amway, hostelería, báscula… usan
-tablas con prefijo en `public`). Lo único común es el registro de tenants de la plataforma:
+tablas con prefijo en `public`). Las tablas que en Palomita están en `restaurant` (mesas, pedidos,
+reservas, premios…) se **replican dentro de `laofi`**, nunca se comparten. Lo único común es el
+registro de tenants de la plataforma:
 
 ```
 public.clientes            fila "restaurante-la-ofi": site_key pública, estado (activo/pausado)
-public.usuarios_negocio    staff de La Ofi → cliente_id (para el futuro /admin)
+public.usuarios_negocio    staff de La Ofi → cliente_id (rol de plataforma "gestion")
 public.is_developer() …    helpers de plataforma (LocalIA ve todos los tenants)
 
 laofi.*                    ← SOLO datos de La Ofi
-  ├─ categorias, productos      carta (alérgenos como claves UE validadas por CHECK)
-  ├─ menus_dia, menu_dia_platos menú / plato del día (único por fecha)
-  ├─ eventos                    con borradores (publicado = false)
-  └─ horario                    7 filas: abierto / cerrado / consultar
-public.laofi_get_*         RPC de lectura pública (única puerta de entrada para anon)
+  ├─ carta        categorias, productos (+ nutrición con fuente, alérgenos confirmados,
+  │               etiquetas, momento, estación, IVA), modificadores
+  ├─ menús        menus_dia, menu_dia_platos
+  ├─ eventos      eventos (borradores con publicado = false)
+  ├─ horario      7 filas: abierto / cerrado / consultar
+  ├─ salón        ajustes, zonas, mesas (token del QR), sesiones de mesa, participantes, avisos
+  ├─ pedidos      grupos_pedido, pedidos, pedido_items, repartos, historial, pagos, franjas
+  ├─ staff        staff (rol admin/encargado/camarero/cocina), cierres de caja
+  ├─ gestión      reservas, reserva_mesas, comensales, reglas_promocion, premios_otorgados, resenas
+  └─ fiscal       ticketbai_facturas (andamiaje, apagado)
+public.laofi_*             RPC: única puerta de entrada desde la web
 ```
 
-Barreras de aislamiento (todas verificadas con tests y en producción):
+Barreras de aislamiento (verificadas por `supabase/tests/seguridad.test.ts`, que falla si alguien
+las rompe):
 
-1. **anon no tiene `USAGE` sobre `laofi`**: no puede leer ni escribir ninguna tabla, ni siquiera
-   resolver sus nombres. Solo puede ejecutar las RPC `public.laofi_get_*`.
-2. **Cada RPC exige la site_key de La Ofi** (`laofi.site_key_valida`: la site_key debe ser la de La
-   Ofi y el tenant estar activo). Con la de Palomita u otra cualquiera devuelven vacío.
-3. **RLS en las 6 tablas**: `authenticated` solo pasa si `laofi.es_gestor()` (LocalIA o un usuario
-   de `usuarios_negocio` vinculado a La Ofi). El staff de otro proyecto no ve ni escribe nada.
-4. **Sin `cliente_id` en las tablas**: al ser un schema de un único tenant no hay columnas de tenant
-   que filtrar ni que olvidar filtrar (el fallo real que tuvo Palomita en §12 no puede darse aquí).
-5. La web lee solo **en servidor** (Server Components + ISR 5 min) con la clave publishable; la
-   site_key va en `LAOFI_SITE_KEY` (secreta en Vercel, nunca llega al navegador). `service_role` no
-   se usa.
+1. **anon no tiene `USAGE` sobre `laofi`**: no puede leer ni escribir ninguna tabla. Solo puede
+   ejecutar una lista cerrada de RPC públicas (`laofi_get_*`, `laofi_crear_pedido`,
+   `laofi_crear_reserva`, sesiones de mesa…), todas con site_key.
+2. **Cada RPC pública exige la site_key de La Ofi** (`laofi.site_key_valida`). La site_key la pone
+   el **servidor** (Server Actions y Server Components); nunca viaja al navegador.
+3. **Precios recalculados en Postgres**: `laofi_crear_pedido` ignora cualquier importe del cliente
+   y valida cada línea contra `laofi.productos` y sus modificadores (`laofi.linea_validada`).
+4. **RLS en todas las tablas**: `authenticated` solo pasa si `laofi.es_gestor()`. Las RPC
+   `laofi_admin_*` son `SECURITY INVOKER` (la RLS sigue aplicando) y además comprueban el rol del
+   panel con `laofi.exigir_rol(...)`.
+5. **Solo `service_role`** (únicamente en rutas de servidor): marcar pagos (`laofi_marcar_*`, desde
+   el webhook de Stripe), leer importes para el checkout, registro TicketBAI (`laofi_tbai_*`) y alta
+   de staff (`laofi_vincular_staff`). Ni anon ni authenticated pueden ejecutarlas.
+6. **Sin `cliente_id` en las tablas**: al ser un schema de un único tenant no hay columna de tenant
+   que olvidar filtrar.
 
-## 2. Modelo de datos (`supabase/migrations/`, aplicado el 2026-10-01)
+Acceso desde el código: todo pasa por `src/lib/supabase/rpc.ts` — `rpcPublica` (anon + site_key),
+`rpcStaff` (sesión del staff por cookie con `@supabase/ssr`) y `rpcServicio` (`service_role`, solo
+en `app/api/stripe/*`, `app/api/ticketbai/*` y el alta de staff).
 
-| Migración | Contenido |
-|---|---|
-| `20261001150000_laofi_schema.sql` | Schema `laofi`, helpers (`cliente_id`, `es_gestor`, `site_key_valida`, `alergenos_validos`), 6 tablas con CHECKs (slugs, precios ≥ 0, estados, `https://` en enlaces, horas obligatorias si abierto, solo los 14 alérgenos UE), índices (carta por categoría+orden, platos por menú, eventos publicados por fecha), triggers `updated_at` con la función compartida `public.set_updated_at()`, RLS y permisos. |
-| `20261001150100_laofi_rpc_publicas.sql` | `laofi_get_carta` (categorías con productos en una sola llamada), `laofi_get_menu_dia`, `laofi_get_eventos`, `laofi_get_evento`, `laofi_get_horario`. SECURITY DEFINER con `search_path` fijo, solo lectura, sin campos internos; un evento pasado se devuelve como `finalizado`. |
+## 2. Modelo de datos (`supabase/migrations/`)
 
-- **Aditivas**: no modifican ningún objeto existente de otros proyectos.
-- **Reversión**: `supabase/rollback/20261001150000_laofi.down.sql` elimina el schema y las RPC; la fila
-  de `public.clientes` se conserva.
-- **Seeds** (aplicados): `la_ofi_tenant.sql` (alta en `public.clientes`) y
-  `la_ofi_contenido_publicado.sql` (carta y horario publicados en internet, cada sección con su
-  procedencia en `descripcion`; alérgenos vacíos a propósito). Ambos idempotentes.
-- **Tests**: `npm test` reproduce el núcleo de la plataforma en PGlite (`supabase/tests/`) y verifica
-  seeds, RPC, aislamiento con site_key ajena, RLS (anon / staff propio / staff de otro tenant /
-  LocalIA), validaciones y reversión (22 tests de base de datos).
-- **Advisors** tras aplicar: sin avisos nuevos de seguridad salvo el aviso esperado "SECURITY DEFINER
-  ejecutable por anon" de las RPC públicas (mismo diseño que Palomita); en rendimiento, solo "índice
-  aún no usado" en tablas vacías.
+| Migración | Estado | Contenido |
+|---|---|---|
+| `20261001150000_laofi_schema.sql` | **aplicada** 2026-10-01 | Schema `laofi`, helpers (`cliente_id`, `es_gestor`, `site_key_valida`, `alergenos_validos`), carta, menú del día, eventos y horario con CHECKs, índices, triggers `updated_at`, RLS y permisos. |
+| `20261001150100_laofi_rpc_publicas.sql` | **aplicada** 2026-10-01 | `laofi_get_carta`, `laofi_get_menu_dia`, `laofi_get_eventos`, `laofi_get_evento`, `laofi_get_horario`. |
+| `20261002100000_laofi_carta_extendida.sql` | **sin aplicar** | Nutrición por producto con `nutricion_fuente` obligatoria (solo se muestra si la aporta el restaurante), `alergenos_confirmados`, etiquetas, momento, estación de cocina, IVA, modificadores; `laofi_get_menu_dia` devuelve `updated_at` ("actualizado hoy a las…"). |
+| `20261002110000_laofi_salon_pedidos.sql` | **sin aplicar** | Ajustes, zonas, mesas con token de QR, sesiones de mesa compartidas, participantes, avisos al camarero, grupos de pedido, pedidos/ítems/repartos/historial/pagos, franjas de recogida. RPC públicas de mesa/pedido/grupo y funciones de pago solo para `service_role`. |
+| `20261002120000_laofi_admin_tpv.sql` | **sin aplicar** | Staff con roles, `laofi.mi_rol`/`exigir_rol`, CRUD genérico con lista blanca (`laofi_admin_listar/guardar/borrar`), salón, cuenta de mesa, TPV, cocina por estación, cobro, caja y cierres. |
+| `20261002130000_laofi_gestion.sql` | **sin aplicar** | Reservas (con mesas y comensales), promociones/premios y reseñas (**apagadas** por defecto), TicketBAI (registro encadenado, solo `service_role`), menú del día y ventas para el panel, alta de staff. |
 
-Menú del día: `tipo` admite `plato` (plato del día a elegir, el formato de La Ofi) además de
-primero/segundo/postre. Horario: si `laofi.horario` estuviera vacío, la web usa el publicado en
-Google (`HORARIO_INTERNET` en `src/lib/horario.ts`).
+- **Aditivas**: no modifican objetos de otros proyectos. Cada una tiene su reversión en
+  `supabase/rollback/` (`*.down.sql`), probada en PGlite en orden inverso; la base
+  (`20261001150000_laofi.down.sql`) borra el schema y **todas** las `public.laofi_*`.
+- **Seeds**: `la_ofi_tenant.sql` y `la_ofi_contenido_publicado.sql` (aplicados);
+  `la_ofi_carta_enriquecida.sql` (opcional, requiere la carta extendida: fotos oficiales, momento y
+  etiquetas deducidos del texto publicado; sin precios, alérgenos ni nutrición inventados);
+  `dev_local.sql` (**solo** backend local: mesas, zonas y staff de prueba).
+- **Tests** (`npm test`, 127): réplica mínima de la plataforma en PGlite
+  (`supabase/tests/platform-stub.sql`, con los permisos por defecto de Supabase) + migraciones, RLS
+  por rol, aislamiento con site_key ajena, precios recalculados, repartos, caja, TicketBAI,
+  reversiones y auditoría de seguridad.
+- **Para aplicar** (cuando se confirme): las cuatro migraciones en orden, `npm test` antes,
+  advisors de Supabase después, y el seed opcional de carta si se quiere.
+
+Menú del día: `tipo` admite `plato` (plato del día a elegir) además de primero/segundo/postre.
+Horario: si `laofi.horario` estuviera vacío, la web usa el publicado en Google
+(`HORARIO_INTERNET` en `src/lib/horario.ts`).
 
 ## 3. Frontend
 
 ```
 app/
-  (site)/[locale]/            raíz pública con idioma (es; eu preparado y desactivado)
-    page.tsx                  home (hero, La Ofi, momentos, menú de hoy, tostadas, carta, eventos, galería, ubicación)
-    carta/ menu-del-dia/ eventos/ eventos/[slug]/ galeria/ contacto/
-    aviso-legal/ privacidad/ cookies/
-    pedir/ reservar/          preparados (noindex)
-    [...rest]/ not-found.tsx  404 con el diseño del sitio
-  (internal)/admin/           raíz independiente, preparada (noindex)
-  robots.ts sitemap.ts manifest.ts icon.svg apple-icon.png
-middleware.ts                 /x → /es/x (conserva la query de los QR); /eu → /es mientras esté desactivado
+  (site)/[locale]/            raíz pública (es; eu preparado y desactivado)
+    page.tsx                  home "Un día en La Ofi": hero en vídeo por franja, historia fijada,
+                              menú de hoy, especialidades, espacios, empresas, vinos, eventos, CTA
+    carta/                    carta interactiva (filtros, alérgenos, nutrición si existe, modificadores)
+    pedir/ pedido/[id]/       cesta, mesa por QR, recogida, grupos; estado del pedido
+    reservar/                 reserva online si está activada en /admin; si no, teléfono
+    espacios/ empresas/ menu-del-dia/ eventos/ galeria/ contacto/ legales
+  (internal)/admin/           raíz independiente (PWA), login y panel por roles:
+    Hoy · Salón (2D/3D) · TPV · Cocina y barra (KDS) · Reservas · Menú del día · Carta ·
+    Eventos · Ventas · Caja · Mesas y QR · Equipo · Configuración · Fidelización y Reseñas (apagadas)
+  api/stripe/{checkout,checkout-participante,webhook}   pagos (confirmación SOLO por webhook)
+  api/ticketbai/emitir        andamiaje: 503 salvo TICKETBAI_ENABLED=true
+middleware.ts                 /x → /es/x (conserva la query de los QR); sesión de /admin
 src/
-  lib/restaurant/             types, queries (RPC), content (real → ejemplo → vacío), demo-content, jsonld
-  lib/                        env (flags), site (datos verificados), seo, i18n, allergens, horario, images, format
-  components/                 layout, home, menu, eventos, gallery, map, media, legal, ui
+  components/home|media|motion|pedir|admin|carta|…
+  lib/supabase/rpc.ts         único acceso a datos (ver §1)
+  lib/supabase/dev-pglite.ts  backend local en memoria (LAOFI_PGLITE=1)
+  lib/pedidos|admin|reservas  Server Actions
+  lib/media.ts                registro de vídeos (real / generado) y escenas del hero
+  lib/ticketbai/              XML, CRC-8, identificador y QR (portados de Palomita); firma y envío pendientes
+print-bridge/                 puente de impresión ESC/POS para la impresora de cocina (Node, red local)
 supabase/                     migrations, rollback, seed, tests
 ```
 
-Flags (`src/lib/env.ts`): `NEXT_PUBLIC_IS_DEMO` (por defecto **true**: un despliegue sin configurar
-nunca se indexa), `NEXT_PUBLIC_SHOW_DEMO_CONTENT`, `NEXT_PUBLIC_SITE_URL`.
+**Motion y rendimiento.** Revelado de titulares con CSS (`clip-path`), GSAP cargado bajo demanda
+(`lib/motion/gsap.ts`), Lenis solo en escritorio con puntero fino y tras la carga, historia fijada
+solo en `lg` (`dynamic(ssr:false)`), three/R3F solo en el salón 3D de `/admin`. Sin Framer Motion en
+la web pública. Vídeos con `preload="none"`, póster, 720p/1080p por media query y reproducción solo
+cuando son visibles (`usePlayWhenVisible`); con `prefers-reduced-motion` todo queda estático.
+
+**Backend local.** `npm run dev:local` arranca Next con PGlite en memoria: aplica el stub de la
+plataforma, todas las migraciones y los seeds, y entra en `/admin` como staff de prueba sin login.
+Permite probar pedidos, TPV, KDS, caja y reservas sin Docker ni tocar el Supabase compartido.
+
+Flags (`src/lib/env.ts`): `NEXT_PUBLIC_IS_DEMO` (por defecto **true**: nunca se indexa un despliegue
+sin configurar), `NEXT_PUBLIC_SHOW_DEMO_CONTENT`, `NEXT_PUBLIC_SITE_URL`. Lo que depende de claves
+(Stripe, alta de staff, TicketBAI) se desactiva solo y lo explica en pantalla si faltan.
 
 Procedencia del contenido (`ContentState`): `real` (Supabase) → `demo` (solo con
-`SHOW_DEMO_CONTENT=true`, siempre con distintivo "Ejemplo" / "Según Instagram" / "Según prensa") →
-`empty` (estados vacíos diseñados). JSON-LD `Menu` y `Event` solo se emiten con datos reales y fuera
-del modo demo; `Restaurant` solo fuera del modo demo.
+`SHOW_DEMO_CONTENT=true`, siempre con distintivo) → `empty` (estados vacíos diseñados). JSON-LD
+`Menu` y `Event` solo con datos reales y fuera del modo demo.
 
 ## 4. Decisiones y desviaciones respecto a Palomita-Bar
 
 | Decisión | Motivo |
 |---|---|
-| **Next 15.5.27 / React 19.0.8** (Palomita: 15.1.9 / 19.0.3) | `npm audit` marca Next 15.1.9 con vulnerabilidades **críticas** (RCE en la optimización de imágenes con AVIF, bypass de middleware, envenenamiento de caché, etc.). 15.5.27 es la última 15.x, misma API. **Palomita y Bar La Osa están afectados: conviene actualizarlos.** Queda un aviso moderado/alto por el PostCSS empaquetado dentro de Next (solo build, sobre CSS propio), que solo se corrige en Next 16. |
-| Sin `three`, `qrcode`, `stripe`, `@supabase/ssr` | No se usan en V1. Se añadirán con `/admin`, QR de mesas y pagos. |
-| Sin Framer Motion | Animaciones con CSS: *scroll-driven animations* (`animation-timeline: view()`) como mejora progresiva, Ken Burns en escritorio y transición de cabecera con un listener mínimo. Cero JS de animación. Respeta `prefers-reduced-motion`. |
-| Schema propio `laofi` (Palomita y La Osa comparten `restaurant`) | Petición de LocalIA: datos de cada proyecto en tablas distintas, sin posibilidad de cruce. Ver §1. |
-| Vitest + PGlite | Palomita no tiene tests ejecutables; aquí `npm test` cubre utilidades y migraciones. |
-| `experimental.inlineCss` + `content-visibility: auto` en secciones bajo el pliegue | Necesario para Lighthouse móvil ≥ 90 (el cuello de botella era style/layout, no JS). |
-| ESLint con `ignores` (`.next`, `next-env.d.ts`) | La config de Palomita analiza `.next/` con ESLint 9. |
-| Mapa estático OSM + Google Maps solo bajo demanda | Sin cookies de terceros sin consentimiento. |
+| **Next 15.5.27 / React 19.0.8** (Palomita: 15.1.9 / 19.0.3) | Next 15.1.9 tiene vulnerabilidades **críticas** (RCE en imágenes AVIF, bypass de middleware…). 15.5.27 es la última 15.x, misma API. **Palomita y Bar La Osa deberían actualizarse.** |
+| `@supabase/ssr` 0.12.4 (no 0.12.7) | 0.12.7 exige `supabase-js` ≥ 2.114. |
+| Schema propio `laofi` con las tablas de Palomita replicadas | Datos de cada proyecto en tablas distintas, sin posibilidad de cruce. Ver §1. |
+| Sin Framer Motion; GSAP, Lenis y three bajo demanda | Lighthouse móvil ≥ 90 en home y carta. |
+| Vídeos ambientales abstractos generados | No hay vídeo real del local. Solo bruma, brasas y vapor, nunca imitando el restaurante; marcados `generado` en `lib/media.ts` e `IMAGES_SOURCES.md`. |
+| Un solo precio por producto | Sin precios por tamaño ni por franja hasta que el restaurante lo pida. |
+| Nutrición solo si la aporta el restaurante | `nutricion_fuente` obligatoria; sin ella la web no la muestra. |
+| Staff por roles (admin / encargado / camarero / cocina) | El rol de plataforma sigue siendo `gestion`; el rol fino vive en `laofi.staff` y lo comprueba Postgres. |
+| TicketBAI en andamiaje y apagado | Faltan certificado, firma XAdES y envío a Batuz; no se emite nada fiscal sin ello. |
+| Fidelización y reseñas apagadas | Requieren decisión del restaurante y textos de privacidad. |
+| Revalidación por rutas concretas tras editar en `/admin` | `revalidatePath` con `dynamicParams = false` en el layout daba 404; se quitó esa opción. |
+| Vitest + PGlite | `npm test` cubre utilidades, migraciones y seguridad sin Docker. |
 
-## 5. Fases siguientes (sin rehacer nada)
+## 5. Pendiente para producción
 
-Todas añaden tablas al schema `laofi` y RPC `laofi_*`, con las mismas barreras de §1.
-
-**Pedido desde mesa (`/es/pedir?mesa=<id>`).** Crear `laofi.mesas`, `laofi.pedidos` y
-`laofi.pedido_items` (estados de cocina y validación de precio contra `laofi.productos` en la RPC),
-y portar de Palomita `CartProvider`, `PedirExperience`, `CartDrawer` y `/pedido/[id]`.
-
-**Stripe.** Mismo flujo que Palomita §10: crear el pedido → `POST /api/stripe/checkout` → confirmación
-solo por webhook, con la RPC de marcar pagado ejecutable únicamente por `service_role`.
-
-**Reservas.** `laofi.reservas` + RPC `laofi_crear_reserva` (con límite de tasa). Tipo `ReservaInput`
-preparado; hoy `/reservar` deriva al teléfono.
-
-**`/admin`.** Supabase Auth + `usuarios_negocio` (rol `gestion`) con el `cliente_id` de La Ofi. La
-RLS (`laofi.es_gestor()`) ya permite al staff editar carta, precios, fotos, disponibilidad, menú del
-día, eventos y horario directamente sobre las tablas de `laofi`.
+1. Confirmar y aplicar las cuatro migraciones nuevas (ver §2) y revisar los advisors.
+2. Variables en Vercel: `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
+   (webhook en `/api/stripe/webhook`).
+3. Dar de alta al staff desde `/admin/staff` (o el dashboard de Supabase) y crear mesas y QR.
+4. Contenido real del restaurante: ver `CONTENT_NEEDED.md`.
+5. TicketBAI: ver `src/lib/ticketbai/README.md`.
 
 ## 6. Candidatos a paquete compartido de LocalIA
 
@@ -144,7 +182,7 @@ Copiados o adaptados de Palomita y que deberían vivir en un paquete común (p. 
 
 ## 7. Seguridad
 
-- Sin secretos en el repo; `.env*` ignorado salvo `.env.example`. En V1 no se usa `service_role`.
+- Sin secretos en el repo; `.env*` ignorado salvo `.env.example`. `service_role` solo en rutas de servidor (Stripe, TicketBAI, alta de staff), nunca en el navegador.
 - Cabeceras: `X-Content-Type-Options`, `Referrer-Policy`, `X-Frame-Options`, `Permissions-Policy`;
   `poweredByHeader: false`.
 - JSON-LD escapado (`<` → `<`).

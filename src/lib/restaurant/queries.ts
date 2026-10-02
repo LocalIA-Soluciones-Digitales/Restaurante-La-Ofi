@@ -1,6 +1,6 @@
 import "server-only";
 import type { HorarioDiaBd } from "@/lib/horario";
-import { getSiteKey, getSupabase } from "@/lib/supabase/client";
+import { rpcPublica } from "@/lib/supabase/rpc";
 import type { CartaCategoria, Evento, MenuDia } from "@/lib/restaurant/types";
 
 // Los datos de La Ofi viven en su propio schema (`laofi`), sin compartir tablas
@@ -10,13 +10,9 @@ import type { CartaCategoria, Evento, MenuDia } from "@/lib/restaurant/types";
 // o la RPC falla: quien llama decide si mostrar contenido de referencia o vacío.
 
 async function rpc<T>(fn: string, args: Record<string, unknown> = {}): Promise<T | null> {
-  const supabase = getSupabase();
-  const siteKey = getSiteKey();
-  if (!supabase || !siteKey) return null;
   try {
-    const { data, error } = await supabase.rpc(fn, { p_site_key: siteKey, ...args });
-    if (error) return null;
-    return data as T;
+    const r = await rpcPublica<T>(fn, args);
+    return r && !r.error ? r.data : null;
   } catch {
     return null;
   }

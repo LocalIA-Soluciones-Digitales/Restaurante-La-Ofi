@@ -52,3 +52,14 @@ export function hoyEnMadrid(ahora: Date = new Date()): string {
     day: "2-digit",
   }).format(ahora);
 }
+
+const HORA = new Intl.DateTimeFormat("es-ES", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Madrid" });
+
+/** "hoy a las 10:12" / "el 30 sept a las 18:40" para una marca de tiempo ISO. */
+export function formatearHoraActualizacion(iso: string, ahora: Date = new Date()): string {
+  const fecha = new Date(iso);
+  const hora = HORA.format(fecha);
+  if (hoyEnMadrid(fecha) === hoyEnMadrid(ahora)) return `hoy a las ${hora}`;
+  const { dia, mes } = formatearFechaCorta(hoyEnMadrid(fecha));
+  return `el ${dia} ${mes} a las ${hora}`;
+}

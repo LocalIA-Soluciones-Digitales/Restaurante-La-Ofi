@@ -28,14 +28,31 @@ export function Ubicacion({ t, horario, headingLevel = "h2" }: { t: Dictionary; 
   return (
     <section id="ubicacion" aria-labelledby="ubicacion-title" className="cv-auto bg-arena py-20 sm:py-28">
       <div className="container-page grid gap-10 lg:grid-cols-[1fr_1.3fr] lg:items-center">
-        <div className="reveal">
+        <div>
           <SectionHeader
             id="ubicacion-title"
             as={headingLevel}
             eyebrow="Ubicación"
             title="Cómo llegar a La Ofi"
-            lead="En el Parque Tecnológico de Bizkaia, junto a Ibaizabal bidea. Con aparcamiento amplio para venir en coche."
+            lead="En el edificio 502 del Parque Científico y Tecnológico de Bizkaia (campus Zamudio-Derio). Con aparcamiento amplio para venir en coche."
           />
+          <div className="mt-8 rounded-[1.5rem] border border-carbon/10 bg-crema/70 p-5">
+            <h3 className="font-sans text-sm font-semibold uppercase tracking-eyebrow text-terracota">Desde el Parque</h3>
+            <ul className="mt-3 grid gap-2 text-sm text-carbon">
+              <li className="flex gap-2">
+                <Icon name="briefcase" className="mt-0.5 h-4 w-4 shrink-0 text-marino" />
+                Edificio 502, dentro del propio campus: se llega andando desde las oficinas del Parque.
+              </li>
+              <li className="flex gap-2">
+                <Icon name="car" className="mt-0.5 h-4 w-4 shrink-0 text-marino" />
+                Aparcamiento para 220 coches.
+              </li>
+              <li className="flex gap-2">
+                <Icon name="pin" className="mt-0.5 h-4 w-4 shrink-0 text-marino" />
+                En Google Maps: <span className="font-mono">74WM+54 Derio</span>
+              </li>
+            </ul>
+          </div>
           <address className="mt-8 grid gap-5 not-italic">
             <p className="flex gap-3">
               <Icon name="pin" className="mt-0.5 h-5 w-5 shrink-0 text-terracota" />

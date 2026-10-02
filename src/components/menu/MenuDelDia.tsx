@@ -1,7 +1,7 @@
 import { AllergenList } from "@/components/menu/AllergenList";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SourceBadge } from "@/components/ui/SourceBadge";
-import { formatCentimos, formatearFechaLarga } from "@/lib/format";
+import { formatCentimos, formatearFechaLarga, formatearHoraActualizacion } from "@/lib/format";
 import type { ContentState, MenuDiaPlato, MenuDiaView } from "@/lib/restaurant/types";
 
 const GRUPOS = [
@@ -34,9 +34,12 @@ export function MenuDelDia({
   state,
   detalle = false,
   headingLevel: Heading = "h3",
+  live = false,
 }: {
   state: ContentState<MenuDiaView>;
   detalle?: boolean;
+  /** Muestra "En vivo · actualizado hoy a las 10:12" (solo con datos reales). */
+  live?: boolean;
   /** h3 dentro de una sección con h2 (home); h2 directamente bajo el h1 de la página. */
   headingLevel?: "h2" | "h3";
 }) {
@@ -54,11 +57,18 @@ export function MenuDelDia({
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-dashed border-carbon/15 bg-arena/60 px-6 py-5 sm:px-8">
         <div>
           <p className="eyebrow text-terracota">{menu.platos.length > 0 ? "Plato del día" : "Menú del día"}</p>
-          <p className="mt-1 font-display text-2xl capitalize text-carbon">
-            {menu.fecha ? formatearFechaLarga(menu.fecha) : "Entre semana"}
+          <p className="mt-1 font-display text-2xl text-carbon first-letter:uppercase">
+            {menu.fecha ? formatearFechaLarga(menu.fecha) : "entre semana"}
           </p>
         </div>
-        <SourceBadge fuente={menu.fuente} />
+        {live && state.status === "real" && menu.actualizadoEn ? (
+          <p className="inline-flex items-center gap-2 rounded-full bg-oliva-soft px-3 py-1 text-xs font-semibold text-oliva">
+            <span aria-hidden="true" className="h-2 w-2 rounded-full bg-oliva motion-safe:animate-pulse" />
+            Actualizado {formatearHoraActualizacion(menu.actualizadoEn)}
+          </p>
+        ) : (
+          <SourceBadge fuente={menu.fuente} />
+        )}
       </div>
 
       <div className={`grid gap-8 px-6 py-7 sm:px-8 ${menu.platos.length > 0 ? "" : "md:grid-cols-3"}`}>

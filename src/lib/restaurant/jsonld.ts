@@ -1,7 +1,7 @@
 import { SITE_URL } from "@/lib/env";
 import { horarioSchemaOrg, type Semana } from "@/lib/horario";
 import { SITE } from "@/lib/site";
-import type { CartaSeccion, EventoView } from "@/lib/restaurant/types";
+import type { CartaItem, CartaSeccion, EventoView } from "@/lib/restaurant/types";
 
 // JSON-LD solo con datos verificados. Menu y Event se generan únicamente a
 // partir de datos reales de Supabase (nunca del contenido de ejemplo).
@@ -33,6 +33,14 @@ export function restaurantJsonLd(semana: Semana | null) {
   };
 }
 
+function dietas(item: CartaItem): string[] {
+  const d: string[] = [];
+  if (item.etiquetas.includes("vegano")) d.push("https://schema.org/VeganDiet");
+  if (item.etiquetas.includes("vegetariano") || item.etiquetas.includes("vegano")) d.push("https://schema.org/VegetarianDiet");
+  if (item.etiquetas.includes("sin_gluten") && item.alergenosConfirmados) d.push("https://schema.org/GlutenFreeDiet");
+  return d;
+}
+
 export function menuJsonLd(secciones: CartaSeccion[]) {
   return {
     "@context": "https://schema.org",
@@ -49,6 +57,11 @@ export function menuJsonLd(secciones: CartaSeccion[]) {
         ...(item.precioCentimos !== null
           ? { offers: { "@type": "Offer", price: (item.precioCentimos / 100).toFixed(2), priceCurrency: "EUR" } }
           : {}),
+        // Nutrición y dietas solo con datos reales del restaurante (nunca ejemplos ni alérgenos sin confirmar).
+        ...(item.fuente === "supabase" && item.nutricion?.fuente === "restaurante" && item.nutricion.calorias !== null
+          ? { nutrition: { "@type": "NutritionInformation", calories: `${item.nutricion.calorias} kcal` } }
+          : {}),
+        ...(item.fuente === "supabase" && dietas(item).length > 0 ? { suitableForDiet: dietas(item) } : {}),
       })),
     })),
   };

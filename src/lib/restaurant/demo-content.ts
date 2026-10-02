@@ -1,5 +1,6 @@
+import { cartaItem } from "@/lib/carta";
 import { IMAGES } from "@/lib/images";
-import type { CartaSeccion, EventoView, MenuDiaView } from "@/lib/restaurant/types";
+import type { CartaItem, CartaSeccion, EventoView, MenuDiaView } from "@/lib/restaurant/types";
 
 // Contenido para la DEMO cuando Supabase todavía no tiene datos de La Ofi.
 // Solo se usa con NEXT_PUBLIC_SHOW_DEMO_CONTENT=true y SIEMPRE se marca en
@@ -10,9 +11,42 @@ import type { CartaSeccion, EventoView, MenuDiaView } from "@/lib/restaurant/typ
 //  - fuente "carta": plato de una foto de la carta subida por un cliente (2025). Sin precio legible.
 //  - fuente "opiniones": dato publicado por clientes (reseñas). Confirmar en el local.
 //  - fuente "ejemplo": estructura ilustrativa. Sin precios ni fechas inventadas.
-// Nunca se inventan precios, alérgenos ni fechas.
+// Nunca se inventan precios, alérgenos ni fechas. Las etiquetas solo se derivan
+// del propio dato publicado (categoría "Para picotear", "a la parrilla", horario de
+// desayunos). Los únicos valores ilustrativos son los nutricionales de dos platos,
+// con fuente "ejemplo" (la web los marca "Valores de ejemplo, no reales").
 
 const img = (key: keyof typeof IMAGES) => ({ src: IMAGES[key].src.src, alt: IMAGES[key].alt });
+
+// Extras de la demo para enseñar la carta interactiva sin inventar datos reales:
+// la Clásica tiene como opciones exactamente las de su descripción publicada, y
+// dos tostadas muestran el bloque nutricional con valores de EJEMPLO marcados.
+const EXTRA_TOSTADAS: Record<string, Partial<CartaItem>> = {
+  Clásica: {
+    modificadores: [
+      {
+        id: "demo-clasica-con",
+        nombre: "Con",
+        tipo: "unico",
+        obligatorio: true,
+        max_opciones: null,
+        opciones: ["Mermelada", "Mantequilla", "Aceite", "Tomate"].map((nombre, i) => ({
+          id: `demo-clasica-${i}`,
+          nombre,
+          precio_extra_centimos: 0,
+        })),
+      },
+    ],
+  },
+  Revuelta: {
+    ingredientes: ["Pan de masa madre", "Queso cottage", "Huevo revuelto", "Jamón ibérico"],
+    nutricion: { calorias: 480, proteinas: 28, carbohidratos: 38, grasas: 22, fuente: "ejemplo" },
+  },
+  Burrata: {
+    ingredientes: ["Pan de masa madre", "Burrata", "Melocotón a la plancha", "Jamón ibérico"],
+    nutricion: { calorias: 520, proteinas: 22, carbohidratos: 44, grasas: 28, fuente: "ejemplo" },
+  },
+};
 
 export const DEMO_CARTA: CartaSeccion[] = [
   {
@@ -30,16 +64,19 @@ export const DEMO_CARTA: CartaSeccion[] = [
       { n: "Bonita", d: "Tortilla francesa de bonito y aguacate", p: 600, i: img("tostadaBonita") },
       { n: "Americana", d: "Bacon y huevo frito", p: 650 },
       { n: "Bowl de yogur", d: "Muesli, miel y fruta tropical de temporada", p: 450 },
-    ].map((t, idx) => ({
-      id: `demo-tostada-${idx}`,
-      nombre: t.n,
-      descripcion: t.d,
-      precioCentimos: t.p,
-      imagen: t.i ?? null,
-      alergenos: [],
-      destacado: false,
-      fuente: "instagram" as const,
-    })),
+    ].map((t, idx) =>
+      cartaItem({
+        id: `demo-tostada-${idx}`,
+        nombre: t.n,
+        descripcion: t.d,
+        precioCentimos: t.p,
+        imagen: t.i ?? null,
+        momento: ["desayuno"],
+        estacion: "barra",
+        fuente: "instagram",
+        ...EXTRA_TOSTADAS[t.n],
+      }),
+    ),
   },
   {
     id: "demo-picotear",
@@ -57,16 +94,16 @@ export const DEMO_CARTA: CartaSeccion[] = [
       { n: "Pulpo a la parrilla", d: null, i: img("pulpoBrasa") },
       { n: "Gambas al ajillo", d: "10 unidades" },
       { n: "Morcilla a la brasa", d: null },
-    ].map((t, idx) => ({
-      id: `demo-picotear-${idx}`,
-      nombre: t.n,
-      descripcion: t.d,
-      precioCentimos: null,
-      imagen: t.i ?? null,
-      alergenos: [],
-      destacado: false,
-      fuente: "carta" as const,
-    })),
+    ].map((t, idx) =>
+      cartaItem({
+        id: `demo-picotear-${idx}`,
+        nombre: t.n,
+        descripcion: t.d,
+        imagen: t.i ?? null,
+        etiquetas: /parrilla|brasa/i.test(t.n) ? ["para_picar", "brasa"] : ["para_picar"],
+        fuente: "carta",
+      }),
+    ),
   },
   {
     id: "demo-brasa",
@@ -80,16 +117,16 @@ export const DEMO_CARTA: CartaSeccion[] = [
       { n: "Secreto ibérico a la brasa", d: null },
       { n: "Rabo de toro", d: "Cocido y dorado en la parrilla" },
       { n: "Carrilleras al Pedro Ximénez", d: null },
-    ].map((t, idx) => ({
-      id: `demo-brasa-${idx}`,
-      nombre: t.n,
-      descripcion: t.d,
-      precioCentimos: null,
-      imagen: null,
-      alergenos: [],
-      destacado: false,
-      fuente: "prensa" as const,
-    })),
+    ].map((t, idx) =>
+      cartaItem({
+        id: `demo-brasa-${idx}`,
+        nombre: t.n,
+        descripcion: t.d,
+        etiquetas: /brasa|parrilla/i.test(`${t.n} ${t.d ?? ""}`) ? ["brasa"] : [],
+        momento: ["mediodia", "tarde"],
+        fuente: "prensa",
+      }),
+    ),
   },
 ];
 
@@ -101,6 +138,7 @@ export const DEMO_MENU_DIA: MenuDiaView = {
   fecha: null,
   precioCentimos: 890,
   incluye: ["Bebida", "Pan", "Postre"],
+  actualizadoEn: null,
   notas: "Precio e incluidos según opiniones de clientes en internet: confírmalos en el local. Los platos son ejemplos de días anteriores; cada día el encargado publicará aquí el plato del día.",
   platos: [
     { id: "d1", tipo: "plato", nombre: "Secreto con patatas", descripcion: null, alergenos: [], orden: 1 },
