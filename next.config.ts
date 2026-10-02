@@ -9,6 +9,8 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Backend local de desarrollo (LAOFI_PGLITE=1): PGlite queda fuera del bundle.
+  serverExternalPackages: ["@electric-sql/pglite"],
   experimental: {
     // CSS crítico incrustado en el HTML: elimina la petición CSS que bloquea el
     // primer render (mejora el LCP en móvil; el CSS total es pequeño, ~8 KB).
