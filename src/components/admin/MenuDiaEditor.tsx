@@ -94,8 +94,6 @@ export function MenuDiaEditor() {
     return () => {
       vivo = false;
     };
-    // `aplicar` solo usa setters de estado (estables).
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fecha]);
 
   const copiarUltimo = async () => {

@@ -28,7 +28,7 @@ export function Ubicacion({ t, horario, headingLevel = "h2" }: { t: Dictionary; 
   return (
     <section id="ubicacion" aria-labelledby="ubicacion-title" className="cv-auto bg-arena py-20 sm:py-28">
       <div className="container-page grid gap-10 lg:grid-cols-[1fr_1.3fr] lg:items-center">
-        <div className="reveal">
+        <div>
           <SectionHeader
             id="ubicacion-title"
             as={headingLevel}

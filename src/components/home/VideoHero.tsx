@@ -76,6 +76,7 @@ export function VideoHero({ franjaInicial, estadoInicial, semana, links, labels 
                 alt={activa ? img.alt : ""}
                 fill
                 priority={f === franjaInicial}
+                quality={60}
                 sizes="100vw"
                 className="animate-kenburns object-cover"
               />

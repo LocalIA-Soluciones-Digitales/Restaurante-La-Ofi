@@ -34,6 +34,7 @@ export default async function EspaciosPage({ params }: Params) {
         image={IMAGES.comedorRatan}
       />
       <div className="container-page py-16 sm:py-24">
+        <h2 className="sr-only">Nuestros espacios</h2>
         <ul className="grid gap-6 md:grid-cols-2">
           {ESPACIOS.map((e) => (
             <li key={e.id} className="reveal">

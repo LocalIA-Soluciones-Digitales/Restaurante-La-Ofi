@@ -18,8 +18,6 @@ export const viewport: Viewport = {
   themeColor: "#0B1424",
   width: "device-width",
   initialScale: 1,
-  // Pantallas táctiles de servicio: sin zoom accidental al tocar rápido.
-  maximumScale: 1,
 };
 
 // Aplica el tema guardado antes de pintar (sin parpadeo claro→oscuro).
@@ -31,7 +29,8 @@ export default function AdminRootLayout({ children }: { children: React.ReactNod
       <head>
         <script dangerouslySetInnerHTML={{ __html: TEMA }} />
       </head>
-      <body className="min-h-screen bg-crema font-sans text-carbon antialiased dark:bg-noche dark:text-crema">{children}</body>
+      {/* touch-manipulation: sin zoom por doble toque en las pantallas de servicio, sin impedir el zoom con dos dedos (accesibilidad). */}
+      <body className="min-h-screen touch-manipulation bg-crema font-sans text-carbon antialiased dark:bg-noche dark:text-crema">{children}</body>
     </html>
   );
 }

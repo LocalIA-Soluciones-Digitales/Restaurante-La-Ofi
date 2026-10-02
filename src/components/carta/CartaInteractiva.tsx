@@ -87,7 +87,7 @@ export function CartaInteractiva({
                   className="inline-flex min-h-10 items-center rounded-full bg-arena px-4 text-sm font-semibold text-carbon transition-colors hover:bg-arena-2 aria-[current=true]:bg-marino aria-[current=true]:text-crema"
                 >
                   {s.nombre}
-                  <span className="ml-1.5 text-xs opacity-60">{s.items.length}</span>
+                  <span className="ml-1.5 text-xs opacity-80">{s.items.length}</span>
                 </a>
               </li>
             ))}

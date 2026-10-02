@@ -55,7 +55,7 @@ export function PageHero({
         {video ? (
           <AmbientVideo video={video} threshold={0.01} />
         ) : image ? (
-          <Image src={image.src} alt="" fill priority sizes="100vw" className="animate-kenburns object-cover" />
+          <Image src={image.src} alt="" fill priority quality={60} sizes="100vw" className="animate-kenburns object-cover" />
         ) : (
           <div className={`absolute inset-0 ${noche ? "hex-pattern-night" : "hex-pattern-night opacity-80"}`} />
         )}
