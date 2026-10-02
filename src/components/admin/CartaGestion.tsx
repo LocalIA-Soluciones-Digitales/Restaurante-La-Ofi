@@ -111,7 +111,7 @@ export function CartaGestion(props: { categorias: CategoriaBd[]; productos: Prod
     <div className="grid gap-4">
       <div role="tablist" className="flex w-fit rounded-xl bg-arena p-1 dark:bg-noche-2">
         {(["productos", "categorias"] as const).map((t) => (
-          <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)} className="min-h-11 rounded-lg px-5 text-sm font-semibold capitalize aria-selected:bg-marino aria-selected:text-crema dark:aria-selected:bg-neon dark:aria-selected:text-noche">
+          <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)} className="min-h-11 rounded-lg px-5 text-sm font-semibold capitalize aria-selected:bg-[theme(colors.marino.DEFAULT)] aria-selected:text-crema dark:aria-selected:bg-neon dark:aria-selected:text-noche">
             {t === "productos" ? "Productos" : "Categorías"}
           </button>
         ))}

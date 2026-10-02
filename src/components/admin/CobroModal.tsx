@@ -67,7 +67,7 @@ export function CobroModal({
                 aria-pressed={partes === n}
                 disabled={pagadas > 0}
                 onClick={() => setPartes(n)}
-                className="min-h-11 min-w-11 rounded-xl border border-carbon/15 px-3 font-semibold aria-pressed:border-marino aria-pressed:bg-marino aria-pressed:text-crema disabled:opacity-40 dark:border-crema/15 dark:aria-pressed:bg-neon dark:aria-pressed:text-noche"
+                className="min-h-11 min-w-11 rounded-xl border border-carbon/15 px-3 font-semibold aria-pressed:border-marino aria-pressed:bg-[theme(colors.marino.DEFAULT)] aria-pressed:text-crema disabled:opacity-40 dark:border-crema/15 dark:aria-pressed:bg-neon dark:aria-pressed:text-noche"
               >
                 {n === 1 ? "Entera" : n}
               </button>

@@ -137,7 +137,7 @@ export function SalonBoard({ inicial, rol, fiscal }: { inicial: SalonData; rol: 
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <div role="tablist" aria-label="Vista" className="flex rounded-xl bg-arena p-1 dark:bg-noche-2">
             {(["2d", "3d"] as const).map((v) => (
-              <button key={v} role="tab" aria-selected={vista === v} onClick={() => setVista(v)} className="min-h-10 rounded-lg px-4 text-sm font-semibold uppercase aria-selected:bg-marino aria-selected:text-crema dark:aria-selected:bg-neon dark:aria-selected:text-noche">
+              <button key={v} role="tab" aria-selected={vista === v} onClick={() => setVista(v)} className="min-h-10 rounded-lg px-4 text-sm font-semibold uppercase aria-selected:bg-[theme(colors.marino.DEFAULT)] aria-selected:text-crema dark:aria-selected:bg-neon dark:aria-selected:text-noche">
                 {v}
               </button>
             ))}

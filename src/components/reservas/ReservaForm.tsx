@@ -78,7 +78,7 @@ export function ReservaForm({
               ...(eventos.length ? [["evento", "Un evento"]] : []),
             ] as [ReservaWeb["espacio"], string][]
           ).map(([k, label]) => (
-            <button key={k} type="button" aria-pressed={f.espacio === k} onClick={() => set({ espacio: k })} className="min-h-11 rounded-full border border-carbon/15 px-4 text-sm font-semibold aria-pressed:border-marino aria-pressed:bg-marino aria-pressed:text-crema">
+            <button key={k} type="button" aria-pressed={f.espacio === k} onClick={() => set({ espacio: k })} className="min-h-11 rounded-full border border-carbon/15 px-4 text-sm font-semibold aria-pressed:border-marino aria-pressed:bg-[theme(colors.marino.DEFAULT)] aria-pressed:text-crema">
               {label}
             </button>
           ))}
