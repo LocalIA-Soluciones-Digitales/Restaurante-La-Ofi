@@ -1,7 +1,7 @@
 // Carta extendida: nutrición solo con procedencia, alérgenos confirmados,
 // modificadores, etiquetas y la RPC pública ampliada.
 import { beforeAll, describe, expect, it } from "vitest";
-import { crearBd, read, STAFF_OTRO, type TestDb } from "./helpers";
+import { crearBd, read, revertirHasta, STAFF_OTRO, type TestDb } from "./helpers";
 
 let t: TestDb;
 let brasa: string;
@@ -140,7 +140,7 @@ describe("seed opcional de carta enriquecida", () => {
 
 describe("reversión", () => {
   it("quita lo añadido y deja la carta como antes", async () => {
-    await t.db.exec(read("rollback/20261002100000_laofi_carta_extendida.down.sql"));
+    await revertirHasta(t.db, "20261002100000");
     const { cols } = await t.one<{ cols: number }>(
       "select count(*)::int as cols from information_schema.columns where table_schema = 'laofi' and table_name = 'productos' and column_name = 'calorias'",
     );

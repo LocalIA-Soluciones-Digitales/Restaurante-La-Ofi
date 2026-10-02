@@ -2,7 +2,7 @@
 // pedido con precios y modificadores validados en servidor, recogida por franja,
 // pedido de grupo, avisos, pagos solo por service_role y transiciones de estado.
 import { beforeAll, describe, expect, it } from "vitest";
-import { crearBd, read, STAFF_LAOFI, type TestDb } from "./helpers";
+import { crearBd, read, revertirHasta, STAFF_LAOFI, type TestDb } from "./helpers";
 
 let t: TestDb;
 let mesaToken: string;
@@ -237,7 +237,7 @@ describe("estados y permisos", () => {
 
 describe("reversión", () => {
   it("elimina el salón y los pedidos sin tocar la carta", async () => {
-    await t.db.exec(read("rollback/20261002110000_laofi_salon_pedidos.down.sql"));
+    await revertirHasta(t.db, "20261002110000");
     const r = await t.one<{ pedidos: number; productos: number }>(
       `select (select count(*)::int from pg_tables where schemaname = 'laofi' and tablename = 'pedidos') as pedidos,
               (select count(*)::int from laofi.productos) as productos`,

@@ -5,6 +5,9 @@ import type { Config } from "tailwindcss";
 // jardín vertical y lavanda del rótulo de neón "la ofi" (solo de noche).
 const config: Config = {
   content: ["./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
+  // Modo oscuro solo donde se pide (panel /admin y pantalla de cocina): la web
+  // pública no lo usa. data-theme="dark" en cualquier ancestro.
+  darkMode: ["selector", '[data-theme="dark"]'],
   theme: {
     extend: {
       colors: {

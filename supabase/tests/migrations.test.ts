@@ -236,7 +236,7 @@ describe("aislamiento y permisos", () => {
 
 describe("reversión", () => {
   it("elimina todo lo de La Ofi sin tocar el registro de tenants", async () => {
-    await db.exec(read("rollback/20261001150000_laofi.down.sql"));
+    for (const f of readdirSync(path.join(ROOT, "rollback")).filter((x) => x.endsWith(".down.sql")).sort().reverse()) await db.exec(read(`rollback/${f}`));
     const r = await one<{ schema: number; rpc: number; clientes: number }>(
       `select (select count(*)::int from pg_namespace where nspname = 'laofi') as schema,
               (select count(*)::int from pg_proc where proname like 'laofi\\_%') as rpc,

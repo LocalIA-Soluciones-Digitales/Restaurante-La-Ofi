@@ -1,4 +1,4 @@
-import type { CSSProperties, ElementType } from "react";
+import type { CSSProperties } from "react";
 import { ReplayOnView } from "@/components/motion/ReplayOnView";
 
 /**
@@ -17,7 +17,7 @@ export function WordReveal({
   nowrapLines = false,
 }: {
   lines: string[];
-  as?: ElementType;
+  as?: "span" | "div" | "p" | "h1" | "h2" | "h3";
   className?: string;
   delayMs?: number;
   wordClassName?: string;
