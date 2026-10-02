@@ -114,7 +114,7 @@ export function ReservasBoard({ mesas, zonas, eventos }: { mesas: MesaSalon[]; z
         </button>
         <div role="tablist" className="flex rounded-xl bg-arena p-1 dark:bg-noche-2">
           {(["lista", "linea"] as const).map((v) => (
-            <button key={v} role="tab" aria-selected={vista === v} onClick={() => setVista(v)} className="min-h-9 rounded-lg px-3 text-sm font-semibold aria-selected:bg-marino aria-selected:text-crema dark:aria-selected:bg-neon dark:aria-selected:text-noche">
+            <button key={v} role="tab" aria-selected={vista === v} onClick={() => setVista(v)} className="min-h-9 rounded-lg px-3 text-sm font-semibold aria-selected:bg-[theme(colors.marino.DEFAULT)] aria-selected:text-crema dark:aria-selected:bg-neon dark:aria-selected:text-noche">
               {v === "lista" ? "Lista" : "Línea de tiempo"}
             </button>
           ))}
@@ -374,7 +374,7 @@ function ReservaForm({
                 type="button"
                 aria-pressed={f.mesas.includes(m.id)}
                 onClick={() => set({ mesas: f.mesas.includes(m.id) ? f.mesas.filter((x) => x !== m.id) : [...f.mesas, m.id] })}
-                className="min-h-10 rounded-xl border border-carbon/15 px-3 text-sm aria-pressed:border-marino aria-pressed:bg-marino aria-pressed:text-crema dark:border-crema/15 dark:aria-pressed:bg-neon dark:aria-pressed:text-noche"
+                className="min-h-10 rounded-xl border border-carbon/15 px-3 text-sm aria-pressed:border-marino aria-pressed:bg-[theme(colors.marino.DEFAULT)] aria-pressed:text-crema dark:border-crema/15 dark:aria-pressed:bg-neon dark:aria-pressed:text-noche"
               >
                 {m.numero} <span className="opacity-60">({m.capacidad})</span>
               </button>

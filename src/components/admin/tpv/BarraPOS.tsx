@@ -160,7 +160,7 @@ export function BarraPOS({
                 role="tab"
                 aria-selected={cat === s.id}
                 onClick={() => setCat(s.id)}
-                className="min-h-12 shrink-0 rounded-xl border border-carbon/15 bg-white px-4 text-sm font-semibold aria-selected:border-marino aria-selected:bg-marino aria-selected:text-crema dark:border-crema/15 dark:bg-noche-2 dark:aria-selected:bg-neon dark:aria-selected:text-noche"
+                className="min-h-12 shrink-0 rounded-xl border border-carbon/15 bg-white px-4 text-sm font-semibold aria-selected:border-marino aria-selected:bg-[theme(colors.marino.DEFAULT)] aria-selected:text-crema dark:border-crema/15 dark:bg-noche-2 dark:aria-selected:bg-neon dark:aria-selected:text-noche"
               >
                 {s.nombre}
               </button>
@@ -331,7 +331,7 @@ function ElegirOpciones({ item, onClose, onAnadir }: { item: CartaItem; onClose:
                         return [...prev.filter((s) => s.modificadorId !== m.id), { modificadorId: m.id, opcionIds: nuevas }];
                       })
                     }
-                    className="min-h-12 rounded-xl border border-carbon/15 px-4 font-semibold aria-pressed:border-marino aria-pressed:bg-marino aria-pressed:text-crema dark:border-crema/15 dark:aria-pressed:bg-neon dark:aria-pressed:text-noche"
+                    className="min-h-12 rounded-xl border border-carbon/15 px-4 font-semibold aria-pressed:border-marino aria-pressed:bg-[theme(colors.marino.DEFAULT)] aria-pressed:text-crema dark:border-crema/15 dark:aria-pressed:bg-neon dark:aria-pressed:text-noche"
                   >
                     {o.nombre}
                     {o.precio_extra_centimos > 0 ? ` +${formatCentimos(o.precio_extra_centimos)}` : ""}
