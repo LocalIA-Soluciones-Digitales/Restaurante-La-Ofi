@@ -26,6 +26,15 @@ export interface Ventas {
   por_metodo: { metodo: string; importe_centimos: number }[];
 }
 
+/** Servicio de sala (laofi_admin_ocupacion): se mide cada vez que se libera una mesa. */
+export interface Ocupacion {
+  desde_medicion: string | null;
+  resumen: { ocupaciones: number; comensales: number; minutos_medios: number; importe_medio_centimos: number };
+  por_zona: { zona: string; mesas: number; ocupaciones: number; rotacion: number; minutos_medios: number; comensales: number; importe_medio_centimos: number }[];
+}
+
+const duracion = (min: number) => (min >= 60 ? `${Math.floor(min / 60)} h ${String(min % 60).padStart(2, "0")} min` : `${min} min`);
+
 const desplazar = (f: string, n: number) => {
   const d = new Date(`${f}T12:00:00Z`);
   d.setUTCDate(d.getUTCDate() + n);
@@ -49,12 +58,17 @@ export function VentasPanel() {
   const [hasta, setHasta] = useState(hoyEnMadrid());
   const [desde, setDesde] = useState(desplazar(hoyEnMadrid(), -6));
   const [v, setV] = useState<Ventas | null>(null);
+  const [o, setO] = useState<Ocupacion | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const cargar = useCallback(async () => {
-    const r = await rpcAdmin<Ventas>("laofi_admin_ventas", { p_desde: desde, p_hasta: hasta });
+    const [r, oc] = await Promise.all([
+      rpcAdmin<Ventas>("laofi_admin_ventas", { p_desde: desde, p_hasta: hasta }),
+      rpcAdmin<Ocupacion>("laofi_admin_ocupacion", { p_desde: desde, p_hasta: hasta }),
+    ]);
     if (r.ok) setV(r.data);
     else setError(r.error);
+    if (oc.ok) setO(oc.data);
   }, [desde, hasta]);
 
   useEffect(() => {
@@ -160,6 +174,59 @@ export function VentasPanel() {
               <BarChart titulo="Ventas por hora (todo el periodo)" datos={porHora.map((h) => ({ etiqueta: `${h.hora}h`, valor: h.ventas_centimos, detalle: `${h.pedidos} pedidos` }))} formato={formatCentimos} />
             </section>
           </div>
+
+          {o ? (
+            <section className={`${card} p-5 break-inside-avoid`} aria-labelledby="sala-t">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <h2 id="sala-t" className="font-display text-xl">
+                  Servicio de sala
+                </h2>
+                <p className="text-xs opacity-60">
+                  {o.desde_medicion
+                    ? `Se mide al liberar cada mesa, desde el ${new Date(o.desde_medicion).toLocaleDateString("es-ES", { timeZone: "Europe/Madrid" })}.`
+                    : "Se empieza a medir cuando se libere la primera mesa desde el salón."}
+                </p>
+              </div>
+              {o.resumen.ocupaciones === 0 ? (
+                <p className="mt-2 text-sm opacity-60">Sin mesas liberadas en este periodo.</p>
+              ) : (
+                <>
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                    <Cifra label="Mesas servidas" valor={o.resumen.ocupaciones} icon="users" />
+                    <Cifra label="Tiempo medio en mesa" valor={duracion(o.resumen.minutos_medios)} icon="clock" />
+                    <Cifra label="Comensales" valor={o.resumen.comensales} icon="utensils" />
+                    <Cifra label="Importe medio por mesa" valor={formatCentimos(o.resumen.importe_medio_centimos)} icon="cash" />
+                  </div>
+                  <table className="mt-4 w-full text-sm">
+                    <thead>
+                      <tr className="text-left text-xs uppercase tracking-wider opacity-60">
+                        <th className="pb-2">Zona</th>
+                        <th className="pb-2 text-right">Mesas</th>
+                        <th className="pb-2 text-right">Servidas</th>
+                        <th className="pb-2 text-right" title="Veces que se ocupa cada mesa al día, de media">
+                          Rotación/día
+                        </th>
+                        <th className="pb-2 text-right">Tiempo medio</th>
+                        <th className="pb-2 text-right">Importe medio</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-carbon/10 dark:divide-crema/10">
+                      {o.por_zona.map((z) => (
+                        <tr key={z.zona}>
+                          <td className="py-1.5 font-semibold">{z.zona}</td>
+                          <td className="py-1.5 text-right tabular-nums">{z.mesas}</td>
+                          <td className="py-1.5 text-right tabular-nums">{z.ocupaciones}</td>
+                          <td className="py-1.5 text-right tabular-nums">{z.ocupaciones ? Number(z.rotacion).toLocaleString("es-ES", { maximumFractionDigits: 2 }) : "—"}</td>
+                          <td className="py-1.5 text-right tabular-nums">{z.ocupaciones ? duracion(z.minutos_medios) : "—"}</td>
+                          <td className="py-1.5 text-right tabular-nums">{z.ocupaciones ? formatCentimos(z.importe_medio_centimos) : "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </>
+              )}
+            </section>
+          ) : null}
 
           <div className="grid gap-4 xl:grid-cols-3">
             <Tabla

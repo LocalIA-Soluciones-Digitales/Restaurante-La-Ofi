@@ -42,7 +42,7 @@ export default async function AdminInicio() {
           <h2 id="avisos-t" className="font-display text-2xl">
             Avisos de mesa
           </h2>
-          <AvisosMesas inicial={avisos} />
+          <AvisosMesas inicial={avisos} yo={sesion.userId} />
         </section>
       ) : null}
 
