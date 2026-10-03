@@ -25,18 +25,10 @@ OUT = Path(__file__).resolve().parent.parent / "public" / "images" / "plantilla"
 
 # clave -> (id de Unsplash, centro del recorte móvil 4:5 relativo (x, y))
 FOTOS: dict[str, tuple[str, tuple[float, float]]] = {
-    "tostadas-aguacate": ("QcUJLRMDryQ", (0.5, 0.5)),
     "tabla-tostadas": ("2IxTgsgFi-s", (0.45, 0.5)),
-    "burrata": ("QiJ5Q-LvJp0", (0.5, 0.72)),
     "huevos-revueltos": ("qla1_604R4c", (0.5, 0.45)),
-    "pulpo": ("zbO0yIqHk0g", (0.45, 0.5)),
     "pintxos-barra": ("MFgpVO9Odms", (0.4, 0.5)),
-    "barra-pintxos-gente": ("O1R2Vdpo7hs", (0.5, 0.5)),
-    "comedor": ("Wzo_34cS5bA", (0.5, 0.5)),
-    "brindis": ("6ciLddToTgM", (0.5, 0.5)),
-    "terraza-noche": ("nFRRqDEkzMs", (0.45, 0.5)),
     "terraza-cena": ("L90oTq9DIK4", (0.5, 0.5)),
-    "cafe-cruasan": ("MV5NQ8oV5LU", (0.5, 0.5)),
     "cafe-latte": ("HtH05rdNLGE", (0.5, 0.5)),
     "parrilla-pescado": ("3_M4NxDo89A", (0.5, 0.5)),
     "parrilla-carne": ("Xm8XD2b9AUs", (0.55, 0.5)),

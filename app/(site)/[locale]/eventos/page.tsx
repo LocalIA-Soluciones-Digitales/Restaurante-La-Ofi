@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { VIDEOS } from "@/lib/media";
 import { IMAGES } from "@/lib/images";
 import { EventCard } from "@/components/eventos/EventCard";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -50,7 +49,6 @@ export default async function EventosPage({ params }: Params) {
         title="En La Ofi siempre pasa algo"
         lead="Un tardeo al mes en la terraza, partidos en pantalla grande y celebraciones a medida: bautizos, comuniones, postbodas o comidas de empresa."
         image={IMAGES.salonNoche}
-        ambiente={VIDEOS.ambienteNeon}
         noche
       />
       <div className="container-wide pb-20 sm:pb-28">

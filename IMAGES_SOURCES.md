@@ -32,6 +32,38 @@ del C.F. Derio.
 **Placeholders de marca** (sin foto, con textura hexagonal y la etiqueta "Foto pendiente"): tortilla
 (home → "Para cada momento" y sección de tostadas) y pintxos de la barra. Nunca se usan fotos de stock.
 
+## Fotos y vídeos mejorados / generados con IA (`public/images/ia/`, `public/videos/ia/`)
+
+Añadidos el 2026-10-03. LocalIA los generó con Gemini (imagen) y Veo (vídeo) **a partir de las fotos
+reales** de la carpeta de originales, con prompts que piden la misma escena sin añadir comida,
+objetos ni personas. Revisados uno a uno (el neón dice «la ofi», sin elementos inventados).
+Pies en la web: fotos «mejorada con IA», vídeos «Vídeo generado con IA a partir de una foto del local».
+
+| Archivo | Partió de | Uso |
+|---|---|---|
+| `ia/tostada-burrata.webp` (1856×2304) | `pintxos/tostada-burrata` (oficial) | hero de mañana, platos, carta |
+| `ia/tostada-bonita.webp` (1856×2304) | `pintxos/tostada-bonita` (oficial) | «9:00», platos, carta |
+| `ia/pulpo.webp` (1856×2304) | `carta/pulpo-brasa-deia` (Deia) | hero de mediodía, platos, carta |
+| `ia/comedor.webp` (2400×1792) | `hero/comedor-ratan-avdg` (AVDG) | comedor, «Mediodía», reservar |
+| `ia/comedor-panoramica.webp` (2400×1340) | `hero/comedor-ratan-avdg` (AVDG) | cabecera de Espacios |
+| `ia/salon.webp` (2400×1792) | `eventos/salon-celebracion-noche` (oficial) | hero de tarde, empresas, eventos |
+| `ia/barra-neon.webp` (2400×1792) | `local/rotulo-neon-rg` (cliente, Restaurant Guru) | barra, «7:30» |
+| `ia/terraza-noche.webp` (2400×1340) | `local/terraza-noche-deia` (Deia) | terraza, «Viernes», contacto |
+
+| Vídeo (720p, bucle) | Partió de | Uso | Tipo |
+|---|---|---|---|
+| `burrata` | `ia/tostada-burrata` | hero de mañana | `ia` |
+| `pulpo` | `ia/pulpo` | hero de mediodía | `ia` |
+| `salon` | `ia/salon` | hero de tarde | `ia` |
+| `comedor` | `ia/comedor` | espacios (comedor) | `ia` |
+| `barra` | `ia/barra-neon` | espacios (barra) | `ia` |
+| `terraza` | `ia/terraza-noche` | espacios (terraza) | `ia` |
+| `parrilla` | ninguna (texto) | sección «A la brasa» | `ia-ilustrativo` («Imagen ilustrativa») |
+
+Las fotos de terceros siguen siendo de terceros aunque estén mejoradas: para producción, sustituir
+por fotos propias. Se regeneran con `python scripts/fotos-ia.py <carpeta>` y
+`python scripts/videos-web.py <carpeta>` (bucle sin salto: ida y vuelta o fundido).
+
 ## Fotos de PLANTILLA (stock, `public/images/plantilla/`) — temporales
 
 Añadidas el 2026-10-03 a petición de LocalIA para que la web no dependa de las fotos reales de baja
@@ -86,9 +118,9 @@ carpeta, añadir su línea en `FOTOS` del script, ejecutarlo y apuntar `src/lib/
 Las fotos de plato se asocian a su plato de la carta en `src/lib/carta-fotos.ts` (solo ese plato,
 en esa sección). Una foto subida desde `/admin` para el plato tiene prioridad.
 
-## Vídeo
+## Vídeo (histórico)
 
-No hay ningún vídeo accesible del restaurante. Todos los huecos de vídeo real de
+No hay ningún vídeo grabado en el restaurante (ver arriba los generados con IA). Todos los huecos de vídeo real de
 `src/lib/media.ts` (`VIDEOS.heroManana`, `heroMediodia`, `heroNoche`, `brasa`, `pintxos`,
 `platoDia`, `despacho`, `rotulo`) están a `null`: la web muestra la foto y, encima, como mucho una
 capa ambiental abstracta.

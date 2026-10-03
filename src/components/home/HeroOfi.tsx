@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { AmbientVideo } from "@/components/media/AmbientVideo";
 import { Photo } from "@/components/media/Photo";
 import { EstadoAhora } from "@/components/ui/EstadoAhora";
 import type { EstadoAhora as Estado, Semana } from "@/lib/horario";
 import { MOMENTOS_HERO } from "@/lib/home-content";
 import { creditoFoto, IMAGES } from "@/lib/images";
-import { franjaDelDia, type Franja } from "@/lib/media";
+import { creditoVideo, franjaDelDia, type Franja } from "@/lib/media";
 
 interface Props {
   franjaInicial: Franja;
@@ -18,18 +19,21 @@ interface Props {
 }
 
 /**
- * Hero de la home: la comida real manda. En móvil la foto del plato abre la
- * pantalla y debajo va la marca; en escritorio, composición editorial plato +
- * espacio. La foto depende de la hora en Madrid (y se puede cambiar), el resto
- * no cambia: La Ofi es la misma por la mañana que por la tarde.
+ * Hero de la home. Texto a la izquierda alineado con la rejilla; a la derecha, la
+ * comida a sangre hasta el borde de la pantalla y a toda altura. Cada momento del
+ * día tiene foto nítida (LCP) y un vídeo que aparece encima con un fundido cuando
+ * arranca; con "reducir movimiento" o ahorro de datos se queda la foto.
+ * En móvil la foto abre la pantalla y debajo va la marca.
  */
 export function HeroOfi({ franjaInicial, estadoInicial, semana, links, labels }: Props) {
   const [franja, setFranja] = useState<Franja>(franjaInicial);
-  // Capas montadas: solo la inicial al cargar (nada compite con el LCP). Las
-  // demás se montan al apuntar o enfocar su botón, así la foto ya está bajando
-  // cuando se pulsa y el cambio es un fundido, no un hueco.
+  // Solo la capa inicial al cargar (nada compite con el LCP); las demás se montan
+  // al apuntar o enfocar su botón, para que el cambio sea un fundido.
   const [montadas, setMontadas] = useState<Franja[]>([franjaInicial]);
   const precargar = (f: Franja) => setMontadas((m) => (m.includes(f) ? m : [...m, f]));
+  // Vídeo del hero solo en escritorio: en móvil la foto nítida carga antes y no gasta datos.
+  const [conVideo, setConVideo] = useState(false);
+  useEffect(() => setConVideo(window.matchMedia("(min-width: 1024px)").matches), []);
 
   useEffect(() => {
     const real = franjaDelDia();
@@ -46,17 +50,18 @@ export function HeroOfi({ franjaInicial, estadoInicial, semana, links, labels }:
 
   const actual = MOMENTOS_HERO.find((m) => m.franja === franja) ?? MOMENTOS_HERO[0]!;
   const principal = IMAGES[actual.principal];
-  // Con foto de plantilla el pie no describe el plato de La Ofi: solo «Imagen ilustrativa».
-  const pie = principal.kind === "ilustrativa" ? creditoFoto(principal) : [actual.pie, creditoFoto(principal)].filter(Boolean).join(" · ");
+  const credito = (actual.video && conVideo ? creditoVideo(actual.video) : null) ?? creditoFoto(principal);
+  const pie = principal.kind === "ilustrativa" ? credito : [actual.pie, credito].filter(Boolean).join(" · ");
+  const capas = MOMENTOS_HERO.filter((m) => montadas.includes(m.franja));
 
   return (
-    <section aria-labelledby="hero-title" className="relative bg-crema pt-16 lg:pt-[4.5rem]">
-      <div className="lg:container-wide lg:grid lg:min-h-[calc(100svh-4.5rem)] lg:grid-cols-12 lg:items-center lg:gap-10 lg:py-8">
-        {/* Fotos */}
-        <div className="relative lg:order-2 lg:col-span-7 lg:h-full lg:min-h-[34rem]">
-          <figure className="relative">
-            <div className="relative aspect-[4/5] max-h-[64svh] w-full overflow-hidden bg-papel-3 sm:aspect-[16/11] sm:max-h-none lg:aspect-auto lg:h-[min(calc(100svh-8rem),52rem)] lg:rounded-sm">
-              {MOMENTOS_HERO.filter((m) => montadas.includes(m.franja)).map((m) => {
+    <section aria-labelledby="hero-title" className="relative bg-crema">
+      <div className="lg:grid lg:min-h-[100svh] lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+        {/* Comida a sangre */}
+        <div className="relative pt-16 lg:order-2 lg:pt-[4.5rem]">
+          <figure className="relative h-full">
+            <div className="relative aspect-[4/5] max-h-[70svh] w-full overflow-hidden bg-carbon sm:aspect-[16/11] sm:max-h-none lg:aspect-auto lg:h-full lg:min-h-[38rem]">
+              {capas.map((m) => {
                 const activa = m.franja === franja;
                 return (
                   <div
@@ -66,28 +71,35 @@ export function HeroOfi({ franjaInicial, estadoInicial, semana, links, labels }:
                   >
                     <Photo
                       img={m.principal}
-                      sizes="(min-width: 1024px) 58vw, 100vw"
+                      sizes="(min-width: 1024px) 54vw, 100vw"
                       priority={m.franja === franjaInicial}
                       decorative={!activa}
-                      imgClassName="motion-safe:animate-kenburns"
+                      quality={80}
                     />
+                    {/* El vídeo solo en la capa activa: un único vídeo descargándose. */}
+                    {m.video && activa && conVideo ? (
+                      <div className="absolute inset-0">
+                        <AmbientVideo video={m.video} threshold={0.01} showPoster={false} afterLoadMs={1500} revealOnPlay />
+                      </div>
+                    ) : null}
                   </div>
                 );
               })}
+              <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-32 bg-gradient-to-t from-carbon/45 to-transparent" />
+              <figcaption className="absolute bottom-3 left-4 right-4 z-30 text-[0.7rem] text-crema/85 sm:left-6 lg:bottom-5 lg:left-8">
+                {pie}
+              </figcaption>
             </div>
-            <figcaption className="container-wide flex items-baseline justify-between gap-4 pt-3 text-xs text-carbon-muted lg:px-0">
-              <span>{pie}</span>
-            </figcaption>
 
-            {/* Foto del espacio, solo en pantallas grandes: el sitio, junto al plato. */}
-            <div className="absolute -left-6 bottom-[22%] z-20 hidden w-[30%] xl:block">
+            {/* El sitio, junto al plato: foto del espacio superpuesta en escritorio. */}
+            <div className="absolute -left-14 bottom-14 z-30 hidden w-[30%] max-w-[18rem] shadow-[0_30px_60px_-30px_rgb(0_0_0/0.55)] xl:block">
               <div className="relative aspect-[4/3] overflow-hidden border-[6px] border-crema bg-papel-3">
-                {MOMENTOS_HERO.filter((m) => montadas.includes(m.franja)).map((m) => (
+                {capas.map((m) => (
                   <div
                     key={m.franja}
                     className={`absolute inset-0 transition-opacity duration-700 motion-reduce:transition-none ${m.franja === franja ? "opacity-100" : "opacity-0"}`}
                   >
-                    <Photo img={m.detalle} sizes="20vw" decorative mobileBelow={0} />
+                    <Photo img={m.detalle} sizes="18rem" decorative mobileBelow={0} />
                   </div>
                 ))}
               </div>
@@ -95,14 +107,14 @@ export function HeroOfi({ franjaInicial, estadoInicial, semana, links, labels }:
           </figure>
         </div>
 
-        {/* Texto */}
-        <div className="container-wide pb-12 pt-6 lg:order-1 lg:col-span-5 lg:px-0 lg:pb-0 lg:pt-0">
+        {/* Texto, alineado con el contenedor de la web */}
+        <div className="flex flex-col justify-center px-4 pb-12 pt-7 sm:px-6 lg:order-1 lg:py-16 lg:pl-[max(2.5rem,calc((100vw-90rem)/2+2.5rem))] lg:pr-14 lg:pt-[calc(4.5rem+3rem)] xl:pr-20">
           <h1 id="hero-title">
             <span className="kicker block text-brasa">
               La Ofi <span aria-hidden="true">·</span> Restaurante en Derio
             </span>
-            <span className="mt-1 block text-sm text-carbon-muted">Parque Tecnológico de Bizkaia · Edificio 502</span>
-            <span className="t-display mt-5 block text-carbon lg:mt-7">
+            <span className="mt-1.5 block text-sm text-carbon-muted">Parque Tecnológico de Bizkaia · Edificio 502</span>
+            <span className="t-display mt-6 block text-carbon lg:mt-8">
               Desayunar. Comer. <em className="text-brasa">Quedarse un poco más.</em>
             </span>
           </h1>
@@ -113,19 +125,19 @@ export function HeroOfi({ franjaInicial, estadoInicial, semana, links, labels }:
 
           <EstadoAhora semana={semana} inicial={estadoInicial} className="mt-5 text-carbon" />
 
-          <div className="mt-7 flex flex-wrap items-center gap-3">
-            <Link href={links.carta} className="btn-dark">
-              {labels.verCarta}
-            </Link>
-            <Link href={links.reservar} className="btn-primary">
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            <Link href={links.reservar} className="btn-primary px-6">
               {labels.reservar}
             </Link>
-            <Link href={links.menu} className="link-arrow ml-1 min-h-11">
+            <Link href={links.carta} className="btn-dark px-6">
+              {labels.verCarta}
+            </Link>
+            <Link href={links.menu} className="link-arrow ml-1">
               Menú de hoy
             </Link>
           </div>
 
-          <div role="group" aria-label="Un día en La Ofi: elige el momento" className="mt-10 flex items-center gap-6 border-t border-tinta-line pt-4">
+          <div role="group" aria-label="Un día en La Ofi: elige el momento" className="mt-12 flex items-center gap-7 border-t border-tinta-line pt-4">
             {MOMENTOS_HERO.map((m) => (
               <button
                 key={m.franja}
@@ -134,7 +146,7 @@ export function HeroOfi({ franjaInicial, estadoInicial, semana, links, labels }:
                 onClick={() => elegir(m.franja)}
                 onPointerEnter={() => precargar(m.franja)}
                 onFocus={() => precargar(m.franja)}
-                className="relative min-h-11 text-sm font-medium text-carbon-muted transition-colors hover:text-carbon aria-pressed:text-carbon after:absolute after:inset-x-0 after:-top-[17px] after:h-0.5 after:scale-x-0 after:bg-brasa after:transition-transform aria-pressed:after:scale-x-100"
+                className="relative min-h-11 text-sm font-medium text-carbon-muted transition-colors after:absolute after:inset-x-0 after:-top-[17px] after:h-0.5 after:scale-x-0 after:bg-brasa after:transition-transform hover:text-carbon aria-pressed:text-carbon aria-pressed:after:scale-x-100"
               >
                 {m.label}
               </button>

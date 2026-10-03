@@ -111,7 +111,7 @@ export const ESPACIOS: Espacio[] = [
     texto: "Café, tostadas de masa madre y pintxos desde el desayuno. El punto de encuentro de las empresas del Parque.",
     aforo: null,
     imagen: img("barra"),
-    video: VIDEOS.pintxos,
+    video: VIDEOS.barra,
     icon: "coffee",
     cta: "pedir",
     fuente: "prensa",
@@ -122,7 +122,7 @@ export const ESPACIOS: Espacio[] = [
     texto: "Lámparas de ratán, baldosa hexagonal y el plato del día de lunes a viernes.",
     aforo: "70 comensales",
     imagen: img("comedorRatan"),
-    video: null,
+    video: VIDEOS.comedor,
     icon: "utensils",
     cta: "reservar",
     fuente: "prensa",
@@ -144,7 +144,7 @@ export const ESPACIOS: Espacio[] = [
     texto: "Carpa tensada, césped y sofás. De día, sombra; de noche, luces y tardeo.",
     aforo: "220 personas sentadas",
     imagen: img("terrazaNoche"),
-    video: null,
+    video: VIDEOS.terraza,
     icon: "sunset",
     cta: "reservar",
     fuente: "prensa",
@@ -205,6 +205,8 @@ export interface MomentoHero {
   detalle: ImageKey;
   /** Pie de la foto principal. */
   pie: string;
+  /** Vídeo del momento (aparece sobre la foto cuando arranca). */
+  video: VideoAsset | null;
 }
 
 export const MOMENTOS_HERO: MomentoHero[] = [
@@ -215,6 +217,7 @@ export const MOMENTOS_HERO: MomentoHero[] = [
     principal: "tostadaBurrata",
     detalle: "rotuloNeon",
     pie: "Tostada de burrata, melocotón a la plancha y jamón ibérico",
+    video: VIDEOS.heroManana,
   },
   {
     franja: "mediodia",
@@ -223,13 +226,15 @@ export const MOMENTOS_HERO: MomentoHero[] = [
     principal: "pulpoBrasa",
     detalle: "comedorRatan",
     pie: "Pulpo a la parrilla con patata y pimentón",
+    video: VIDEOS.heroMediodia,
   },
   {
     franja: "noche",
     label: "Tarde",
     nota: "Terraza cubierta, tardeos y, los viernes, abierto hasta medianoche.",
-    principal: "pintxosBarra",
+    principal: "salonNoche",
     detalle: "terrazaNoche",
-    pie: "La barra de La Ofi",
+    pie: "El salón de La Ofi, de noche",
+    video: VIDEOS.heroNoche,
   },
 ];

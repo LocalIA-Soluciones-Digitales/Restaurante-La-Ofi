@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { Photo } from "@/components/media/Photo";
+import { SceneMedia } from "@/components/media/SceneMedia";
 import { Icon } from "@/components/ui/Icon";
 import { SourceBadge } from "@/components/ui/SourceBadge";
 import { ESPECIALIDADES, VINOS } from "@/lib/home-content";
 import { href, type Locale } from "@/lib/i18n";
 import { creditoFoto, IMAGES } from "@/lib/images";
+import { creditoVideo, VIDEOS } from "@/lib/media";
 
 /** La brasa: la foto del plato a lo grande y las especialidades como una carta. */
 export function LaBrasa({ locale }: { locale: Locale }) {
@@ -14,10 +15,10 @@ export function LaBrasa({ locale }: { locale: Locale }) {
       <div className="container-wide grid gap-10 lg:grid-cols-12 lg:items-start lg:gap-16">
         <figure className="lg:sticky lg:top-24 lg:col-span-7">
           <div className="reveal-photo photo-hover relative aspect-[4/5] overflow-hidden bg-papel-3 sm:aspect-[16/11] lg:aspect-[6/5]">
-            <Photo img="brasaParrilla" sizes="(min-width: 1024px) 58vw, 100vw" />
+            <SceneMedia img="brasaParrilla" video={VIDEOS.brasa} sizes="(min-width: 1024px) 58vw, 100vw" />
           </div>
           <figcaption className="mt-2 text-xs text-carbon-muted">
-            {foto.kind === "ilustrativa" ? creditoFoto(foto) : [foto.alt, creditoFoto(foto)].filter(Boolean).join(" · ")}
+            {creditoVideo(VIDEOS.brasa) ?? (foto.kind === "ilustrativa" ? creditoFoto(foto) : [foto.alt, creditoFoto(foto)].filter(Boolean).join(" · "))}
           </figcaption>
         </figure>
 

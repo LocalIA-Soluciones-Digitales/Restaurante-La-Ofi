@@ -2,12 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PlanoEsquema } from "@/components/espacios/PlanoEsquema";
 import { Photo } from "@/components/media/Photo";
+import { SceneMedia } from "@/components/media/SceneMedia";
 import { Icon } from "@/components/ui/Icon";
 import { PageHero } from "@/components/ui/PageHero";
 import { SourceBadge } from "@/components/ui/SourceBadge";
 import { ESPACIOS, type Espacio } from "@/lib/home-content";
 import { href, type Locale } from "@/lib/i18n";
 import { creditoFoto, IMAGES, imageKeyBySrc, type ImageKey } from "@/lib/images";
+import { creditoVideo } from "@/lib/media";
 import { pageMetadata } from "@/lib/seo";
 
 type Params = { params: Promise<{ locale: Locale }> };
@@ -23,7 +25,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 }
 
 // Foto adicional real de algunos espacios (además de la principal).
-const EXTRA: Partial<Record<Espacio["id"], ImageKey>> = { terraza: "terrazaCarpa", barra: "rotuloNeon" };
+const EXTRA: Partial<Record<Espacio["id"], ImageKey>> = { terraza: "terrazaCarpa", barra: "pintxosBarra" };
 
 function cta(e: Espacio, locale: Locale) {
   if (e.cta === "pedir") return { href: href(locale, "/pedir"), label: "Pedir para recoger" };
@@ -40,7 +42,7 @@ export default async function EspaciosPage({ params }: Params) {
         eyebrow="Espacios"
         title="Cuatro sitios en uno"
         lead="La barra del desayuno, el comedor del mediodía, un despacho para reunirse y la terraza para alargar la tarde."
-        image={IMAGES.comedorRatan}
+        image={IMAGES.comedorPanoramica}
       />
 
       <div className="container-wide pb-20 sm:pb-28">
@@ -57,9 +59,11 @@ export default async function EspaciosPage({ params }: Params) {
                   {key ? (
                     <figure>
                       <div className="reveal-photo photo-hover relative aspect-[4/5] overflow-hidden bg-papel-3 sm:aspect-[3/2]">
-                        <Photo img={key} sizes="(min-width: 1024px) 58vw, 100vw" />
+                        <SceneMedia img={key} video={e.video} sizes="(min-width: 1024px) 58vw, 100vw" />
                       </div>
-                      {creditoFoto(IMAGES[key]) ? <figcaption className="mt-2 text-xs text-carbon-muted">{creditoFoto(IMAGES[key])}</figcaption> : null}
+                      {(e.video ? creditoVideo(e.video) : null) ?? creditoFoto(IMAGES[key]) ? (
+                        <figcaption className="mt-2 text-xs text-carbon-muted">{(e.video ? creditoVideo(e.video) : null) ?? creditoFoto(IMAGES[key])}</figcaption>
+                      ) : null}
                     </figure>
                   ) : (
                     // Sin foto real de El Despacho todavía: el plano, no una foto inventada.

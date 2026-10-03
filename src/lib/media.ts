@@ -1,16 +1,15 @@
-import { IMAGES, type ImageKey } from "@/lib/images";
-
 // Registro único de vídeos de la web. Procedencia de cada archivo en
-// IMAGES_SOURCES.md. Reglas (PROMPT_REDISENO §0.2):
-//  - "real": grabado en el local. Es lo único que puede mostrar La Ofi, sus
-//    platos o su gente. Mientras no exista, el hueco queda a null y la sección
-//    usa una foto real (con Ken Burns) en su lugar.
-//  - "generado": recurso ambiental abstracto (bruma, brasas, vapor) generado por
-//    código. Nunca representa el local ni un plato concreto.
-// Formato: MP4 H.264 + WebM VP9 sin audio, 720p (móvil, < 2,5 MB) y 1080p
-// (escritorio, < 6 MB), póster WebP del primer fotograma.
+// IMAGES_SOURCES.md. Reglas:
+//  - "real": grabado en el local.
+//  - "ia": generado con IA (Gemini/Veo) A PARTIR DE UNA FOTO REAL del local o de
+//    un plato de La Ofi; la escena es la de la foto, con movimiento.
+//  - "ia-ilustrativo": generado con IA sin foto de partida; no es La Ofi (se marca
+//    "Imagen ilustrativa").
+// Formato: MP4 H.264 + WebM VP9 sin audio y póster WebP del primer fotograma.
+// Los de IA salen de Veo a 720p: `hd: false` (sin versión 1080p).
+// Se preparan con scripts/videos-web.py.
 
-export type VideoKind = "real" | "generado";
+export type VideoKind = "real" | "ia" | "ia-ilustrativo";
 
 export interface VideoAsset {
   /** Ruta base sin sufijo: `${base}-720.mp4`, `${base}-1080.webm`, `${base}-poster.webp`. */
@@ -18,41 +17,53 @@ export interface VideoAsset {
   kind: VideoKind;
   /** Descripción para lectores de pantalla (los vídeos decorativos usan ""). */
   label: string;
+  /** false = solo hay versión 720p. */
+  hd?: boolean;
 }
 
-export function videoSources(v: VideoAsset) {
+export function videoSources(v: VideoAsset): { poster: string; sources: { src: string; type: string; media?: string }[] } {
+  const sd = [
+    { src: `${v.base}-720.webm`, type: "video/webm" },
+    { src: `${v.base}-720.mp4`, type: "video/mp4" },
+  ];
   return {
     poster: `${v.base}-poster.webp`,
-    sources: [
-      { src: `${v.base}-1080.webm`, type: "video/webm", media: "(min-width: 1024px)" },
-      { src: `${v.base}-1080.mp4`, type: "video/mp4", media: "(min-width: 1024px)" },
-      { src: `${v.base}-720.webm`, type: "video/webm" },
-      { src: `${v.base}-720.mp4`, type: "video/mp4" },
-    ],
+    sources:
+      v.hd === false
+        ? sd
+        : [
+            { src: `${v.base}-1080.webm`, type: "video/webm", media: "(min-width: 1024px)" },
+            { src: `${v.base}-1080.mp4`, type: "video/mp4", media: "(min-width: 1024px)" },
+            ...sd,
+          ],
   };
 }
 
-const ambiente = (nombre: string, label: string): VideoAsset => ({
-  base: `/videos/ambiente/${nombre}`,
-  kind: "generado",
+/** Pie obligatorio de un vídeo según su procedencia. */
+export function creditoVideo(v: VideoAsset): string | null {
+  if (v.kind === "ia") return "Vídeo generado con IA a partir de una foto del local";
+  if (v.kind === "ia-ilustrativo") return "Imagen ilustrativa";
+  return null;
+}
+
+const ia = (nombre: string, label: string, kind: VideoKind = "ia"): VideoAsset => ({
+  base: `/videos/ia/${nombre}`,
+  kind,
   label,
+  hd: false,
 });
 
 export const VIDEOS = {
-  // --- Reales (pendientes de grabar en el local: IMAGES_SOURCES.md → "Vídeos a grabar")
-  heroManana: null as VideoAsset | null, //  hero/manana — café y tostada en barra
-  heroMediodia: null as VideoAsset | null, // hero/mediodia — comedor lleno, ratán
-  heroNoche: null as VideoAsset | null, //    hero/noche — terraza con carpa y neón
-  brasa: null as VideoAsset | null, //        brasa/parrilla — video moment
-  pintxos: null as VideoAsset | null, //      historia/pintxos
-  platoDia: null as VideoAsset | null, //     historia/plato-dia
-  despacho: null as VideoAsset | null, //     espacios/despacho
-  rotulo: null as VideoAsset | null, //       neon/rotulo
-
-  // --- Generados (ambiente abstracto, nunca "el local")
-  ambienteNeon: ambiente("neon-haze", ""),
-  ambienteBrasa: ambiente("brasa-ascuas", ""),
-  ambienteVapor: ambiente("vapor-manana", ""),
+  heroManana: ia("burrata", "Un hilo de aceite cae sobre la tostada de burrata"),
+  heroMediodia: ia("pulpo", "Pulpo a la brasa con patatas recién servido"),
+  heroNoche: ia("salon", "El salón de La Ofi de noche, con las bombillas encendidas"),
+  brasa: ia("parrilla", "Pescado y pimientos asándose sobre las brasas", "ia-ilustrativo"),
+  comedor: ia("comedor", "El comedor de La Ofi a mediodía, con las lámparas de ratán"),
+  terraza: ia("terraza", "La terraza de La Ofi al anochecer"),
+  barra: ia("barra", "La barra de La Ofi con el neón y las cafeteras"),
+  // --- Pendientes de grabar en el local (IMAGES_SOURCES.md → "Vídeos a grabar")
+  pintxos: null as VideoAsset | null,
+  despacho: null as VideoAsset | null,
 } as const;
 
 export type Franja = "manana" | "mediodia" | "noche";
@@ -72,56 +83,4 @@ export function franjaDelDia(ahora: Date = new Date()): Franja {
   if (minutos >= 5 * 60 && minutos < 12 * 60) return "manana";
   if (minutos >= 12 * 60 && minutos < 17 * 60 + 30) return "mediodia";
   return "noche";
-}
-
-export interface HeroEscena {
-  franja: Franja;
-  eyebrow: string;
-  /** Líneas del titular (saltos explícitos: el texto no se recoloca al cargar la fuente). */
-  titulo: string[];
-  lead: string;
-  /** Vídeo real del momento si existe; si no, la foto con Ken Burns. */
-  video: VideoAsset | null;
-  /** Bruma/vapor generado que se superpone a la foto mientras no haya vídeo real. */
-  ambiente: VideoAsset | null;
-  imagen: ImageKey;
-  noche: boolean;
-}
-
-/** "Un día en La Ofi": una escena por franja horaria. */
-export const HERO_ESCENAS: Record<Franja, HeroEscena> = {
-  manana: {
-    franja: "manana",
-    eyebrow: "Buenos días desde el Parque",
-    titulo: ["El café", "de las 7:30"],
-    lead: "Tostadas de pan de masa madre, pintxos recién hechos en la barra y el primer café antes de subir a la oficina.",
-    video: VIDEOS.heroManana,
-    ambiente: VIDEOS.ambienteVapor,
-    imagen: "tostadaRevuelta",
-    noche: false,
-  },
-  mediodia: {
-    franja: "mediodia",
-    eyebrow: "Mediodía en La Ofi",
-    titulo: ["Bajar", "a comer", "sin pensarlo"],
-    lead: "Plato del día casero, cocina a la brasa y producto de temporada de los baserris de alrededor.",
-    video: VIDEOS.heroMediodia,
-    ambiente: null,
-    imagen: "comedorRatan",
-    noche: false,
-  },
-  noche: {
-    franja: "noche",
-    eyebrow: "Tarde y tardeo",
-    titulo: ["Punto de", "encuentro", "y buen rollo"],
-    lead: "Brasa, terraza cubierta y el neón encendido: la tarde en La Ofi se alarga sola.",
-    video: VIDEOS.heroNoche,
-    ambiente: VIDEOS.ambienteNeon,
-    imagen: "salonNoche",
-    noche: true,
-  },
-};
-
-export function imagenDe(key: ImageKey) {
-  return IMAGES[key];
 }
