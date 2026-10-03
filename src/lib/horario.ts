@@ -143,3 +143,10 @@ export function estadoAhora(semana: Semana, ahora: Date = new Date()): EstadoAho
   }
   return { abierto: false, texto: "Cerrado ahora" };
 }
+
+/** Horario de hoy en Madrid ("07:30 – 17:00", "Cerrado") o null si no hay dato fiable. */
+export function horarioDeHoy(semana: Semana, ahora: Date = new Date()): string | null {
+  const hoy = semana[ahoraEnMadrid(ahora).dia];
+  if (!hoy) return null;
+  return hoy.abierto ? `${hoy.desde} – ${hoy.hasta}` : "Cerrado";
+}

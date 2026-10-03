@@ -22,6 +22,15 @@ const config: Config = {
         neon: { DEFAULT: "#C9BBFF", soft: "#E4DCFF", deep: "#8E7CF0" },
         // Modo noche (tarde/eventos): azul de la barra casi negro + neón lavanda.
         noche: { DEFAULT: "#0B1424", 2: "#111E33", 3: "#1A2944" },
+        // --- Tokens semánticos de la web pública (rediseño gastronómico) ---
+        // Acento de conversión: el color de la brasa y de la baldosa terracota.
+        // Contraste con crema 5,9:1 (AA para texto normal).
+        brasa: { DEFAULT: "#9A4527", 700: "#7E3820", soft: "#F2DCCF" },
+        // Texto principal y secundario sobre papel; "line" para filetes.
+        tinta: { DEFAULT: "#221E1A", soft: "#5E554B", line: "rgb(43 39 34 / 0.14)" },
+        papel: { DEFAULT: "#FAF5EC", 2: "#F3EBDD", 3: "#E9DCC6" },
+        ok: "#4E6B3A",
+        aviso: "#9A4527",
       },
       fontFamily: {
         display: ["var(--font-display)", "Georgia", "serif"],
@@ -39,8 +48,8 @@ const config: Config = {
       },
       keyframes: {
         kenburns: {
-          "0%": { transform: "scale(1.04) translate3d(0,0,0)" },
-          "100%": { transform: "scale(1.14) translate3d(-2%,-1.5%,0)" },
+          "0%": { transform: "scale(1.0) translate3d(0,0,0)" },
+          "100%": { transform: "scale(1.06) translate3d(-1%,-0.8%,0)" },
         },
         "fade-up": {
           "0%": { opacity: "0", transform: "translateY(14px)" },
@@ -81,7 +90,7 @@ const config: Config = {
         },
       },
       animation: {
-        kenburns: "kenburns 22s ease-out both",
+        kenburns: "kenburns 30s ease-out both",
         "fade-up": "fade-up 0.8s cubic-bezier(0.22,1,0.36,1) both",
         "word-up": "word-up 1.1s cubic-bezier(0.16,1,0.3,1) both",
         marquee: "marquee 38s linear infinite",

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { HORARIO_INTERNET, agruparHorario, estadoAhora, horarioSchemaOrg, resolverHorario, type HorarioDiaBd } from "@/lib/horario";
+import { HORARIO_INTERNET, agruparHorario, estadoAhora, horarioDeHoy, horarioSchemaOrg, resolverHorario, type HorarioDiaBd } from "@/lib/horario";
 
 const filas: HorarioDiaBd[] = [
   ...[1, 2, 3, 4].map((dia) => ({ dia, estado: "abierto" as const, desde: "07:30", hasta: "17:00" })),
@@ -61,5 +61,12 @@ describe("estadoAhora", () => {
   });
   it("pasada la medianoche del viernes ya es sábado (dudoso): no afirma nada", () => {
     expect(estadoAhora(semana, new Date("2026-10-02T22:30:00Z")).abierto).toBeNull();
+  });
+
+  it("da el horario de hoy en Madrid y no inventa los días sin dato", () => {
+    // 2026-10-02 es viernes; 2026-10-03, sábado (sin dato publicado); 2026-10-04, domingo.
+    expect(horarioDeHoy(HORARIO_INTERNET, new Date("2026-10-02T10:00:00+02:00"))).toBe("07:30 – 00:00");
+    expect(horarioDeHoy(HORARIO_INTERNET, new Date("2026-10-03T10:00:00+02:00"))).toBeNull();
+    expect(horarioDeHoy(HORARIO_INTERNET, new Date("2026-10-04T10:00:00+02:00"))).toBe("Cerrado");
   });
 });

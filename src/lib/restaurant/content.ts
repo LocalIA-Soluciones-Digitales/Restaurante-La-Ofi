@@ -1,5 +1,6 @@
 import "server-only";
 import { itemDesdeRpc } from "@/lib/carta";
+import { conFotosDePlato } from "@/lib/carta-fotos";
 import { SHOW_DEMO_CONTENT } from "@/lib/env";
 import { hoyEnMadrid } from "@/lib/format";
 import { DEMO_CARTA, DEMO_EVENTOS, DEMO_MENU_DIA } from "@/lib/restaurant/demo-content";
@@ -31,8 +32,8 @@ export async function getCartaContent(): Promise<ContentState<CartaSeccion[]>> {
       items: c.productos.map((p) => itemDesdeRpc(p)),
     }))
     .filter((s) => s.items.length > 0);
-  if (secciones.length > 0) return { status: "real", data: secciones };
-  return fallback(DEMO_CARTA);
+  if (secciones.length > 0) return { status: "real", data: conFotosDePlato(secciones) };
+  return fallback(conFotosDePlato(DEMO_CARTA));
 }
 
 function menuDiaView(menu: MenuDia): MenuDiaView {

@@ -119,10 +119,11 @@ print-bridge/                 puente de impresión ESC/POS para la impresora de 
 supabase/                     migrations, rollback, seed, tests
 ```
 
-**Motion y rendimiento.** Revelado de titulares con CSS (`clip-path`), GSAP cargado bajo demanda
-(`lib/motion/gsap.ts`), Lenis solo en escritorio con puntero fino y tras la carga, historia fijada
-solo en `lg` (`dynamic(ssr:false)`), three/R3F solo en el salón 3D de `/admin`. Sin Framer Motion en
-la web pública. Vídeos con `preload="none"`, póster, 720p/1080p por media query y reproducción solo
+**Motion y rendimiento.** Web pública sin librerías de animación (rediseño gastronómico,
+2026-10-02): revelado de fotos con CSS ligado al scroll (`animation-timeline: view()`, `.reveal-photo`),
+fundidos entre momentos del día, zoom muy lento en el hero y `content-visibility` en las secciones bajo
+el pliegue. Fotos con `<picture>` (recorte 4:5 en móvil, `components/media/Photo.tsx`) y precarga del
+recorte que toca en el LCP. three/R3F solo en el salón 3D de `/admin`. Vídeos con `preload="none"`, póster, 720p/1080p por media query y reproducción solo
 cuando son visibles (`usePlayWhenVisible`); con `prefers-reduced-motion` todo queda estático.
 
 **Backend local.** `npm run dev:local` arranca Next con PGlite en memoria: aplica el stub de la
@@ -144,7 +145,7 @@ Procedencia del contenido (`ContentState`): `real` (Supabase) → `demo` (solo c
 | **Next 15.5.27 / React 19.0.8** (Palomita: 15.1.9 / 19.0.3) | Next 15.1.9 tiene vulnerabilidades **críticas** (RCE en imágenes AVIF, bypass de middleware…). 15.5.27 es la última 15.x, misma API. **Palomita y Bar La Osa deberían actualizarse.** |
 | `@supabase/ssr` 0.12.4 (no 0.12.7) | 0.12.7 exige `supabase-js` ≥ 2.114. |
 | Schema propio `laofi` con las tablas de Palomita replicadas | Datos de cada proyecto en tablas distintas, sin posibilidad de cruce. Ver §1. |
-| Sin Framer Motion; GSAP, Lenis y three bajo demanda | Lighthouse móvil ≥ 90 en home y carta. |
+| Sin Framer Motion, GSAP ni Lenis en la web pública; three solo en `/admin` | Rendimiento y nada de scroll secuestrado. Lighthouse móvil ≥ 85 en home (LCP = foto real del plato) y ≥ 90 en carta. |
 | Vídeos ambientales abstractos generados | No hay vídeo real del local. Solo bruma, brasas y vapor, nunca imitando el restaurante; marcados `generado` en `lib/media.ts` e `IMAGES_SOURCES.md`. |
 | Un solo precio por producto | Sin precios por tamaño ni por franja hasta que el restaurante lo pida. |
 | Nutrición solo si la aporta el restaurante | `nutricion_fuente` obligatoria; sin ella la web no la muestra. |

@@ -35,7 +35,7 @@ export default async function ContactoPage({ params }: Params) {
         image={IMAGES.terrazaNoche}
         compact
       />
-      <Ubicacion t={getDictionary(locale)} horario={resolverHorario(horario)} />
+      <Ubicacion t={getDictionary(locale)} horario={resolverHorario(horario)} mapPriority />
     </>
   );
 }

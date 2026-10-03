@@ -34,13 +34,13 @@ export default async function CartaPage() {
       {state.status === "real" && !IS_DEMO ? <JsonLd data={menuJsonLd(state.data)} /> : null}
       <PageHero
         id="carta-title"
-        eyebrow="Carta"
-        title="Nuestra carta"
-        lead="Desayunos, pintxos, brasa y cocina de temporada. Pregunta por el pescado del día: depende del mercado."
+        eyebrow="La carta"
+        title="Masa madre por la mañana, brasa al mediodía"
+        lead="Tostadas de 9:00 a 11:30, picoteo para compartir y carnes y pescados a la parrilla. El pescado, según mercado: pregúntanos qué ha llegado hoy."
         image={IMAGES.tostadaBurrata}
         compact
       />
-      <div className="container-page pb-16 pt-0 sm:pb-24">
+      <div className="container-wide pb-16 pt-0 sm:pb-24">
         {state.status === "empty" ? (
           <EmptyState title="Carta en preparación" icon="utensils">
             Muy pronto podrás consultar aquí la carta completa con precios y alérgenos. Mientras tanto, llámanos al{" "}

@@ -12,6 +12,7 @@ export function restaurantJsonLd(semana: Semana | null) {
     "@type": "Restaurant",
     "@id": `${SITE_URL}/#restaurant`,
     name: SITE.name,
+    description: SITE.description,
     url: `${SITE_URL}/es`,
     image: `${SITE_URL}/og/la-ofi-og.jpg`,
     telephone: `+34${SITE.phone.digits}`,
@@ -27,6 +28,8 @@ export function restaurantJsonLd(semana: Semana | null) {
       addressCountry: SITE.address.country,
     },
     geo: { "@type": "GeoCoordinates", latitude: SITE.geo.lat, longitude: SITE.geo.lng },
+    // Edificio 502 del campus Zamudio-Derio del Parque (búsquedas "restaurante Parque Tecnológico").
+    containedInPlace: { "@type": "Place", name: "Parque Científico y Tecnológico de Bizkaia" },
     sameAs: [SITE.instagram.url],
     hasMenu: `${SITE_URL}/es/carta`,
     ...(semana ? { openingHoursSpecification: horarioSchemaOrg(semana) } : {}),

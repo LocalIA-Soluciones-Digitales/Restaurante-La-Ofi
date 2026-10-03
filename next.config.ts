@@ -18,6 +18,8 @@ const nextConfig: NextConfig = {
   },
   images: {
     formats: ["image/avif", "image/webp"],
+    // Calidades permitidas (obligatorio desde Next 16): 60 fondos, 75 general, 80 fotos de plato grandes.
+    qualities: [60, 75, 80],
     // Fotos futuras subidas desde /admin a Supabase Storage (mismo patrón que Palomita).
     remotePatterns: [
       {

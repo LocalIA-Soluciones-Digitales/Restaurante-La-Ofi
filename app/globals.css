@@ -48,31 +48,90 @@
     @apply text-xs font-semibold uppercase tracking-eyebrow;
   }
 
+  /* Botones de la web pública (el panel /admin usa los suyos en ui.tsx).
+     Esquina corta y sin sombras: más carta impresa que aplicación. */
   .btn {
-    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-6 text-[0.95rem] font-semibold transition-[background-color,color,box-shadow,transform] duration-200 active:scale-[0.98];
+    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-md px-5 text-[0.95rem] font-semibold tracking-[0.01em] transition-[background-color,color,border-color,transform] duration-200 ease-out active:scale-[0.98];
   }
 
   .btn-primary {
-    @apply btn bg-marino text-crema shadow-card hover:bg-marino-700 hover:shadow-lift;
+    @apply btn bg-brasa text-crema hover:bg-brasa-700;
   }
 
   .btn-secondary {
-    @apply btn border border-carbon/15 bg-crema text-carbon hover:border-carbon/30 hover:bg-white;
+    @apply btn border border-carbon/25 bg-transparent text-carbon hover:border-carbon/60 hover:bg-white/60;
+  }
+
+  .btn-dark {
+    @apply btn bg-carbon text-crema hover:bg-tinta;
   }
 
   .btn-ghost-light {
-    @apply btn border border-crema/30 text-crema hover:bg-crema/10;
+    @apply btn border border-crema/40 text-crema hover:border-crema hover:bg-crema/10;
+  }
+
+  /* Enlace de texto con flecha: la acción secundaria por defecto. */
+  .link-arrow {
+    @apply inline-flex min-h-11 items-center gap-2 font-semibold text-carbon underline decoration-carbon/30 decoration-1 underline-offset-[6px] transition-[text-decoration-color,color] hover:decoration-brasa;
+  }
+
+  /* --- Escala tipográfica editorial (Fraunces + Figtree) ------------------ */
+  .t-display {
+    @apply font-display font-normal text-balance;
+    font-size: clamp(2.35rem, 1.55rem + 3.1vw, 4.4rem);
+    line-height: 1.02;
+    letter-spacing: -0.022em;
+  }
+
+  .t-h2 {
+    @apply font-display font-normal text-balance;
+    font-size: clamp(1.9rem, 1.45rem + 1.8vw, 3rem);
+    line-height: 1.06;
+    letter-spacing: -0.016em;
+  }
+
+  .t-h3 {
+    @apply font-display font-normal;
+    font-size: clamp(1.35rem, 1.2rem + 0.5vw, 1.65rem);
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+  }
+
+  .kicker {
+    @apply font-sans text-[0.72rem] font-semibold uppercase tracking-[0.18em];
+  }
+
+  .lead {
+    @apply max-w-[38rem] text-[1.0625rem] leading-relaxed text-carbon-muted sm:text-lg;
+  }
+
+  .section {
+    @apply py-20 sm:py-28;
+  }
+
+  /* Secciones bajo el pliegue: el navegador no las maqueta ni pinta hasta que se
+     acercan al viewport (mucho menos trabajo de estilo y layout en la carga). */
+  .cv-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 900px;
+  }
+
+  .container-wide {
+    @apply mx-auto w-full max-w-[90rem] px-4 sm:px-6 lg:px-10;
+  }
+
+  /* Foto con zoom muy lento al pasar el ratón (solo con puntero fino). */
+  @media (hover: hover) and (pointer: fine) {
+    .photo-hover img {
+      transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .photo-hover:hover img {
+      transform: scale(1.035);
+    }
   }
 
   .link-underline {
     @apply underline decoration-1 underline-offset-4 transition-colors hover:decoration-2;
-  }
-
-  /* Secciones bajo el pliegue: el navegador no las maqueta ni pinta hasta que se
-     acercan al viewport (reduce mucho el trabajo del primer render en móvil). */
-  .cv-auto {
-    content-visibility: auto;
-    contain-intrinsic-size: auto 900px;
   }
 
   /* Motivo de marca: baldosa hexagonal del suelo del local. */
@@ -105,11 +164,7 @@
     }
   }
 
-  /* Secciones de tarde/noche: marino casi negro con el neón del rótulo. */
-  .section-night {
-    @apply bg-noche text-crema;
-  }
-
+  /* Solo /admin (login y cabecera del panel). */
   .btn-neon {
     @apply btn bg-neon text-noche shadow-[0_0_0_1px_rgb(201_187_255/0.4),0_10px_40px_-10px_rgb(201_187_255/0.7)] hover:bg-neon-soft;
   }
@@ -126,45 +181,6 @@
       0 0 14px rgb(201 187 255 / 0.65),
       0 0 34px rgb(142 124 240 / 0.55),
       0 0 70px rgb(142 124 240 / 0.35);
-  }
-
-  /* Titulares editoriales enormes (9–10vw en escritorio). */
-  .display-xl {
-    @apply font-display font-semibold leading-[0.9] tracking-[-0.02em];
-    font-size: clamp(3.4rem, 13vw, 10.5rem);
-  }
-
-  .display-lg {
-    @apply font-display font-semibold leading-[0.95] tracking-[-0.015em];
-    font-size: clamp(2.6rem, 8vw, 6.5rem);
-  }
-
-  /* Revelado por palabras: cada palabra sube desde una máscara (sin JS).
-     --i = índice de la palabra para el escalonado. */
-  /* La máscara recorta solo por abajo mientras la palabra sube y se abre al
-     final: un overflow:hidden cortaría el halo del neón en rectángulos. */
-  .word-mask {
-    display: inline-block;
-    vertical-align: top;
-    padding-bottom: 0.1em;
-    margin-bottom: -0.1em;
-    clip-path: inset(-1em -1em -1em -1em);
-    animation: mask-open 1.1s linear both;
-    animation-delay: calc(var(--d, 0ms) + var(--i, 0) * 70ms);
-  }
-
-  .word-mask > span {
-    display: inline-block;
-    animation: word-up 1.1s cubic-bezier(0.16, 1, 0.3, 1) both;
-    animation-delay: calc(var(--d, 0ms) + var(--i, 0) * 70ms);
-  }
-
-  .marquee-track {
-    animation: marquee 38s linear infinite;
-  }
-
-  .marquee:hover .marquee-track {
-    animation-play-state: paused;
   }
 
   .no-scrollbar {
@@ -186,101 +202,35 @@
       animation-range: entry 0% entry 55%;
     }
 
-    .parallax-soft {
-      animation: parallax-y linear both;
+    /* Foto que se descubre de abajo arriba al entrar en pantalla. Nunca deja
+       la foto invisible: arranca mostrando ya el 70 %. */
+    .reveal-photo {
+      animation: photo-in linear both;
       animation-timeline: view();
-      animation-range: cover 0% cover 100%;
+      animation-range: entry 0% entry 70%;
     }
+
+  }
+}
+
+@keyframes photo-in {
+  from {
+    clip-path: inset(30% 0 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
   }
 }
 
 @keyframes reveal-in {
   from {
-    opacity: 0;
-    transform: translateY(28px);
+    opacity: 0.25;
+    transform: translateY(20px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-@keyframes parallax-y {
-  from {
-    transform: translateY(-6%) scale(1.08);
-  }
-  to {
-    transform: translateY(6%) scale(1.08);
-  }
-}
-
-@keyframes word-up {
-  from {
-    transform: translateY(105%) rotate(2deg);
-  }
-  to {
-    transform: translateY(0) rotate(0);
-  }
-}
-
-/* Móvil: sin máscara, fundido corto. Chrome no cuenta como LCP un texto que
-   está tapado por la máscara, y en móvil el titular del hero ES el LCP. */
-@media (max-width: 1023px) {
-  .word-mask {
-    clip-path: none;
-    animation: none;
-  }
-
-  .word-mask > span {
-    animation: word-fade 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
-    animation-delay: calc(var(--i, 0) * 40ms);
-  }
-}
-
-/* Opacidad inicial > 0 a propósito: Chrome no registra como LCP un texto pintado
-   con opacidad 0 y el fundido (en el compositor) no genera un nuevo "paint". */
-@keyframes word-fade {
-  from {
-    opacity: 0.12;
-    transform: translateY(0.18em);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes mask-open {
-  0%,
-  92% {
-    clip-path: inset(-1em -1em 0 -1em);
-  }
-  100% {
-    clip-path: inset(-1em -1em -1em -1em);
-  }
-}
-
-@keyframes marquee {
-  from {
-    transform: translate3d(0, 0, 0);
-  }
-  to {
-    transform: translate3d(-50%, 0, 0);
-  }
-}
-
-/* Lenis (scroll suave, solo escritorio) */
-html.lenis,
-html.lenis body {
-  height: auto;
-}
-
-.lenis.lenis-smooth {
-  scroll-behavior: auto !important;
-}
-
-.lenis.lenis-stopped {
-  overflow: hidden;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -48,12 +48,12 @@ export default async function EventosPage({ params }: Params) {
         momento="noche"
         eyebrow="Eventos"
         title="En La Ofi siempre pasa algo"
-        lead="Tardeos, partidos en pantalla grande y celebraciones a medida: bautizos, comuniones, postbodas o comidas de empresa."
+        lead="Un tardeo al mes en la terraza, partidos en pantalla grande y celebraciones a medida: bautizos, comuniones, postbodas o comidas de empresa."
         image={IMAGES.salonNoche}
         ambiente={VIDEOS.ambienteNeon}
         noche
       />
-      <div className="container-page py-10 sm:py-14">
+      <div className="container-wide pb-20 sm:pb-28">
         {state.status === "empty" ? (
           <EmptyState title="Próximamente" icon="calendar">
             Estamos preparando los próximos eventos. Síguenos en{" "}
@@ -70,7 +70,7 @@ export default async function EventosPage({ params }: Params) {
         ) : (
           <>
             <h2 className="sr-only">Próximos eventos</h2>
-            <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <ul className="space-y-14">
               {state.data.map((evento) => (
                 <li key={evento.id}>
                   <EventCard evento={evento} locale={locale} />
@@ -80,9 +80,9 @@ export default async function EventosPage({ params }: Params) {
           </>
         )}
 
-        <div className="mt-14 flex flex-col items-start justify-between gap-6 rounded-[2rem] bg-marino-900 p-8 text-crema sm:flex-row sm:items-center sm:p-10">
+        <div className="mt-20 flex flex-col items-start justify-between gap-6 bg-marino-900 p-8 text-crema sm:flex-row sm:items-center sm:p-12">
           <div>
-            <p className="font-display text-3xl">¿Organizas una celebración?</p>
+            <p className="t-h2">¿Organizas una celebración?</p>
             <p className="mt-2 max-w-xl text-crema/80">
               Menús concertados a medida en el comedor privado o en la terraza
               cubierta. Cuéntanos qué necesitas.
@@ -90,7 +90,7 @@ export default async function EventosPage({ params }: Params) {
           </div>
           <a
             href={SITE.phone.href}
-            className="btn shrink-0 bg-crema text-marino hover:bg-white"
+            className="btn-light shrink-0"
           >
             <Icon name="phone" className="h-4 w-4" />
             Llamar

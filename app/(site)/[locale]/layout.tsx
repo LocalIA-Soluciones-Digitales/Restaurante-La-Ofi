@@ -4,8 +4,7 @@ import { notFound } from "next/navigation";
 import { BottomBar } from "@/components/layout/BottomBar";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
-import { mainNav } from "@/components/layout/nav";
-import { SmoothScroll } from "@/components/motion/SmoothScroll";
+import { mainNav, primaryNav } from "@/components/layout/nav";
 import { JsonLd } from "@/components/ui/JsonLd";
 import { getDictionary } from "@/i18n/dictionaries";
 import { IS_DEMO, SITE_URL } from "@/lib/env";
@@ -20,6 +19,8 @@ const display = Fraunces({
   subsets: ["latin"],
   variable: "--font-display",
   display: "swap",
+  // Cursiva real para los acentos editoriales (sin eje óptico: pesa la mitad).
+  style: ["normal", "italic"],
 });
 
 const sans = Figtree({
@@ -72,17 +73,17 @@ export default async function LocaleLayout({
       <body className="flex min-h-screen flex-col">
         <a
           href="#contenido"
-          className="sr-only z-50 rounded-full bg-marino px-5 py-3 text-crema focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
+          className="sr-only z-50 rounded-md bg-carbon px-5 py-3 text-crema focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
         >
           {t.common.saltarContenido}
         </a>
         {IS_DEMO ? null : <JsonLd data={restaurantJsonLd(semana)} />}
-        <SmoothScroll />
         <Header
           homeHref={href(locale)}
           pedirHref={href(locale, "/pedir")}
           reservarHref={href(locale, "/reservar")}
           items={items}
+          primary={primaryNav(locale, t)}
           phoneHref={SITE.phone.href}
           phoneDisplay={SITE.phone.display}
           directionsHref={SITE.maps.directions}
@@ -100,11 +101,11 @@ export default async function LocaleLayout({
         </main>
         <Footer locale={locale} items={items} />
         <BottomBar
+          hoyHref={href(locale, "/menu-del-dia")}
           cartaHref={href(locale, "/carta")}
-          pedirHref={href(locale, "/pedir")}
           reservarHref={href(locale, "/reservar")}
           directionsHref={SITE.maps.directions}
-          labels={{ carta: t.nav.carta, pedir: t.cta.pedir, reservar: t.cta.reservar, comoLlegar: t.cta.comoLlegar }}
+          labels={{ hoy: t.nav.hoy, carta: t.nav.carta, reservar: t.cta.reservar, llegar: t.cta.llegar }}
         />
       </body>
     </html>

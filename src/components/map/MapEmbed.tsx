@@ -9,11 +9,11 @@ import { Icon } from "@/components/ui/Icon";
  * interactivo de Google solo se carga si la persona lo pide expresamente,
  * porque Google puede instalar cookies de terceros (ver /cookies).
  */
-export function MapEmbed({ image, alt, embedUrl, credit }: { image: StaticImageData; alt: string; embedUrl: string; credit: string }) {
+export function MapEmbed({ image, alt, embedUrl, credit, priority = false }: { image: StaticImageData; alt: string; embedUrl: string; credit: string; priority?: boolean }) {
   const [interactive, setInteractive] = useState(false);
 
   return (
-    <div className="relative aspect-[4/3] overflow-hidden rounded-[2rem] bg-arena shadow-card sm:aspect-[16/10]">
+    <div className="relative aspect-[4/3] overflow-hidden rounded-sm bg-arena ring-1 ring-tinta-line sm:aspect-[16/10] lg:aspect-auto lg:h-full lg:min-h-[32rem]">
       {interactive ? (
         <iframe
           src={embedUrl}
@@ -24,13 +24,13 @@ export function MapEmbed({ image, alt, embedUrl, credit }: { image: StaticImageD
         />
       ) : (
         <>
-          <Image src={image} alt={alt} fill sizes="(min-width: 1024px) 55vw, 100vw" className="object-cover" />
+          <Image src={image} alt={alt} fill priority={priority} sizes="(min-width: 1024px) 55vw, 100vw" className="object-cover" />
           <div className="absolute inset-x-3 bottom-3 flex flex-wrap items-center justify-between gap-2 sm:inset-x-4 sm:bottom-4">
             <button type="button" onClick={() => setInteractive(true)} className="btn-secondary min-h-11 bg-crema px-4 text-sm">
               <Icon name="pin" className="h-4 w-4" />
               Cargar mapa interactivo
             </button>
-            <span className="rounded-full bg-crema/90 px-2 py-1 text-[0.65rem] text-carbon-muted">{credit}</span>
+            <span className="rounded-sm bg-crema/90 px-2 py-1 text-[0.65rem] text-carbon-muted">{credit}</span>
           </div>
         </>
       )}

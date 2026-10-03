@@ -42,7 +42,7 @@ export function ReservaForm({
 
   if (estado === "ok") {
     return (
-      <div role="status" className="rounded-[2rem] border border-oliva/30 bg-oliva-soft p-8 text-oliva">
+      <div role="status" className="border-l-2 border-ok bg-oliva-soft/60 p-8 text-ok">
         <Icon name="check" className="h-8 w-8" />
         <p className="mt-3 font-display text-3xl">¡Solicitud enviada!</p>
         <p className="mt-2 text-carbon">
@@ -55,7 +55,7 @@ export function ReservaForm({
 
   return (
     <form
-      className="grid gap-4 rounded-[2rem] border border-carbon/10 bg-white p-6 shadow-card sm:grid-cols-2 sm:p-8"
+      className="grid gap-4 bg-[#FFFDF8] p-6 ring-1 ring-tinta-line sm:grid-cols-2 sm:p-8"
       onSubmit={async (e) => {
         e.preventDefault();
         setEstado("enviando");

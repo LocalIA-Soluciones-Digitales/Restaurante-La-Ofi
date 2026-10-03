@@ -25,11 +25,65 @@ del C.F. Derio.
 | `local/rotulo-neon-rg.webp` (630×395) | Restaurant Guru: `https://img02.restaurantguru.com/caa7-design-Restaurante-La-Ofi.jpg` (cuadrante inferior, sin la mascota superpuesta) | Tercero (foto de cliente) | Desconocido | **DEMO – sustituir antes de producción** |
 | `local/terraza-carpa-rg.webp` (408×245) | Restaurant Guru: `https://img02.restaurantguru.com/c35f-Restaurante-La-Ofi-Derio-interior-1.jpg` (cuadrante superior derecho) | Tercero (foto de cliente) | Desconocido | **DEMO – sustituir antes de producción** |
 | `local/mapa-la-ofi-osm.webp` (1200×760) | Generado con teselas de `tile.openstreetmap.org` (z16) + marcador propio | Generada | © OpenStreetMap contributors (ODbL) — atribución visible en la web | Válida para producción (mantener la atribución) |
-| `public/og/la-ofi-og.jpg` (1200×630) | Composición propia con `hero/comedor-ratan-avdg.webp` | Generada | — | **DEMO – regenerar con foto oficial** |
+| `public/og/la-ofi-og.jpg` (1200×630) | Composición propia con dos fotos oficiales editadas: tostada de burrata y salón de noche | Generada | — | Válida (solo fotos oficiales autorizadas) |
 | `app/icon.svg`, `app/apple-icon.png`, `public/icons/*` | Monograma provisional "lo" | Generada | LocalIA | Provisional – sustituir por el logo oficial |
 
 **Placeholders de marca** (sin foto, con textura hexagonal y la etiqueta "Foto pendiente"): tortilla
 (home → "Para cada momento" y sección de tostadas) y pintxos de la barra. Nunca se usan fotos de stock.
+
+## Fotos de PLANTILLA (stock, `public/images/plantilla/`) — temporales
+
+Añadidas el 2026-10-03 a petición de LocalIA para que la web no dependa de las fotos reales de baja
+calidad mientras el restaurante entrega fotos profesionales. **No son de La Ofi.** Licencia
+[Unsplash](https://unsplash.com/license): uso comercial libre, sin atribución obligatoria (se
+acredita igualmente en `src/lib/images-plantilla.ts`). Se eligieron solo platos y espacios del mismo
+tipo que los de La Ofi (tostadas, burrata, revuelto, pulpo, pintxos, brasa, café, terraza, comedor).
+
+- Se activan por defecto y se apagan con `NEXT_PUBLIC_FOTOS_PLANTILLA=false` (vuelven las reales).
+- Sustituyen por clave a las reales (`IMAGES` en `src/lib/images.ts`); la **galería** («La Ofi, por
+  dentro») y la imagen Open Graph usan siempre las reales.
+- Todo pie de foto con una de ellas dice «Imagen ilustrativa»; la alt describe la foto tal cual.
+- En la carta solo se asignan a su plato equivalente (Burrata, Bonita → tostadas de aguacate,
+  Revuelta → huevos revueltos, Pulpo a la parrilla); el resto de platos va sin foto.
+- Se regeneran con `python scripts/fotos-plantilla.py` (máx. 2400 px, WebP q82 + recorte 4:5).
+
+| Archivo | Unsplash | Autor | Sustituye a |
+|---|---|---|---|
+| `tostadas-aguacate` | [QcUJLRMDryQ](https://unsplash.com/photos/QcUJLRMDryQ) | Anna Pelzer | `tostadaBonita` (mañana, «9:00») |
+| `tabla-tostadas` | [2IxTgsgFi-s](https://unsplash.com/photos/2IxTgsgFi-s) | Ella Olsson | `cartaTostadas` |
+| `burrata` | [QiJ5Q-LvJp0](https://unsplash.com/photos/QiJ5Q-LvJp0) | Marie Dehayes | `tostadaBurrata` (hero de mañana, plato «Burrata») |
+| `huevos-revueltos` | [qla1_604R4c](https://unsplash.com/photos/qla1_604R4c) | Imad 786 | `tostadaRevuelta` (plato «Revuelta») |
+| `pulpo` | [zbO0yIqHk0g](https://unsplash.com/photos/zbO0yIqHk0g) | Andrea Huls Pareja | `pulpoBrasa` (hero de mediodía, «Pulpo a la parrilla») |
+| `pintxos-barra` | [MFgpVO9Odms](https://unsplash.com/photos/MFgpVO9Odms) | Paul (@paul_colorado) | `pintxosBarra` (hero de tarde) |
+| `barra-pintxos-gente` | [O1R2Vdpo7hs](https://unsplash.com/photos/O1R2Vdpo7hs) | Paul (@paul_colorado) | `barra` |
+| `comedor` | [Wzo_34cS5bA](https://unsplash.com/photos/Wzo_34cS5bA) | Raymond Yeung | `comedorRatan` |
+| `brindis` | [6ciLddToTgM](https://unsplash.com/photos/6ciLddToTgM) | Matthieu Joannon | `salonNoche` (celebraciones, empresas) |
+| `terraza-noche` | [nFRRqDEkzMs](https://unsplash.com/photos/nFRRqDEkzMs) | Nikita | `terrazaNoche` |
+| `terraza-cena` | [L90oTq9DIK4](https://unsplash.com/photos/L90oTq9DIK4) | Miguel Domínguez | `terrazaCarpa` |
+| `cafe-cruasan` | [MV5NQ8oV5LU](https://unsplash.com/photos/MV5NQ8oV5LU) | Yuliia Huzenko | `rotuloNeon` («7:30», detalle de mañana) |
+| `cafe-latte` | [HtH05rdNLGE](https://unsplash.com/photos/HtH05rdNLGE) | Lauren Gray | `cafeLatte` |
+| `parrilla-pescado` | [3_M4NxDo89A](https://unsplash.com/photos/3_M4NxDo89A) | Clint Bustrillos | `brasaParrilla` (sección «A la brasa») |
+| `parrilla-carne` | [Xm8XD2b9AUs](https://unsplash.com/photos/Xm8XD2b9AUs) | Philipp Kämmerer | `brasaCarne` |
+
+Al recibir las fotos profesionales: añadirlas como reales (sección siguiente), comprobar la web con
+`NEXT_PUBLIC_FOTOS_PLANTILLA=false` y, cuando todo esté cubierto, borrar `public/images/plantilla/`,
+`src/lib/images-plantilla.ts` y la variable.
+
+## Versiones editadas para la web (`public/images/ed/`)
+
+Desde el rediseño gastronómico (2026-10-02) la web sirve versiones **reveladas** de las fotos de
+la tabla anterior, generadas con `python scripts/editar-fotos.py` a partir de los originales (que no
+se tocan). Solo revelado, sin añadir ni quitar nada de la escena: balance de blancos parcial
+(corrige p. ej. la dominante magenta del salón de noche), curvas y contraste suaves, color,
+máscara de enfoque y reescalado Lanczos moderado (×1,3–1,6) en las que se ven grandes. No es
+recuperación de detalle: los originales de 1080 px de Instagram siguen siendo el límite de calidad.
+
+Cada foto lleva además un recorte vertical 4:5 para móvil (`*-m.webp`, plato o espacio centrado) y
+un punto focal (`FOCUS` en `src/lib/images.ts`). Al sustituir una foto: dejar el original en su
+carpeta, añadir su línea en `FOTOS` del script, ejecutarlo y apuntar `src/lib/images.ts` a `ed/`.
+
+Las fotos de plato se asocian a su plato de la carta en `src/lib/carta-fotos.ts` (solo ese plato,
+en esa sección). Una foto subida desde `/admin` para el plato tiene prioridad.
 
 ## Vídeo
 
