@@ -73,6 +73,19 @@ export function Header({ homeHref, pedirHref, reservarHref, items, phoneHref, ph
         </nav>
 
         <div className="flex items-center gap-2">
+          {/* Acceso del equipo al panel (como en Palomita y La Osa). prefetch off: no carga /admin para los clientes. */}
+          <Link
+            href="/admin/login"
+            prefetch={false}
+            title="Panel de gestión"
+            className={`hidden min-h-11 min-w-11 items-center justify-center gap-2 rounded-full border text-sm font-semibold transition-colors sm:inline-flex xl:px-4 ${
+              light ? "border-crema/30 text-crema hover:bg-crema/10" : "border-carbon/15 text-carbon hover:bg-white"
+            }`}
+          >
+            <Icon name="lock" className="h-4 w-4" />
+            <span className="sr-only xl:not-sr-only">Panel</span>
+            <span className="sr-only"> de gestión</span>
+          </Link>
           <Link
             href={pedirHref}
             className={`btn hidden min-h-11 border px-4 text-sm sm:inline-flex ${light ? "border-crema/30 text-crema hover:bg-crema/10" : "border-carbon/15 text-carbon hover:bg-white"}`}
@@ -195,6 +208,10 @@ function MobileMenu({
             <Icon name="pin" className="h-4 w-4" />
             {labels.comoLlegar}
           </a>
+          <Link href="/admin/login" prefetch={false} onClick={onClose} className="mt-2 inline-flex min-h-11 items-center justify-center gap-2 text-sm font-semibold text-carbon-muted">
+            <Icon name="lock" className="h-4 w-4" />
+            Panel de gestión
+          </Link>
         </div>
       </nav>
     </div>
