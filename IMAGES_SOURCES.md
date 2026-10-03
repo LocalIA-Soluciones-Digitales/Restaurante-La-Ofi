@@ -26,7 +26,8 @@ del C.F. Derio.
 | `local/terraza-carpa-rg.webp` (408×245) | Restaurant Guru: `https://img02.restaurantguru.com/c35f-Restaurante-La-Ofi-Derio-interior-1.jpg` (cuadrante superior derecho) | Tercero (foto de cliente) | Desconocido | **DEMO – sustituir antes de producción** |
 | `local/mapa-la-ofi-osm.webp` (1200×760) | Generado con teselas de `tile.openstreetmap.org` (z16) + marcador propio | Generada | © OpenStreetMap contributors (ODbL) — atribución visible en la web | Válida para producción (mantener la atribución) |
 | `public/og/la-ofi-og.jpg` (1200×630) | Composición propia con dos fotos oficiales editadas: tostada de burrata y salón de noche | Generada | — | Válida (solo fotos oficiales autorizadas) |
-| `app/icon.svg`, `app/apple-icon.png`, `public/icons/*` | Monograma provisional "lo" | Generada | LocalIA | Provisional – sustituir por el logo oficial |
+| `src/components/layout/Logo.tsx`, `app/icon.svg` | Logotipo "la ofi" redibujado en SVG a partir del rótulo de neón del local (foto `local/rotulo-neon-rg.webp`). Buscado el 2026-10-03 en Instagram, Eatbu, Restaurant Guru y parke.eus: no hay logo publicado como archivo | Generada | LocalIA | Provisional – sustituir por el logo oficial |
+| `app/apple-icon.png`, `public/icons/*` | Monograma provisional "lo" (sin regenerar) | Generada | LocalIA | Provisional – sustituir por el logo oficial |
 
 **Placeholders de marca** (sin foto, con textura hexagonal y la etiqueta "Foto pendiente"): tortilla
 (home → "Para cada momento" y sección de tostadas) y pintxos de la barra. Nunca se usan fotos de stock.
