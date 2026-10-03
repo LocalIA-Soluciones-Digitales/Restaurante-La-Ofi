@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Photo } from "@/components/media/Photo";
 import { EMPRESAS } from "@/lib/home-content";
 import { href, type Locale } from "@/lib/i18n";
+import { creditoFoto, IMAGES } from "@/lib/images";
 
 /** Empresas del Parque y celebraciones: foto real del salón + servicios en lista, no en tarjetas. */
 export function EmpresasHome({ locale }: { locale: Locale }) {
@@ -12,7 +13,9 @@ export function EmpresasHome({ locale }: { locale: Locale }) {
           <div className="reveal-photo photo-hover relative aspect-[4/5] overflow-hidden bg-papel-3 sm:aspect-[3/2]">
             <Photo img="salonNoche" sizes="(min-width: 1024px) 50vw, 100vw" />
           </div>
-          <figcaption className="mt-2 text-xs text-carbon-muted">El salón preparado para una celebración</figcaption>
+          <figcaption className="mt-2 text-xs text-carbon-muted">
+            {IMAGES.salonNoche.kind === "ilustrativa" ? creditoFoto(IMAGES.salonNoche) : "El salón preparado para una celebración"}
+          </figcaption>
         </figure>
 
         <div className="lg:order-1 lg:col-span-6">

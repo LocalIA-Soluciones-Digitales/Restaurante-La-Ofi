@@ -1,5 +1,5 @@
 import { Photo } from "@/components/media/Photo";
-import { IMAGES, type ImageKey } from "@/lib/images";
+import { creditoFoto, IMAGES, type ImageKey } from "@/lib/images";
 
 interface Paso {
   hora: string;
@@ -54,7 +54,7 @@ export function UnDia() {
 
         <ol className="no-scrollbar -mx-4 mt-12 flex snap-x snap-mandatory gap-5 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:px-6 lg:mx-0 lg:grid lg:grid-cols-4 lg:gap-8 lg:overflow-visible lg:px-0">
           {PASOS.map((p, i) => {
-            const img = IMAGES[p.img];
+            const credito = creditoFoto(IMAGES[p.img]);
             return (
               <li key={p.hora} className="w-[74vw] max-w-[20rem] shrink-0 snap-start lg:w-auto lg:max-w-none">
                 <div className="flex items-center gap-3 border-t border-crema/20 pt-4">
@@ -67,7 +67,7 @@ export function UnDia() {
                   <div className={`reveal-photo relative overflow-hidden bg-noche-3 ${i % 2 === 0 ? "aspect-[4/5]" : "aspect-[4/5] lg:mt-12"}`}>
                     <Photo img={p.img} sizes="(min-width: 1024px) 22vw, 74vw" mobileBelow={0} />
                   </div>
-                  {img.kind === "tercero" ? <figcaption className="mt-2 text-[0.68rem] text-crema/70">Foto: {img.credit}</figcaption> : null}
+                  {credito ? <figcaption className="mt-2 text-[0.68rem] text-crema/70">{credito}</figcaption> : null}
                 </figure>
                 <h3 className="t-h3 mt-5 text-crema">{p.titulo}</h3>
                 <p className="mt-2 text-[0.95rem] leading-relaxed text-crema/70">{p.texto}</p>

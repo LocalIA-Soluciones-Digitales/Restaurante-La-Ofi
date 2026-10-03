@@ -7,11 +7,11 @@ import { SITE } from "@/lib/site";
 
 // Secuencia de tamaños distintos (no una rejilla de miniaturas iguales).
 const TIRA: { img: ImageKey; w: string; aspect: string }[] = [
-  { img: "tostadaSalmon", w: "w-[58vw] sm:w-[19rem]", aspect: "aspect-[4/5]" },
-  { img: "rotuloNeon", w: "w-[78vw] sm:w-[28rem]", aspect: "aspect-[4/3]" },
+  { img: "cafeLatte", w: "w-[58vw] sm:w-[19rem]", aspect: "aspect-[4/5]" },
+  { img: "pintxosBarra", w: "w-[78vw] sm:w-[28rem]", aspect: "aspect-[4/3]" },
   { img: "tostadaRevuelta", w: "w-[58vw] sm:w-[17rem]", aspect: "aspect-[4/5]" },
   { img: "terrazaCarpa", w: "w-[78vw] sm:w-[26rem]", aspect: "aspect-[5/3]" },
-  { img: "cartaTostadas", w: "w-[58vw] sm:w-[19rem]", aspect: "aspect-square" },
+  { img: "brasaCarne", w: "w-[58vw] sm:w-[19rem]", aspect: "aspect-square" },
 ];
 
 export function GaleriaTira({ locale }: { locale: Locale }) {

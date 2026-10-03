@@ -6,7 +6,7 @@ import { Photo } from "@/components/media/Photo";
 import { EstadoAhora } from "@/components/ui/EstadoAhora";
 import type { EstadoAhora as Estado, Semana } from "@/lib/horario";
 import { MOMENTOS_HERO } from "@/lib/home-content";
-import { IMAGES } from "@/lib/images";
+import { creditoFoto, IMAGES } from "@/lib/images";
 import { franjaDelDia, type Franja } from "@/lib/media";
 
 interface Props {
@@ -46,7 +46,8 @@ export function HeroOfi({ franjaInicial, estadoInicial, semana, links, labels }:
 
   const actual = MOMENTOS_HERO.find((m) => m.franja === franja) ?? MOMENTOS_HERO[0]!;
   const principal = IMAGES[actual.principal];
-  const credito = principal.kind === "tercero" ? ` · Foto: ${principal.credit}` : "";
+  // Con foto de plantilla el pie no describe el plato de La Ofi: solo «Imagen ilustrativa».
+  const pie = principal.kind === "ilustrativa" ? creditoFoto(principal) : [actual.pie, creditoFoto(principal)].filter(Boolean).join(" · ");
 
   return (
     <section aria-labelledby="hero-title" className="relative bg-crema pt-16 lg:pt-[4.5rem]">
@@ -75,10 +76,7 @@ export function HeroOfi({ franjaInicial, estadoInicial, semana, links, labels }:
               })}
             </div>
             <figcaption className="container-wide flex items-baseline justify-between gap-4 pt-3 text-xs text-carbon-muted lg:px-0">
-              <span>
-                {actual.pie}
-                {credito}
-              </span>
+              <span>{pie}</span>
             </figcaption>
 
             {/* Foto del espacio, solo en pantallas grandes: el sitio, junto al plato. */}

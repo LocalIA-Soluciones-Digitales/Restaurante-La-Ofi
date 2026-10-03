@@ -2,14 +2,14 @@ import Link from "next/link";
 import { Photo } from "@/components/media/Photo";
 import { Icon } from "@/components/ui/Icon";
 import { href, type Locale } from "@/lib/i18n";
-import { IMAGES, type ImageKey } from "@/lib/images";
+import { creditoFoto, IMAGES, type ImageKey } from "@/lib/images";
 
 function Pie({ img, children }: { img: ImageKey; children: React.ReactNode }) {
-  const i = IMAGES[img];
+  const credito = creditoFoto(IMAGES[img]);
   return (
     <figcaption className="mt-3">
       {children}
-      {i.kind === "tercero" ? <span className="mt-1 block text-[0.68rem] text-carbon-muted">Foto: {i.credit}</span> : null}
+      {credito ? <span className="mt-1 block text-[0.68rem] text-carbon-muted">{credito}</span> : null}
     </figcaption>
   );
 }

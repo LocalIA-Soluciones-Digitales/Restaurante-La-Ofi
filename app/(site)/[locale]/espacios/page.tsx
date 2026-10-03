@@ -7,7 +7,7 @@ import { PageHero } from "@/components/ui/PageHero";
 import { SourceBadge } from "@/components/ui/SourceBadge";
 import { ESPACIOS, type Espacio } from "@/lib/home-content";
 import { href, type Locale } from "@/lib/i18n";
-import { IMAGES, imageKeyBySrc, type ImageKey } from "@/lib/images";
+import { creditoFoto, IMAGES, imageKeyBySrc, type ImageKey } from "@/lib/images";
 import { pageMetadata } from "@/lib/seo";
 
 type Params = { params: Promise<{ locale: Locale }> };
@@ -59,7 +59,7 @@ export default async function EspaciosPage({ params }: Params) {
                       <div className="reveal-photo photo-hover relative aspect-[4/5] overflow-hidden bg-papel-3 sm:aspect-[3/2]">
                         <Photo img={key} sizes="(min-width: 1024px) 58vw, 100vw" />
                       </div>
-                      {e.imagen!.kind === "tercero" ? <figcaption className="mt-2 text-xs text-carbon-muted">Foto: {e.imagen!.credit}</figcaption> : null}
+                      {creditoFoto(IMAGES[key]) ? <figcaption className="mt-2 text-xs text-carbon-muted">{creditoFoto(IMAGES[key])}</figcaption> : null}
                     </figure>
                   ) : (
                     // Sin foto real de El Despacho todavía: el plano, no una foto inventada.

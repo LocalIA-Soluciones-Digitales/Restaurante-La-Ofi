@@ -1,4 +1,6 @@
+import { FOTOS_PLANTILLA } from "@/lib/env";
 import { IMAGES, type ImageKey } from "@/lib/images";
+import { PLANTILLA } from "@/lib/images-plantilla";
 import type { CartaItem, CartaSeccion } from "@/lib/restaurant/types";
 
 // Fotos REALES de platos concretos de La Ofi que ya están en el sitio (publicadas
@@ -23,7 +25,9 @@ const normalizar = (s: string) =>
 function conFoto(item: CartaItem, seccion: string): CartaItem {
   if (item.imagen) return item;
   const f = FOTOS_DE_PLATO.find((x) => x.seccion === seccion && x.nombre === normalizar(item.nombre));
-  if (!f) return item;
+  // Con fotos de plantilla, solo los platos con una foto ilustrativa equivalente
+  // (no se mezcla una foto real de baja calidad entre las de plantilla).
+  if (!f || (FOTOS_PLANTILLA && !PLANTILLA[f.img])) return item;
   const imagen = { src: IMAGES[f.img].src.src, alt: IMAGES[f.img].alt };
   return { ...item, imagen, imagenes: [imagen, ...item.imagenes] };
 }

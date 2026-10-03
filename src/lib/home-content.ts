@@ -228,8 +228,8 @@ export const MOMENTOS_HERO: MomentoHero[] = [
     franja: "noche",
     label: "Tarde",
     nota: "Terraza cubierta, tardeos y, los viernes, abierto hasta medianoche.",
-    principal: "salonNoche",
+    principal: "pintxosBarra",
     detalle: "terrazaNoche",
-    pie: "El salón de La Ofi, de celebración",
+    pie: "La barra de La Ofi",
   },
 ];

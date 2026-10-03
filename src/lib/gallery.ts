@@ -1,5 +1,7 @@
 import type { GalleryImage } from "@/components/gallery/Gallery";
-import { IMAGES, type ImageKey } from "@/lib/images";
+import { IMAGES_REALES as IMAGES, type ImageKey } from "@/lib/images";
+
+// «La Ofi, por dentro»: siempre fotos reales, nunca las de plantilla.
 
 export type CategoriaGaleria = "platos" | "espacio" | "ambiente";
 

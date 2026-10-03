@@ -7,7 +7,7 @@ import { EstadoAhora } from "@/components/ui/EstadoAhora";
 import { Icon } from "@/components/ui/Icon";
 import { estadoAhora, horarioDeHoy, resolverHorario } from "@/lib/horario";
 import { href, type Locale } from "@/lib/i18n";
-import { IMAGES } from "@/lib/images";
+import { creditoFoto, IMAGES } from "@/lib/images";
 import { getMenuDiaContent } from "@/lib/restaurant/content";
 import { getHorario } from "@/lib/restaurant/queries";
 import { pageMetadata } from "@/lib/seo";
@@ -85,7 +85,7 @@ export default async function MenuDelDiaPage({ params }: Params) {
                   <Photo img="comedorRatan" sizes="17rem" mobileBelow={0} />
                 </div>
                 <figcaption className="mt-2 text-xs text-carbon-muted">
-                  El comedor{comedor.kind === "tercero" ? ` · Foto: ${comedor.credit}` : ""}
+                  {comedor.kind === "ilustrativa" ? creditoFoto(comedor) : ["El comedor", creditoFoto(comedor)].filter(Boolean).join(" · ")}
                 </figcaption>
               </figure>
             </div>

@@ -5,7 +5,7 @@ import { SourceBadge } from "@/components/ui/SourceBadge";
 import { PRIORIDAD_FOTO } from "@/lib/carta-fotos";
 import { formatCentimos } from "@/lib/format";
 import { href, type Locale } from "@/lib/i18n";
-import { imageKeyBySrc } from "@/lib/images";
+import { esIlustrativa, imageKeyBySrc } from "@/lib/images";
 import type { CartaItem, CartaSeccion, ContentState } from "@/lib/restaurant/types";
 
 /**
@@ -38,6 +38,7 @@ export function PlatosQueApetecen({ locale, carta }: { locale: Locale; carta: Co
           </div>
           <div className="flex items-center gap-5">
             <SourceBadge fuente={fuente} />
+            {lista.some(({ item }) => esIlustrativa(item.imagen!.src)) ? <span className="text-xs text-carbon-muted">Imágenes ilustrativas</span> : null}
             <Link href={href(locale, "/carta")} className="link-arrow">
               Ver la carta
               <Icon name="arrow" className="h-4 w-4" />

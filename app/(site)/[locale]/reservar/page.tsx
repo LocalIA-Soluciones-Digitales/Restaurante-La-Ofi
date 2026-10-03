@@ -6,7 +6,7 @@ import { EstadoAhora } from "@/components/ui/EstadoAhora";
 import { Icon } from "@/components/ui/Icon";
 import { estadoAhora, horarioDeHoy, resolverHorario } from "@/lib/horario";
 import { href, type Locale } from "@/lib/i18n";
-import { IMAGES } from "@/lib/images";
+import { creditoFoto, IMAGES } from "@/lib/images";
 import { getEventos, getHorario } from "@/lib/restaurant/queries";
 import { pageMetadata } from "@/lib/seo";
 import { SITE } from "@/lib/site";
@@ -99,7 +99,9 @@ export default async function ReservarPage({ params, searchParams }: Props) {
               </div>
               <figcaption className="mt-3 flex flex-wrap items-center justify-between gap-4 text-sm text-carbon-muted">
                 <span>
-                  El comedor de La Ofi{IMAGES.comedorRatan.kind === "tercero" ? ` · Foto: ${IMAGES.comedorRatan.credit}` : ""}
+                  {IMAGES.comedorRatan.kind === "ilustrativa"
+                    ? creditoFoto(IMAGES.comedorRatan)
+                    : ["El comedor de La Ofi", creditoFoto(IMAGES.comedorRatan)].filter(Boolean).join(" · ")}
                 </span>
                 <span className="flex gap-6">
                   <Link href={href(locale, "/menu-del-dia")} className="link-arrow">

@@ -1,4 +1,6 @@
 import type { StaticImageData } from "next/image";
+import { FOTOS_PLANTILLA } from "@/lib/env";
+import { PLANTILLA, PLANTILLA_CROPS, PLANTILLA_FOCUS } from "@/lib/images-plantilla";
 import comedorRatan from "../../public/images/ed/comedor-ratan-avdg.webp";
 import salonNoche from "../../public/images/ed/salon-celebracion-noche.webp";
 import cartaTostadas from "../../public/images/ed/carta-tostadas-desayuno.webp";
@@ -26,7 +28,8 @@ import rotuloNeonM from "../../public/images/ed/rotulo-neon-rg-m.webp";
 // Procedencia completa de cada archivo en IMAGES_SOURCES.md.
 // oficial = publicada por el propio restaurante (Instagram / Google Business), uso autorizado (2026-10-01).
 // tercero = prensa o directorio, SOLO DEMO: sustituir antes de producción.
-export type ImageKind = "oficial" | "tercero" | "generada";
+// ilustrativa = stock de plantilla (Unsplash), no es La Ofi (images-plantilla.ts).
+export type ImageKind = "oficial" | "tercero" | "generada" | "ilustrativa";
 
 export interface SiteImage {
   src: StaticImageData;
@@ -35,7 +38,8 @@ export interface SiteImage {
   credit: string;
 }
 
-export const IMAGES = {
+/** Fotos reales del restaurante (o de su entorno). La galería usa siempre estas. */
+export const IMAGES_REALES = {
   comedorRatan: {
     src: comedorRatan,
     alt: "Comedor de La Ofi con grandes lámparas de ratán, mesas de madera y suelo de baldosa hexagonal, junto a ventanales",
@@ -108,6 +112,31 @@ export const IMAGES = {
     kind: "tercero",
     credit: "Restaurant Guru (foto de cliente)",
   },
+  // Papeles nuevos de la plantilla; sin plantilla muestran la foto real equivalente.
+  pintxosBarra: {
+    src: barra,
+    alt: "Barra de La Ofi con frontal de listones de madera, rótulo luminoso y mesas altas",
+    kind: "tercero",
+    credit: "Deia · Itziar Acereda",
+  },
+  brasaParrilla: {
+    src: pulpoBrasa,
+    alt: "Pulpo a la brasa con patata cocida y pimentón",
+    kind: "tercero",
+    credit: "Deia · Itziar Acereda",
+  },
+  brasaCarne: {
+    src: pulpoBrasa,
+    alt: "Pulpo a la brasa con patata cocida y pimentón",
+    kind: "tercero",
+    credit: "Deia · Itziar Acereda",
+  },
+  cafeLatte: {
+    src: rotuloNeon,
+    alt: "Rótulo de neón «la ofi» sobre la barra, con las cafeteras",
+    kind: "tercero",
+    credit: "Restaurant Guru (foto de cliente)",
+  },
   mapa: {
     src: mapa,
     alt: "Mapa del Parque Tecnológico con la ubicación de La Ofi en Ibaizabal bidea, edificio 502",
@@ -116,13 +145,28 @@ export const IMAGES = {
   },
 } satisfies Record<string, SiteImage>;
 
-export type ImageKey = keyof typeof IMAGES;
+export type ImageKey = keyof typeof IMAGES_REALES;
+
+/** Fotos que pinta la web: las reales o, con FOTOS_PLANTILLA, las de plantilla donde las hay. */
+export const IMAGES: Record<ImageKey, SiteImage> = FOTOS_PLANTILLA ? { ...IMAGES_REALES, ...PLANTILLA } : IMAGES_REALES;
+
+/** true si la foto de un plato (por URL) es de plantilla, no del restaurante. */
+export function esIlustrativa(src: string): boolean {
+  return Object.values(IMAGES).some((v) => v.src.src === src && v.kind === "ilustrativa");
+}
+
+/** Pie de foto obligatorio según procedencia (null = foto propia, sin pie). */
+export function creditoFoto(img: SiteImage): string | null {
+  if (img.kind === "tercero") return `Foto: ${img.credit}`;
+  if (img.kind === "ilustrativa") return "Imagen ilustrativa";
+  return null;
+}
 
 // --- Dirección de arte responsive ------------------------------------------
 // Recortes 4:5 para móvil generados por scripts/editar-fotos.py (plato o espacio
 // centrado) y punto focal para object-position cuando la foto se recorta en CSS.
 
-export const MOBILE_CROPS: Partial<Record<ImageKey, StaticImageData>> = {
+const MOBILE_CROPS_REALES: Partial<Record<ImageKey, StaticImageData>> = {
   comedorRatan: comedorRatanM,
   salonNoche: salonNocheM,
   pulpoBrasa: pulpoBrasaM,
@@ -136,7 +180,7 @@ export const MOBILE_CROPS: Partial<Record<ImageKey, StaticImageData>> = {
 };
 
 /** Punto focal (object-position) de cada foto: lo que no debe perderse al recortar. */
-export const FOCUS: Partial<Record<ImageKey, string>> = {
+const FOCUS_REALES: Partial<Record<ImageKey, string>> = {
   comedorRatan: "60% 55%",
   salonNoche: "55% 40%",
   pulpoBrasa: "48% 50%",
@@ -151,8 +195,14 @@ export const FOCUS: Partial<Record<ImageKey, string>> = {
   cartaTostadas: "45% 50%",
 };
 
+export const MOBILE_CROPS: Partial<Record<ImageKey, StaticImageData>> = FOTOS_PLANTILLA
+  ? { ...MOBILE_CROPS_REALES, ...PLANTILLA_CROPS }
+  : MOBILE_CROPS_REALES;
+export const FOCUS: Partial<Record<ImageKey, string>> = FOTOS_PLANTILLA ? { ...FOCUS_REALES, ...PLANTILLA_FOCUS } : FOCUS_REALES;
+
 /** Clave de una foto propia a partir de su URL (para recuperar foco y recorte). */
 export function imageKeyBySrc(src: string): ImageKey | null {
-  const entry = (Object.entries(IMAGES) as [ImageKey, SiteImage][]).find(([, v]) => v.src.src === src);
+  const entry = (Object.entries(IMAGES) as [ImageKey, SiteImage][]).find(([, v]) => v.src.src === src)
+    ?? (Object.entries(IMAGES_REALES) as [ImageKey, SiteImage][]).find(([, v]) => v.src.src === src);
   return entry ? entry[0] : null;
 }

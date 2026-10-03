@@ -8,6 +8,7 @@ import { SourceBadge } from "@/components/ui/SourceBadge";
 import { getAlergeno, normalizarAlergenos } from "@/lib/allergens";
 import { ETIQUETAS } from "@/lib/carta";
 import { formatCentimos } from "@/lib/format";
+import { esIlustrativa } from "@/lib/images";
 import type { CartaItem, CartaSeccion } from "@/lib/restaurant/types";
 
 /**
@@ -54,7 +55,10 @@ export function CartaSeccionEditorial({
                   <DishPhoto imagen={i.imagen!} sizes="(min-width: 1024px) 38vw, 100vw" decorative />
                 </div>
               ))}
-              <p className="absolute bottom-0 left-0 bg-crema/90 px-3 py-1.5 font-display text-sm text-carbon">{foto.nombre}</p>
+              <p className="absolute bottom-0 left-0 bg-crema/90 px-3 py-1.5 font-display text-sm text-carbon">
+                {foto.nombre}
+                {esIlustrativa(foto.imagen!.src) ? <span className="ml-2 font-sans text-[0.68rem] text-carbon-muted">Imagen ilustrativa</span> : null}
+              </p>
             </div>
           </div>
         ) : null}
