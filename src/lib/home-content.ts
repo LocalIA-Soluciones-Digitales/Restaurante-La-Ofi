@@ -198,6 +198,8 @@ export type ImagenEditorial = { src: StaticImageData; alt: string; credit: strin
 export interface MomentoHero {
   franja: "manana" | "mediodia" | "noche";
   label: string;
+  /** Detalle corto del momento en el selector del hero (solo datos publicados). */
+  sub: string;
   /** Línea de contexto bajo el titular. */
   nota: string;
   principal: ImageKey;
@@ -213,6 +215,7 @@ export const MOMENTOS_HERO: MomentoHero[] = [
   {
     franja: "manana",
     label: "Mañana",
+    sub: "Desde las 7:30",
     nota: "Café desde las 7:30 y tostadas de pan de masa madre de 9:00 a 11:30.",
     principal: "tostadaBurrata",
     detalle: "rotuloNeon",
@@ -222,6 +225,7 @@ export const MOMENTOS_HERO: MomentoHero[] = [
   {
     franja: "mediodia",
     label: "Mediodía",
+    sub: "Plato del día y brasa",
     nota: "Plato del día de lunes a viernes y cocina a la brasa.",
     principal: "pulpoBrasa",
     detalle: "comedorRatan",
@@ -231,6 +235,7 @@ export const MOMENTOS_HERO: MomentoHero[] = [
   {
     franja: "noche",
     label: "Tarde",
+    sub: "Viernes hasta las 00:00",
     nota: "Terraza cubierta, tardeos y, los viernes, abierto hasta medianoche.",
     principal: "salonNoche",
     detalle: "terrazaNoche",

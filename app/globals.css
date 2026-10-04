@@ -34,7 +34,8 @@
   /* "colors.neon" es un grupo: hay que pedir su DEFAULT. Con el grupo, Tailwind
      descartaba bg-marino-900 y las variantes de bg-marino (fondos que no salían). */
   .bg-marino-900 :focus-visible,
-  .bg-marino :focus-visible {
+  .bg-marino :focus-visible,
+  [data-header="light"] :focus-visible {
     outline-color: theme("colors.neon.DEFAULT");
   }
 }

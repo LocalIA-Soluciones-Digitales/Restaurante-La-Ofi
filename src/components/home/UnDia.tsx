@@ -50,9 +50,12 @@ export function UnDia() {
               Durante el día, el restaurante del Parque. <em className="text-ratan">Cuando acaba la oficina, empieza La Ofi.</em>
             </h2>
           </div>
+          <p className="max-w-[26rem] text-[0.95rem] leading-relaxed text-crema/70 lg:col-span-4 lg:col-start-9 lg:pb-2">
+            De lunes a viernes desde las 7:30, con cocina casera a mediodía. Los viernes, abierto hasta medianoche.
+          </p>
         </div>
 
-        <ol className="no-scrollbar -mx-4 mt-12 flex snap-x snap-mandatory gap-5 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:px-6 lg:mx-0 lg:grid lg:grid-cols-4 lg:gap-8 lg:overflow-visible lg:px-0">
+        <ol className="no-scrollbar -mx-4 mt-12 flex snap-x snap-mandatory gap-5 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:px-6 lg:mx-0 lg:grid lg:grid-cols-4 lg:gap-6 xl:gap-8 lg:overflow-visible lg:px-0">
           {PASOS.map((p, i) => {
             const credito = creditoFoto(IMAGES[p.img]);
             return (
@@ -63,13 +66,18 @@ export function UnDia() {
                   </span>
                   <p className="font-display text-3xl tabular-nums text-crema">{p.hora}</p>
                 </div>
-                <figure className="mt-5">
-                  <div className={`reveal-photo relative overflow-hidden bg-noche-3 ${i % 2 === 0 ? "aspect-[4/5]" : "aspect-[4/5] lg:mt-12"}`}>
-                    <Photo img={p.img} sizes="(min-width: 1024px) 22vw, 74vw" mobileBelow={0} />
-                  </div>
-                  {credito ? <figcaption className="mt-2 text-[0.68rem] text-crema/70">{credito}</figcaption> : null}
+                {/* Misma proporción en las cuatro y crédito dentro de la foto: fotos y
+                    títulos quedan en la misma línea en toda la fila. */}
+                <figure className="reveal-photo relative mt-5 aspect-[4/5] overflow-hidden bg-noche-3">
+                  <Photo img={p.img} sizes="(min-width: 1024px) 22vw, 74vw" mobileBelow={0} />
+                  {credito ? (
+                    <>
+                      <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-noche/75 to-transparent" />
+                      <figcaption className="absolute inset-x-3 bottom-2.5 text-[0.66rem] leading-snug text-crema/80">{credito}</figcaption>
+                    </>
+                  ) : null}
                 </figure>
-                <h3 className="t-h3 mt-5 text-crema">{p.titulo}</h3>
+                <h3 className="t-h3 mt-6 text-crema">{p.titulo}</h3>
                 <p className="mt-2 text-[0.95rem] leading-relaxed text-crema/70">{p.texto}</p>
               </li>
             );

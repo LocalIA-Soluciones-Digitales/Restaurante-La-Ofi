@@ -25,9 +25,11 @@ interface Props {
 export function Header({ homeHref, pedirHref, reservarHref, items, primary, phoneHref, phoneDisplay, labels, directionsHref }: Props) {
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
-  const [overHero, setOverHero] = useState(false);
-  const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  // La home abre con hero oscuro: ya en el HTML del servidor la cabecera va en claro
+  // (sin destello de texto oscuro sobre la foto); el efecto de abajo lo confirma.
+  const [overHero, setOverHero] = useState(pathname === homeHref);
+  const [open, setOpen] = useState(false);
   const lastY = useRef(0);
 
   // Fondo al despegarse del borde y se esconde al bajar leyendo; vuelve al subir.
