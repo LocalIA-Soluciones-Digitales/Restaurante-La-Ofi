@@ -5,7 +5,7 @@
  */
 export function Logo({ light = false, className = "" }: { light?: boolean; className?: string }) {
   return (
-    <span className={`inline-flex flex-col leading-none ${className}`}>
+    <span className={`inline-flex flex-col items-start leading-none ${className}`}>
       <svg
         viewBox="0 0 119 46"
         role="img"
