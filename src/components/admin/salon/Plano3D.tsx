@@ -15,7 +15,8 @@ import { ESTADO_MESA, estadoMesa, type MesaSalon, type Zona } from "@/lib/admin/
 // comedor privado con bombillas de cuerda, terraza bajo carpa con luz morada y
 // zona chill-out con sofás sobre césped. Es una representación, no un plano a
 // escala: las medidas reales están pendientes del croquis (CONTENT_NEEDED.md).
-// Se carga con dynamic() solo al pulsar "3D": three.js no entra en ningún otro sitio.
+// Se carga con dynamic() solo al pulsar "3D" en /admin o al acercarse el plano en
+// /espacios (modo `publico`: mesas en madera, sin números ni estados de servicio).
 
 const ESCALA = 20; // el lienzo 100×100 (%) ocupa 20×12.4 unidades
 const ANCHO = ESCALA;
@@ -362,15 +363,31 @@ function Sillas({ forma, capacidad, ancho, fondo, color }: { forma: MesaSalon["f
 export default function Plano3D({
   zonas,
   mesas,
-  seleccion,
+  seleccion = null,
   onSelect,
+  publico = false,
+  destacar,
+  interactivo = true,
+  autoRotar = false,
+  className,
 }: {
   zonas: Zona[];
   mesas: MesaSalon[];
-  seleccion: string | null;
-  onSelect: (id: string) => void;
+  seleccion?: string | null;
+  onSelect?: (id: string) => void;
+  /** Web pública: sin números ni estados de mesa, sin desplazar el plano. */
+  publico?: boolean;
+  /** Zona resaltada y centrada en la cámara. */
+  destacar?: Zona["tipo"];
+  /** false = solo se ve (no captura el ratón ni el dedo; no secuestra el scroll). */
+  interactivo?: boolean;
+  autoRotar?: boolean;
+  className?: string;
 }) {
   const pos = posicionesPorDefecto(zonas, mesas);
+  const zonaDestacada = destacar ? zonas.find((z) => z.tipo === destacar) : undefined;
+  const foco = zonaDestacada ? caja(zonaDestacada) : null;
+  const objetivo: [number, number, number] = foco ? [foco.cx * 0.5, 0, foco.cz * 0.5] : [0, 0, 0];
   const hex = useSueloHexagonal();
   const interiores = zonas.filter((z) => INTERIOR.includes(z.tipo));
   const izq = Math.min(...interiores.map((z) => Number(z.x)));
@@ -378,14 +395,19 @@ export default function Plano3D({
   const zonaDe = new Map(zonas.map((z) => [z.id, z]));
 
   return (
-    <div className="h-[62vh] min-h-[420px] w-full overflow-hidden rounded-[1.5rem] bg-noche">
-      <Canvas camera={{ position: [0, 15, 14], fov: 45 }} shadows dpr={[1, 1.75]}>
+    <div className={className ?? "h-[62vh] min-h-[420px] w-full overflow-hidden rounded-[1.5rem] bg-noche"}>
+      <Canvas camera={{ position: foco ? [objetivo[0] - 3, 12, objetivo[2] + 13] : [0, 15, 14], fov: 45 }} shadows dpr={[1, 1.75]}>
         <color attach="background" args={["#0B1424"]} />
         <fog attach="fog" args={["#0B1424", 26, 48]} />
         <ambientLight intensity={0.5} />
         <hemisphereLight args={["#bcc8ff", "#1b2a1e", 0.35]} />
         <directionalLight position={[6, 14, 8]} intensity={0.9} castShadow shadow-mapSize={[1024, 1024]} />
 
+        {/* drei 10 + React 19: el primer <Html> del lienzo se desmonta al montar
+            (se perdía la etiqueta de El Despacho). Este vacío absorbe el fallo. */}
+        <Html position={[0, 0, 0]} style={{ display: "none" }} aria-hidden>
+          <span />
+        </Html>
         {/* Césped alrededor del pabellón */}
         <mesh rotation-x={-Math.PI / 2} position={[0, -0.01, 0]} receiveShadow>
           <planeGeometry args={[ANCHO + 8, FONDO + 8]} />
@@ -408,8 +430,22 @@ export default function Plano3D({
             {z.tipo === "despacho" ? <BombillasCuerda z={z} /> : null}
             {z.tipo === "terraza" ? <Carpa z={z} /> : null}
             {esChillOut(z) ? <ChillOut z={z} /> : null}
+            {z.id === zonaDestacada?.id ? (
+              <mesh position={[caja(z).cx, 0.035, caja(z).cz]} rotation-x={-Math.PI / 2}>
+                <planeGeometry args={[caja(z).w, caja(z).d]} />
+                <meshBasicMaterial color="#e08a5f" transparent opacity={0.28} depthWrite={false} />
+              </mesh>
+            ) : null}
             <Html position={[caja(z).cx - caja(z).w / 2 + 0.3, 0.1, caja(z).cz - caja(z).d / 2 + 0.35]} center={false} style={{ pointerEvents: "none" }}>
-              <span style={{ color: "#F4F0FF", fontSize: 12, fontWeight: 700, whiteSpace: "nowrap", textShadow: "0 1px 3px #000" }}>{z.nombre}</span>
+              <span
+                style={
+                  z.id === zonaDestacada?.id
+                    ? { color: "#fff", background: "#9A4527", padding: "3px 8px", borderRadius: 4, fontSize: 13, fontWeight: 700, whiteSpace: "nowrap" }
+                    : { color: "#F4F0FF", fontSize: 12, fontWeight: 700, whiteSpace: "nowrap", textShadow: "0 1px 3px #000" }
+                }
+              >
+                {z.nombre}
+              </span>
             </Html>
           </group>
         ))}
@@ -431,39 +467,61 @@ export default function Plano3D({
               <group
                 position={[x, 0, z]}
                 rotation-y={(-Number(m.rotacion ?? 0) * Math.PI) / 180}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelect(m.id);
-                }}
+                onClick={
+                  onSelect
+                    ? (e) => {
+                        e.stopPropagation();
+                        onSelect(m.id);
+                      }
+                    : undefined
+                }
               >
                 <mesh position={[0, alto, 0]} castShadow>
                   {redonda ? <cylinderGeometry args={[ancho / 2, ancho / 2, 0.06, 32]} /> : <boxGeometry args={[ancho, 0.06, fondo]} />}
-                  <meshStandardMaterial color={ESTADO_MESA[est].color} emissive={sel ? "#C9BBFF" : "#000"} emissiveIntensity={sel ? 0.6 : 0} />
+                  <meshStandardMaterial
+                    color={publico ? (exterior ? "#d6d2c8" : "#8a6440") : ESTADO_MESA[est].color}
+                    emissive={sel ? "#C9BBFF" : "#000"}
+                    emissiveIntensity={sel ? 0.6 : 0}
+                  />
                 </mesh>
                 <mesh position={[0, alto / 2, 0]} castShadow>
                   <cylinderGeometry args={[0.04, 0.07, alto, 10]} />
                   <meshStandardMaterial color={exterior ? "#c9ccd2" : "#3a2f25"} />
                 </mesh>
                 <Sillas forma={m.forma} capacidad={m.capacidad} ancho={ancho} fondo={fondo} color={exterior ? "#2a2f3a" : "#b98b5e"} />
-                {(m.aviso_camarero || m.pide_cuenta) && (
+                {!publico && (m.aviso_camarero || m.pide_cuenta) && (
                   <mesh position={[0, alto + 0.6, 0]}>
                     <sphereGeometry args={[0.14, 16, 16]} />
                     <meshStandardMaterial color="#C9BBFF" emissive="#8E7CF0" emissiveIntensity={2} />
                   </mesh>
                 )}
-                <Html position={[0, alto + 0.25, 0]} center style={{ pointerEvents: "none" }}>
-                  <span style={{ color: "#fff", fontSize: 13, fontWeight: 800, textShadow: "0 1px 3px #000" }}>
-                    {m.numero}
-                    {m.ocupada ? ` · ${m.comensales}p` : ""}
-                  </span>
-                </Html>
+                {publico ? null : (
+                  <Html position={[0, alto + 0.25, 0]} center style={{ pointerEvents: "none" }}>
+                    <span style={{ color: "#fff", fontSize: 13, fontWeight: 800, textShadow: "0 1px 3px #000" }}>
+                      {m.numero}
+                      {m.ocupada ? ` · ${m.comensales}p` : ""}
+                    </span>
+                  </Html>
+                )}
               </group>
               {zona?.tipo === "comedor" ? <LamparaRatan x={x} z={z} escala={m.capacidad > 4 ? 1.25 : 1} /> : null}
             </group>
           );
         })}
 
-        <OrbitControls makeDefault enablePan maxPolarAngle={Math.PI / 2.15} minDistance={5} maxDistance={34} />
+        <OrbitControls
+          makeDefault
+          target={objetivo}
+          enabled={interactivo || autoRotar}
+          enableRotate={interactivo}
+          enableZoom={interactivo}
+          enablePan={interactivo && !publico}
+          autoRotate={autoRotar}
+          autoRotateSpeed={0.35}
+          maxPolarAngle={Math.PI / 2.15}
+          minDistance={5}
+          maxDistance={publico ? 26 : 34}
+        />
       </Canvas>
     </div>
   );

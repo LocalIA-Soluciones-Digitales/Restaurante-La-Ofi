@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { PlanoEsquema } from "@/components/espacios/PlanoEsquema";
+import { PlanoLocal3D } from "@/components/espacios/PlanoLocal3D";
 import { Photo } from "@/components/media/Photo";
 import { SceneMedia } from "@/components/media/SceneMedia";
 import { Icon } from "@/components/ui/Icon";
@@ -66,10 +66,13 @@ export default async function EspaciosPage({ params }: Params) {
                       ) : null}
                     </figure>
                   ) : (
-                    // Sin foto real de El Despacho todavía: el plano, no una foto inventada.
-                    <div className="bg-papel-2 p-6 sm:p-10">
-                      <PlanoEsquema />
-                    </div>
+                    // Sin foto real de El Despacho todavía: el plano 3D del local, no una foto inventada.
+                    <figure>
+                      <PlanoLocal3D destacar={e.id === "despacho" ? "despacho" : undefined} />
+                      <figcaption className="mt-2 text-xs text-carbon-muted">
+                        Recreación orientativa del local, no a escala. La distribución real se publicará con el plano del salón.
+                      </figcaption>
+                    </figure>
                   )}
                 </div>
                 <div className={`lg:col-span-5 ${par ? "lg:order-1" : ""}`}>
