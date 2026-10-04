@@ -95,7 +95,7 @@ export function Ubicacion({
           </div>
         </div>
         <div className="lg:col-span-7">
-          <MapEmbed image={IMAGES.mapa.src} alt={IMAGES.mapa.alt} embedUrl={SITE.maps.embed} credit={IMAGES.mapa.credit} priority={mapPriority} />
+          <MapEmbed image={IMAGES.mapa.src} alt={IMAGES.mapa.alt} embedUrl={SITE.maps.embed} priority={mapPriority} />
         </div>
       </div>
     </section>
