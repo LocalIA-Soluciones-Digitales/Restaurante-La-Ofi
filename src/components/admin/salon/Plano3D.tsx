@@ -1,8 +1,8 @@
 "use client";
 
 import { Html, OrbitControls } from "@react-three/drei";
-import { Canvas } from "@react-three/fiber";
-import { useMemo } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { posicionesPorDefecto, puestosMesa, tamanoMesa } from "@/lib/admin/plano";
 import { ESTADO_MESA, estadoMesa, type MesaSalon, type Zona } from "@/lib/admin/types";
@@ -179,12 +179,33 @@ function Barra({ z }: { z: Zona }) {
       <pointLight position={[cx, 2.1, zc + 0.4]} intensity={6} distance={6} color="#ffd9a0" />
       {/* Neón lavanda sobre azulejo blanco */}
       <pointLight position={[cx - largo * 0.25, 1.8, cz - d / 2 + 0.5]} intensity={5} distance={5} color="#c9bbff" />
-      <Html transform position={[cx - largo * 0.25, 1.8, cz - d / 2 + 0.08]} scale={0.32} style={{ pointerEvents: "none" }}>
-        <span style={{ fontFamily: "var(--font-display), Georgia, serif", fontSize: 64, fontWeight: 600, color: "#f6f2ff", textShadow: "0 0 6px #c9bbff, 0 0 18px #9d86ff, 0 0 36px #7a5cff", whiteSpace: "nowrap" }}>
-          la ofi
-        </span>
-      </Html>
+      <RotuloNeon position={[cx - largo * 0.25, 1.8, cz - d / 2 + 0.08]} />
     </group>
+  );
+}
+
+/**
+ * Rótulo de neón "la ofi" en la pared del fondo de la barra. Es HTML sobre el
+ * lienzo: no lo tapa la geometría por sí solo. Se oculta cuando la cámara queda
+ * detrás de la pared en la que está colgado (lo taparía la pared y además se
+ * vería al revés).
+ */
+function RotuloNeon({ position }: { position: [number, number, number] }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  useFrame(({ camera }) => {
+    // La cara del rótulo mira hacia +z (al interior); detrás de la pared, oculto.
+    const delante = camera.position.z > position[2];
+    if (ref.current) ref.current.style.visibility = delante ? "visible" : "hidden";
+  });
+  return (
+    <Html transform position={position} scale={0.32} style={{ pointerEvents: "none" }}>
+      <span
+        ref={ref}
+        style={{ fontFamily: "var(--font-display), Georgia, serif", fontSize: 64, fontWeight: 600, color: "#f6f2ff", textShadow: "0 0 6px #c9bbff, 0 0 18px #9d86ff, 0 0 36px #7a5cff", whiteSpace: "nowrap" }}
+      >
+        la ofi
+      </span>
+    </Html>
   );
 }
 
