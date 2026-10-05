@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
+import { AyudaSeccion } from "@/components/admin/AyudaSeccion";
 import { Icon } from "@/components/ui/Icon";
 import { salir } from "@/lib/admin/actions";
 import { ROLES, SECCIONES, type Rol } from "@/lib/admin/roles";
@@ -137,17 +138,9 @@ export function AdminShell({ nombre, rol, local, children }: { nombre: string; r
             <Icon name="menu" />
             <span className="sr-only">Abrir menú</span>
           </button>
-          <p className="min-w-0 flex-1 truncate font-display text-xl">{pathname.startsWith("/admin/manual") ? "Manual" : (actual?.label ?? "Panel")}</p>
+          <p className="min-w-0 flex-1 truncate font-display text-xl">{actual?.label ?? "Panel"}</p>
           <span className="hidden font-mono text-sm tabular-nums text-carbon-muted dark:text-crema/60 sm:inline">{hora}</span>
-          <Link
-            href="/admin/manual"
-            title="Manual: cómo funciona un pedido"
-            aria-current={pathname.startsWith("/admin/manual") ? "page" : undefined}
-            className="grid h-11 w-11 place-items-center rounded-xl border border-carbon/15 aria-[current=page]:bg-neon aria-[current=page]:text-noche dark:border-crema/15"
-          >
-            <Icon name="info" className="h-5 w-5" />
-            <span className="sr-only">Manual</span>
-          </Link>
+          <AyudaSeccion pathname={pathname} titulo={actual?.label ?? "Panel"} />
           <button type="button" onClick={cambiarTema} className="grid h-11 w-11 place-items-center rounded-xl border border-carbon/15 dark:border-crema/15" aria-pressed={oscuro}>
             <Icon name={oscuro ? "sun" : "moon"} className="h-5 w-5" />
             <span className="sr-only">Modo oscuro</span>

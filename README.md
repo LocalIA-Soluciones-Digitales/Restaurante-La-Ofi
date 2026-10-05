@@ -59,7 +59,7 @@ Sin variables de Supabase la web funciona igual: muestra contenido de ejemplo (s
 | `/es/reservar` | Reserva online si está activada en `/admin/configuracion`; si no, teléfono |
 | `/es/espacios`, `/es/empresas` | Comedor, terraza y El Despacho; comidas de empresa |
 | `/admin` | Panel por roles: Hoy (servicio en vivo en una pantalla: atender ya, pedidos en marcha, próximas reservas), Salón 2D/3D, TPV, Cocina y barra, Reservas, Menú del día, Carta, Eventos, Ventas, Caja, Mesas y QR, Equipo, Configuración |
-| `/admin/manual` | Manual del equipo: un pedido de principio a fin (QR → cocina → sala → cobro → cierre) con capturas reales. También en [`docs/MANUAL_PEDIDOS.md`](./docs/MANUAL_PEDIDOS.md) |
+| [`docs/manual/`](./docs/manual/) | Manual de servicio para el equipo (del QR al cierre de caja) con capturas reales: [`Manual-servicio-La-Ofi.pdf`](./docs/manual/Manual-servicio-La-Ofi.pdf) y su versión HTML. Se regenera con `python scripts/manual/generar.py`. En el panel, el botón «i» de cada pantalla explica esa sección |
 | `/es/menu-del-dia` | Menú del día (Supabase) |
 | `/es/eventos`, `/es/eventos/[slug]` | Eventos (Supabase) |
 | `/es/galeria`, `/es/contacto` | Galería con lightbox; contacto y cómo llegar |
