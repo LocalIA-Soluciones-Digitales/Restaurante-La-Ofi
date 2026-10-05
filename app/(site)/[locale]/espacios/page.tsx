@@ -66,13 +66,7 @@ export default async function EspaciosPage({ params }: Params) {
                       ) : null}
                     </figure>
                   ) : (
-                    // Sin foto real de El Despacho todavía: el plano 3D del local, no una foto inventada.
-                    <figure>
-                      <PlanoLocal3D destacar={e.id === "despacho" ? "despacho" : undefined} />
-                      <figcaption className="mt-2 text-xs text-carbon-muted">
-                        Recreación orientativa del local, no a escala. La distribución real se publicará con el plano del salón.
-                      </figcaption>
-                    </figure>
+                    <div className="aspect-[3/2] bg-papel-2" />
                   )}
                 </div>
                 <div className={`lg:col-span-5 ${par ? "lg:order-1" : ""}`}>
@@ -100,6 +94,27 @@ export default async function EspaciosPage({ params }: Params) {
           })}
         </ol>
 
+        <section aria-labelledby="plano-title" className="mt-24 border-t border-tinta-line pt-10 sm:mt-32">
+          <div className="grid gap-6 lg:grid-cols-12 lg:items-end">
+            <div className="lg:col-span-6">
+              <p className="kicker text-brasa">El plano</p>
+              <h2 id="plano-title" className="t-h2 mt-3 text-carbon">
+                Dónde está cada cosa
+              </h2>
+            </div>
+            <p className="lead lg:col-span-6">
+              El Despacho, la barra y el comedor bajo el mismo techo, con fachada de cristal hacia la terraza cubierta y la zona
+              chill-out. Pulsa «Explorar en 3D» para girarlo y acercarte.
+            </p>
+          </div>
+          <figure className="mt-10">
+            <PlanoLocal3D />
+            <figcaption className="mt-2 text-xs text-carbon-muted">
+              Recreación orientativa del local, no a escala. La distribución real se publicará con el plano del salón.
+            </figcaption>
+          </figure>
+        </section>
+
         <section aria-labelledby="celebrar-title" className="mt-24 grid gap-8 bg-marino-900 p-6 text-crema sm:p-10 lg:grid-cols-12 lg:items-center lg:gap-14 lg:p-14">
           <div className="lg:col-span-6">
             <p className="kicker text-ratan">Celebraciones y empresa</p>
@@ -117,7 +132,7 @@ export default async function EspaciosPage({ params }: Params) {
             </div>
           </div>
           <div className="relative aspect-[3/2] overflow-hidden lg:col-span-6">
-            <Photo img="salonNoche" sizes="(min-width: 1024px) 45vw, 100vw" mobileBelow={0} />
+            <Photo img="comedorPanoramica" sizes="(min-width: 1024px) 45vw, 100vw" mobileBelow={0} />
           </div>
         </section>
       </div>

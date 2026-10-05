@@ -24,6 +24,9 @@ const FONDO = ESCALA * 0.62;
 const ALTURA = 2.6;
 const INTERIOR: Zona["tipo"][] = ["barra", "comedor", "despacho"];
 
+/** Cámara de la vista general en la web: todo el pabellón y la terraza dentro del encuadre. */
+const VISTA_PUBLICA = { posicion: [0, 19, 14] as [number, number, number], fov: 36 };
+
 const aMundo = (x: number, y: number): [number, number] => [(x / 100) * ANCHO - ANCHO / 2, (y / 100) * FONDO - FONDO / 2];
 
 interface Caja {
@@ -396,7 +399,15 @@ export default function Plano3D({
 
   return (
     <div className={className ?? "h-[62vh] min-h-[420px] w-full overflow-hidden rounded-[1.5rem] bg-noche"}>
-      <Canvas camera={{ position: foco ? [objetivo[0] - 3, 12, objetivo[2] + 13] : [0, 15, 14], fov: 45 }} shadows dpr={[1, 1.75]}>
+      <Canvas
+        camera={{
+          // Web pública: vista general alejada y algo más cenital, para que se lea todo el local.
+          position: foco ? [objetivo[0] - 3, 12, objetivo[2] + 13] : publico ? VISTA_PUBLICA.posicion : [0, 15, 14],
+          fov: publico && !foco ? VISTA_PUBLICA.fov : 45,
+        }}
+        shadows
+        dpr={[1, 1.75]}
+      >
         <color attach="background" args={["#0B1424"]} />
         <fog attach="fog" args={["#0B1424", 26, 48]} />
         <ambientLight intensity={0.5} />
@@ -436,12 +447,17 @@ export default function Plano3D({
                 <meshBasicMaterial color="#e08a5f" transparent opacity={0.28} depthWrite={false} />
               </mesh>
             ) : null}
-            <Html position={[caja(z).cx - caja(z).w / 2 + 0.3, 0.1, caja(z).cz - caja(z).d / 2 + 0.35]} center={false} style={{ pointerEvents: "none" }}>
+            {/* En la web, etiqueta centrada en la zona (no en la esquina): no se pisan en pantallas pequeñas. */}
+            <Html
+              position={publico ? [caja(z).cx, 0.1, caja(z).cz + caja(z).d * 0.32] : [caja(z).cx - caja(z).w / 2 + 0.3, 0.1, caja(z).cz - caja(z).d / 2 + 0.35]}
+              center={publico}
+              style={{ pointerEvents: "none" }}
+            >
               <span
                 style={
                   z.id === zonaDestacada?.id
                     ? { color: "#fff", background: "#9A4527", padding: "3px 8px", borderRadius: 4, fontSize: 13, fontWeight: 700, whiteSpace: "nowrap" }
-                    : { color: "#F4F0FF", fontSize: 12, fontWeight: 700, whiteSpace: "nowrap", textShadow: "0 1px 3px #000" }
+                    : { color: "#F4F0FF", fontSize: publico ? 11 : 12, fontWeight: 700, whiteSpace: "nowrap", textShadow: "0 1px 3px #000" }
                 }
               >
                 {z.nombre}
