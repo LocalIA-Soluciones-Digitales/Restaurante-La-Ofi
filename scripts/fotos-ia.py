@@ -27,6 +27,8 @@ FOTOS: dict[str, tuple[str, str, tuple[float, float] | None]] = {
     "terraza-noche": ("Gemini_Generated_Image_j9hlx7j9hlx7j9hl.jfif", "10_terraza-noche-fachada", (0.55, 0.55)),
     "salon": ("Gemini_Generated_Image_qnrng6qnrng6qnrn.jfif", "06_salon-celebracion-noche", (0.55, 0.45)),
     "comedor": ("Gemini_Generated_Image_yl0nnbyl0nnbyl0n.jfif", "07_comedor-ratan", (0.62, 0.5)),
+    # Recreación (no retoque): la sala de las bombillas de cuerda de día, con la mesa puesta.
+    "despacho": ("Gemini_Generated_Image_l56o17l56o17l56o.jfif", "06_salon-celebracion-noche", (0.5, 0.55)),
     "comedor-panoramica": ("Gemini_Generated_Image_94q70r94q70r94q7.jfif", "07_comedor-ratan", (0.5, 0.5)),
 }
 

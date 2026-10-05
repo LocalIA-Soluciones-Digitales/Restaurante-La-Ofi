@@ -132,9 +132,10 @@ export const ESPACIOS: Espacio[] = [
     nombre: "El Despacho",
     texto: "Comedor privado para comer de carta o reunirse con tu equipo, con reserva previa.",
     aforo: null,
-    // El comedor privado es la sala de las bombillas colgadas de cuerdas (seed del salón).
-    imagen: img("salonNoche"),
-    video: VIDEOS.heroNoche,
+    // La sala de las bombillas colgadas de cuerdas, de día y con la mesa puesta
+    // (recreación con IA a partir de la foto real; el pie lo indica).
+    imagen: img("despacho"),
+    video: null,
     icon: "briefcase",
     cta: "presupuesto",
     fuente: "prensa",

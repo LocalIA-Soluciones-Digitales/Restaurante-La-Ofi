@@ -49,6 +49,7 @@ Pies en la web: fotos «mejorada con IA», vídeos «Vídeo generado con IA a pa
 | `ia/salon.webp` (2400×1792) | `eventos/salon-celebracion-noche` (oficial) | hero de tarde, empresas, eventos |
 | `ia/barra-neon.webp` (2400×1792) | `local/rotulo-neon-rg` (cliente, Restaurant Guru) | barra, «7:30» |
 | `ia/terraza-noche.webp` (2400×1340) | `local/terraza-noche-deia` (Deia) | terraza, «Viernes», contacto |
+| `ia/despacho.webp` (2400×1610) | `eventos/salon-celebracion-noche` (oficial) | El Despacho en /espacios. **Recreación** (la misma sala de día con la mesa puesta, no un retoque): pie «Recreación con IA a partir de una foto del local» |
 
 | Vídeo (720p, bucle) | Partió de | Uso | Tipo |
 |---|---|---|---|

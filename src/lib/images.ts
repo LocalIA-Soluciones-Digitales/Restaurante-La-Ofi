@@ -7,6 +7,8 @@ import barraNeonM from "../../public/images/ia/barra-neon-m.webp";
 import comedor from "../../public/images/ia/comedor.webp";
 import comedorM from "../../public/images/ia/comedor-m.webp";
 import comedorPanoramica from "../../public/images/ia/comedor-panoramica.webp";
+import despacho from "../../public/images/ia/despacho.webp";
+import despachoM from "../../public/images/ia/despacho-m.webp";
 import comedorPanoramicaM from "../../public/images/ia/comedor-panoramica-m.webp";
 import pulpo from "../../public/images/ia/pulpo.webp";
 import salon from "../../public/images/ia/salon.webp";
@@ -37,6 +39,8 @@ export interface SiteImage {
   kind: ImageKind;
   credit: string;
   ia?: boolean;
+  /** Pie propio cuando la procedencia necesita más precisión (p. ej. escena recreada). */
+  pie?: string;
 }
 
 /** Fotos reales del restaurante (o de su entorno). La galería usa siempre estas. */
@@ -54,6 +58,14 @@ export const IMAGES_REALES = {
     kind: "tercero",
     credit: "Academia Vasca de Gastronomía",
     ia: true,
+  },
+  despacho: {
+    src: despacho,
+    alt: "El Despacho, comedor privado de La Ofi, con una mesa larga para doce puesta bajo bombillas colgadas de cuerdas y ventanales al Parque",
+    kind: "oficial",
+    credit: "Restaurante La Ofi (Google)",
+    ia: true,
+    pie: "Recreación con IA a partir de una foto del local",
   },
   salonNoche: {
     src: salon,
@@ -177,6 +189,7 @@ export function esIlustrativa(src: string): boolean {
 
 /** Pie de foto obligatorio según procedencia (null = foto propia sin retocar con IA, sin pie). */
 export function creditoFoto(img: SiteImage): string | null {
+  if (img.pie) return img.pie;
   if (img.kind === "ilustrativa") return "Imagen ilustrativa";
   const ia = img.ia ? "mejorada con IA" : null;
   if (img.kind === "tercero") return [`Foto: ${img.credit}`, ia].filter(Boolean).join(" · ");
@@ -190,6 +203,7 @@ export function creditoFoto(img: SiteImage): string | null {
 const MOBILE_CROPS_REALES: Partial<Record<ImageKey, StaticImageData>> = {
   comedorRatan: comedorM,
   comedorPanoramica: comedorPanoramicaM,
+  despacho: despachoM,
   salonNoche: salonM,
   tostadaRevuelta: tostadaRevueltaM,
   tostadaSalmon: tostadaSalmonM,
@@ -202,6 +216,7 @@ const MOBILE_CROPS_REALES: Partial<Record<ImageKey, StaticImageData>> = {
 const FOCUS_REALES: Partial<Record<ImageKey, string>> = {
   comedorRatan: "62% 50%",
   comedorPanoramica: "50% 50%",
+  despacho: "50% 55%",
   salonNoche: "55% 45%",
   pulpoBrasa: "50% 50%",
   tostadaBonita: "50% 62%",
