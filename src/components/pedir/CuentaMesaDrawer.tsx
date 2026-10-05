@@ -24,6 +24,8 @@ export function CuentaMesaDrawer({ pagoOnline, onClose }: { pagoOnline: boolean;
   const s = useTableSession();
   const ref = useDialogA11y<HTMLDivElement>(onClose);
   const [aviso, setAviso] = useState<string | null>(null);
+  // Evita avisos repetidos al personal por toques dobles o impaciencia.
+  const [cuentaPedida, setCuentaPedida] = useState(false);
   const [cargando, setCargando] = useState(false);
 
   const partes = useMemo(() => {
@@ -51,8 +53,10 @@ export function CuentaMesaDrawer({ pagoOnline, onClose }: { pagoOnline: boolean;
   const pendienteMio = mias.filter((x) => !x.pagado).reduce((a, x) => a + x.importe, 0);
 
   const pedirCuenta = async () => {
+    setCuentaPedida(true);
     const r = await avisarMesa(s.token, "CUENTA");
     setAviso(r.ok ? "Hemos avisado al personal: enseguida os traen la cuenta." : r.error);
+    if (!r.ok) setCuentaPedida(false);
   };
 
   const pagarMiParte = async () => {
@@ -178,9 +182,9 @@ export function CuentaMesaDrawer({ pagoOnline, onClose }: { pagoOnline: boolean;
                 Pagar mi parte
               </button>
             ) : null}
-            <button type="button" onClick={() => void pedirCuenta()} className="btn-secondary">
-              <Icon name="receipt" className="h-4 w-4" />
-              Pedir la cuenta
+            <button type="button" onClick={() => void pedirCuenta()} disabled={cuentaPedida} className="btn-secondary disabled:opacity-60">
+              <Icon name={cuentaPedida ? "check" : "receipt"} className="h-4 w-4" />
+              {cuentaPedida ? "Cuenta pedida" : "Pedir la cuenta"}
             </button>
           </div>
         </footer>

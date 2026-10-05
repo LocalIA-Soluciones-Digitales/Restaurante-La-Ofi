@@ -76,12 +76,15 @@ export function SalonBoard({
   fiscal,
   yo,
   reservasIniciales,
+  mesaInicial,
 }: {
   inicial: SalonData;
   rol: Rol;
   fiscal: DatosFiscales;
   yo: string;
   reservasIniciales: ReservaDia[];
+  /** Mesa a abrir al entrar (enlaces «Cobrar» desde Hoy: /admin/salon?mesa=…). */
+  mesaInicial?: string;
 }) {
   const [data, setData] = useState(inicial);
   const [reservas, setReservas] = useState(reservasIniciales);
@@ -89,7 +92,7 @@ export function SalonBoard({
   const [editar, setEditar] = useState(false);
   const [filtro, setFiltro] = useState<EstadoMesa | null>(null);
   const [soloMias, setSoloMias] = useState(false);
-  const [sel, setSel] = useState<string | null>(null);
+  const [sel, setSel] = useState<string | null>(() => (mesaInicial && inicial.mesas.some((m) => m.id === mesaInicial) ? mesaInicial : null));
   const [rapido, setRapido] = useState(false);
   const [hoja, setHoja] = useState(false);
   const [uniendo, setUniendo] = useState<string[] | null>(null);

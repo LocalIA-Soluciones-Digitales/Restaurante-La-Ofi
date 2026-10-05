@@ -117,9 +117,9 @@ function Interior({ secciones, config, modo }: { secciones: CartaSeccion[]; conf
         </div>
         {modo.tipo === "mesa" && mesa?.haySesion ? (
           <div className="flex gap-2">
-            <button type="button" onClick={() => void llamar()} className="btn-secondary min-h-11 px-4 text-sm">
-              <Icon name="bell" className="h-4 w-4" />
-              Llamar al camarero
+            <button type="button" onClick={() => void llamar()} disabled={aviso !== null} className="btn-secondary min-h-11 px-4 text-sm disabled:opacity-60">
+              <Icon name={aviso ? "check" : "bell"} className="h-4 w-4" />
+              {aviso ? "Avisado" : "Llamar al camarero"}
             </button>
             <button type="button" onClick={() => setCuenta(true)} className="btn-primary min-h-11 px-4 text-sm">
               <Icon name="receipt" className="h-4 w-4" />

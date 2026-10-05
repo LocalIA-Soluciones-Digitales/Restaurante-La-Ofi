@@ -72,6 +72,7 @@ export function BarraPOS({
   const desc = Math.min(aCentimos(descuento) ?? 0, subtotal);
   const total = subtotal - desc;
   const mesa = mesas.find((m) => m.id === destino) ?? null;
+  const mesasOrdenadas = useMemo(() => [...mesas].sort((x, y) => x.numero.localeCompare(y.numero, "es", { numeric: true })), [mesas]);
 
   const anadir = (item: CartaItem, seleccion: SeleccionModificador[] = [], precioManual: number | null = null) => {
     vibrar(10);
@@ -192,12 +193,22 @@ export function BarraPOS({
           <span className="font-semibold">Para</span>
           <select value={destino} onChange={(e) => setDestino(e.target.value)} className={input}>
             <option value="BARRA">Barra (sin mesa)</option>
-            {mesas.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.nombre ?? `Mesa ${m.numero}`}
-                {m.ocupada ? ` · ${m.comensales}p` : " · libre"}
-              </option>
-            ))}
+            {/* Ocupadas primero (es donde se suele añadir) y en orden natural: 1, 2… 10, no 1, 10, 2. */}
+            {[
+              { label: "Ocupadas", lista: mesasOrdenadas.filter((m) => m.ocupada) },
+              { label: "Libres", lista: mesasOrdenadas.filter((m) => !m.ocupada) },
+            ].map((g) =>
+              g.lista.length ? (
+                <optgroup key={g.label} label={g.label}>
+                  {g.lista.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.nombre ?? `Mesa ${m.numero}`}
+                      {m.ocupada ? ` · ${m.comensales}p` : " · libre"}
+                    </option>
+                  ))}
+                </optgroup>
+              ) : null,
+            )}
           </select>
         </label>
         {!mesa ? <input value={nombre} onChange={(e) => setNombre(e.target.value.slice(0, 60))} placeholder="Nombre (opcional)" className={`${input} mt-2`} /> : null}

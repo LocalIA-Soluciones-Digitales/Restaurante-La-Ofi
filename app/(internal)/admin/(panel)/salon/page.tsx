@@ -10,7 +10,8 @@ import type { DatosFiscales } from "@/lib/print/ticket";
 export const metadata: Metadata = { title: "Salón" };
 export const dynamic = "force-dynamic";
 
-export default async function SalonPage() {
+export default async function SalonPage({ searchParams }: { searchParams: Promise<{ mesa?: string }> }) {
+  const { mesa } = await searchParams;
   const sesion = (await obtenerSesionAdmin())!;
   const hoy = hoyEnMadrid();
   const [r, ajustes, reservas] = await Promise.all([
@@ -27,6 +28,7 @@ export default async function SalonPage() {
       fiscal={fiscal}
       yo={sesion.userId}
       reservasIniciales={reservas.ok ? reservas.data : []}
+      mesaInicial={mesa}
     />
   );
 }

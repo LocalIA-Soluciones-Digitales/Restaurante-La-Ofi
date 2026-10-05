@@ -10,6 +10,11 @@ const config: Config = {
   darkMode: ["selector", '[data-theme="dark"]'],
   theme: {
     extend: {
+      screens: {
+        // Pantallas altas (monitor, tablet en vertical): el menú del panel recupera
+        // los botones de 44 px; en pantallas bajas se compacta para no hacer scroll.
+        alto: { raw: "(min-height: 900px)" },
+      },
       colors: {
         crema: "#FAF5EC",
         arena: { DEFAULT: "#F1E8D8", 2: "#E6D8BF" },
