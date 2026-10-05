@@ -8,9 +8,11 @@ import { creditoFoto, IMAGES } from "@/lib/images";
 export function EmpresasHome({ locale }: { locale: Locale }) {
   return (
     <section aria-labelledby="empresas-title" className="cv-auto section bg-papel-2">
-      <div className="container-wide grid gap-10 lg:grid-cols-12 lg:items-center lg:gap-16">
-        <figure className="lg:order-2 lg:col-span-6">
-          <div className="reveal-photo photo-hover relative aspect-[4/5] overflow-hidden bg-papel-3 sm:aspect-[3/2]">
+      <div className="container-wide grid gap-10 lg:grid-cols-12 lg:gap-16">
+        {/* En escritorio la foto ocupa toda la altura del texto: arranca a la altura
+            del kicker y termina junto a los botones. */}
+        <figure className="lg:order-2 lg:col-span-6 lg:flex lg:flex-col">
+          <div className="reveal-photo photo-hover relative aspect-[4/5] overflow-hidden bg-papel-3 sm:aspect-[3/2] lg:aspect-auto lg:min-h-[26rem] lg:flex-1">
             <Photo img="salonNoche" sizes="(min-width: 1024px) 50vw, 100vw" />
           </div>
           <figcaption className="mt-2 text-xs text-carbon-muted">

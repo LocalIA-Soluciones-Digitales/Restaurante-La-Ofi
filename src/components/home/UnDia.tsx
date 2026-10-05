@@ -55,7 +55,7 @@ export function UnDia() {
           </p>
         </div>
 
-        <ol className="no-scrollbar -mx-4 mt-12 flex snap-x snap-mandatory gap-5 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:px-6 lg:mx-0 lg:grid lg:grid-cols-4 lg:gap-6 xl:gap-8 lg:overflow-visible lg:px-0">
+        <ol className="no-scrollbar -mx-4 mt-12 flex snap-x snap-mandatory scroll-px-4 gap-5 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:scroll-px-6 sm:px-6 lg:mx-0 lg:grid lg:grid-cols-4 lg:gap-6 xl:gap-8 lg:overflow-visible lg:px-0">
           {PASOS.map((p, i) => {
             const credito = creditoFoto(IMAGES[p.img]);
             return (

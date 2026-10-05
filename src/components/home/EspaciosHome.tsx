@@ -34,8 +34,10 @@ export function EspaciosHome({ locale }: { locale: Locale }) {
         </div>
 
         <div className="mt-10 grid gap-x-6 gap-y-10 lg:grid-cols-12">
-          <figure className="lg:col-span-8">
-            <div className="reveal-photo photo-hover relative aspect-[4/5] overflow-hidden bg-papel-3 sm:aspect-[16/10]">
+          {/* En escritorio el comedor crece hasta la altura de la columna derecha:
+              las tres fotos y sus pies terminan a la misma línea. */}
+          <figure className="lg:col-span-8 lg:flex lg:flex-col">
+            <div className="reveal-photo photo-hover relative aspect-[4/5] overflow-hidden bg-papel-3 sm:aspect-[16/10] lg:aspect-auto lg:min-h-[28rem] lg:flex-1">
               <SceneMedia img="comedorRatan" video={VIDEOS.comedor} sizes="(min-width: 1024px) 64vw, 100vw" />
             </div>
             <Pie img="comedorRatan" video={VIDEOS.comedor}>

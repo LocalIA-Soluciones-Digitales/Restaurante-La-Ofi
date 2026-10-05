@@ -25,6 +25,10 @@ export function PlatosQueApetecen({ locale, carta }: { locale: Locale; carta: Co
   const lista = platos.slice(0, 5);
   if (lista.length === 0) return null;
   const fuente = lista[0]!.item.fuente;
+  // Composición asimétrica (grande + 2×2) solo con 5 platos; con menos, columnas
+  // iguales: así nunca queda un hueco en la rejilla según lo que haya con foto.
+  const asimetrica = lista.length === 5;
+  const colSpan = asimetrica ? "lg:col-span-3" : ({ 1: "lg:col-span-6", 2: "lg:col-span-6", 3: "lg:col-span-4" } as Record<number, string>)[lista.length] ?? "lg:col-span-3";
 
   return (
     <section aria-labelledby="platos-title" className="cv-auto section overflow-hidden bg-crema">
@@ -47,15 +51,15 @@ export function PlatosQueApetecen({ locale, carta }: { locale: Locale; carta: Co
         </div>
 
         {/* Móvil: tira táctil con snap. Escritorio: composición asimétrica. */}
-        <ul className="no-scrollbar -mx-4 mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:px-6 lg:mx-0 lg:grid lg:grid-cols-12 lg:gap-x-6 lg:gap-y-10 lg:overflow-visible lg:px-0">
+        <ul className="no-scrollbar -mx-4 mt-10 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:scroll-px-6 sm:px-6 lg:mx-0 lg:grid lg:grid-cols-12 lg:gap-x-6 lg:gap-y-10 lg:overflow-visible lg:px-0">
           {lista.map(({ item, seccion }, i) => (
             <li
               key={item.id}
-              className={`w-[78vw] max-w-[22rem] shrink-0 snap-start sm:w-[44vw] lg:w-auto lg:max-w-none ${
-                i === 0 ? "lg:col-span-6 lg:row-span-2" : "lg:col-span-3"
+              className={`w-[78vw] max-w-[22rem] shrink-0 snap-start sm:w-[44vw] lg:flex lg:w-auto lg:max-w-none ${
+                asimetrica && i === 0 ? "lg:col-span-6 lg:row-span-2" : colSpan
               }`}
             >
-              <Plato item={item} grande={i === 0} seccion={seccion.slug} locale={locale} />
+              <Plato item={item} grande={asimetrica && i === 0} seccion={seccion.slug} locale={locale} />
             </li>
           ))}
         </ul>
@@ -66,8 +70,10 @@ export function PlatosQueApetecen({ locale, carta }: { locale: Locale; carta: Co
 
 function Plato({ item, grande, seccion, locale }: { item: CartaItem; grande: boolean; seccion: string; locale: Locale }) {
   return (
-    <Link href={href(locale, `/carta#${seccion}`)} className="photo-hover group block">
-      <div className={`reveal-photo relative overflow-hidden bg-papel-3 ${grande ? "aspect-[4/5] lg:aspect-[5/6]" : "aspect-[4/5]"}`}>
+    <Link href={href(locale, `/carta#${seccion}`)} className="photo-hover group flex w-full flex-col">
+      {/* El grande ocupa dos filas: en escritorio su foto crece hasta igualar la
+          altura de las dos filas de la derecha (fotos y pies quedan a ras). */}
+      <div className={`reveal-photo relative overflow-hidden bg-papel-3 ${grande ? "aspect-[4/5] lg:aspect-auto lg:min-h-[30rem] lg:flex-1" : "aspect-[4/5]"}`}>
         <DishPhoto imagen={item.imagen!} sizes={grande ? "(min-width: 1024px) 45vw, 78vw" : "(min-width: 1024px) 22vw, 78vw"} decorative />
       </div>
       <div className="mt-3 flex items-baseline justify-between gap-4">
