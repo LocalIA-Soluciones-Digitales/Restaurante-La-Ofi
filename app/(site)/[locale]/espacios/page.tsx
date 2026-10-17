@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 }
 
 // Foto adicional real de algunos espacios (además de la principal).
-const EXTRA: Partial<Record<Espacio["id"], ImageKey>> = { terraza: "terrazaCarpa", barra: "pintxosBarra" };
+const EXTRA: Partial<Record<Espacio["id"], ImageKey>> = { barra: "barraMesasAltas", despacho: "despachoRotulo", terraza: "terrazaCarpa" };
 
 function cta(e: Espacio, locale: Locale) {
   if (e.cta === "pedir") return { href: href(locale, "/pedir"), label: "Pedir para recoger" };

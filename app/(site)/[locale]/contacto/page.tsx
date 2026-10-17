@@ -32,7 +32,7 @@ export default async function ContactoPage({ params }: Params) {
         eyebrow="Contacto"
         title="Ven a vernos"
         lead="Edificio 502 del Parque Tecnológico de Bizkaia, en Derio. Con aparcamiento propio."
-        image={IMAGES.terrazaNoche}
+        image={IMAGES.terrazaCarpa}
         compact
       />
       <Ubicacion t={getDictionary(locale)} horario={resolverHorario(horario)} mapPriority />

@@ -1,15 +1,25 @@
 import type { StaticImageData } from "next/image";
 import { FOTOS_PLANTILLA } from "@/lib/env";
 import { PLANTILLA, PLANTILLA_CROPS, PLANTILLA_FOCUS } from "@/lib/images-plantilla";
+// Fotos profesionales del local entregadas por el restaurante (2026-10-17): scripts/fotos-local.py
+import barraMesasAltas from "../../public/images/local/pro/barra-mesas-altas.webp";
+import barraMesasAltasM from "../../public/images/local/pro/barra-mesas-altas-m.webp";
+import barraNeon from "../../public/images/local/pro/barra-neon.webp";
+import barraNeonM from "../../public/images/local/pro/barra-neon-m.webp";
+import comedor from "../../public/images/local/pro/comedor.webp";
+import comedorM from "../../public/images/local/pro/comedor-m.webp";
+import despacho from "../../public/images/local/pro/despacho.webp";
+import despachoM from "../../public/images/local/pro/despacho-m.webp";
+import despachoRotulo from "../../public/images/local/pro/despacho-rotulo.webp";
+import fachadaCarpa from "../../public/images/local/pro/fachada-carpa.webp";
+import fachadaCarpaM from "../../public/images/local/pro/fachada-carpa-m.webp";
+import furgoneta from "../../public/images/local/pro/furgoneta.webp";
+import lounge from "../../public/images/local/pro/lounge-vinoteca.webp";
+import loungeM from "../../public/images/local/pro/lounge-vinoteca-m.webp";
+import rotuloAguila from "../../public/images/local/pro/rotulo-aguila.webp";
+import terraza from "../../public/images/local/pro/terraza.webp";
+import terrazaM from "../../public/images/local/pro/terraza-m.webp";
 // Mejoradas con IA (Gemini) a partir de las fotos reales: scripts/fotos-ia.py
-import barraNeon from "../../public/images/ia/barra-neon.webp";
-import barraNeonM from "../../public/images/ia/barra-neon-m.webp";
-import comedor from "../../public/images/ia/comedor.webp";
-import comedorM from "../../public/images/ia/comedor-m.webp";
-import comedorPanoramica from "../../public/images/ia/comedor-panoramica.webp";
-import despacho from "../../public/images/ia/despacho.webp";
-import despachoM from "../../public/images/ia/despacho-m.webp";
-import comedorPanoramicaM from "../../public/images/ia/comedor-panoramica-m.webp";
 import pulpo from "../../public/images/ia/pulpo.webp";
 import salon from "../../public/images/ia/salon.webp";
 import salonM from "../../public/images/ia/salon-m.webp";
@@ -19,7 +29,6 @@ import tostadaBonita from "../../public/images/ia/tostada-bonita.webp";
 import tostadaBurrata from "../../public/images/ia/tostada-burrata.webp";
 // Reveladas a partir de las originales (sin IA): scripts/editar-fotos.py
 import cartaTostadas from "../../public/images/ed/carta-tostadas-desayuno.webp";
-import terrazaCarpa from "../../public/images/ed/terraza-carpa-rg.webp";
 import tostadaRevuelta from "../../public/images/ed/tostada-revuelta.webp";
 import tostadaRevueltaM from "../../public/images/ed/tostada-revuelta-m.webp";
 import tostadaSalmon from "../../public/images/ed/tostada-salmon.webp";
@@ -47,25 +56,27 @@ export interface SiteImage {
 export const IMAGES_REALES = {
   comedorRatan: {
     src: comedor,
-    alt: "Comedor de La Ofi con grandes lámparas de ratán, mesas de madera y suelo de baldosa hexagonal, junto a ventanales",
-    kind: "tercero",
-    credit: "Academia Vasca de Gastronomía",
-    ia: true,
+    alt: "Comedor de La Ofi con lámparas de ratán, mesas puestas, suelo de baldosa hexagonal y ventanales al Parque",
+    kind: "oficial",
+    credit: "Restaurante La Ofi",
   },
   comedorPanoramica: {
-    src: comedorPanoramica,
-    alt: "Vista amplia del comedor de La Ofi con lámparas de ratán, techo de madera y ventanales al Parque",
-    kind: "tercero",
-    credit: "Academia Vasca de Gastronomía",
-    ia: true,
+    src: lounge,
+    alt: "Interior de La Ofi: sillones junto a los ventanales, la vinoteca de rejilla en el centro y, al fondo, el comedor de las lámparas de ratán",
+    kind: "oficial",
+    credit: "Restaurante La Ofi",
   },
   despacho: {
     src: despacho,
-    alt: "El Despacho, comedor privado de La Ofi, con una mesa larga para doce puesta bajo bombillas colgadas de cuerdas y ventanales al Parque",
+    alt: "El Despacho de La Ofi: mesas puestas con copas, paneles de luz cálida en las paredes y, al fondo, la pared de madera con el rótulo y los vinos",
     kind: "oficial",
-    credit: "Restaurante La Ofi (Google)",
-    ia: true,
-    pie: "Recreación con IA a partir de una foto del local",
+    credit: "Restaurante La Ofi",
+  },
+  despachoRotulo: {
+    src: despachoRotulo,
+    alt: "Pared de madera de El Despacho con el rótulo «El Despacho de la ofi», cajas de vino iluminadas y la vinoteca",
+    kind: "oficial",
+    credit: "Restaurante La Ofi",
   },
   salonNoche: {
     src: salon,
@@ -115,10 +126,33 @@ export const IMAGES_REALES = {
   },
   barra: {
     src: barraNeon,
-    alt: "Barra de La Ofi con el rótulo de neón «la ofi», cafeteras y frontal de listones de madera",
-    kind: "tercero",
-    credit: "Restaurant Guru (foto de cliente)",
-    ia: true,
+    alt: "Barra de La Ofi con el rótulo de neón «la ofi», la cafetera y el frontal de listones de madera",
+    kind: "oficial",
+    credit: "Restaurante La Ofi",
+  },
+  barraMesasAltas: {
+    src: barraMesasAltas,
+    alt: "Zona de mesas altas junto a la barra, con bombillas colgadas de cuerdas, jardín vertical y ventanales",
+    kind: "oficial",
+    credit: "Restaurante La Ofi",
+  },
+  terraza: {
+    src: terraza,
+    alt: "Terraza cubierta de La Ofi bajo la carpa, con mesas de madera y sillas azules frente a la fachada acristalada",
+    kind: "oficial",
+    credit: "Restaurante La Ofi",
+  },
+  rotuloAguila: {
+    src: rotuloAguila,
+    alt: "Rótulo redondo «El Águila · la ofi» colgado junto a lámparas de globo, delante de los ventanales",
+    kind: "oficial",
+    credit: "Restaurante La Ofi",
+  },
+  furgoneta: {
+    src: furgoneta,
+    alt: "Furgoneta blanca de La Ofi aparcada frente al local, junto a la carpa de la terraza",
+    kind: "oficial",
+    credit: "Restaurante La Ofi",
   },
   terrazaNoche: {
     src: terrazaNoche,
@@ -129,24 +163,22 @@ export const IMAGES_REALES = {
   },
   rotuloNeon: {
     src: barraNeon,
-    alt: "Barra de La Ofi con el rótulo de neón «la ofi» y las cafeteras",
-    kind: "tercero",
-    credit: "Restaurant Guru (foto de cliente)",
-    ia: true,
+    alt: "Barra de La Ofi con el rótulo de neón «la ofi» y la cafetera",
+    kind: "oficial",
+    credit: "Restaurante La Ofi",
   },
   terrazaCarpa: {
-    src: terrazaCarpa,
-    alt: "Terraza cubierta con carpa e iluminación de colores al anochecer",
-    kind: "tercero",
-    credit: "Restaurant Guru (foto de cliente)",
+    src: fachadaCarpa,
+    alt: "Fachada de La Ofi con la terraza cubierta por la carpa tensada y la barandilla de acero",
+    kind: "oficial",
+    credit: "Restaurante La Ofi",
   },
   // Papeles de la plantilla sin foto real propia: muestran la real más cercana.
   pintxosBarra: {
     src: barraNeon,
-    alt: "Barra de La Ofi con el rótulo de neón «la ofi» y las cafeteras",
-    kind: "tercero",
-    credit: "Restaurant Guru (foto de cliente)",
-    ia: true,
+    alt: "Barra de La Ofi con el rótulo de neón «la ofi» y la cafetera",
+    kind: "oficial",
+    credit: "Restaurante La Ofi",
   },
   brasaParrilla: {
     src: pulpo,
@@ -164,10 +196,9 @@ export const IMAGES_REALES = {
   },
   cafeLatte: {
     src: barraNeon,
-    alt: "Barra de La Ofi con el rótulo de neón «la ofi» y las cafeteras",
-    kind: "tercero",
-    credit: "Restaurant Guru (foto de cliente)",
-    ia: true,
+    alt: "Barra de La Ofi con el rótulo de neón «la ofi» y la cafetera",
+    kind: "oficial",
+    credit: "Restaurante La Ofi",
   },
   mapa: {
     src: mapa,
@@ -202,31 +233,43 @@ export function creditoFoto(img: SiteImage): string | null {
 
 const MOBILE_CROPS_REALES: Partial<Record<ImageKey, StaticImageData>> = {
   comedorRatan: comedorM,
-  comedorPanoramica: comedorPanoramicaM,
+  comedorPanoramica: loungeM,
   despacho: despachoM,
   salonNoche: salonM,
   tostadaRevuelta: tostadaRevueltaM,
   tostadaSalmon: tostadaSalmonM,
   barra: barraNeonM,
+  barraMesasAltas: barraMesasAltasM,
   rotuloNeon: barraNeonM,
+  pintxosBarra: barraNeonM,
+  cafeLatte: barraNeonM,
+  terraza: terrazaM,
+  terrazaCarpa: fachadaCarpaM,
   terrazaNoche: terrazaNocheM,
 };
 
 /** Punto focal (object-position) de cada foto: lo que no debe perderse al recortar. */
 const FOCUS_REALES: Partial<Record<ImageKey, string>> = {
-  comedorRatan: "62% 50%",
-  comedorPanoramica: "50% 50%",
-  despacho: "50% 55%",
+  comedorRatan: "56% 50%",
+  comedorPanoramica: "55% 50%",
+  despacho: "50% 50%",
+  despachoRotulo: "55% 45%",
+  barraMesasAltas: "45% 50%",
+  terraza: "50% 55%",
+  rotuloAguila: "45% 45%",
+  furgoneta: "55% 55%",
   salonNoche: "55% 45%",
   pulpoBrasa: "50% 50%",
   tostadaBonita: "50% 62%",
   tostadaRevuelta: "55% 55%",
   tostadaSalmon: "45% 50%",
   tostadaBurrata: "50% 58%",
-  barra: "32% 50%",
-  rotuloNeon: "32% 50%",
+  barra: "52% 45%",
+  rotuloNeon: "52% 40%",
+  pintxosBarra: "52% 45%",
+  cafeLatte: "55% 45%",
   terrazaNoche: "55% 55%",
-  terrazaCarpa: "50% 55%",
+  terrazaCarpa: "55% 50%",
   cartaTostadas: "45% 50%",
 };
 

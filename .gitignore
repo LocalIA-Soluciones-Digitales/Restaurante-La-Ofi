@@ -38,3 +38,6 @@ supabase/.branches/
 
 # claude code local state
 /.claude/
+
+# Python
+__pycache__/

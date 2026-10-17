@@ -11,7 +11,7 @@ const TIRA: { img: ImageKey; aspect: string; etiqueta: string }[] = [
   { img: "cafeLatte", aspect: "aspect-[4/5]", etiqueta: "Café" },
   { img: "pintxosBarra", aspect: "aspect-[4/3]", etiqueta: "Pintxos en barra" },
   { img: "tostadaRevuelta", aspect: "aspect-[4/5]", etiqueta: "Desayunos" },
-  { img: "terrazaCarpa", aspect: "aspect-[4/3]", etiqueta: "La terraza" },
+  { img: "terraza", aspect: "aspect-[4/3]", etiqueta: "La terraza" },
   { img: "brasaCarne", aspect: "aspect-[4/5]", etiqueta: "A la brasa" },
 ];
 

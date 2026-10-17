@@ -58,6 +58,8 @@ export const VIDEOS = {
   heroMediodia: ia("pulpo", "Pulpo a la brasa con patatas recién servido"),
   heroNoche: ia("salon", "El salón de La Ofi de noche, con las bombillas encendidas"),
   brasa: ia("parrilla", "Pescado y pimientos asándose sobre las brasas", "ia-ilustrativo"),
+  // comedor, terraza y barra: ya no se usan (partían de fotos de terceros); los espacios
+  // muestran las fotos profesionales del local (2026-10-17). Se conservan por si se recuperan.
   comedor: ia("comedor", "El comedor de La Ofi a mediodía, con las lámparas de ratán"),
   terraza: ia("terraza", "La terraza de La Ofi al anochecer"),
   barra: ia("barra", "La barra de La Ofi con el neón y las cafeteras"),

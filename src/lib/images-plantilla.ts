@@ -12,8 +12,6 @@ import pintxos from "../../public/images/plantilla/pintxos-barra.webp";
 import pintxosM from "../../public/images/plantilla/pintxos-barra-m.webp";
 import tablaTostadas from "../../public/images/plantilla/tabla-tostadas.webp";
 import tablaTostadasM from "../../public/images/plantilla/tabla-tostadas-m.webp";
-import terrazaCena from "../../public/images/plantilla/terraza-cena.webp";
-import terrazaCenaM from "../../public/images/plantilla/terraza-cena-m.webp";
 
 // FOTOS DE PLANTILLA (Unsplash, licencia Unsplash: uso comercial libre). NO son de
 // La Ofi: sustituyen a las fotos reales de baja calidad hasta que el restaurante
@@ -22,6 +20,7 @@ import terrazaCenaM from "../../public/images/plantilla/terraza-cena-m.webp";
 // IMAGES_SOURCES.md; se regeneran con scripts/fotos-plantilla.py.
 // Cada una sustituye a una clave con el mismo papel (plato del mismo tipo, mismo
 // espacio o mismo momento); las alt describen la foto tal como es.
+// Los espacios ya tienen fotos profesionales del local (2026-10-17): aquí solo quedan platos.
 
 const stock = (src: StaticImageData, alt: string, autor: string): SiteImage => ({
   src,
@@ -32,7 +31,6 @@ const stock = (src: StaticImageData, alt: string, autor: string): SiteImage => (
 
 export const PLANTILLA: Partial<Record<ImageKey, SiteImage>> = {
   tostadaRevuelta: stock(huevos, "Huevos revueltos junto a una tostada de pan", "Imad 786"),
-  terrazaCarpa: stock(terrazaCena, "Gente cenando en una terraza bajo guirnaldas de luces", "Miguel Domínguez"),
   cartaTostadas: stock(tablaTostadas, "Tabla con tostadas variadas", "Ella Olsson"),
   pintxosBarra: stock(pintxos, "Barra con pintxos variados", "Paul"),
   brasaParrilla: stock(parrillaPescado, "Pescados enteros en la parrilla sobre las brasas", "Clint Bustrillos"),
@@ -42,7 +40,6 @@ export const PLANTILLA: Partial<Record<ImageKey, SiteImage>> = {
 
 export const PLANTILLA_CROPS: Partial<Record<ImageKey, StaticImageData>> = {
   tostadaRevuelta: huevosM,
-  terrazaCarpa: terrazaCenaM,
   cartaTostadas: tablaTostadasM,
   pintxosBarra: pintxosM,
   brasaParrilla: parrillaPescadoM,
@@ -52,7 +49,6 @@ export const PLANTILLA_CROPS: Partial<Record<ImageKey, StaticImageData>> = {
 
 export const PLANTILLA_FOCUS: Partial<Record<ImageKey, string>> = {
   tostadaRevuelta: "50% 45%",
-  terrazaCarpa: "50% 50%",
   cartaTostadas: "45% 50%",
   pintxosBarra: "40% 50%",
   brasaParrilla: "50% 50%",

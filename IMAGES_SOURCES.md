@@ -32,6 +32,37 @@ del C.F. Derio.
 **Placeholders de marca** (sin foto, con textura hexagonal y la etiqueta "Foto pendiente"): tortilla
 (home → "Para cada momento" y sección de tostadas) y pintxos de la barra. Nunca se usan fotos de stock.
 
+## Fotos profesionales del local (`public/images/local/pro/`)
+
+Entregadas por **Carlos, encargado del restaurante**, el **2026-10-17** (por WhatsApp, 1600 px de
+ancho). Fotos de fotógrafo ya reveladas: **oficiales**, sin pie de foto ni retoque de color. Se
+procesan con `python scripts/fotos-local.py <carpeta>` (recorte, enfoque suave, WebP y recorte 4:5
+para móvil). **Pedir los originales a resolución completa** (correo o Drive, no WhatsApp) y volver a
+ejecutar el script: el hero a pantalla completa los agradecerá.
+
+| Archivo | Original | Clave(s) | Edición |
+|---|---|---|---|
+| `comedor` | 14.28.31 | `comedorRatan` | — |
+| `lounge-vinoteca` | 14.27.58 | `comedorPanoramica` (cabecera de Espacios) | — |
+| `despacho` | 14.21.22 | `despacho` (sustituye a la recreación con IA) | — |
+| `despacho-rotulo` | 14.29.42 | `despachoRotulo` | recortada la franja derecha desenfocada |
+| `barra-neon` | 14.29.06 | `barra`, `rotuloNeon` (y respaldo de `pintxosBarra`, `cafeLatte`) | — |
+| `barra-mesas-altas` | 14.29.31 (móvil) | `barraMesasAltas` | — |
+| `terraza` | 14.28.48 | `terraza` | — |
+| `fachada-carpa` | 14.20.55 | `terrazaCarpa`, cabecera de Contacto | — |
+| `rotulo-aguila` | 14.22.49 | `rotuloAguila` (galería) | — |
+| `furgoneta` | 14.29.17 | `furgoneta` (galería) | **matrícula difuminada** |
+
+Descartadas: 14.21.06 y 14.27.36 (la misma foto de móvil, duplicada; la 14.21.22 es el mismo
+encuadre con cámara). Vídeos (14.49.53, 14.50.08, 14.50.20): no se publican. Son verticales a
+576×1024, grabados a mano y movidos; el de la fiesta tiene caras reconocibles sin consentimiento y
+en el de El Despacho se refleja una persona en la vinoteca. Sirven para stories de Instagram.
+
+Con estas fotos, los espacios (barra, comedor, terraza, Despacho) dejan de usar las de terceros
+mejoradas con IA y sus vídeos de IA (`comedor`, `barra`, `terraza`), y la terraza de plantilla
+(Unsplash) se retira. Siguen pendientes de foto propia: `terrazaNoche` (Deia; «Viernes» y hero de
+tarde) y los platos de terceros o de plantilla.
+
 ## Fotos y vídeos mejorados / generados con IA (`public/images/ia/`, `public/videos/ia/`)
 
 Añadidos el 2026-10-03. LocalIA los generó con Gemini (imagen) y Veo (vídeo) **a partir de las fotos

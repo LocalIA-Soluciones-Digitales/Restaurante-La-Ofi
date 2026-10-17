@@ -13,18 +13,23 @@ export const CATEGORIAS_GALERIA: { key: CategoriaGaleria; label: string }[] = [
 
 // Orden editorial: se alternan plato y espacio para que la galería respire.
 const ORDEN: { key: ImageKey; categoria: CategoriaGaleria }[] = [
-  { key: "tostadaBurrata", categoria: "platos" },
   { key: "comedorRatan", categoria: "espacio" },
-  { key: "pulpoBrasa", categoria: "platos" },
+  { key: "tostadaBurrata", categoria: "platos" },
   { key: "barra", categoria: "espacio" },
-  { key: "salonNoche", categoria: "ambiente" },
+  { key: "pulpoBrasa", categoria: "platos" },
+  { key: "comedorPanoramica", categoria: "ambiente" },
+  { key: "despacho", categoria: "espacio" },
   { key: "tostadaBonita", categoria: "platos" },
-  { key: "rotuloNeon", categoria: "espacio" },
+  { key: "terraza", categoria: "espacio" },
+  { key: "rotuloAguila", categoria: "ambiente" },
   { key: "tostadaRevuelta", categoria: "platos" },
-  { key: "terrazaNoche", categoria: "ambiente" },
+  { key: "despachoRotulo", categoria: "ambiente" },
+  { key: "barraMesasAltas", categoria: "espacio" },
   { key: "cartaTostadas", categoria: "platos" },
-  { key: "terrazaCarpa", categoria: "ambiente" },
+  { key: "salonNoche", categoria: "ambiente" },
+  { key: "terrazaCarpa", categoria: "espacio" },
   { key: "tostadaSalmon", categoria: "platos" },
+  { key: "furgoneta", categoria: "ambiente" },
 ];
 
 export const GALLERY: GalleryImage[] = ORDEN.map(({ key, categoria }) => ({
