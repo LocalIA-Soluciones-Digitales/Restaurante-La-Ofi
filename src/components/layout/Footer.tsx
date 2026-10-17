@@ -2,13 +2,14 @@ import Link from "next/link";
 import { Logo } from "@/components/layout/Logo";
 import type { NavItem } from "@/components/layout/nav";
 import { Icon } from "@/components/ui/Icon";
+import { Wordmark } from "@/components/ui/Wordmark";
 import { href, type Locale } from "@/lib/i18n";
 import { SITE } from "@/lib/site";
 
 export function Footer({ locale, items }: { locale: Locale; items: NavItem[] }) {
   const year = new Date().getFullYear();
   return (
-    <footer className="bg-marino-900 pb-28 pt-16 text-crema/75 lg:pb-12">
+    <footer className="overflow-hidden bg-marino-900 pb-28 pt-16 text-crema/75 lg:pb-10">
       <div className="container-wide grid gap-12 md:grid-cols-[1.4fr_1fr_1fr]">
         <div>
           <Logo light />
@@ -82,6 +83,11 @@ export function Footer({ locale, items }: { locale: Locale; items: NavItem[] }) 
             </Link>
           </li>
         </ul>
+      </div>
+
+      {/* El rótulo a todo el ancho como cierre de página. */}
+      <div className="container-wide mt-12">
+        <Wordmark strokeWidth={2.4} className="h-auto w-full max-w-[52rem] text-crema/[0.09]" />
       </div>
     </footer>
   );

@@ -8,9 +8,9 @@ import type { VideoAsset } from "@/lib/media";
 const MOMENTO_LABEL: Record<Momento, string> = { manana: "Mañana", mediodia: "Mediodía", tarde: "Tarde", noche: "Noche" };
 
 /**
- * Cabecera editorial de las páginas interiores: titular contenido, entradilla y
- * foto real al lado (o debajo en móvil), sobre papel. Sin velos oscuros: la foto
- * se ve como es. `video`, `ambiente` y `noche` se aceptan por compatibilidad,
+ * Cabecera de las páginas interiores: etiqueta entre puntos, titular grande
+ * centrado, entradilla y botones, y debajo la foto real a todo el ancho. Sin
+ * velos oscuros: la foto se ve como es. `video`, `ambiente` y `noche` se aceptan por compatibilidad,
  * pero la cabecera ya no cambia de identidad.
  */
 export function PageHero({
@@ -39,28 +39,31 @@ export function PageHero({
   const kicker = [momento ? MOMENTO_LABEL[momento] : null, eyebrow].filter(Boolean).join(" · ");
 
   return (
-    <header className="bg-crema pb-10 pt-24 sm:pb-14 lg:pt-32">
-      <div className="container-wide grid gap-8 lg:grid-cols-12 lg:items-end lg:gap-14">
-        <div className={image ? "lg:col-span-6" : "lg:col-span-9"}>
-          {kicker ? <p className="kicker text-brasa">{kicker}</p> : null}
-          <h1 id={id} className="t-display mt-4 max-w-[18ch] text-carbon">
-            {title}
-          </h1>
-          {lead ? <div className="lead mt-5">{lead}</div> : null}
-          {children}
-        </div>
-        {image ? (
-          <div className="lg:col-span-6">
-            <div className={`relative overflow-hidden bg-papel-3 ${compact ? "aspect-[16/9] lg:aspect-[16/10]" : "aspect-[4/3]"}`}>
-              {key ? (
-                <Photo img={key} sizes="(min-width: 1024px) 50vw, 100vw" priority mobileBelow={0} imgClassName="motion-safe:animate-kenburns" />
-              ) : (
-                <Image src={image.src} alt={image.alt} fill priority sizes="(min-width: 1024px) 50vw, 100vw" className="object-cover" />
-              )}
-            </div>
-          </div>
+    <header className={`bg-crema pt-28 lg:pt-40 ${image ? "" : "pb-12 sm:pb-16"}`}>
+      <div className="container-wide flex flex-col items-center text-center">
+        {kicker ? (
+          <p className="flex items-center gap-3 text-[0.8rem] font-medium text-carbon">
+            <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-carbon" />
+            {kicker}
+            <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-carbon" />
+          </p>
         ) : null}
+        <h1 id={id} className="t-display mt-6 max-w-[20ch] font-light text-carbon">
+          {title}
+        </h1>
+        {lead ? <div className="lead mx-auto mt-6">{lead}</div> : null}
+        {/* Los botones que pasa cada página llegan en una fila flex: centrados. */}
+        {children ? <div className="flex flex-col items-center [&_.flex-wrap]:justify-center">{children}</div> : null}
       </div>
+      {image ? (
+        <div className={`relative mt-14 w-full overflow-hidden bg-papel-3 lg:mt-20 ${compact ? "aspect-[4/3] sm:aspect-[21/9]" : "aspect-[4/5] sm:aspect-[16/9] lg:aspect-[21/9]"}`}>
+          {key ? (
+            <Photo img={key} sizes="100vw" priority mobileBelow={640} imgClassName="motion-safe:animate-kenburns" />
+          ) : (
+            <Image src={image.src} alt={image.alt} fill priority sizes="100vw" className="object-cover" />
+          )}
+        </div>
+      ) : null}
     </header>
   );
 }

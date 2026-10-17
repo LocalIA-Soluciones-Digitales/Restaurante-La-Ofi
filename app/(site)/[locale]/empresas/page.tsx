@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Photo } from "@/components/media/Photo";
 import { Icon } from "@/components/ui/Icon";
 import { PageHero } from "@/components/ui/PageHero";
+import { SectionRule } from "@/components/ui/SectionRule";
 import { EMPRESAS } from "@/lib/home-content";
 import { href, type Locale } from "@/lib/i18n";
 import { IMAGES } from "@/lib/images";
@@ -36,28 +37,27 @@ export default async function EmpresasPage({ params }: Params) {
         eyebrow="Empresas del Parque"
         title="Comer con tu equipo sin salir del Parque"
         lead="Reuniones con comida en El Despacho, pedidos de grupo para recoger y factura a nombre de tu empresa. En el edificio 502, a un paseo de la oficina."
-        image={IMAGES.salonNoche}
+        image={IMAGES.despacho}
       >
-        <div className="mt-8 flex flex-wrap gap-3">
-          <a href={SITE.phone.href} className="btn-primary">
-            <Icon name="phone" className="h-4 w-4" />
-            {SITE.phone.display}
-          </a>
-          <Link href={href(locale, "/reservar?espacio=despacho")} className="btn-secondary">
+        <div className="mt-9 flex flex-wrap gap-3">
+          <Link href={href(locale, "/reservar?espacio=despacho")} className="btn-dark px-6">
             Reservar El Despacho
+            <Icon name="arrow" className="h-4 w-4" />
           </Link>
+          <a href="#servicios" className="btn-secondary px-6">
+            Ver opciones
+          </a>
         </div>
+        <a href={SITE.phone.href} className="link-arrow mt-4 text-sm">
+          <Icon name="phone" className="h-4 w-4" />
+          O llámanos al {SITE.phone.display}
+        </a>
       </PageHero>
 
-      <section aria-labelledby="servicios-title" className="section bg-papel-2">
-        <div className="container-wide grid gap-10 lg:grid-cols-12 lg:gap-14">
-          <div className="lg:col-span-4">
-            <p className="kicker text-brasa">Qué podemos hacer</p>
-            <h2 id="servicios-title" className="t-h2 mt-3 text-carbon">
-              Para el día a día del Parque
-            </h2>
-          </div>
-          <ol className="border-t border-tinta-line lg:col-span-8">
+      <section id="servicios" aria-labelledby="servicios-title" className="section scroll-mt-20 bg-papel-2">
+        <div className="container-wide">
+          <SectionRule id="servicios-title" title="Para el día a día del Parque" aside={<span>Qué podemos hacer</span>} />
+          <ol className="mt-10 border-t border-tinta-line">
             {EMPRESAS.map((s, i) => (
               <li key={s.titulo} className="grid grid-cols-[2.5rem_1fr] gap-x-4 border-b border-tinta-line py-6 sm:grid-cols-[3rem_1fr_1.2fr]">
                 <span aria-hidden="true" className="font-display text-xl tabular-nums text-brasa">
@@ -74,10 +74,7 @@ export default async function EmpresasPage({ params }: Params) {
       <section aria-labelledby="grupo-title" className="section bg-crema">
         <div className="container-wide grid gap-10 lg:grid-cols-12 lg:items-center lg:gap-14">
           <div className="lg:col-span-5">
-            <p className="kicker text-brasa">Pedido de grupo</p>
-            <h2 id="grupo-title" className="t-h2 mt-3 text-carbon">
-              Pedís a media mañana, recogéis a la hora de comer
-            </h2>
+            <SectionRule id="grupo-title" title="Pedís a media mañana, recogéis a la hora de comer" aside={<span>Pedido de grupo</span>} />
             <ol className="mt-8 space-y-6">
               {PASOS.map((p, i) => (
                 <li key={p.titulo} className="grid grid-cols-[2.5rem_1fr] gap-x-3">
@@ -113,10 +110,7 @@ export default async function EmpresasPage({ params }: Params) {
       <section id="contacto" aria-labelledby="contacto-empresas-title" className="section scroll-mt-20 bg-marino-900 text-crema">
         <div className="container-wide grid gap-10 lg:grid-cols-12 lg:items-end">
           <div className="lg:col-span-7">
-            <p className="kicker text-ratan">El Despacho y celebraciones</p>
-            <h2 id="contacto-empresas-title" className="t-h2 mt-3">
-              Cuéntanos qué necesitas
-            </h2>
+            <SectionRule dark id="contacto-empresas-title" title="Cuéntanos qué necesitas" aside={<span>El Despacho y celebraciones</span>} />
             <p className="mt-4 max-w-xl text-crema/75">
               Reuniones, comidas de empresa, bautizos, comuniones o postbodas: llámanos y preparamos un menú concertado a tu medida.
             </p>

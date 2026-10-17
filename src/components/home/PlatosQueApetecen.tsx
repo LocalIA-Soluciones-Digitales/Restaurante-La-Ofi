@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { DishPhoto } from "@/components/media/DishPhoto";
 import { Icon } from "@/components/ui/Icon";
+import { SectionRule } from "@/components/ui/SectionRule";
 import { SourceBadge } from "@/components/ui/SourceBadge";
 import { PRIORIDAD_FOTO } from "@/lib/carta-fotos";
 import { formatCentimos } from "@/lib/format";
@@ -33,22 +34,20 @@ export function PlatosQueApetecen({ locale, carta }: { locale: Locale; carta: Co
   return (
     <section aria-labelledby="platos-title" className="cv-auto section overflow-hidden bg-crema">
       <div className="container-wide">
-        <div className="flex flex-wrap items-end justify-between gap-6">
-          <div>
-            <p className="kicker text-brasa">De la barra y la cocina</p>
-            <h2 id="platos-title" className="t-h2 mt-3 max-w-[18ch] text-carbon">
-              Pan de masa madre, buen producto y brasa
-            </h2>
-          </div>
-          <div className="flex items-center gap-5">
-            <SourceBadge fuente={fuente} />
-            {lista.some(({ item }) => esIlustrativa(item.imagen!.src)) ? <span className="text-xs text-carbon-muted">Imágenes ilustrativas</span> : null}
-            <Link href={href(locale, "/carta")} className="link-arrow">
-              Ver la carta
-              <Icon name="arrow" className="h-4 w-4" />
-            </Link>
-          </div>
-        </div>
+        <SectionRule
+          id="platos-title"
+          title="Pan de masa madre, buen producto y brasa"
+          aside={
+            <>
+              <SourceBadge fuente={fuente} />
+              {lista.some(({ item }) => esIlustrativa(item.imagen!.src)) ? <span className="normal-case tracking-normal">Imágenes ilustrativas</span> : null}
+              <Link href={href(locale, "/carta")} className="inline-flex min-h-11 items-center gap-2 text-carbon hover:text-brasa">
+                Ver la carta
+                <Icon name="arrow" className="h-4 w-4" />
+              </Link>
+            </>
+          }
+        />
 
         {/* Móvil: tira táctil con snap. Escritorio: composición asimétrica. */}
         <ul className="no-scrollbar -mx-4 mt-10 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:scroll-px-6 sm:px-6 lg:mx-0 lg:grid lg:grid-cols-12 lg:gap-x-6 lg:gap-y-10 lg:overflow-visible lg:px-0">

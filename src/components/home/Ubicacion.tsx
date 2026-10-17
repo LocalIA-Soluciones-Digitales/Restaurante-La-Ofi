@@ -1,5 +1,6 @@
 import { MapEmbed } from "@/components/map/MapEmbed";
 import { Icon } from "@/components/ui/Icon";
+import { SectionRule } from "@/components/ui/SectionRule";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { agruparHorario, type HorarioResuelto } from "@/lib/horario";
 import { IMAGES } from "@/lib/images";
@@ -35,16 +36,12 @@ export function Ubicacion({
   /** En /contacto el mapa es lo más grande de la primera pantalla en escritorio. */
   mapPriority?: boolean;
 }) {
-  const Heading = headingLevel;
   return (
     <section id="ubicacion" aria-labelledby="ubicacion-title" className="cv-auto section bg-papel-2">
       <div className="container-wide grid gap-12 lg:grid-cols-12 lg:gap-16">
         <div className="lg:col-span-5">
-          <p className="kicker text-brasa">Cómo llegar</p>
-          <Heading id="ubicacion-title" className="t-h2 mt-3 text-carbon">
-            Edificio 502 del Parque Tecnológico, en Derio
-          </Heading>
-          <p className="lead mt-4">
+          <SectionRule as={headingLevel} id="ubicacion-title" title="Edificio 502 del Parque Tecnológico, en Derio" aside={<span>Cómo llegar</span>} />
+          <p className="lead mt-6">
             Dentro del campus Zamudio-Derio del Parque Científico y Tecnológico de Bizkaia: se llega andando desde las
             oficinas, y en coche hay aparcamiento para 220 plazas.
           </p>

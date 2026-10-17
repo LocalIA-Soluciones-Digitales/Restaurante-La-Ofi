@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Logo } from "@/components/layout/Logo";
 import type { NavItem } from "@/components/layout/nav";
+import { Photo } from "@/components/media/Photo";
 import { Icon } from "@/components/ui/Icon";
 import { useDialogA11y } from "@/hooks/useDialogA11y";
 
@@ -12,9 +13,9 @@ interface Props {
   homeHref: string;
   pedirHref: string;
   reservarHref: string;
-  /** Todas las páginas (menú móvil). */
+  /** Todas las páginas (menú desplegable). */
   items: NavItem[];
-  /** Selección corta para la barra de escritorio. */
+  /** Casillas de la cabecera de escritorio. */
   primary: NavItem[];
   phoneHref: string;
   phoneDisplay: string;
@@ -22,6 +23,11 @@ interface Props {
   directionsHref: string;
 }
 
+/**
+ * Cabecera en casillas separadas por filetes: menú y dirección a la izquierda,
+ * logotipo centrado y, a la derecha, las dos páginas más buscadas y un bloque
+ * sólido de "Reservar". Sobre el hero oscuro va transparente con texto claro.
+ */
 export function Header({ homeHref, pedirHref, reservarHref, items, primary, phoneHref, phoneDisplay, labels, directionsHref }: Props) {
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
@@ -56,89 +62,77 @@ export function Header({ homeHref, pedirHref, reservarHref, items, primary, phon
   const isActive = (itemHref: string) =>
     !itemHref.includes("#") && (itemHref === homeHref ? pathname === homeHref : pathname.startsWith(itemHref));
 
+  const line = light ? "border-crema/20" : "border-tinta-line";
+  const cell = `hidden h-full items-center border-l px-6 text-[0.72rem] font-semibold uppercase tracking-[0.2em] transition-colors lg:flex ${line} ${
+    light ? "text-crema/90 hover:bg-crema/10 hover:text-crema" : "text-carbon/80 hover:bg-papel-2 hover:text-carbon"
+  }`;
+
   return (
     <>
       <header
-        className={`fixed inset-x-0 top-0 z-40 transition-[transform,background-color,box-shadow] duration-300 ease-out motion-reduce:transition-none ${
+        className={`fixed inset-x-0 top-0 z-40 border-b transition-[transform,background-color,border-color] duration-300 ease-out motion-reduce:transition-none ${
           hidden && !open ? "-translate-y-full" : "translate-y-0"
-        } ${scrolled ? "bg-crema/95 shadow-[0_1px_0_rgb(43_39_34/0.1)] backdrop-blur-md" : "bg-transparent"} ${
-          light ? "text-crema" : "text-carbon"
-        }`}
+        } ${scrolled ? "bg-crema/95 backdrop-blur-md" : "bg-transparent"} ${line} ${light ? "text-crema" : "text-carbon"}`}
       >
-        <div className="container-wide flex h-16 items-center justify-between gap-6 lg:h-[4.5rem]">
-          <Link href={homeHref} className="shrink-0 rounded-md">
-            <Logo light={light} />
+        <div className="relative flex h-16 items-stretch lg:h-[4.5rem]">
+          {/* Izquierda: menú + dirección y teléfono */}
+          <button
+            type="button"
+            aria-expanded={open}
+            aria-controls="menu-movil"
+            onClick={() => setOpen(true)}
+            className={`flex h-full items-center gap-3 border-r px-4 text-[0.72rem] font-semibold uppercase tracking-[0.2em] transition-colors sm:px-6 ${line} ${
+              light ? "hover:bg-crema/10" : "hover:bg-papel-2"
+            }`}
+          >
+            <Icon name="menu" className="h-5 w-5" />
+            <span className="hidden sm:inline">Menú</span>
+            <span className="sr-only">{labels.abrirMenu}</span>
+          </button>
+          <a
+            href={directionsHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`hidden flex-col justify-center border-r px-6 text-[0.78rem] leading-snug transition-colors xl:flex ${line} ${
+              light ? "text-crema/85 hover:text-crema" : "text-carbon-muted hover:text-carbon"
+            }`}
+          >
+            <span>Edificio 502 · Parque Tecnológico, Derio</span>
+            <span className={light ? "text-crema/60" : "text-carbon-muted/80"}>{phoneDisplay}</span>
+          </a>
+
+          {/* Logotipo centrado */}
+          <Link href={homeHref} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-md">
+            <Logo light={light} center />
           </Link>
 
-          <nav aria-label="Principal" className="hidden lg:block">
-            <ul className="flex items-center gap-1 xl:gap-2">
-              {primary.map((item) => (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    aria-current={isActive(item.href) ? "page" : undefined}
-                    className={`relative inline-flex min-h-11 items-center px-2.5 text-[0.92rem] font-medium transition-colors after:absolute after:inset-x-2.5 after:bottom-2 after:h-px after:origin-left after:scale-x-0 after:bg-current after:transition-transform after:duration-300 hover:after:scale-x-100 aria-[current=page]:after:scale-x-100 ${
-                      light ? "text-crema/90 hover:text-crema" : "text-carbon/80 hover:text-carbon aria-[current=page]:text-carbon"
-                    }`}
-                  >
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
-
-          <div className="flex items-center gap-2">
-            {/* Acceso del equipo al panel (como en Palomita y La Osa). prefetch off: no carga /admin para los clientes. */}
-            <Link
-              href="/admin/login"
-              prefetch={false}
-              title="Panel de gestión"
-              className={`hidden min-h-11 min-w-11 items-center justify-center gap-1.5 px-2 text-[0.92rem] font-medium transition-colors sm:inline-flex ${
-                light ? "text-crema/80 hover:text-crema" : "text-carbon-muted hover:text-carbon"
-              }`}
-            >
-              <Icon name="lock" className="h-4 w-4" />
-              <span className="sr-only xl:not-sr-only">Panel</span>
-              <span className="sr-only"> de gestión</span>
-            </Link>
-            <Link
-              href={pedirHref}
-              className={`hidden min-h-11 items-center gap-1.5 px-3 text-[0.92rem] font-medium transition-colors xl:inline-flex ${
-                light ? "text-crema/90 hover:text-crema" : "text-carbon/80 hover:text-carbon"
-              }`}
-            >
-              <Icon name="bag" className="h-4 w-4" />
-              {labels.pedir}
-            </Link>
-            <Link href={reservarHref} className={`${light ? "btn-light" : "btn-primary"} hidden min-h-11 px-5 text-sm sm:inline-flex`}>
-              {labels.reservar}
-            </Link>
-            <a
-              href={phoneHref}
-              className={`grid h-11 w-11 place-items-center rounded-md lg:hidden ${light ? "text-crema" : "text-carbon"}`}
-            >
+          {/* Derecha: páginas clave + Reservar */}
+          <nav aria-label="Principal" className="ml-auto flex h-full items-stretch">
+            {primary.map((item) => (
+              <Link key={item.href} href={item.href} aria-current={isActive(item.href) ? "page" : undefined} className={`${cell} aria-[current=page]:underline aria-[current=page]:underline-offset-8`}>
+                {item.label}
+              </Link>
+            ))}
+            <a href={phoneHref} className={`grid h-full w-14 place-items-center border-l lg:hidden ${line}`}>
               <Icon name="phone" className="h-5 w-5" />
               <span className="sr-only">
                 {labels.llamar} {phoneDisplay}
               </span>
             </a>
-            <button
-              type="button"
-              className={`inline-flex h-11 items-center gap-2 rounded-md px-2 text-sm font-semibold lg:hidden ${light ? "text-crema" : "text-carbon"}`}
-              aria-expanded={open}
-              aria-controls="menu-movil"
-              onClick={() => setOpen(true)}
+            <Link
+              href={reservarHref}
+              className={`hidden h-full items-center px-7 text-[0.72rem] font-semibold uppercase tracking-[0.2em] transition-colors sm:flex ${
+                light ? "bg-crema text-carbon hover:bg-white" : "bg-carbon text-crema hover:bg-brasa"
+              }`}
             >
-              <Icon name="menu" />
-              <span className="sr-only">{labels.abrirMenu}</span>
-            </button>
-          </div>
+              {labels.reservar}
+            </Link>
+          </nav>
         </div>
       </header>
 
       {open ? (
-        <MobileMenu
+        <MenuPanel
           items={items}
           isActive={isActive}
           onClose={() => setOpen(false)}
@@ -154,7 +148,8 @@ export function Header({ homeHref, pedirHref, reservarHref, items, primary, phon
   );
 }
 
-function MobileMenu({
+/** Menú a pantalla completa (móvil y escritorio): páginas en grande, acciones y, en escritorio, una foto del local. */
+function MenuPanel({
   items,
   isActive,
   onClose,
@@ -184,53 +179,78 @@ function MobileMenu({
       aria-modal="true"
       aria-label="Menú de navegación"
       tabIndex={-1}
-      className="fixed inset-0 z-50 flex flex-col bg-crema motion-safe:animate-fade-up lg:hidden"
+      className="fixed inset-0 z-50 flex flex-col bg-crema motion-safe:animate-fade-up"
     >
-      <div className="container-wide flex h-16 items-center justify-between">
-        <Logo />
-        <button type="button" onClick={onClose} className="grid h-11 w-11 place-items-center rounded-md text-carbon">
-          <Icon name="close" />
+      <div className="relative flex h-16 items-stretch border-b border-tinta-line lg:h-[4.5rem]">
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex h-full items-center gap-3 border-r border-tinta-line px-4 text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-carbon hover:bg-papel-2 sm:px-6"
+        >
+          <Icon name="close" className="h-5 w-5" />
+          <span className="hidden sm:inline">Cerrar</span>
           <span className="sr-only">{labels.cerrarMenu}</span>
         </button>
+        <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+          <Logo center />
+        </span>
       </div>
-      <nav aria-label="Principal (móvil)" className="container-wide flex-1 overflow-y-auto pb-10 pt-2">
-        <ul className="border-t border-tinta-line">
-          {items.map((item) => (
-            <li key={item.href} className="border-b border-tinta-line">
-              <Link
-                href={item.href}
-                onClick={onClose}
-                aria-current={isActive(item.href) ? "page" : undefined}
-                className="flex min-h-14 items-center justify-between py-3 font-display text-[1.65rem] leading-tight text-carbon aria-[current=page]:text-brasa"
-              >
-                {item.label}
-                <Icon name="arrow" className="h-5 w-5 text-carbon/40" />
+
+      <div className="flex min-h-0 flex-1">
+        <nav aria-label="Principal (menú)" className="flex-1 overflow-y-auto">
+          <div className="container-wide max-w-3xl pb-28 pt-6 lg:mx-0 lg:px-16 lg:pt-12">
+            <ul className="border-t border-tinta-line">
+              {items.map((item, i) => (
+                <li key={item.href} className="border-b border-tinta-line">
+                  <Link
+                    href={item.href}
+                    onClick={onClose}
+                    aria-current={isActive(item.href) ? "page" : undefined}
+                    className="group flex min-h-14 items-baseline gap-5 py-3 text-carbon aria-[current=page]:text-brasa lg:py-4"
+                  >
+                    <span aria-hidden="true" className="w-6 text-xs tabular-nums text-carbon-muted">
+                      0{i + 1}
+                    </span>
+                    <span className="flex-1 font-display text-[1.65rem] font-light leading-tight transition-colors group-hover:text-brasa lg:text-[2.1rem]">
+                      {item.label}
+                    </span>
+                    <Icon name="arrow" className="h-5 w-5 self-center text-carbon/40 transition-transform group-hover:translate-x-1 group-hover:text-brasa" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-8 grid grid-cols-2 gap-3 sm:max-w-lg">
+              <Link href={reservarHref} onClick={onClose} className="btn-dark">
+                {labels.reservar}
               </Link>
-            </li>
-          ))}
-        </ul>
-        <div className="mt-8 grid grid-cols-2 gap-3">
-          <Link href={reservarHref} onClick={onClose} className="btn-primary">
-            {labels.reservar}
-          </Link>
-          <Link href={pedirHref} onClick={onClose} className="btn-secondary">
-            <Icon name="bag" className="h-4 w-4" />
-            {labels.pedir}
-          </Link>
-          <a href={phoneHref} className="btn-secondary">
-            <Icon name="phone" className="h-4 w-4" />
-            {phoneDisplay}
-          </a>
-          <a href={directionsHref} target="_blank" rel="noopener noreferrer" className="btn-secondary">
-            <Icon name="pin" className="h-4 w-4" />
-            {labels.comoLlegar}
-          </a>
-          <Link href="/admin/login" prefetch={false} onClick={onClose} className="col-span-2 mt-2 inline-flex min-h-11 items-center justify-center gap-2 text-sm font-semibold text-carbon-muted">
-            <Icon name="lock" className="h-4 w-4" />
-            Panel de gestión
-          </Link>
+              <Link href={pedirHref} onClick={onClose} className="btn-secondary">
+                <Icon name="bag" className="h-4 w-4" />
+                {labels.pedir}
+              </Link>
+              <a href={phoneHref} className="btn-secondary">
+                <Icon name="phone" className="h-4 w-4" />
+                {phoneDisplay}
+              </a>
+              <a href={directionsHref} target="_blank" rel="noopener noreferrer" className="btn-secondary">
+                <Icon name="pin" className="h-4 w-4" />
+                {labels.comoLlegar}
+              </a>
+              <Link
+                href="/admin/login"
+                prefetch={false}
+                onClick={onClose}
+                className="col-span-2 mt-2 inline-flex min-h-11 items-center justify-center gap-2 text-sm font-semibold text-carbon-muted sm:justify-start"
+              >
+                <Icon name="lock" className="h-4 w-4" />
+                Panel de gestión
+              </Link>
+            </div>
+          </div>
+        </nav>
+        <div aria-hidden="true" className="relative hidden w-[42%] border-l border-tinta-line lg:block">
+          <Photo img="comedorRatan" sizes="42vw" mobileBelow={0} decorative />
         </div>
-      </nav>
+      </div>
     </div>
   );
 }

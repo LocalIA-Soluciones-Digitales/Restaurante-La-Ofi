@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SceneMedia } from "@/components/media/SceneMedia";
 import { Icon } from "@/components/ui/Icon";
+import { SectionRule } from "@/components/ui/SectionRule";
 import { SourceBadge } from "@/components/ui/SourceBadge";
 import { ESPECIALIDADES, VINOS } from "@/lib/home-content";
 import { href, type Locale } from "@/lib/i18n";
@@ -23,11 +24,8 @@ export function LaBrasa({ locale }: { locale: Locale }) {
         </figure>
 
         <div className="lg:col-span-5">
-          <p className="kicker text-brasa">A la brasa</p>
-          <h2 id="brasa-title" className="t-h2 mt-3 text-carbon">
-            Fuego lento y <em>producto de temporada</em>
-          </h2>
-          <p className="lead mt-4">
+          <SectionRule id="brasa-title" title={<>Fuego lento y <em>producto de temporada</em></>} aside={<span>A la brasa</span>} />
+          <p className="lead mt-6">
             Tomates, pimientos, huevos y carnes de los baserris de alrededor; pescado de mercado y verdura a la parrilla.
           </p>
 

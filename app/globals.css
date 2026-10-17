@@ -71,6 +71,28 @@
     @apply btn border border-crema/40 text-crema hover:border-crema hover:bg-crema/10;
   }
 
+  /* Botón fino de línea: texto en versalitas y la flecha en su propia casilla. */
+  .btn-line {
+    @apply inline-flex min-h-11 items-stretch border border-current text-[0.7rem] font-semibold uppercase tracking-[0.2em] transition-colors duration-300;
+  }
+  .btn-line > span:first-child {
+    @apply flex items-center px-5;
+  }
+  .btn-line > span:last-child {
+    @apply flex w-11 items-center justify-center border-l border-current transition-[background-color,color] duration-300;
+  }
+  .btn-line:hover > span:last-child {
+    @apply bg-carbon text-crema;
+  }
+
+  /* Titular en versalitas de serifa fina, centrado: el registro "de hotel". */
+  .t-caps {
+    @apply font-display font-light uppercase text-balance;
+    font-size: clamp(1.45rem, 1.15rem + 1.1vw, 2.2rem);
+    line-height: 1.22;
+    letter-spacing: 0.07em;
+  }
+
   /* Enlace de texto con flecha: la acción secundaria por defecto. */
   .link-arrow {
     @apply inline-flex min-h-11 items-center gap-2 font-semibold text-carbon underline decoration-carbon/30 decoration-1 underline-offset-[6px] transition-[text-decoration-color,color] hover:decoration-brasa;

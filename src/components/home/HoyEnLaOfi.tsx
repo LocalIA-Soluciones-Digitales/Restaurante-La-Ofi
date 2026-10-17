@@ -2,6 +2,7 @@ import Link from "next/link";
 import { MenuDelDia } from "@/components/menu/MenuDelDia";
 import { EstadoAhora } from "@/components/ui/EstadoAhora";
 import { Icon } from "@/components/ui/Icon";
+import { SectionRule } from "@/components/ui/SectionRule";
 import { estadoAhora, horarioDeHoy, type HorarioResuelto } from "@/lib/horario";
 import { href, type Locale } from "@/lib/i18n";
 import type { ContentState, MenuDiaView } from "@/lib/restaurant/types";
@@ -17,14 +18,12 @@ export function HoyEnLaOfi({ locale, menu, horario }: { locale: Locale; menu: Co
 
   return (
     <section id="hoy" aria-labelledby="hoy-title" className="section scroll-mt-16 bg-papel-2">
-      <div className="container-wide grid gap-12 lg:grid-cols-12 lg:gap-16">
+      <div className="container-wide">
+        <SectionRule id="hoy-title" title="Hoy en La Ofi" aside={<span>Antes de salir de la oficina</span>} />
+      </div>
+      <div className="container-wide mt-10 grid gap-12 lg:grid-cols-12 lg:gap-16">
         <div className="lg:col-span-5">
-          <p className="kicker text-brasa">Hoy en La Ofi</p>
-          <h2 id="hoy-title" className="t-h2 mt-3 text-carbon">
-            Lo que hay hoy, antes de salir de la oficina
-          </h2>
-
-          <ul className="mt-8 border-t border-tinta-line">
+          <ul className="border-t border-tinta-line">
             <li className={fila}>
               <Icon name="clock" className="mt-0.5 h-5 w-5 shrink-0 text-brasa" />
               <div>

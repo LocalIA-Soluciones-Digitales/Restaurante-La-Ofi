@@ -5,6 +5,7 @@ import { Photo } from "@/components/media/Photo";
 import { SceneMedia } from "@/components/media/SceneMedia";
 import { Icon } from "@/components/ui/Icon";
 import { PageHero } from "@/components/ui/PageHero";
+import { SectionRule } from "@/components/ui/SectionRule";
 import { SourceBadge } from "@/components/ui/SourceBadge";
 import { ESPACIOS, type Espacio } from "@/lib/home-content";
 import { href, type Locale } from "@/lib/i18n";
@@ -94,15 +95,10 @@ export default async function EspaciosPage({ params }: Params) {
           })}
         </ol>
 
-        <section aria-labelledby="plano-title" className="mt-24 border-t border-tinta-line pt-10 sm:mt-32">
-          <div className="grid gap-6 lg:grid-cols-12 lg:items-end">
-            <div className="lg:col-span-6">
-              <p className="kicker text-brasa">El plano</p>
-              <h2 id="plano-title" className="t-h2 mt-3 text-carbon">
-                Dónde está cada cosa
-              </h2>
-            </div>
-            <p className="lead lg:col-span-6">
+        <section aria-labelledby="plano-title" className="mt-24 sm:mt-32">
+          <SectionRule id="plano-title" title="Dónde está cada cosa" aside={<span>El plano</span>} />
+          <div className="mt-6">
+            <p className="lead">
               El Despacho, la barra y el comedor bajo el mismo techo, con fachada de cristal hacia la terraza cubierta y la zona
               chill-out. Pulsa «Explorar en 3D» para girarlo y acercarte.
             </p>
@@ -117,10 +113,7 @@ export default async function EspaciosPage({ params }: Params) {
 
         <section aria-labelledby="celebrar-title" className="mt-24 grid gap-8 bg-marino-900 p-6 text-crema sm:p-10 lg:grid-cols-12 lg:items-center lg:gap-14 lg:p-14">
           <div className="lg:col-span-6">
-            <p className="kicker text-ratan">Celebraciones y empresa</p>
-            <h2 id="celebrar-title" className="t-h2 mt-3">
-              Comidas de empresa, bautizos, comuniones o postbodas
-            </h2>
+            <SectionRule dark id="celebrar-title" title="Comidas de empresa, bautizos, comuniones o postbodas" aside={<span>Celebraciones</span>} />
             <p className="mt-4 max-w-md text-crema/75">Menús concertados en el comedor privado o en la terraza cubierta. Cuéntanos qué necesitas.</p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href={href(locale, "/empresas#contacto")} className="btn-light">

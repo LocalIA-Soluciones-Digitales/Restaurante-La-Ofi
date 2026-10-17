@@ -21,16 +21,12 @@ export function mainNav(locale: Locale, t: Dictionary): NavItem[] {
 }
 
 /**
- * Cabecera de escritorio: lo que de verdad busca quien entra (qué hay hoy y la
- * carta) primero; galería y contacto viven en el pie, el menú móvil y la home.
+ * Casillas de la cabecera de escritorio: solo lo que de verdad busca quien entra
+ * (qué hay hoy y la carta). El resto de páginas vive en el menú desplegable.
  */
 export function primaryNav(locale: Locale, t: Dictionary): NavItem[] {
   return [
     { href: href(locale, "/menu-del-dia"), label: t.nav.menuDelDia },
     { href: href(locale, "/carta"), label: t.nav.carta },
-    { href: href(locale, "/espacios"), label: t.nav.espacios },
-    { href: href(locale, "/empresas"), label: t.nav.empresas },
-    { href: href(locale, "/eventos"), label: t.nav.eventos },
-    { href: href(locale, "/contacto"), label: t.cta.comoLlegar },
   ];
 }
