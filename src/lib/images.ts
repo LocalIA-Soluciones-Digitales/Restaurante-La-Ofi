@@ -213,6 +213,15 @@ export type ImageKey = keyof typeof IMAGES_REALES;
 /** Fotos que pinta la web: las reales o, con FOTOS_PLANTILLA, las de plantilla donde las hay. */
 export const IMAGES: Record<ImageKey, SiteImage> = FOTOS_PLANTILLA ? { ...IMAGES_REALES, ...PLANTILLA } : IMAGES_REALES;
 
+/**
+ * Punto focal de las fotos de plato (4:5): el plato está en la mitad de abajo y
+ * arriba quedan copa y comedor. Cuando hay que recortarlas (cuadrado, horizontal),
+ * se encuadra el plato en vez del centro.
+ */
+export function encuadrePlato(src: string): string {
+  return src.startsWith("/images/carta/platos/") ? "object-[50%_68%]" : "";
+}
+
 /** true si la foto de un plato (por URL) es de plantilla, no del restaurante. */
 export function esIlustrativa(src: string): boolean {
   // Fotos de plato recreadas con IA (src/lib/carta-fichas.ts).

@@ -77,7 +77,7 @@ function PlatoCard({ item, cart, onOpen }: { item: CartaItem; cart?: CartaCartCo
         enCesta > 0 ? "ring-marino/40" : "ring-carbon/[0.07]"
       }`}
     >
-      <div className="relative aspect-[4/3] overflow-hidden bg-papel-3">
+      <div className="relative aspect-square overflow-hidden bg-papel-3">
         {item.imagen ? (
           <div className="absolute inset-0 transition-transform duration-700 ease-out group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover:scale-100">
             <DishPhoto imagen={item.imagen} sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 100vw" decorative />

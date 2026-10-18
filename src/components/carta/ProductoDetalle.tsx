@@ -19,7 +19,7 @@ import {
   type SeleccionModificador,
 } from "@/lib/carta";
 import { formatCentimos } from "@/lib/format";
-import { esIlustrativa } from "@/lib/images";
+import { encuadrePlato, esIlustrativa } from "@/lib/images";
 import { vibrar } from "@/lib/haptics";
 import type { CartaItem } from "@/lib/restaurant/types";
 
@@ -110,10 +110,10 @@ export function ProductoDetalle({
         </button>
       ) : null}
 
-      <div className="[perspective:1800px] w-full max-w-4xl">
+      <div className="[perspective:1800px] w-full max-w-4xl lg:max-w-5xl">
         <div
           ref={setCardEl}
-          className="relative flex max-h-[92svh] w-full flex-col overflow-hidden rounded-t-[2rem] bg-crema shadow-lift [transform-style:preserve-3d] max-sm:animate-sheet-up sm:rounded-[2rem]"
+          className="relative flex max-h-[92svh] w-full flex-col overflow-hidden rounded-t-[2rem] lg:h-[min(88svh,720px)] bg-crema shadow-lift [transform-style:preserve-3d] max-sm:animate-sheet-up sm:rounded-[2rem]"
         >
           <button
             type="button"
@@ -189,45 +189,48 @@ function Detalle({
   };
 
   return (
-    <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)] overflow-y-auto overflow-x-hidden md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
-      {/* Media */}
-      <div className="relative bg-arena md:min-h-[32rem]">
-        <div className="relative aspect-[4/3] md:absolute md:inset-0 md:aspect-auto">
-          {item.video ? (
-            <video src={item.video} muted loop playsInline autoPlay={!prefersReducedMotion()} preload="metadata" className="h-full w-full object-cover" aria-label={item.nombre} />
-          ) : imagen ? (
-            <>
-              <Image src={imagen.src} alt={imagen.alt} fill sizes="(min-width: 768px) 45vw, 100vw" className="object-cover" />
-              {esIlustrativa(imagen.src) ? (
-                <span className="absolute left-3 top-3 rounded-full bg-carbon/60 px-2.5 py-1 text-[0.68rem] font-medium text-crema backdrop-blur">
-                  Imagen ilustrativa
-                </span>
-              ) : null}
-            </>
-          ) : (
-            <BrandPlaceholder label={item.nombre} icon="utensils" />
-          )}
-        </div>
-        {item.imagenes.length > 1 && !item.video ? (
-          <div className="absolute inset-x-0 bottom-3 flex justify-center gap-2" role="group" aria-label="Fotos del plato">
-            {item.imagenes.map((img, i) => (
-              <button
-                key={img.src}
-                type="button"
-                aria-pressed={i === foto}
-                onClick={() => setFoto(i)}
-                className="relative h-12 w-12 overflow-hidden rounded-xl border-2 border-crema/70 aria-pressed:border-crema aria-pressed:ring-2 aria-pressed:ring-marino"
-              >
-                <Image src={img.src} alt="" fill sizes="48px" className="object-cover" />
-                <span className="sr-only">Foto {i + 1}</span>
-              </button>
-            ))}
+    <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)] overflow-y-auto overflow-x-hidden lg:grid-cols-[min(70.4svh,576px)_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)] lg:overflow-hidden">
+      {/* Media: la foto entera en su formato (4:5). En escritorio ocupa toda la
+          altura de la ficha (su ancho sale de esa altura) y solo se desplaza el texto. */}
+      <div className="relative bg-carbon">
+        <div className="relative h-full">
+          <div className="relative mx-auto aspect-[4/5] max-h-[60svh] w-full lg:h-full lg:max-h-none">
+            {item.video ? (
+              <video src={item.video} muted loop playsInline autoPlay={!prefersReducedMotion()} preload="metadata" className="h-full w-full object-cover" aria-label={item.nombre} />
+            ) : imagen ? (
+              <>
+                <Image src={imagen.src} alt={imagen.alt} fill sizes="(min-width: 768px) 45vw, 100vw" className={`object-cover ${encuadrePlato(imagen.src)}`} />
+                {esIlustrativa(imagen.src) ? (
+                  <span className="absolute left-3 top-3 rounded-full bg-carbon/60 px-2.5 py-1 text-[0.68rem] font-medium text-crema backdrop-blur">
+                    Imagen ilustrativa
+                  </span>
+                ) : null}
+              </>
+            ) : (
+              <BrandPlaceholder label={item.nombre} icon="utensils" />
+            )}
           </div>
-        ) : null}
+          {item.imagenes.length > 1 && !item.video ? (
+            <div className="absolute inset-x-0 bottom-3 flex justify-center gap-2" role="group" aria-label="Fotos del plato">
+              {item.imagenes.map((img, i) => (
+                <button
+                  key={img.src}
+                  type="button"
+                  aria-pressed={i === foto}
+                  onClick={() => setFoto(i)}
+                  className="relative h-12 w-12 overflow-hidden rounded-xl border-2 border-crema/70 aria-pressed:border-crema aria-pressed:ring-2 aria-pressed:ring-marino"
+                >
+                  <Image src={img.src} alt="" fill sizes="48px" className="object-cover" />
+                  <span className="sr-only">Foto {i + 1}</span>
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
       </div>
 
       {/* Información */}
-      <div className="flex flex-col gap-6 p-6 sm:p-8">
+      <div className="flex flex-col gap-6 p-6 sm:p-8 lg:min-h-0 lg:overflow-y-auto">
         <div>
           <div className="flex flex-wrap items-center gap-2 pr-12">
             <span className="eyebrow text-terracota">{seccion}</span>

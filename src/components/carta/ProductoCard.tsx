@@ -10,6 +10,7 @@ import { Icon } from "@/components/ui/Icon";
 import { getAlergeno, normalizarAlergenos } from "@/lib/allergens";
 import { ETIQUETAS } from "@/lib/carta";
 import { formatCentimos } from "@/lib/format";
+import { encuadrePlato } from "@/lib/images";
 import type { CartaItem } from "@/lib/restaurant/types";
 
 /**
@@ -91,7 +92,7 @@ export function ProductoCard({
       <div className="relative flex shrink-0 flex-col items-end justify-between gap-3">
         {item.imagen ? (
           <div className="relative h-24 w-24 overflow-hidden rounded-2xl bg-arena sm:h-28 sm:w-28">
-            <Image src={item.imagen.src} alt="" fill sizes="112px" className="object-cover transition-transform duration-500 group-hover:scale-105" />
+            <Image src={item.imagen.src} alt="" fill sizes="112px" className={`object-cover transition-transform duration-500 group-hover:scale-105 ${encuadrePlato(item.imagen.src)}`} />
           </div>
         ) : null}
         {pedible && cart ? <AnadirControl item={item} cart={cart} onRequiereFicha={abrir} /> : null}
