@@ -11,14 +11,14 @@ import type { CartaItem, CartaSeccion, Etiqueta, EventoView, MenuDiaView } from 
 //  - fuente "opiniones": dato publicado por clientes (reseñas). Confirmar en el local.
 //  - fuente "ejemplo": estructura ilustrativa. Sin precios ni fechas inventadas.
 // Nunca se inventan precios, alérgenos ni fechas. Las etiquetas solo se derivan
-// del propio dato publicado (entrantes, "a la brasa", horario de desayunos). Los únicos valores ilustrativos son los nutricionales de dos platos,
-// con fuente "ejemplo" (la web los marca "Valores de ejemplo, no reales").
+// del propio dato publicado (entrantes, "a la brasa", horario de desayunos). La
+// nutrición es una estimación orientativa (carta-fichas.ts) y la web lo indica.
 
 const img = (key: keyof typeof IMAGES) => ({ src: IMAGES[key].src.src, alt: IMAGES[key].alt });
 
 // Extras de la demo para enseñar la carta interactiva sin inventar datos reales:
 // la Clásica tiene como opciones exactamente las de su descripción publicada, y
-// dos tostadas muestran el bloque nutricional con valores de EJEMPLO marcados.
+// la nutrición y los ingredientes los completa src/lib/carta-fichas.ts.
 const EXTRA_TOSTADAS: Record<string, Partial<CartaItem>> = {
   Clásica: {
     modificadores: [
@@ -35,14 +35,6 @@ const EXTRA_TOSTADAS: Record<string, Partial<CartaItem>> = {
         })),
       },
     ],
-  },
-  Revuelta: {
-    ingredientes: ["Pan de masa madre", "Queso cottage", "Huevo revuelto", "Jamón ibérico"],
-    nutricion: { calorias: 480, proteinas: 28, carbohidratos: 38, grasas: 22, fuente: "ejemplo" },
-  },
-  Burrata: {
-    ingredientes: ["Pan de masa madre", "Burrata", "Melocotón a la plancha", "Jamón ibérico"],
-    nutricion: { calorias: 520, proteinas: 22, carbohidratos: 44, grasas: 28, fuente: "ejemplo" },
   },
 };
 

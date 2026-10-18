@@ -15,17 +15,20 @@ import type { CartaSeccion, MomentoCarta } from "@/lib/restaurant/types";
 /**
  * Carta interactiva: categorías pegajosas con scroll-spy, buscador, filtros por
  * momento del día, etiquetas y los 14 alérgenos, y ficha de producto.
- * - Sin `cart` (/carta): carta editorial, como en papel; la UI se esconde tras
- *   "Buscar y filtrar" para que mande la comida.
- * - Con `cart` (/pedir): tarjetas con "+ añadir" y contador.
+ * - Editorial (/carta): tarjetas grandes con foto; la UI se esconde tras
+ *   "Buscar y filtrar" para que mande la comida. Con cesta, "+ Añadir" en cada una.
+ * - Pedido (/pedir): tarjetas compactas con "+ añadir" y contador.
  */
 export function CartaInteractiva({
   secciones,
   cart,
+  layout,
   stickyTop = "top-16 lg:top-[4.5rem]",
 }: {
   secciones: CartaSeccion[];
   cart?: CartaCartControls;
+  /** Por defecto: editorial sin cesta, pedido con cesta. */
+  layout?: "editorial" | "pedido";
   /** Offset de la barra pegajosa (bajo la cabecera del sitio). */
   stickyTop?: string;
 }) {
@@ -35,7 +38,7 @@ export function CartaInteractiva({
   const [alergenosAbierto, setAlergenosAbierto] = useState(false);
   const [panel, setPanel] = useState(false);
   const navRef = useRef<HTMLUListElement>(null);
-  const editorial = !cart;
+  const editorial = layout ? layout === "editorial" : !cart;
 
   const { secciones: visibles, ocultosSinConfirmar } = useMemo(() => filtrarCarta(secciones, filtros), [secciones, filtros]);
   const conItems = useMemo(() => visibles.filter((s) => s.items.length > 0), [visibles]);
@@ -245,6 +248,7 @@ export function CartaInteractiva({
               key={s.id}
               seccion={s}
               indice={i}
+              cart={cart}
               onOpen={(index, origen) => setDetalle({ seccion: s.slug, index, origen })}
             />
           ))}

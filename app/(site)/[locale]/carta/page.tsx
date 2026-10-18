@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import { IMAGES } from "@/lib/images";
 import { AllergenLegend } from "@/components/menu/AllergenLegend";
+import { CartaConPedido } from "@/components/carta/CartaConPedido";
 import { CartaInteractiva } from "@/components/carta/CartaInteractiva";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { JsonLd } from "@/components/ui/JsonLd";
 import { PageHero } from "@/components/ui/PageHero";
 import { IS_DEMO } from "@/lib/env";
 import type { Locale } from "@/lib/i18n";
+import { obtenerConfigPedidos } from "@/lib/pedidos/actions";
 import { getCartaContent } from "@/lib/restaurant/content";
 import { menuJsonLd } from "@/lib/restaurant/jsonld";
 import { pageMetadata } from "@/lib/seo";
@@ -27,7 +29,9 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 }
 
 export default async function CartaPage() {
-  const state = await getCartaContent();
+  const [state, configR] = await Promise.all([getCartaContent(), obtenerConfigPedidos()]);
+  // Con los pedidos online configurados, la carta deja añadir a la cesta.
+  const config = configR.ok ? configR.data : null;
 
   return (
     <>
@@ -36,7 +40,7 @@ export default async function CartaPage() {
         id="carta-title"
         eyebrow="La carta"
         title="Masa madre por la mañana, brasa al mediodía"
-        lead="Tostadas de 9:00 a 11:30, picoteo para compartir y carnes y pescados a la parrilla. El pescado, según mercado: pregúntanos qué ha llegado hoy."
+        lead="Tostadas de 9:00 a 11:30 y, en El Despacho, entrantes, brasa, carnes, pescados y postres. Abre cada plato para ver ingredientes y valores nutricionales, y pídelo para recoger."
         image={IMAGES.tostadaBurrata}
         compact
       />
@@ -49,6 +53,8 @@ export default async function CartaPage() {
             </a>
             .
           </EmptyState>
+        ) : config ? (
+          <CartaConPedido secciones={state.data} config={config} />
         ) : (
           <CartaInteractiva secciones={state.data} />
         )}

@@ -19,6 +19,7 @@ import {
   type SeleccionModificador,
 } from "@/lib/carta";
 import { formatCentimos } from "@/lib/format";
+import { esIlustrativa } from "@/lib/images";
 import { vibrar } from "@/lib/haptics";
 import type { CartaItem } from "@/lib/restaurant/types";
 
@@ -188,14 +189,21 @@ function Detalle({
   };
 
   return (
-    <div className="grid min-h-0 flex-1 overflow-y-auto md:grid-cols-[1fr_1.1fr]">
+    <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)] overflow-y-auto overflow-x-hidden md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
       {/* Media */}
       <div className="relative bg-arena md:min-h-[32rem]">
         <div className="relative aspect-[4/3] md:absolute md:inset-0 md:aspect-auto">
           {item.video ? (
             <video src={item.video} muted loop playsInline autoPlay={!prefersReducedMotion()} preload="metadata" className="h-full w-full object-cover" aria-label={item.nombre} />
           ) : imagen ? (
-            <Image src={imagen.src} alt={imagen.alt} fill sizes="(min-width: 768px) 45vw, 100vw" className="object-cover" />
+            <>
+              <Image src={imagen.src} alt={imagen.alt} fill sizes="(min-width: 768px) 45vw, 100vw" className="object-cover" />
+              {esIlustrativa(imagen.src) ? (
+                <span className="absolute left-3 top-3 rounded-full bg-carbon/60 px-2.5 py-1 text-[0.68rem] font-medium text-crema backdrop-blur">
+                  Imagen ilustrativa
+                </span>
+              ) : null}
+            </>
           ) : (
             <BrandPlaceholder label={item.nombre} icon="utensils" />
           )}
@@ -249,51 +257,67 @@ function Detalle({
 
         {item.ingredientes.length > 0 ? (
           <section aria-labelledby="ing-t">
-            <h3 id="ing-t" className="font-sans text-sm font-semibold uppercase tracking-eyebrow text-carbon">
+            <h3 id="ing-t" className="flex items-center gap-2 font-sans text-sm font-semibold uppercase tracking-eyebrow text-carbon">
+              <Icon name="leaf" className="h-4 w-4 text-oliva" />
               Ingredientes
             </h3>
-            <p className="mt-2 text-sm leading-relaxed text-carbon-muted">{item.ingredientes.join(" · ")}</p>
+            <ol className="mt-3 grid gap-x-4 gap-y-1.5 rounded-2xl border border-carbon/10 bg-white p-4 text-sm sm:grid-cols-2">
+              {item.ingredientes.map((ing, i) => (
+                <li key={ing} className="flex items-baseline gap-2.5 text-carbon">
+                  <span className="w-5 shrink-0 text-[0.7rem] font-semibold tabular-nums text-brasa/80">{String(i + 1).padStart(2, "0")}</span>
+                  {ing}
+                </li>
+              ))}
+            </ol>
           </section>
         ) : null}
 
         {item.nutricion ? (
           <section aria-labelledby="nut-t" className="rounded-[1.5rem] border border-carbon/10 bg-white p-5">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 id="nut-t" className="font-sans text-sm font-semibold uppercase tracking-eyebrow text-carbon">
+              <h3 id="nut-t" className="flex items-center gap-2 font-sans text-sm font-semibold uppercase tracking-eyebrow text-carbon">
+                <Icon name="flame" className="h-4 w-4 text-brasa" />
                 Información nutricional
               </h3>
-              {item.nutricion.fuente === "ejemplo" ? (
-                <span className="rounded-full bg-terracota px-2.5 py-0.5 text-[0.7rem] font-semibold uppercase tracking-wider text-crema">
-                  Valores de ejemplo
+              {item.nutricion.fuente !== "restaurante" ? (
+                <span className="rounded-full bg-arena px-2.5 py-0.5 text-[0.7rem] font-semibold uppercase tracking-wider text-carbon-muted">
+                  {item.nutricion.fuente === "ejemplo" ? "Valores de ejemplo" : "Estimación"}
                 </span>
               ) : null}
             </div>
-            <div className="mt-4 flex items-center gap-5">
-              {macros.length > 0 ? <MacroDonut segmentos={macros} kcal={item.nutricion.calorias} /> : null}
-              <dl className="grid flex-1 gap-2 text-sm">
-                {item.nutricion.calorias !== null ? (
-                  <div className="flex justify-between gap-3">
-                    <dt className="text-carbon-muted">Energía (ración)</dt>
-                    <dd className="font-semibold text-carbon">{item.nutricion.calorias} kcal</dd>
-                  </div>
-                ) : null}
-                {macros.map((m) => (
-                  <div key={m.key} className="flex items-center justify-between gap-3">
-                    <dt className="flex items-center gap-2 text-carbon-muted">
-                      <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full" style={{ background: MACRO_COLORES[m.key] }} />
-                      {m.label}
-                    </dt>
-                    <dd className="font-semibold text-carbon">
-                      {m.gramos} g <span className="font-normal text-carbon-muted">· {m.pct} % kcal</span>
-                    </dd>
-                  </div>
-                ))}
-              </dl>
+
+            <div className="mt-4 grid grid-cols-4 gap-2 text-center">
+              <Dato etiqueta="Kcal" valor={item.nutricion.calorias !== null ? `${item.nutricion.fuente === "estimacion" ? "≈" : ""}${item.nutricion.calorias}` : "—"} color="#9A4527" />
+              <Dato etiqueta="Proteínas" valor={item.nutricion.proteinas !== null ? `${item.nutricion.proteinas} g` : "—"} color={MACRO_COLORES.proteinas} />
+              <Dato etiqueta="Hidratos" valor={item.nutricion.carbohidratos !== null ? `${item.nutricion.carbohidratos} g` : "—"} color={MACRO_COLORES.carbohidratos} />
+              <Dato etiqueta="Grasas" valor={item.nutricion.grasas !== null ? `${item.nutricion.grasas} g` : "—"} color={MACRO_COLORES.grasas} />
             </div>
-            <p className="mt-3 text-xs text-carbon-muted">
+
+            {macros.length > 0 ? (
+              <div className="mt-4 flex flex-col items-center gap-4 rounded-2xl bg-papel-2 p-4 min-[420px]:flex-row min-[420px]:gap-5">
+                <MacroDonut segmentos={macros} kcal={item.nutricion.calorias} />
+                <ul className="grid w-full flex-1 gap-2 text-sm">
+                  {macros.map((m) => (
+                    <li key={m.key} className="flex items-center justify-between gap-3">
+                      <span className="flex items-center gap-2 text-carbon-muted">
+                        <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full" style={{ background: MACRO_COLORES[m.key] }} />
+                        {m.label}
+                      </span>
+                      <span className="whitespace-nowrap font-semibold tabular-nums text-carbon">
+                        {m.gramos} g <span className="font-normal text-carbon-muted">· {m.pct} %</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
+            <p className="mt-3 text-xs leading-relaxed text-carbon-muted">
               {item.nutricion.fuente === "ejemplo"
                 ? "Valores ilustrativos de la demo: no son los del plato real."
-                : "Valores aproximados por ración facilitados por el restaurante."}
+                : item.nutricion.fuente === "estimacion"
+                  ? `Valores orientativos por ${item.nutricion.racion ?? "ración"}, estimados a partir de los ingredientes con tablas de composición de alimentos. No son un análisis del plato.`
+                  : `Valores aproximados por ${item.nutricion.racion ?? "ración"} facilitados por el restaurante.`}
             </p>
           </section>
         ) : null}
@@ -414,6 +438,16 @@ function Detalle({
           </>
         ) : null}
       </div>
+    </div>
+  );
+}
+
+function Dato({ etiqueta, valor, color }: { etiqueta: string; valor: string; color: string }) {
+  return (
+    <div className="rounded-2xl border border-carbon/10 bg-papel-2 px-1 py-3">
+      <span aria-hidden="true" className="mx-auto block h-1.5 w-6 rounded-full" style={{ background: color }} />
+      <p className="mt-2 font-display text-lg leading-none tabular-nums text-carbon">{valor}</p>
+      <p className="mt-1 truncate text-[0.6rem] font-semibold uppercase tracking-wide text-carbon-muted">{etiqueta}</p>
     </div>
   );
 }

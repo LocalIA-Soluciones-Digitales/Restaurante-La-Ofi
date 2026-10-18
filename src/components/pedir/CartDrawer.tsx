@@ -44,7 +44,10 @@ export function CartDrawer({ contexto, config, onClose }: { contexto: PedirConte
   const [cambios, setCambios] = useState<CambioCarta[] | null>(null);
 
   const recogida = contexto.tipo !== "mesa";
+  // Recogida sin franjas hoy (fuera de horario o desactivada): la cesta se guarda, pero no se envía.
+  const sinRecogida = contexto.tipo === "recogida" && !config.recogida_activa;
   const faltaDato =
+    sinRecogida ||
     cart.lineas.length === 0 ||
     (recogida && !nombre.trim()) ||
     (contexto.tipo === "recogida" && !franja) ||
@@ -226,7 +229,15 @@ export function CartDrawer({ contexto, config, onClose }: { contexto: PedirConte
             </ul>
           )}
 
-          {recogida && cart.lineas.length > 0 ? (
+          {sinRecogida && cart.lineas.length > 0 ? (
+            <p className="flex gap-2 rounded-2xl bg-arena p-4 text-sm text-carbon-muted">
+              <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-marino" />
+              Ahora mismo no hay horas de recogida disponibles. Guardamos tu pedido en este dispositivo unas horas: vuelve en horario
+              de apertura para enviarlo, o pídelo en barra.
+            </p>
+          ) : null}
+
+          {recogida && !sinRecogida && cart.lineas.length > 0 ? (
             <fieldset className="grid gap-3">
               <legend className="mb-2 font-sans text-sm font-semibold uppercase tracking-eyebrow text-carbon">Recogida</legend>
               {contexto.tipo === "recogida" ? (

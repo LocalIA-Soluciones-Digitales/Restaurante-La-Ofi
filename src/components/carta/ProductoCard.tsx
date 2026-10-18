@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useRef } from "react";
+import { AnadirControl } from "@/components/carta/AnadirControl";
 import type { OrigenRect } from "@/components/carta/ProductoDetalle";
 import type { CartaCartControls } from "@/components/carta/types";
 import { AllergenIcon } from "@/components/menu/AllergenIcon";
@@ -9,7 +10,6 @@ import { Icon } from "@/components/ui/Icon";
 import { getAlergeno, normalizarAlergenos } from "@/lib/allergens";
 import { ETIQUETAS } from "@/lib/carta";
 import { formatCentimos } from "@/lib/format";
-import { vibrar } from "@/lib/haptics";
 import type { CartaItem } from "@/lib/restaurant/types";
 
 /**
@@ -27,23 +27,13 @@ export function ProductoCard({
   onOpen: (origen: OrigenRect | null) => void;
 }) {
   const ref = useRef<HTMLLIElement>(null);
-  const [bump, setBump] = useState(0);
   const alergenos = normalizarAlergenos(item.alergenos);
   const cantidad = cart?.cantidad(item.id) ?? 0;
   const pedible = Boolean(cart?.sePuedePedir(item));
-  const requiereFicha = item.modificadores.some((m) => m.obligatorio);
 
   const abrir = () => {
     const r = ref.current?.getBoundingClientRect();
     onOpen(r ? { left: r.left, top: r.top, width: r.width, height: r.height } : null);
-  };
-
-  const anadir = () => {
-    if (!cart) return;
-    if (requiereFicha) return abrir();
-    cart.anadir(item);
-    vibrar(12);
-    setBump((b) => b + 1);
   };
 
   return (
@@ -67,6 +57,7 @@ export function ProductoCard({
           {item.nutricion?.calorias != null ? (
             <span className="inline-flex items-center gap-1 text-carbon-muted">
               <Icon name="flame" className="h-3.5 w-3.5" />
+              {item.nutricion.fuente === "estimacion" ? "≈ " : ""}
               {item.nutricion.calorias} kcal{item.nutricion.fuente === "ejemplo" ? " (ejemplo)" : ""}
             </span>
           ) : null}
@@ -103,35 +94,7 @@ export function ProductoCard({
             <Image src={item.imagen.src} alt="" fill sizes="112px" className="object-cover transition-transform duration-500 group-hover:scale-105" />
           </div>
         ) : null}
-        {pedible ? (
-          <div className="relative z-10">
-            {cantidad > 0 && !requiereFicha ? (
-              <div className="flex items-center rounded-full bg-marino text-crema shadow-card">
-                <button type="button" onClick={() => cart!.quitarUno(item.id)} className="grid h-10 w-10 place-items-center">
-                  <Icon name="minus" className="h-4 w-4" />
-                  <span className="sr-only">Quitar uno de {item.nombre}</span>
-                </button>
-                <span key={bump} aria-live="polite" className="min-w-6 text-center text-sm font-semibold tabular-nums motion-safe:animate-bump">
-                  {cantidad}
-                </span>
-                <button type="button" onClick={anadir} className="grid h-10 w-10 place-items-center">
-                  <Icon name="plus" className="h-4 w-4" />
-                  <span className="sr-only">Añadir otro {item.nombre}</span>
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={anadir}
-                className="inline-flex h-10 items-center gap-1 rounded-full bg-marino px-4 text-sm font-semibold text-crema shadow-card transition-transform hover:bg-marino-700 active:scale-95"
-              >
-                <Icon name="plus" className="h-4 w-4" />
-                {cantidad > 0 ? `${cantidad} · Añadir` : "Añadir"}
-                <span className="sr-only"> {item.nombre}</span>
-              </button>
-            )}
-          </div>
-        ) : null}
+        {pedible && cart ? <AnadirControl item={item} cart={cart} onRequiereFicha={abrir} /> : null}
       </div>
     </li>
   );

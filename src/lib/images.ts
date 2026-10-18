@@ -215,6 +215,8 @@ export const IMAGES: Record<ImageKey, SiteImage> = FOTOS_PLANTILLA ? { ...IMAGES
 
 /** true si la foto de un plato (por URL) es de plantilla, no del restaurante. */
 export function esIlustrativa(src: string): boolean {
+  // Fotos de plato recreadas con IA (src/lib/carta-fichas.ts).
+  if (src.startsWith("/images/carta/platos/")) return true;
   return Object.values(IMAGES).some((v) => v.src.src === src && v.kind === "ilustrativa");
 }
 

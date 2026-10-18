@@ -201,3 +201,14 @@ Con sesión iniciada, desde el perfil y la ficha oficiales:
 Colocarlas en `public/images/<carpeta>/` (hero, carta, pintxos, local, eventos, galeria), añadirlas en
 `src/lib/images.ts` y en esta tabla. Lo ideal es pedir al propietario los **originales a máxima
 resolución**: las de Instagram llegan comprimidas a 1080 px.
+
+## Fotos de plato de la carta (`public/images/carta/platos/`)
+
+Generadas el **2026-10-18** con Gemini a partir de dos fotos reales como referencia de escena:
+`local/pro/despacho.webp` (El Despacho) y `ia/tostada-burrata.webp` (desayunos). Prompts en
+`docs/prompts-gemini-platos.md`. Son **recreaciones con IA, no fotos del plato servido**: la web las
+marca «Imagen ilustrativa» (`esIlustrativa`). Se asignan en `src/lib/carta-fichas.ts`; una foto subida
+desde /admin las sustituye. **Pendiente: visto bueno de Carlos** plato a plato.
+
+Faltan (sin foto, «Foto pendiente»): tabla de ibérico, espárragos, ensalada de la casa, bol de lechuga y
+cebolla, entrecot, pastel vasco, tarta de queso, arroz con leche, helados y los cuatro vinos dulces.

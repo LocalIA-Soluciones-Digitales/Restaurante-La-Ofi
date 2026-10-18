@@ -11,13 +11,12 @@ const FOTOS_DE_PLATO: { seccion: string; nombre: string; img: ImageKey }[] = [
   { seccion: "desayunos", nombre: "bonita", img: "tostadaBonita" },
   { seccion: "desayunos", nombre: "revuelta", img: "tostadaRevuelta" },
   { seccion: "desayunos", nombre: "salmon", img: "tostadaSalmon" },
-  { seccion: "entrantes-brasa", nombre: "pulpo", img: "pulpoBrasa" },
 ];
 
 /** Fotos reales aún sin versión mejorada: con FOTOS_PLANTILLA no se asignan. */
 const FOTOS_BAJA_CALIDAD: ImageKey[] = ["tostadaSalmon"];
 
-const normalizar = (s: string) =>
+export const normalizarNombre = (s: string) =>
   s
     .toLowerCase()
     .normalize("NFD")
@@ -26,7 +25,7 @@ const normalizar = (s: string) =>
 
 function conFoto(item: CartaItem, seccion: string): CartaItem {
   if (item.imagen) return item;
-  const f = FOTOS_DE_PLATO.find((x) => x.seccion === seccion && x.nombre === normalizar(item.nombre));
+  const f = FOTOS_DE_PLATO.find((x) => x.seccion === seccion && x.nombre === normalizarNombre(item.nombre));
   // Con fotos de plantilla no se mezcla una foto real de baja calidad (sin versión
   // mejorada ni equivalente ilustrativo) entre las buenas.
   if (!f || (FOTOS_PLANTILLA && FOTOS_BAJA_CALIDAD.includes(f.img))) return item;

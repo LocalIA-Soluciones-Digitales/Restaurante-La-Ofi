@@ -4,7 +4,8 @@
 
 // --- Respuestas de las RPC públicas ----------------------------------------
 
-export type FuenteNutricion = "restaurante" | "ejemplo";
+/** estimacion = calculada por la web con tablas de composición (orientativa), no medida. */
+export type FuenteNutricion = "restaurante" | "ejemplo" | "estimacion";
 export type Etiqueta =
   | "casero"
   | "temporada"
@@ -142,6 +143,8 @@ export interface Nutricion {
   carbohidratos: number | null;
   grasas: number | null;
   fuente: FuenteNutricion;
+  /** A qué cantidad se refieren los valores ("unidad", "copa de 7 cl"…). Por defecto, la ración. */
+  racion?: string;
 }
 
 export interface CartaItem {
