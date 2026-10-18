@@ -236,6 +236,246 @@
   }
 }
 
+/* ===================== Movimiento de la web pública =====================
+   Todo es CSS: la entrada del hero son animaciones normales (fuera del hilo
+   principal) y el resto va ligado al scroll con animation-timeline. Donde no hay
+   soporte, o con "reducir movimiento", el contenido aparece quieto y completo.
+   Curva única: la de Tailwind `ease-out-expo` (cubic-bezier(0.16,1,0.3,1)). */
+
+@media (prefers-reduced-motion: no-preference) {
+  /* El rótulo de neón se "enciende" trazo a trazo y parpadea al terminar. */
+  .wm-draw .wm-stroke {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: wm-draw 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation-delay: calc(0.35s + var(--i, 0) * 0.08s);
+  }
+  .wm-draw .wm-dot {
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: wm-dot 0.5s cubic-bezier(0.16, 1, 0.3, 1) 1.25s forwards;
+  }
+  .wm-draw {
+    animation: wm-flicker 1.2s linear 1.5s both;
+  }
+
+  /* Titulares del hero: cada línea sube desde detrás de una máscara. */
+  .line-mask {
+    display: block;
+    overflow: hidden;
+    padding-bottom: 0.08em;
+  }
+  .line-mask > span {
+    display: block;
+    animation: line-up 1.1s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: var(--d, 0s);
+  }
+  .intro-up {
+    animation: intro-up 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: var(--d, 0s);
+  }
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* Hero: la foto se acerca y el texto se va mientras bajas. */
+    .hero-zoom {
+      animation: hero-zoom linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 100vh;
+    }
+    .hero-out {
+      animation: hero-out linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 75vh;
+    }
+
+    /* Cabeceras de sección: el filete se dibuja y el titular sube. */
+    .rule-line {
+      transform-origin: left;
+      animation: rule-in linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 90%;
+    }
+    .title-in {
+      animation: title-in linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 75%;
+    }
+
+    /* Foto con parallax dentro de su marco (el marco no se mueve). */
+    .parallax > picture {
+      animation: parallax linear both;
+      animation-timeline: view();
+      animation-range: cover;
+    }
+
+    /* Piezas que flotan a distinta velocidad (--f = recorrido). */
+    .float-y {
+      animation: float-y linear both;
+      animation-timeline: view();
+      animation-range: cover;
+    }
+
+    /* Filas de texto que se desplazan en sentidos opuestos con el scroll. */
+    .drift-l {
+      animation: drift-l linear both;
+      animation-timeline: view();
+      animation-range: cover;
+    }
+    .drift-r {
+      animation: drift-r linear both;
+      animation-timeline: view();
+      animation-range: cover;
+    }
+
+    /* Sección horizontal anclada (solo escritorio): el scroll vertical mueve la pista. */
+    @media (min-width: 1024px) {
+      .hscroll {
+        height: 360vh;
+        view-timeline: --hs block;
+      }
+      .hscroll-sticky {
+        position: sticky;
+        top: 0;
+        display: flex;
+        height: 100svh;
+        flex-direction: column;
+        justify-content: center;
+        overflow: hidden;
+      }
+      .hscroll-track {
+        width: max-content;
+        overflow: visible;
+        animation: hs-move linear both;
+        animation-timeline: --hs;
+        animation-range: contain 0% contain 100%;
+      }
+      .hscroll-bar {
+        transform-origin: left;
+        animation: rule-in linear both;
+        animation-timeline: --hs;
+        animation-range: contain 0% contain 100%;
+      }
+    }
+  }
+}
+
+@keyframes wm-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes wm-dot {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes wm-flicker {
+  0%, 30%, 38%, 100% {
+    opacity: 1;
+  }
+  34% {
+    opacity: 0.45;
+  }
+  36% {
+    opacity: 0.85;
+  }
+}
+@keyframes line-up {
+  from {
+    transform: translateY(105%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes intro-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes hero-zoom {
+  to {
+    transform: scale(1.12);
+  }
+}
+@keyframes hero-out {
+  to {
+    opacity: 0;
+    transform: translateY(-64px);
+  }
+}
+@keyframes rule-in {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes title-in {
+  from {
+    opacity: 0;
+    transform: translateY(36px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes parallax {
+  from {
+    transform: translateY(-7%) scale(1.16);
+  }
+  to {
+    transform: translateY(7%) scale(1.16);
+  }
+}
+@keyframes float-y {
+  from {
+    transform: translateY(var(--f, 60px));
+  }
+  to {
+    transform: translateY(calc(var(--f, 60px) * -1));
+  }
+}
+@keyframes drift-l {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-28%);
+  }
+}
+@keyframes drift-r {
+  from {
+    transform: translateX(-28%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@keyframes hs-move {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(-100% + 100vw));
+  }
+}
+
 @keyframes photo-in {
   from {
     clip-path: inset(30% 0 0 0);

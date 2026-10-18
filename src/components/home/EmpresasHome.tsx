@@ -46,7 +46,7 @@ export function EmpresasHome({ locale }: { locale: Locale }) {
             href={p.href}
             className="group relative isolate flex min-h-[70svh] flex-col items-center justify-center overflow-hidden px-8 py-24 text-center text-crema md:min-h-[88svh]"
           >
-            <div className="absolute inset-0 -z-10 transition-transform duration-[1.6s] ease-out-expo group-hover:scale-[1.04]">
+            <div className="parallax absolute inset-0 -z-10 transition-transform duration-[1.6s] ease-out-expo group-hover:scale-[1.04]">
               <Photo img={p.img} sizes="(min-width: 768px) 50vw, 100vw" decorative />
             </div>
             <span aria-hidden="true" className="absolute inset-0 -z-10 bg-noche/50 transition-colors duration-500 group-hover:bg-noche/35" />

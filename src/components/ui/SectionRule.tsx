@@ -2,8 +2,9 @@ import type { ReactNode } from "react";
 
 /**
  * Cabecera de sección editorial: filete grueso arriba, titular a la izquierda y
- * una etiqueta o enlace pequeño a la derecha (como una revista impresa). Sustituye
- * al kicker de color + titular apilados.
+ * una etiqueta o enlace pequeño a la derecha (como una revista impresa). Al
+ * entrar en pantalla el filete se dibuja de izquierda a derecha y el titular
+ * sube (CSS .rule-line / .title-in, ligados al scroll).
  */
 export function SectionRule({
   id,
@@ -21,15 +22,14 @@ export function SectionRule({
   className?: string;
 }) {
   return (
-    <div
-      className={`flex flex-wrap items-baseline justify-between gap-x-8 gap-y-3 border-t-[3px] pt-5 ${
-        dark ? "border-crema" : "border-carbon"
-      } ${className}`}
-    >
-      <Tag id={id} className={`t-h2 max-w-[24ch] ${dark ? "text-crema" : "text-carbon"}`}>
-        {title}
-      </Tag>
-      {aside ? <div className={`kicker flex items-center gap-6 ${dark ? "text-crema/70" : "text-carbon-muted"}`}>{aside}</div> : null}
+    <div className={className}>
+      <span aria-hidden="true" className={`rule-line block h-[3px] ${dark ? "bg-crema" : "bg-carbon"}`} />
+      <div className="flex flex-wrap items-baseline justify-between gap-x-8 gap-y-3 pt-5">
+        <Tag id={id} className={`title-in t-h2 max-w-[24ch] ${dark ? "text-crema" : "text-carbon"}`}>
+          {title}
+        </Tag>
+        {aside ? <div className={`kicker flex items-center gap-6 ${dark ? "text-crema/70" : "text-carbon-muted"}`}>{aside}</div> : null}
+      </div>
     </div>
   );
 }

@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { Photo } from "@/components/media/Photo";
+import type { CSSProperties } from "react";
+import { CountUp } from "@/components/ui/CountUp";
 import { Icon } from "@/components/ui/Icon";
 import { SectionRule } from "@/components/ui/SectionRule";
 import { VINOS } from "@/lib/home-content";
@@ -25,9 +27,9 @@ export function Presentacion({ locale }: { locale: Locale }) {
       <div className="container-wide">
         <ul className="grid grid-cols-3 gap-2 sm:gap-4 lg:gap-6">
           {TRIPTICO.map((t, i) => (
-            <li key={t.img} className={i === 1 ? "lg:-mt-10" : "lg:mt-6"}>
+            <li key={t.img} className={`float-y ${i === 1 ? "lg:-mt-10" : "lg:mt-6"}`} style={{ "--f": `${[24, -18, 40][i]}px` } as CSSProperties}>
               <figure>
-                <div className="reveal-photo photo-hover relative aspect-[3/4] overflow-hidden bg-papel-3">
+                <div className="parallax photo-hover relative aspect-[3/4] overflow-hidden bg-papel-3">
                   <Photo img={t.img} sizes="(min-width: 1024px) 30vw, 33vw" mobileBelow={9999} />
                 </div>
                 <figcaption className="kicker mt-3 hidden text-carbon-muted sm:block">{t.label}</figcaption>
@@ -68,14 +70,18 @@ export function Presentacion({ locale }: { locale: Locale }) {
             <ul className="divide-y divide-tinta-line border-y border-tinta-line">
               <li className="flex items-baseline justify-between gap-4 py-3">
                 <span>Valoración en Google</span>
-                <span className="font-display text-xl text-carbon">4,4</span>
+                <span className="font-display text-xl text-carbon">
+                  <CountUp value={4.4} decimals={1} />
+                </span>
               </li>
               <li className="py-3">
                 Su pulpo a la brasa y sus carrilleras, en <span className="text-carbon">Deia</span> (septiembre de 2025)
               </li>
               <li className="flex items-baseline justify-between gap-4 py-3">
                 <span>Referencias de vino y txakoli</span>
-                <span className="font-display text-xl text-carbon">{VINOS.referencias}</span>
+                <span className="font-display text-xl text-carbon">
+                  <CountUp value={VINOS.referencias} />
+                </span>
               </li>
             </ul>
           </Columna>

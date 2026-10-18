@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { BottomBar } from "@/components/layout/BottomBar";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
+import { ReservarFlotante } from "@/components/layout/ReservarFlotante";
 import { mainNav, primaryNav } from "@/components/layout/nav";
 import { JsonLd } from "@/components/ui/JsonLd";
 import { getDictionary } from "@/i18n/dictionaries";
@@ -107,6 +108,7 @@ export default async function LocaleLayout({
           directionsHref={SITE.maps.directions}
           labels={{ hoy: t.nav.hoy, carta: t.nav.carta, reservar: t.cta.reservar, llegar: t.cta.llegar }}
         />
+        <ReservarFlotante href={href(locale, "/reservar")} label={t.cta.reservarMesa} />
       </body>
     </html>
   );

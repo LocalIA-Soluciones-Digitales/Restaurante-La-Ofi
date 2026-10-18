@@ -76,14 +76,14 @@ export function EspaciosHome({ locale }: { locale: Locale }) {
         <div className="relative mt-16 lg:mt-24">
           <Wordmark
             strokeWidth={2.2}
-            className="pointer-events-none absolute -top-10 left-1/2 hidden h-auto w-[115%] max-w-none -translate-x-1/2 text-carbon/[0.07] lg:block"
+            className="drift-l pointer-events-none absolute -top-10 left-0 hidden h-auto w-[115%] max-w-none text-carbon/[0.07] lg:block"
           />
           <div className="relative grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-12 lg:gap-y-0">
             {ESPACIOS.map((e) => {
               const credito = creditoFoto(IMAGES[e.img]);
               return (
                 <figure key={e.img} className={e.grid}>
-                  <div className={`reveal-photo photo-hover relative overflow-hidden bg-papel-3 ${e.aspect}`}>
+                  <div className={`parallax photo-hover relative overflow-hidden bg-papel-3 ${e.aspect}`}>
                     <Photo img={e.img} sizes={e.sizes} mobileBelow={0} />
                   </div>
                   <figcaption className="mt-4 flex items-baseline justify-between gap-4 border-t border-tinta-line pt-3">

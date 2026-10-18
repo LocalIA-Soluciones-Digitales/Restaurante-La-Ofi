@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import { DiaHorizontal } from "@/components/home/DiaHorizontal";
 import { EmpresasHome } from "@/components/home/EmpresasHome";
 import { EspaciosHome } from "@/components/home/EspaciosHome";
 import { HeroOfi } from "@/components/home/HeroOfi";
 import { HoyEnLaOfi } from "@/components/home/HoyEnLaOfi";
 import { LaBrasa } from "@/components/home/LaBrasa";
 import { Manifiesto } from "@/components/home/Manifiesto";
+import { Marquesina } from "@/components/home/Marquesina";
 import { ParaCadaMomento, type Momento } from "@/components/home/ParaCadaMomento";
 import { PlatosQueApetecen } from "@/components/home/PlatosQueApetecen";
 import { Presentacion } from "@/components/home/Presentacion";
@@ -63,7 +65,9 @@ export default async function HomePage({ params }: Params) {
       <Presentacion locale={locale} />
       <HoyEnLaOfi locale={locale} menu={menu} horario={resuelto} />
       <PlatosQueApetecen locale={locale} carta={carta} />
+      <Marquesina />
       <Manifiesto />
+      <DiaHorizontal />
       <LaBrasa locale={locale} />
       <EspaciosHome locale={locale} />
       <ParaCadaMomento items={momentos} />

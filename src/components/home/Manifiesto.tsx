@@ -1,44 +1,48 @@
+import type { CSSProperties } from "react";
 import { Photo } from "@/components/media/Photo";
+import type { ImageKey } from "@/lib/images";
 
-// Solo lo verificable: apertura 7:30 L–V y viernes hasta 00:00 (horario publicado),
-// tostadas 9:00–11:30 (carta de La Ofi en Instagram), plato del día L–V y brasa
-// (Deia, 09/2025), tardeo mensual y terraza cubierta (Deia / Instagram).
-const HORAS: { hora: string; titulo: string; texto: string }[] = [
-  { hora: "7:30", titulo: "El primer café", texto: "Café en barra antes de subir a la oficina." },
-  { hora: "9:00", titulo: "Tostadas", texto: "Ocho tostadas de masa madre, hasta las 11:30." },
-  { hora: "Mediodía", titulo: "Plato del día", texto: "Casero, a elegir, de lunes a viernes. Y brasa." },
-  { hora: "Viernes", titulo: "La tarde se alarga", texto: "Terraza, un tardeo al mes y abierto hasta las 00:00." },
+// Fotos del local (fotógrafo, 2026-10-17) que flotan alrededor de la frase, cada
+// una a su velocidad (--f = recorrido vertical mientras la sección cruza la pantalla).
+const FLOTANTES: { img: ImageKey; pos: string; f: number }[] = [
+  { img: "rotuloAguila", pos: "left-[4%] top-[8%] w-[15%] aspect-[4/5]", f: 90 },
+  { img: "despachoRotulo", pos: "right-[5%] top-[4%] w-[13%] aspect-[4/5]", f: 50 },
+  { img: "barraMesasAltas", pos: "left-[9%] bottom-[2%] w-[12%] aspect-[3/4]", f: 140 },
+  { img: "comedorPanoramica", pos: "right-[8%] bottom-[8%] w-[17%] aspect-[4/3]", f: 110 },
 ];
 
 /**
- * Manifiesto de la marca: una frase en serifa sobre una foto vertical del local y,
- * debajo, el día en La Ofi contado con horas reales (texto, sin miniaturas).
+ * Manifiesto de la marca: la frase grande en el centro y fotos del local que
+ * flotan alrededor a distinta velocidad con el scroll (parallax en capas). En
+ * móvil, la frase sola y dos fotos debajo.
  */
 export function Manifiesto() {
   return (
-    <section aria-labelledby="manifiesto-title" className="cv-auto section overflow-hidden bg-noche text-crema">
-      <div className="container-wide">
-        <p className="kicker text-center text-ratan">Un día en La Ofi</p>
+    <section aria-labelledby="manifiesto-title" className="relative overflow-hidden bg-noche py-28 text-crema sm:py-40 lg:py-56">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 hidden lg:block">
+        {FLOTANTES.map((f) => (
+          <div key={f.img} className={`float-y absolute overflow-hidden bg-noche-3 ${f.pos}`} style={{ "--f": `${f.f}px` } as CSSProperties}>
+            <Photo img={f.img} sizes="18vw" mobileBelow={9999} decorative />
+          </div>
+        ))}
+      </div>
 
-        <figure className="relative mx-auto mt-8 aspect-[4/5] w-full max-w-[34rem] overflow-hidden bg-noche-3 sm:aspect-[3/4]">
-          <Photo img="barraMesasAltas" sizes="(min-width: 640px) 34rem, 100vw" mobileBelow={9999} decorative />
-          <span aria-hidden="true" className="absolute inset-0 bg-noche/55" />
-          <blockquote className="absolute inset-0 grid place-items-center px-8 text-center sm:px-12">
-            <p id="manifiesto-title" className="font-display text-[clamp(1.6rem,1.2rem+1.4vw,2.35rem)] font-light leading-[1.2] tracking-[0.005em]">
-              «Durante el día, el restaurante del Parque. <em className="text-ratan">Cuando acaba la oficina, empieza La Ofi.</em>»
-            </p>
-          </blockquote>
-        </figure>
+      <div className="container-wide relative">
+        <p className="kicker text-center text-ratan">La Ofi · Derio</p>
+        <blockquote className="mx-auto mt-8 text-center">
+          <p id="manifiesto-title" className="title-in mx-auto max-w-[17em] font-display text-[clamp(2rem,1.2rem+3.4vw,4.6rem)] lg:max-w-[14em] font-light leading-[1.08] tracking-[-0.02em]">
+            Durante el día, el restaurante del Parque. <em className="text-ratan">Cuando acaba la oficina, empieza La Ofi.</em>
+          </p>
+        </blockquote>
 
-        <ol className="mx-auto mt-16 grid max-w-5xl gap-x-8 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
-          {HORAS.map((h) => (
-            <li key={h.hora} className="border-t border-crema/20 pt-4">
-              <p className="font-display text-3xl font-light tabular-nums text-crema">{h.hora}</p>
-              <h3 className="kicker mt-3 text-ratan">{h.titulo}</h3>
-              <p className="mt-2 text-[0.95rem] leading-relaxed text-crema/70">{h.texto}</p>
-            </li>
-          ))}
-        </ol>
+        <div aria-hidden="true" className="mx-auto mt-14 grid max-w-md grid-cols-2 gap-3 lg:hidden">
+          <div className="relative aspect-[4/5] overflow-hidden bg-noche-3">
+            <Photo img="rotuloAguila" sizes="50vw" mobileBelow={9999} decorative />
+          </div>
+          <div className="relative mt-10 aspect-[4/5] overflow-hidden bg-noche-3">
+            <Photo img="despachoRotulo" sizes="50vw" mobileBelow={9999} decorative />
+          </div>
+        </div>
       </div>
     </section>
   );

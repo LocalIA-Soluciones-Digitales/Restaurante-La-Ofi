@@ -2,12 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Logo } from "@/components/layout/Logo";
 import type { NavItem } from "@/components/layout/nav";
 import { Photo } from "@/components/media/Photo";
 import { Icon } from "@/components/ui/Icon";
 import { useDialogA11y } from "@/hooks/useDialogA11y";
+import type { ImageKey } from "@/lib/images";
+
+// Foto del panel del menú para cada página, en el orden de mainNav (inicio, menú del día,
+// carta, espacios, empresas, eventos, galería, contacto).
+const MENU_FOTOS: ImageKey[] = ["comedorPanoramica", "comedorRatan", "barra", "barraMesasAltas", "despacho", "salonNoche", "rotuloAguila", "terrazaCarpa"];
 
 interface Props {
   homeHref: string;
@@ -171,6 +176,7 @@ function MenuPanel({
   labels: Props["labels"];
 }) {
   const ref = useDialogA11y<HTMLDivElement>(onClose);
+  const [foto, setFoto] = useState(0);
   return (
     <div
       id="menu-movil"
@@ -201,10 +207,12 @@ function MenuPanel({
           <div className="container-wide max-w-3xl pb-28 pt-6 lg:mx-0 lg:px-16 lg:pt-12">
             <ul className="border-t border-tinta-line">
               {items.map((item, i) => (
-                <li key={item.href} className="border-b border-tinta-line">
+                <li key={item.href} className="intro-up border-b border-tinta-line" style={{ "--d": `${0.06 + i * 0.04}s` } as CSSProperties}>
                   <Link
                     href={item.href}
                     onClick={onClose}
+                    onPointerEnter={() => setFoto(i)}
+                    onFocus={() => setFoto(i)}
                     aria-current={isActive(item.href) ? "page" : undefined}
                     className="group flex min-h-14 items-baseline gap-5 py-3 text-carbon aria-[current=page]:text-brasa lg:py-4"
                   >
@@ -248,7 +256,11 @@ function MenuPanel({
           </div>
         </nav>
         <div aria-hidden="true" className="relative hidden w-[42%] border-l border-tinta-line lg:block">
-          <Photo img="comedorRatan" sizes="42vw" mobileBelow={0} decorative />
+          {MENU_FOTOS.map((img, i) => (
+            <div key={img} className={`absolute inset-0 transition-opacity duration-500 ease-out ${i === foto ? "opacity-100" : "opacity-0"}`}>
+              <Photo img={img} sizes="42vw" mobileBelow={0} decorative />
+            </div>
+          ))}
         </div>
       </div>
     </div>
