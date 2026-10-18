@@ -41,7 +41,7 @@ const FICHAS: Ficha[] = [
 
   // Entrantes
   { seccion: "entrantes", nombre: "Cecina de Angus", foto: "cecina", ingredientes: ["Cecina de vacuno Angus", AOVE, "Sal en escamas"], macros: [32, 1, 8], racion: "ración para compartir" },
-  { seccion: "entrantes", nombre: "Tabla de ibérico", ingredientes: ["Jamón ibérico", "Lomo ibérico", "Chorizo ibérico", "Salchichón ibérico", "Picos de pan"], macros: [52, 15, 60], racion: "ración para compartir" },
+  { seccion: "entrantes", nombre: "Tabla de ibérico", foto: "tabla-iberico", ingredientes: ["Jamón ibérico", "Lomo ibérico", "Chorizo ibérico", "Salchichón ibérico", "Picos de pan"], macros: [52, 15, 60], racion: "ración para compartir" },
   { seccion: "entrantes", nombre: "Paletilla ibérica", foto: "paletilla", ingredientes: ["Paletilla ibérica cortada a cuchillo"], macros: [30, 0, 20], racion: "ración para compartir" },
   { seccion: "entrantes", nombre: "Queso de la casa", foto: "queso", ingredientes: ["Queso curado de oveja", AOVE], macros: [38, 1, 50], racion: "ración para compartir" },
   { seccion: "entrantes", nombre: "Anchoas 00", foto: "anchoas", ingredientes: ["Anchoas del Cantábrico (Casa Santoña)", "Aceite de oliva"], macros: [14, 0, 10] },
@@ -50,7 +50,7 @@ const FICHAS: Ficha[] = [
 
   // Entrantes a la brasa
   { seccion: "entrantes-brasa", nombre: "Puerros con salsa de hongos", foto: "puerros", ingredientes: ["Puerro a la brasa", "Salsa de hongos", AOVE], macros: [6, 22, 18] },
-  { seccion: "entrantes-brasa", nombre: "Espárragos sobre mahonesa de aguacate", ingredientes: ["Espárrago verde a la brasa", "Mahonesa de aguacate", "Sal en escamas"], macros: [7, 10, 28] },
+  { seccion: "entrantes-brasa", nombre: "Espárragos sobre mahonesa de aguacate", foto: "esparragos", ingredientes: ["Espárrago verde a la brasa", "Mahonesa de aguacate", "Sal en escamas"], macros: [7, 10, 28] },
   { seccion: "entrantes-brasa", nombre: "Pulpo", foto: "pulpo", ingredientes: ["Pulpo a la brasa", "Patata cocida", "Pimentón", AOVE, "Sal gruesa"], macros: [38, 35, 22] },
   { seccion: "entrantes-brasa", nombre: "Morcilla de Burgos con pimientos asados", foto: "morcilla-burgos", ingredientes: ["Morcilla de Burgos (con arroz)", "Pimiento rojo asado", "Aceite de oliva"], macros: [18, 30, 32] },
   { seccion: "entrantes-brasa", nombre: "Morcilla de puerro de Zamudio", foto: "morcilla-zamudio", ingredientes: ["Morcilla de puerro de Zamudio a la brasa"], macros: [16, 14, 34] },

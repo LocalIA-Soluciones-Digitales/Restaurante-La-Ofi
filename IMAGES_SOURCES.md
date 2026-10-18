@@ -210,6 +210,6 @@ Generadas el **2026-10-18** con Gemini a partir de dos fotos reales como referen
 marca «Imagen ilustrativa» (`esIlustrativa`). Se asignan en `src/lib/carta-fichas.ts`; una foto subida
 desde /admin las sustituye. **Pendiente: visto bueno de Carlos** plato a plato.
 
-Recortadas en cuadrado centradas en el plato o la copa. Faltan (sin foto, «Foto pendiente»): **tabla de
-ibérico** y **espárragos sobre mahonesa de aguacate** (prompts en `docs/prompts-gemini-platos.md`).
+Recortadas en cuadrado centradas en el plato o la copa. Todos los platos de la carta tienen foto
+(prompts en `docs/prompts-gemini-platos.md`).
 Salmón, burrata, revuelta y bonita usan sus fotos reales de Instagram (`src/lib/carta-fotos.ts`).
