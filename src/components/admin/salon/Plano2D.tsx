@@ -87,7 +87,7 @@ export function Plano2D({
       viewBox={`0 0 ${W} ${H}`}
       role="group"
       aria-label="Plano del salón"
-      className={`h-auto w-full touch-none select-none rounded-[1.5rem] bg-[#162a1e] ${editar ? "cursor-move" : ""}`}
+      className={`h-full w-full touch-none select-none rounded-[1.25rem] bg-[#162a1e] ${editar ? "cursor-move" : ""}`}
       onPointerMove={(e) => {
         if (!arrastre) return;
         const p = aPorcentaje(e);

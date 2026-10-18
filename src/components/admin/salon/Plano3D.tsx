@@ -419,7 +419,7 @@ export default function Plano3D({
   const zonaDe = new Map(zonas.map((z) => [z.id, z]));
 
   return (
-    <div className={className ?? "h-[62vh] min-h-[420px] w-full overflow-hidden rounded-[1.5rem] bg-noche"}>
+    <div className={className ?? "h-[62vh] min-h-[420px] w-full overflow-hidden rounded-[1.25rem] bg-noche lg:h-full lg:min-h-0"}>
       <Canvas
         camera={{
           // Web pública: vista general alejada y algo más cenital, para que se lea todo el local.

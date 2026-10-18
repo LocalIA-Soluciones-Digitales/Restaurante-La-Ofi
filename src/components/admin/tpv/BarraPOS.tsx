@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { CobroModal } from "@/components/admin/CobroModal";
@@ -72,6 +73,12 @@ export function BarraPOS({
   const desc = Math.min(aCentimos(descuento) ?? 0, subtotal);
   const total = subtotal - desc;
   const mesa = mesas.find((m) => m.id === destino) ?? null;
+  const enComanda = useMemo(() => {
+    const n = new Map<string, number>();
+    for (const l of lineas) n.set(l.item.id, (n.get(l.item.id) ?? 0) + l.cantidad);
+    return n;
+  }, [lineas]);
+  const unidades = lineas.reduce((a, l) => a + l.cantidad, 0);
   const mesasOrdenadas = useMemo(() => [...mesas].sort((x, y) => x.numero.localeCompare(y.numero, "es", { numeric: true })), [mesas]);
 
   const anadir = (item: CartaItem, seleccion: SeleccionModificador[] = [], precioManual: number | null = null) => {
@@ -161,34 +168,62 @@ export function BarraPOS({
                 role="tab"
                 aria-selected={cat === s.id}
                 onClick={() => setCat(s.id)}
-                className="min-h-12 shrink-0 rounded-xl border border-carbon/15 bg-white px-4 text-sm font-semibold aria-selected:border-marino aria-selected:bg-[theme(colors.marino.DEFAULT)] aria-selected:text-crema dark:border-crema/15 dark:bg-noche-2 dark:aria-selected:bg-neon dark:aria-selected:text-noche"
+                className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border border-carbon/10 bg-white px-4 text-sm font-semibold transition-colors hover:border-carbon/25 aria-selected:border-transparent aria-selected:bg-[theme(colors.marino.DEFAULT)] aria-selected:text-crema dark:border-crema/10 dark:bg-noche-2 dark:aria-selected:bg-neon dark:aria-selected:text-noche"
               >
                 {s.nombre}
+                <span className="text-xs tabular-nums opacity-55">{s.items.length}</span>
               </button>
             ))}
           </div>
         ) : null}
-        <ul className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
-          {productos.map((p) => (
-            <li key={p.id}>
-              <button
-                type="button"
-                onClick={() => tocarProducto(p)}
-                className={`${card} flex min-h-24 w-full flex-col justify-between p-3 text-left transition-transform active:scale-[0.97]`}
-              >
-                <span className="font-semibold leading-tight">{p.nombre}</span>
-                <span className="mt-2 flex items-center justify-between text-sm">
-                  <span className="font-display text-lg text-marino dark:text-neon">{p.precioCentimos !== null ? formatCentimos(p.precioCentimos) : "S/M"}</span>
-                  {p.modificadores.length > 0 ? <Icon name="settings" className="h-4 w-4 opacity-50" /> : null}
-                </span>
-              </button>
-            </li>
-          ))}
+        {/* Tarjetas con miniatura del plato: se reconocen de un vistazo y la cantidad ya pedida se ve en la esquina. */}
+        <ul className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-4">
+          {productos.length === 0 ? <li className="col-span-full py-10 text-center text-sm opacity-60">Nada coincide con «{busca}».</li> : null}
+          {productos.map((p) => {
+            const n = enComanda.get(p.id) ?? 0;
+            return (
+              <li key={p.id}>
+                <button
+                  type="button"
+                  onClick={() => tocarProducto(p)}
+                  className={`group relative flex h-full min-h-[5.5rem] w-full items-stretch gap-3 overflow-hidden rounded-2xl border bg-white p-2 text-left shadow-card transition-[transform,border-color,box-shadow] duration-150 hover:shadow-lift active:scale-[0.97] dark:bg-noche-2 ${
+                    n ? "border-marino ring-1 ring-marino dark:border-neon dark:ring-neon" : "border-carbon/10 dark:border-crema/10"
+                  }`}
+                >
+                  <span className="relative aspect-square w-[4.5rem] shrink-0 overflow-hidden rounded-xl bg-arena dark:bg-noche-3">
+                    {p.imagen ? (
+                      <Image src={p.imagen.src} alt="" fill sizes="72px" className="object-cover transition-transform duration-300 group-hover:scale-105" />
+                    ) : (
+                      <span aria-hidden="true" className="grid h-full place-items-center font-display text-2xl text-carbon/30 dark:text-crema/30">
+                        {p.nombre.charAt(0)}
+                      </span>
+                    )}
+                  </span>
+                  <span className="flex min-w-0 flex-1 flex-col justify-between py-0.5 pr-1">
+                    <span className="line-clamp-2 font-semibold leading-tight">{p.nombre}</span>
+                    <span className="mt-1 flex items-center justify-between gap-1">
+                      <span className="font-display text-lg tabular-nums text-marino dark:text-neon">{p.precioCentimos !== null ? formatCentimos(p.precioCentimos) : "S/M"}</span>
+                      {p.modificadores.length > 0 ? (
+                        <span title="Con opciones" className="rounded-md bg-carbon/[0.06] px-1.5 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide text-carbon/60 dark:bg-crema/10 dark:text-crema/60">
+                          Opciones
+                        </span>
+                      ) : null}
+                    </span>
+                  </span>
+                  {n ? (
+                    <span key={n} className="absolute right-1.5 top-1.5 grid h-6 min-w-6 animate-bump place-items-center rounded-full bg-marino px-1.5 text-xs font-bold tabular-nums text-crema dark:bg-neon dark:text-noche">
+                      {n}
+                    </span>
+                  ) : null}
+                </button>
+              </li>
+            );
+          })}
         </ul>
       </section>
 
       {/* Comanda */}
-      <section aria-label="Comanda" className={`${card} flex h-fit flex-col p-4 lg:sticky lg:top-20`}>
+      <section aria-label="Comanda" className={`${card} flex h-fit flex-col p-4 lg:sticky lg:top-20 lg:max-h-[calc(100dvh-7rem)]`}>
         <label className="grid gap-1 text-sm">
           <span className="font-semibold">Para</span>
           <select value={destino} onChange={(e) => setDestino(e.target.value)} className={input}>
@@ -213,8 +248,21 @@ export function BarraPOS({
         </label>
         {!mesa ? <input value={nombre} onChange={(e) => setNombre(e.target.value.slice(0, 60))} placeholder="Nombre (opcional)" className={`${input} mt-2`} /> : null}
 
-        <ul className="mt-3 max-h-[40vh] divide-y divide-carbon/10 overflow-y-auto dark:divide-crema/10">
-          {lineas.length === 0 ? <li className="py-6 text-center text-sm opacity-60">Toca productos para añadirlos.</li> : null}
+        <div className="mt-3 flex items-center justify-between text-xs font-semibold uppercase tracking-eyebrow text-carbon-muted dark:text-crema/55">
+          <span>Comanda</span>
+          {unidades ? (
+            <button type="button" onClick={() => setLineas([])} className="normal-case tracking-normal text-terracota hover:underline">
+              Vaciar ({unidades})
+            </button>
+          ) : null}
+        </div>
+        <ul className="mt-1 min-h-0 flex-1 divide-y divide-carbon/10 overflow-y-auto max-lg:max-h-[40vh] dark:divide-crema/10">
+          {lineas.length === 0 ? (
+            <li className="grid place-items-center gap-2 py-8 text-center text-sm opacity-60">
+              <Icon name="plus" className="h-6 w-6" />
+              Toca productos para añadirlos.
+            </li>
+          ) : null}
           {lineas.map((l) => (
             <li key={l.key} className="py-2">
               <div className="flex items-start gap-2">

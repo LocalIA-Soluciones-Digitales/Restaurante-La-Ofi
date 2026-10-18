@@ -63,16 +63,18 @@ export function AdminShell({ nombre, rol, local, children }: { nombre: string; r
         if (items.length === 0) return null;
         return (
           <div key={g.key} className="mb-2.5 last:mb-0 alto:mb-5">
-            <p className="px-3 text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-crema/40">{g.label}</p>
+            <p className="px-3 text-[0.625rem] font-semibold uppercase tracking-[0.22em] text-crema/35">{g.label}</p>
             <ul className="mt-1 grid gap-px">
               {items.map((s) => (
                 <li key={s.href}>
                   <Link
                     href={s.href}
                     aria-current={activa(s.href) ? "page" : undefined}
-                    className="flex min-h-[2.125rem] items-center gap-3 rounded-xl px-3 text-sm font-medium alto:min-h-11 text-crema/75 transition-colors hover:bg-crema/10 hover:text-crema aria-[current=page]:bg-neon aria-[current=page]:text-noche"
+                    className="group relative flex min-h-[2.125rem] items-center gap-3 rounded-xl px-3 text-sm font-medium text-crema/65 transition-colors duration-150 hover:bg-crema/[0.06] hover:text-crema alto:min-h-11 aria-[current=page]:bg-crema/[0.09] aria-[current=page]:text-crema"
                   >
-                    <Icon name={s.icon} className="h-[1.125rem] w-[1.125rem] shrink-0" />
+                    {/* Indicador de sección activa: barra de neón a la izquierda. */}
+                    <span aria-hidden="true" className="absolute inset-y-2 left-0 w-[3px] scale-y-0 rounded-full bg-neon transition-transform duration-200 ease-out-expo group-aria-[current=page]:scale-y-100" />
+                    <Icon name={s.icon} className="h-[1.125rem] w-[1.125rem] shrink-0 opacity-80 group-aria-[current=page]:text-neon group-aria-[current=page]:opacity-100" />
                     {s.label}
                   </Link>
                 </li>
@@ -88,7 +90,7 @@ export function AdminShell({ nombre, rol, local, children }: { nombre: string; r
     <div className="flex min-h-screen">
       {/* Barra lateral (fija en escritorio/tablet horizontal, cajón en móvil) */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex h-dvh w-60 print:hidden flex-col bg-noche text-crema transition-transform duration-300 ease-drawer lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 flex h-dvh w-60 print:hidden flex-col border-r border-crema/[0.06] bg-[#0a1220] text-crema [&_:focus-visible]:outline-neon transition-transform duration-300 ease-drawer lg:translate-x-0 ${
           abierto ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -132,14 +134,24 @@ export function AdminShell({ nombre, rol, local, children }: { nombre: string; r
         {/* En cocina la pantalla es siempre oscura (KDS): la cabecera la acompaña. */}
         <header
           data-theme={pathname.startsWith("/admin/cocina") ? "dark" : undefined}
-          className="sticky top-0 z-20 flex h-16 print:hidden items-center gap-3 border-b border-carbon/10 bg-crema/90 px-4 backdrop-blur dark:border-crema/10 dark:bg-noche/90 dark:text-crema sm:px-6"
+          className="sticky top-0 z-20 flex h-16 print:hidden items-center gap-3 border-b border-carbon/[0.08] bg-crema/80 px-4 backdrop-blur-md dark:border-crema/10 dark:bg-noche/85 dark:text-crema sm:px-6"
         >
           <button type="button" onClick={() => setAbierto(true)} className="grid h-11 w-11 place-items-center rounded-xl border border-carbon/15 dark:border-crema/15 lg:hidden">
             <Icon name="menu" />
             <span className="sr-only">Abrir menú</span>
           </button>
-          <p className="min-w-0 flex-1 truncate font-display text-xl">{actual?.label ?? "Panel"}</p>
-          <span className="hidden font-mono text-sm tabular-nums text-carbon-muted dark:text-crema/60 sm:inline">{hora}</span>
+          <div className="flex min-w-0 flex-1 items-center gap-2.5">
+            {actual ? <Icon name={actual.icon} className="hidden h-5 w-5 shrink-0 text-carbon-muted dark:text-crema/50 sm:block" /> : null}
+            <p className="truncate font-display text-xl">{actual?.label ?? "Panel"}</p>
+          </div>
+          {/* En directo: los datos de servicio se actualizan solos (Realtime + sondeo). */}
+          <span className="hidden items-center gap-2 rounded-full border border-carbon/10 px-3 py-1.5 font-mono text-sm tabular-nums text-carbon-muted dark:border-crema/10 dark:text-crema/60 sm:inline-flex">
+            <span className="relative flex h-2 w-2" aria-hidden="true">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-[#1F9D74] opacity-60 motion-safe:animate-ping" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#1F9D74]" />
+            </span>
+            {hora}
+          </span>
           <AyudaSeccion pathname={pathname} titulo={actual?.label ?? "Panel"} />
           <button type="button" onClick={cambiarTema} className="grid h-11 w-11 place-items-center rounded-xl border border-carbon/15 dark:border-crema/15" aria-pressed={oscuro}>
             <Icon name={oscuro ? "sun" : "moon"} className="h-5 w-5" />

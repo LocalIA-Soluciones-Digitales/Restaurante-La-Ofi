@@ -8,7 +8,7 @@ import { Modal } from "@/components/admin/Modal";
 import { Plano2D } from "@/components/admin/salon/Plano2D";
 import { Aviso, botonPeligro, botonPrimario, botonSecundario, card, input } from "@/components/admin/ui";
 import { Icon } from "@/components/ui/Icon";
-import { accionMesa, cobrar, rpcAdmin, salon } from "@/lib/admin/actions";
+import { accionMesa, accionSalon, cobrar, rpcAdmin, salonYReservas } from "@/lib/admin/actions";
 import { minutosDesde, posicionesPorDefecto } from "@/lib/admin/plano";
 import type { Rol } from "@/lib/admin/roles";
 import { ESTADO_MESA, estadoMesa, type EstadoMesa, type MesaSalon, type ReservaDia, type SalonData } from "@/lib/admin/types";
@@ -18,7 +18,7 @@ import { escucharLaofi } from "@/lib/supabase/browser";
 
 const Plano3D = dynamic(() => import("@/components/admin/salon/Plano3D"), {
   ssr: false,
-  loading: () => <div className="grid h-[62vh] place-items-center rounded-[1.5rem] bg-noche text-crema/60">Cargando 3D…</div>,
+  loading: () => <div className="grid h-[62vh] place-items-center rounded-[1.25rem] lg:h-full bg-noche text-crema/60">Cargando 3D…</div>,
 });
 
 /** Preferencia del dispositivo: ver solo las mesas propias (y sus avisos en «Hoy»). */
@@ -33,6 +33,17 @@ interface CuentaMesa {
   pendiente_centimos: number;
   camarero: string | null;
 }
+
+/** Cómo queda la mesa en pantalla nada más tocar cada acción (el servidor confirma después). */
+const CAMBIO_OPTIMISTA: Record<string, (d: Record<string, unknown>) => Partial<MesaSalon>> = {
+  sentar: (d) => ({ ocupada: true, por_limpiar: false, comensales: Number(d.comensales) || 1, entrada_at: new Date().toISOString() }),
+  atender: () => ({ aviso_camarero: false }),
+  limpia: () => ({ por_limpiar: false }),
+  liberar: () => ({ ocupada: false, por_limpiar: true, comensales: 0, entrada_at: null, aviso_camarero: false, pide_cuenta: false, importe_centimos: 0, pendiente_centimos: 0 }),
+  bloquear: () => ({ bloqueada: true }),
+  desbloquear: () => ({ bloqueada: false, bloqueo_motivo: null }),
+  nota: (d) => ({ nota: typeof d.nota === "string" && d.nota.trim() ? d.nota : null }),
+};
 
 const etiquetaMesa = (m: Pick<MesaSalon, "nombre" | "numero">) => m.nombre ?? `Mesa ${m.numero}`;
 const aMinutos = (hhmm: string) => {
@@ -124,10 +135,30 @@ export function SalonBoard({
   };
 
   const recargar = useCallback(async () => {
-    const [r, rs] = await Promise.all([salon<SalonData>(), rpcAdmin<ReservaDia[]>("laofi_admin_reservas", { p_desde: hoyEnMadrid(), p_hasta: hoyEnMadrid() })]);
-    if (r.ok) setData(r.data);
-    if (rs.ok) setReservas(rs.data);
+    const r = await salonYReservas<SalonData, ReservaDia[]>(hoyEnMadrid());
+    if (!r.ok) return;
+    setData(r.data.salon);
+    setReservas(r.data.reservas);
   }, []);
+
+  /**
+   * Ejecuta una RPC del salón y pinta el resultado en la misma petición. Con
+   * `optimista`, la mesa cambia en pantalla al instante (antes de que responda el
+   * servidor); si falla, se vuelve al estado real.
+   */
+  const ejecutar = useCallback(async (fn: `laofi_admin_${string}`, args: Record<string, unknown>, optimista?: { id: string; cambio: Partial<MesaSalon> }) => {
+    setError(null);
+    if (optimista) setData((d) => ({ ...d, mesas: d.mesas.map((m) => (m.id === optimista.id ? { ...m, ...optimista.cambio } : m)) }));
+    const r = await accionSalon<SalonData, ReservaDia[]>(fn, args, hoyEnMadrid());
+    if (!r.ok) {
+      setError(r.error);
+      if (optimista) void recargar();
+      return false;
+    }
+    setData(r.data.salon);
+    setReservas(r.data.reservas);
+    return true;
+  }, [recargar]);
 
   useEffect(() => {
     const baja = escucharLaofi(["mesas", "pedidos", "pedido_items", "avisos"], () => void recargar());
@@ -152,21 +183,15 @@ export function SalonBoard({
 
   const accion = async (a: string, datos: Record<string, unknown> = {}, id = mesa?.id) => {
     if (!id) return false;
-    setError(null);
-    const r = await accionMesa(id, a, datos);
-    if (!r.ok) {
-      setError(r.error);
-      return false;
-    }
-    await recargar();
-    return true;
+    return ejecutar("laofi_admin_mesa", { p_mesa: id, p_accion: a, p_datos: datos }, { id, cambio: CAMBIO_OPTIMISTA[a]?.(datos) ?? {} });
   };
 
   const servir = async (id: string) => {
-    setError(null);
-    const r = await rpcAdmin<number>("laofi_admin_servir_mesa", { p_mesa: id });
-    if (!r.ok) return setError(r.error);
-    await recargar();
+    await ejecutar("laofi_admin_servir_mesa", { p_mesa: id }, { id, cambio: { listos: 0 } });
+  };
+
+  const sentarReserva = async (r: ReservaDia) => {
+    await ejecutar("laofi_admin_reserva_estado", { p_id: r.id, p_estado: "SENTADA" });
   };
 
   const asignarReserva = async (r: ReservaDia, mesaId: string) => {
@@ -179,10 +204,7 @@ export function SalonBoard({
     const dudas = conflictosReserva(r, m, data.mesas, reservas, anadir);
     if (dudas.length && !window.confirm(`${dudas.join("\n")}\n\n¿Asignar igualmente?`)) return;
     const mesas = anadir ? [...r.mesas.map((x) => x.id), mesaId] : [mesaId];
-    const res = await rpcAdmin<ReservaDia>("laofi_admin_guardar_reserva", { p: { id: r.id, mesas } });
-    if (!res.ok) return setError(res.error);
-    setError(null);
-    await recargar();
+    await ejecutar("laofi_admin_guardar_reserva", { p: { id: r.id, mesas } });
   };
 
   // Arrastrar una reserva hasta su mesa (ratón o dedo): al soltar se busca la mesa bajo el puntero.
@@ -308,11 +330,7 @@ export function SalonBoard({
         await accion(a, d);
       }}
       onServir={() => servir(mesa.id)}
-      onSentarReserva={async (r) => {
-        const res = await rpcAdmin("laofi_admin_reserva_estado", { p_id: r.id, p_estado: "SENTADA" });
-        if (!res.ok) return setError(res.error);
-        await recargar();
-      }}
+      onSentarReserva={sentarReserva}
       onUnir={() => setUniendo(uniendo ? null : [])}
       onConfirmarUnion={async () => {
         await accion("unir", { mesas: uniendo });
@@ -330,50 +348,84 @@ export function SalonBoard({
     />
   ) : null;
 
+  const importeEnSala = data.mesas.reduce((s, m) => s + (m.ocupada ? m.importe_centimos : 0), 0);
+  const pendienteSala = data.mesas.reduce((s, m) => s + (m.ocupada ? m.pendiente_centimos : 0), 0);
+  const activas = data.mesas.filter((m) => !m.bloqueada);
+  const ocupacion = activas.length ? Math.round((activas.filter((m) => m.ocupada).length / activas.length) * 100) : 0;
+  const plazas = activas.reduce((s, m) => s + m.capacidad, 0);
+  const largas = data.mesas.filter((m) => m.ocupada && (minutosDesde(m.entrada_at) ?? 0) >= 90).length;
+  const porZona = data.zonas
+    .map((z) => {
+      const ms = data.mesas.filter((m) => m.zona_id === z.id);
+      return { id: z.id, nombre: z.nombre, total: ms.length, ocupadas: ms.filter((m) => m.ocupada).length };
+    })
+    .filter((z) => z.total > 0);
+
+  const chip = "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[0.8125rem] font-semibold transition-colors disabled:opacity-35";
+  const herramienta =
+    "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-3 text-[0.8125rem] font-semibold text-carbon/80 transition-colors hover:bg-carbon/[0.06] aria-pressed:bg-[theme(colors.marino.DEFAULT)] aria-pressed:text-crema dark:text-crema/80 dark:hover:bg-crema/10 dark:aria-pressed:bg-neon dark:aria-pressed:text-noche";
+
   return (
-    <div className="grid gap-4 xl:grid-cols-[1fr_22rem]">
-      <div className="min-w-0">
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          <div role="tablist" aria-label="Vista" className="flex rounded-xl bg-arena p-1 dark:bg-noche-2">
+    // En escritorio/tablet horizontal todo el salón cabe en la pantalla: el plano
+    // se escala al hueco que queda y el panel lateral desplaza solo su contenido.
+    <div className="grid gap-3 lg:h-[calc(100dvh-7rem)] lg:min-h-[34rem] xl:grid-cols-[minmax(0,1fr)_21rem]">
+      <div className="flex min-h-0 min-w-0 flex-col gap-2.5">
+        {/* Barra de herramientas: vista, acciones y cifras en vivo, en una fila. */}
+        <div className="flex flex-wrap items-center gap-1.5 rounded-2xl border border-carbon/10 bg-white/80 p-1.5 shadow-card backdrop-blur dark:border-crema/10 dark:bg-noche-2/80">
+          <div role="tablist" aria-label="Vista" className="flex rounded-lg bg-carbon/[0.05] p-0.5 dark:bg-crema/10">
             {(["2d", "3d"] as const).map((v) => (
               <button
                 key={v}
                 role="tab"
                 aria-selected={vista === v}
                 onClick={() => setVista(v)}
-                className="min-h-10 rounded-lg px-4 text-sm font-semibold uppercase aria-selected:bg-[theme(colors.marino.DEFAULT)] aria-selected:text-crema dark:aria-selected:bg-neon dark:aria-selected:text-noche"
+                className="h-8 rounded-md px-3 text-xs font-bold uppercase tracking-wide text-carbon/60 transition aria-selected:bg-white aria-selected:text-carbon aria-selected:shadow-sm dark:text-crema/60 dark:aria-selected:bg-noche dark:aria-selected:text-crema"
               >
                 {v}
               </button>
             ))}
           </div>
+          <span aria-hidden="true" className="mx-0.5 h-5 w-px bg-carbon/10 dark:bg-crema/10" />
           <button
             type="button"
             aria-pressed={soloMias}
             title="Las mesas que has abierto tú (o en las que tomaste la primera comanda)"
             onClick={() => cambiarSoloMias(!soloMias)}
-            className={`${botonSecundario} aria-pressed:border-transparent aria-pressed:bg-[theme(colors.marino.DEFAULT)] aria-pressed:text-crema`}
+            className={herramienta}
           >
             <Icon name="users" className="h-4 w-4" />
-            Mis mesas{misMesas.size ? ` (${misMesas.size})` : ""}
+            Mis mesas{misMesas.size ? ` · ${misMesas.size}` : ""}
           </button>
           {gestiona && vista === "2d" ? (
-            <button type="button" aria-pressed={editar} onClick={() => setEditar((e) => !e)} className={`${botonSecundario} aria-pressed:border-terracota aria-pressed:text-terracota`}>
+            <button type="button" aria-pressed={editar} onClick={() => setEditar((e) => !e)} className={herramienta}>
               <Icon name="move" className="h-4 w-4" />
-              {editar ? "Terminar de mover" : "Mover mesas"}
+              {editar ? "Terminar" : "Mover mesas"}
             </button>
           ) : null}
-          <button type="button" onClick={() => setFinServicio(true)} className={botonSecundario}>
+          <button type="button" onClick={() => setFinServicio(true)} className={herramienta}>
             <Icon name="check" className="h-4 w-4" />
             Fin de servicio
           </button>
-          <p className="ml-auto text-sm font-semibold tabular-nums text-carbon-muted dark:text-crema/60">
-            {comensalesSentados} comensales{platosListos ? <span className="ml-2 rounded-full bg-[#1F9D74] px-2 py-0.5 text-crema">{platosListos} platos listos</span> : null}
-          </p>
+          <dl className="ml-auto flex items-center gap-1 text-[0.8125rem]">
+            <div className="flex items-baseline gap-1 rounded-lg px-2.5 py-1">
+              <dt className="text-carbon-muted dark:text-crema/55">Ocupación</dt>
+              <dd className="font-bold tabular-nums">{ocupacion}%</dd>
+            </div>
+            <div className="flex items-baseline gap-1 rounded-lg px-2.5 py-1">
+              <dt className="text-carbon-muted dark:text-crema/55">Comensales</dt>
+              <dd className="font-bold tabular-nums">{comensalesSentados}</dd>
+            </div>
+            {platosListos ? (
+              <div className="flex items-baseline gap-1 rounded-lg bg-[#1F9D74] px-2.5 py-1 text-white">
+                <dt>Listos</dt>
+                <dd className="font-bold tabular-nums">{platosListos}</dd>
+              </div>
+            ) : null}
+          </dl>
         </div>
 
-        {/* Estados con contador: pulsar uno resalta esas mesas en el plano. */}
-        <div role="group" aria-label="Filtrar mesas por estado" className="mb-3 flex flex-wrap gap-2">
+        {/* Estados con contador: pulsar uno resalta esas mesas en el plano. Las reservas de hoy, en la misma fila. */}
+        <div role="group" aria-label="Filtrar mesas por estado" className="no-scrollbar flex gap-1.5 overflow-x-auto">
           {(Object.entries(ESTADO_MESA) as [EstadoMesa, (typeof ESTADO_MESA)[EstadoMesa]][]).map(([clave, e]) => {
             const n = conteo[clave];
             const activo = filtro === clave;
@@ -385,54 +437,53 @@ export function SalonBoard({
                 aria-pressed={activo}
                 disabled={n === 0 && !activo}
                 onClick={() => setFiltro(activo ? null : clave)}
-                className={`inline-flex min-h-10 items-center gap-2 rounded-full border px-3.5 text-sm font-semibold transition disabled:opacity-40 ${
-                  activo ? "border-transparent text-crema shadow-card" : "border-carbon/15 bg-white text-carbon dark:border-crema/15 dark:bg-noche-2 dark:text-crema"
-                } ${urgente && !activo ? "border-neon-deep motion-safe:animate-pulse" : ""}`}
+                className={`${chip} ${
+                  activo ? "border-transparent text-crema shadow-card" : "border-carbon/10 bg-white text-carbon hover:border-carbon/25 dark:border-crema/10 dark:bg-noche-2 dark:text-crema"
+                } ${urgente && !activo ? "border-neon-deep ring-2 ring-neon/50 motion-safe:animate-pulse" : ""}`}
                 style={activo ? { background: e.color, color: clave === "limpiar" ? "#2B2722" : undefined } : undefined}
               >
-                <span className="h-2.5 w-2.5 rounded-full" style={{ background: activo ? "#fff" : e.color }} />
+                <span className="h-2 w-2 rounded-full" style={{ background: activo ? "#fff" : e.color }} />
                 {clave === "cuenta" ? "Avisos" : e.label}
-                <span className="tabular-nums opacity-80">{n}</span>
+                <span className="tabular-nums opacity-70">{n}</span>
               </button>
             );
           })}
-        </div>
-
-        {/* Reservas de hoy: arrastrar (o tocar y luego tocar la mesa) para asignarlas. */}
-        {vista === "2d" && !editar && reservasHoy.length > 0 ? (
-          <section aria-label="Reservas de hoy" className="mb-3 rounded-2xl bg-arena/70 p-2.5 dark:bg-noche-2">
-            <p className="mb-2 px-1 text-xs font-semibold text-carbon-muted dark:text-crema/60">
-              Reservas de hoy · arrastra una a su mesa, o tócala y toca la mesa
-            </p>
-            <ul className="flex gap-2 overflow-x-auto pb-1">
-              {reservasHoy.map((r) => {
-                const activa = asignando?.id === r.id;
-                return (
-                  <li key={r.id} className="shrink-0">
-                    <button
-                      type="button"
-                      aria-pressed={activa}
-                      onPointerDown={(e) => empezarArrastre(r, e)}
-                      onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setAsignando(activa ? null : r)}
-                      className="group flex min-h-12 touch-none items-center gap-2 rounded-xl border border-carbon/15 bg-white px-3 text-left text-sm shadow-card aria-pressed:border-transparent aria-pressed:bg-[theme(colors.marino.DEFAULT)] aria-pressed:text-crema dark:border-crema/15 dark:bg-noche-3"
-                    >
-                      <span className="font-display text-lg tabular-nums">{r.hora}</span>
-                      <span className="grid leading-tight">
+          {/* Reservas de hoy: arrastrar (o tocar y luego tocar la mesa) para asignarlas. */}
+          {vista === "2d" && !editar && reservasHoy.length > 0 ? (
+            <>
+              <span aria-hidden="true" className="mx-1 h-9 w-px shrink-0 bg-carbon/10 dark:bg-crema/10" />
+              <ul aria-label="Reservas de hoy: arrastra una a su mesa, o tócala y toca la mesa" className="flex gap-1.5">
+                {reservasHoy.map((r) => {
+                  const activa = asignando?.id === r.id;
+                  return (
+                    <li key={r.id} className="shrink-0">
+                      <button
+                        type="button"
+                        aria-pressed={activa}
+                        title="Arrastra a su mesa, o tócala y toca la mesa"
+                        onPointerDown={(e) => empezarArrastre(r, e)}
+                        onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setAsignando(activa ? null : r)}
+                        className={`group flex h-9 touch-none items-center gap-2 rounded-full border border-dashed px-3 text-[0.8125rem] aria-pressed:border-solid aria-pressed:border-transparent aria-pressed:bg-[theme(colors.marino.DEFAULT)] aria-pressed:text-crema ${
+                          r.mesas.length ? "border-carbon/25 bg-white dark:border-crema/20 dark:bg-noche-3" : "border-terracota/60 bg-terracota-soft/60 dark:bg-terracota/20"
+                        }`}
+                      >
+                        <Icon name="calendar" className="h-3.5 w-3.5 opacity-60" />
+                        <span className="font-bold tabular-nums">{r.hora}</span>
                         <span className="font-semibold">
                           {r.nombre} · {r.personas}p
                         </span>
-                        <span className={`text-xs ${r.mesas.length ? "opacity-70" : "font-semibold text-terracota group-aria-pressed:text-[#FFC9B5]"}`}>
-                          {r.mesas.length ? `Mesa ${r.mesas.map((x) => x.numero).join(" + ")}` : "Sin mesa"}
+                        <span className={`text-xs ${r.mesas.length ? "opacity-60" : "font-bold text-terracota group-aria-pressed:text-[#FFC9B5]"}`}>
+                          {r.mesas.length ? `M${r.mesas.map((x) => x.numero).join("+")}` : "sin mesa"}
                           {r.estado === "PENDIENTE" ? " · por confirmar" : ""}
                         </span>
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-        ) : null}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          ) : null}
+        </div>
 
         {uniendo ? <Aviso tono="info">Toca las mesas que quieres unir a {mesa ? etiquetaMesa(mesa) : "la mesa"} y pulsa «Unir».</Aviso> : null}
         {cambiando ? <Aviso tono="info">Toca la mesa libre a la que pasa la cuenta.</Aviso> : null}
@@ -444,84 +495,86 @@ export function SalonBoard({
             </button>
           </Aviso>
         ) : null}
-        {soloMias ? (
-          <p className="mb-2 text-xs font-semibold text-carbon-muted dark:text-crema/60">
-            {misMesas.size
-              ? `Mostrando ${misMesas.size === 1 ? "tu mesa" : `tus ${misMesas.size} mesas`} (las que has abierto); el resto se ve atenuado.`
-              : "Aún no tienes mesas: serán tuyas las que abras al sentar a los clientes o al tomar su primera comanda."}
+        {soloMias && !misMesas.size ? (
+          <p className="text-xs font-semibold text-carbon-muted dark:text-crema/60">
+            Aún no tienes mesas: serán tuyas las que abras al sentar a los clientes o al tomar su primera comanda.
           </p>
         ) : null}
+        {error && !mesa ? <Aviso>{error}</Aviso> : null}
 
-        <div className="relative mt-2">
-          {vista === "2d" ? (
-            <Plano2D
-              zonas={data.zonas}
-              mesas={data.mesas}
-              seleccion={sel}
-              multiSeleccion={uniendo ?? []}
-              editar={editar}
-              filtro={filtro}
-              mias={soloMias ? misMesas : null}
-              reservaPersonas={asignando?.personas ?? null}
-              onSelect={(id) => void seleccionar(id)}
-              onMover={async (id, p) => {
-                setData((d) => ({ ...d, mesas: d.mesas.map((m) => (m.id === id ? { ...m, pos_x: p.x, pos_y: p.y } : m)) }));
-                const r = await accionMesa(id, "mover", { pos_x: Math.round(p.x * 100) / 100, pos_y: Math.round(p.y * 100) / 100 });
-                if (!r.ok) setError(r.error);
-              }}
-            />
-          ) : (
-            <Plano3D zonas={data.zonas} mesas={data.mesas} seleccion={sel} onSelect={(id) => void seleccionar(id)} />
-          )}
+        {/* Hueco del plano: el lienzo (proporción fija 1000×620) se ajusta al alto y al ancho que quedan. */}
+        <div className="grid min-h-0 flex-1 place-items-center lg:[container-type:size]">
+          <div className="relative aspect-[1000/620] w-full lg:w-[min(100cqw,calc(100cqh*1000/620))]">
+            {vista === "2d" ? (
+              <Plano2D
+                zonas={data.zonas}
+                mesas={data.mesas}
+                seleccion={sel}
+                multiSeleccion={uniendo ?? []}
+                editar={editar}
+                filtro={filtro}
+                mias={soloMias ? misMesas : null}
+                reservaPersonas={asignando?.personas ?? null}
+                onSelect={(id) => void seleccionar(id)}
+                onMover={async (id, p) => {
+                  setData((d) => ({ ...d, mesas: d.mesas.map((m) => (m.id === id ? { ...m, pos_x: p.x, pos_y: p.y } : m)) }));
+                  const r = await accionMesa(id, "mover", { pos_x: Math.round(p.x * 100) / 100, pos_y: Math.round(p.y * 100) / 100 });
+                  if (!r.ok) setError(r.error);
+                }}
+              />
+            ) : (
+              <Plano3D zonas={data.zonas} mesas={data.mesas} seleccion={sel} onSelect={(id) => void seleccionar(id)} />
+            )}
 
-          {verRapido ? (
-            <AccionesRapidas
-              mesa={mesa}
-              x={posSel.x}
-              y={posSel.y}
-              reserva={reservaDeMesa(mesa)}
-              onCerrar={() => setRapido(false)}
-              onMas={() => {
-                setRapido(false);
-                setHoja(true);
-                panelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-              }}
-              onSentar={(n) => void accion("sentar", { comensales: n })}
-              onSentarReserva={async (r) => {
-                const res = await rpcAdmin("laofi_admin_reserva_estado", { p_id: r.id, p_estado: "SENTADA" });
-                if (!res.ok) return setError(res.error);
-                await recargar();
-              }}
-              onServir={() => void servir(mesa.id)}
-              onCobrar={() => void abrirCobro()}
-              onAtender={() => void accion("atender")}
-              onLiberar={() => {
-                if (mesa.pendiente_centimos > 0 && !window.confirm(`Queda ${formatCentimos(mesa.pendiente_centimos)} pendiente. ¿Liberar igualmente?`)) return;
-                void accion("liberar", { forzar: mesa.pendiente_centimos > 0 });
-              }}
-              onLimpia={() => void accion("limpia")}
-              onDesbloquear={() => void accion("desbloquear")}
-            />
-          ) : null}
+            {verRapido ? (
+              <AccionesRapidas
+                mesa={mesa}
+                x={posSel.x}
+                y={posSel.y}
+                reserva={reservaDeMesa(mesa)}
+                onCerrar={() => setRapido(false)}
+                onMas={() => {
+                  setRapido(false);
+                  setHoja(true);
+                  panelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                }}
+                onSentar={(n) => void accion("sentar", { comensales: n })}
+                onSentarReserva={(r) => void sentarReserva(r)}
+                onServir={() => void servir(mesa.id)}
+                onCobrar={() => void abrirCobro()}
+                onAtender={() => void accion("atender")}
+                onLiberar={() => {
+                  if (mesa.pendiente_centimos > 0 && !window.confirm(`Queda ${formatCentimos(mesa.pendiente_centimos)} pendiente. ¿Liberar igualmente?`)) return;
+                  void accion("liberar", { forzar: mesa.pendiente_centimos > 0 });
+                }}
+                onLimpia={() => void accion("limpia")}
+                onDesbloquear={() => void accion("desbloquear")}
+              />
+            ) : null}
+          </div>
         </div>
 
-        {vista === "2d" && !editar ? (
-          <p className="mt-2 text-xs text-carbon-muted dark:text-crema/60">
-            <span className="font-semibold text-[#1F9D74]">●</span> platos listos para servir · <span className="font-semibold">€</span> pide la cuenta · <span className="font-semibold">!</span> llama al
-            camarero · <span className="font-semibold">i</span> nota · borde naranja: más de 90 min · debajo de la mesa, lo pendiente de cobro o la reserva próxima.
-          </p>
-        ) : null}
         {data.mesas.length === 0 ? (
           <Aviso tono="info">
             Todavía no hay mesas. {gestiona ? <Link href="/admin/mesas" className="underline">Créalas en «Mesas y QR»</Link> : "Pide a un encargado que las cree."}
           </Aviso>
         ) : null}
-        {error && !mesa ? <Aviso>{error}</Aviso> : null}
       </div>
 
-      {/* Panel de la mesa: lateral en pantallas grandes, hoja inferior en tablet y móvil. */}
-      <aside ref={panelRef} className={`${card} hidden h-fit p-5 xl:sticky xl:top-20 xl:block`} aria-live="polite">
-        {panel ?? <p className="text-sm text-carbon-muted dark:text-crema/60">Toca una mesa del plano para ver su estado y acciones.</p>}
+      {/* Panel de la mesa: lateral en pantallas grandes (resumen del servicio si no hay mesa tocada), hoja inferior en tablet y móvil. */}
+      <aside ref={panelRef} className={`${card} hidden min-h-0 overflow-y-auto p-5 xl:block`} aria-live="polite">
+        {panel ?? (
+          <ResumenServicio
+            ocupacion={ocupacion}
+            plazas={plazas}
+            comensales={comensalesSentados}
+            enSala={importeEnSala}
+            pendiente={pendienteSala}
+            largas={largas}
+            zonas={porZona}
+            reservas={reservasHoy.slice(0, 4)}
+          />
+        )}
       </aside>
       {hoja && panel ? (
         <div className="xl:hidden">
@@ -553,10 +606,8 @@ export function SalonBoard({
             setRapido(true);
           }}
           onLimpiarTodas={async () => {
-            const r = await rpcAdmin<number>("laofi_admin_limpiar_todas");
-            if (!r.ok) return r.error;
-            await recargar();
-            return null;
+            const ok = await ejecutar("laofi_admin_limpiar_todas", {});
+            return ok ? null : "No se han podido marcar las mesas como limpias.";
           }}
         />
       ) : null}
@@ -576,6 +627,103 @@ export function SalonBoard({
           }}
         />
       ) : null}
+    </div>
+  );
+}
+
+/** Resumen del servicio en vivo (panel lateral sin mesa tocada): lo que un encargado mira de un vistazo. */
+function ResumenServicio({
+  ocupacion,
+  plazas,
+  comensales,
+  enSala,
+  pendiente,
+  largas,
+  zonas,
+  reservas,
+}: {
+  ocupacion: number;
+  plazas: number;
+  comensales: number;
+  enSala: number;
+  pendiente: number;
+  largas: number;
+  zonas: { id: string; nombre: string; total: number; ocupadas: number }[];
+  reservas: ReservaDia[];
+}) {
+  const kpi = "rounded-2xl bg-arena/60 p-3 dark:bg-noche-3";
+  return (
+    <div className="grid gap-5">
+      <div>
+        <p className="text-[0.7rem] font-semibold uppercase tracking-eyebrow text-carbon-muted dark:text-crema/55">Servicio en vivo</p>
+        <div className="mt-2 flex items-end gap-3">
+          <p className="font-display text-5xl leading-none tabular-nums">{ocupacion}%</p>
+          <p className="pb-1 text-sm text-carbon-muted dark:text-crema/60">de mesas ocupadas</p>
+        </div>
+        <div className="mt-3 h-2 overflow-hidden rounded-full bg-carbon/10 dark:bg-crema/10" aria-hidden="true">
+          <div className="h-full rounded-full bg-gradient-to-r from-oliva to-terracota transition-[width] duration-700 ease-out-expo" style={{ width: `${ocupacion}%` }} />
+        </div>
+      </div>
+      <dl className="grid grid-cols-2 gap-2">
+        <div className={kpi}>
+          <dt className="text-xs text-carbon-muted dark:text-crema/60">Comensales</dt>
+          <dd className="mt-1 text-xl font-bold tabular-nums">
+            {comensales}
+            <span className="text-sm font-medium opacity-50"> / {plazas}</span>
+          </dd>
+        </div>
+        <div className={kpi}>
+          <dt className="text-xs text-carbon-muted dark:text-crema/60">En mesa</dt>
+          <dd className="mt-1 text-xl font-bold tabular-nums">{formatCentimos(enSala)}</dd>
+        </div>
+        <div className={kpi}>
+          <dt className="text-xs text-carbon-muted dark:text-crema/60">Por cobrar</dt>
+          <dd className="mt-1 text-xl font-bold tabular-nums">{formatCentimos(pendiente)}</dd>
+        </div>
+        <div className={`${kpi} ${largas ? "bg-[#E0A458]/25 dark:bg-[#E0A458]/20" : ""}`}>
+          <dt className="text-xs text-carbon-muted dark:text-crema/60">+90 min</dt>
+          <dd className="mt-1 text-xl font-bold tabular-nums">{largas}</dd>
+        </div>
+      </dl>
+      {zonas.length ? (
+        <div>
+          <p className="text-[0.7rem] font-semibold uppercase tracking-eyebrow text-carbon-muted dark:text-crema/55">Por zona</p>
+          <ul className="mt-2 grid gap-2.5">
+            {zonas.map((z) => (
+              <li key={z.id} className="grid gap-1">
+                <div className="flex justify-between text-sm">
+                  <span className="font-semibold">{z.nombre}</span>
+                  <span className="tabular-nums text-carbon-muted dark:text-crema/60">
+                    {z.ocupadas}/{z.total}
+                  </span>
+                </div>
+                <div className="h-1.5 overflow-hidden rounded-full bg-carbon/10 dark:bg-crema/10" aria-hidden="true">
+                  <div className="h-full rounded-full bg-terracota transition-[width] duration-700 ease-out-expo" style={{ width: `${(z.ocupadas / z.total) * 100}%` }} />
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {reservas.length ? (
+        <div>
+          <p className="text-[0.7rem] font-semibold uppercase tracking-eyebrow text-carbon-muted dark:text-crema/55">Próximas reservas</p>
+          <ul className="mt-2 grid gap-1.5">
+            {reservas.map((r) => (
+              <li key={r.id} className="flex items-center gap-3 rounded-xl border border-carbon/10 px-3 py-2 text-sm dark:border-crema/10">
+                <span className="font-display text-lg tabular-nums">{r.hora}</span>
+                <span className="min-w-0 flex-1 truncate font-semibold">{r.nombre}</span>
+                <span className="tabular-nums opacity-70">{r.personas}p</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      <div className="rounded-2xl border border-dashed border-carbon/15 p-3 text-xs leading-relaxed text-carbon-muted dark:border-crema/15 dark:text-crema/60">
+        <p className="mb-1 font-semibold text-carbon dark:text-crema">Toca una mesa para ver sus acciones.</p>
+        <span className="font-bold text-[#1F9D74]">●</span> platos listos · <b>€</b> pide la cuenta · <b>!</b> llama al camarero · <b>i</b> nota · borde naranja: +90 min · bajo la mesa,
+        lo pendiente de cobro o la reserva próxima.
+      </div>
     </div>
   );
 }

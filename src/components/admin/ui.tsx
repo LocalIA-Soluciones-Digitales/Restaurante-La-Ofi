@@ -4,7 +4,7 @@ import { Icon, type IconName } from "@/components/ui/Icon";
 // Piezas comunes del panel: tarjetas, cifras, modal accesible, campos y botones
 // táctiles (mínimo 44 px), con variantes de modo oscuro.
 
-export const card = "rounded-[1.5rem] border border-carbon/10 bg-white shadow-card dark:border-crema/10 dark:bg-noche-2";
+export const card = "rounded-[1.25rem] border border-carbon/[0.08] bg-white shadow-card dark:border-crema/10 dark:bg-noche-2";
 export const input =
   "h-11 w-full rounded-xl border border-carbon/15 bg-white px-3 text-base text-carbon focus:border-marino focus:outline-none dark:border-crema/15 dark:bg-noche-3 dark:text-crema dark:focus:border-neon";
 export const boton =
@@ -26,14 +26,21 @@ export function Cabecera({ titulo, texto, children }: { titulo: string; texto?: 
 }
 
 export function Cifra({ label, valor, icon, tono = "neutro" }: { label: string; valor: ReactNode; icon: IconName; tono?: "neutro" | "ok" | "aviso" }) {
-  const color = tono === "ok" ? "text-oliva" : tono === "aviso" ? "text-terracota" : "text-marino dark:text-neon";
+  const color =
+    tono === "ok"
+      ? "bg-oliva-soft text-oliva dark:bg-oliva/25 dark:text-oliva-soft"
+      : tono === "aviso"
+        ? "bg-terracota-soft text-terracota dark:bg-terracota/25 dark:text-terracota-soft"
+        : "bg-marino/[0.08] text-marino dark:bg-neon/15 dark:text-neon";
   return (
-    <div className={`${card} p-5`}>
-      <div className="flex items-center gap-2 text-sm text-carbon-muted dark:text-crema/65">
-        <Icon name={icon} className={`h-4 w-4 ${color}`} />
+    <div className={`${card} p-5 transition-shadow hover:shadow-lift`}>
+      <div className="flex items-center justify-between gap-2 text-sm font-medium text-carbon-muted dark:text-crema/65">
         {label}
+        <span className={`grid h-8 w-8 place-items-center rounded-xl ${color}`}>
+          <Icon name={icon} className="h-4 w-4" />
+        </span>
       </div>
-      <p className="mt-2 font-display text-3xl tabular-nums">{valor}</p>
+      <p className="mt-3 font-display text-3xl tabular-nums tracking-tight">{valor}</p>
     </div>
   );
 }

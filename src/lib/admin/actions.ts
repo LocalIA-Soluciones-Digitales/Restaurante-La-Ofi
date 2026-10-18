@@ -107,6 +107,24 @@ export async function accionMesa<T>(mesaId: string, accion: string, datos: Recor
   return staff<T>("laofi_admin_mesa", { p_mesa: mesaId, p_accion: accion, p_datos: datos });
 }
 
+/**
+ * Salón + reservas del día en UNA petición: las Server Actions se ejecutan de una
+ * en una desde el navegador, así que dos llamadas «en paralelo» eran dos viajes
+ * seguidos (cada uno con su comprobación de sesión).
+ */
+export async function salonYReservas<S, R>(dia: string): Promise<ResultadoAccion<{ salon: S; reservas: R }>> {
+  const [s, r] = await Promise.all([staff<S>("laofi_admin_salon"), staff<R>("laofi_admin_reservas", { p_desde: dia, p_hasta: dia })]);
+  if (!s.ok) return s;
+  return { ok: true, data: { salon: s.data, reservas: r.ok ? r.data : ([] as R) } };
+}
+
+/** Ejecuta una RPC del salón y devuelve el salón ya actualizado en la misma petición. */
+export async function accionSalon<S, R>(fn: `laofi_admin_${string}`, args: Record<string, unknown>, dia: string): Promise<ResultadoAccion<{ salon: S; reservas: R }>> {
+  const a = await staff<unknown>(fn, args);
+  if (!a.ok) return a;
+  return salonYReservas<S, R>(dia);
+}
+
 export async function colaCocina<T>(historial = false) {
   return staff<T[]>("laofi_admin_cocina", { p_historial: historial });
 }

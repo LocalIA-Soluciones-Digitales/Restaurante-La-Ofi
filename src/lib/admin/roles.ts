@@ -39,7 +39,7 @@ export const SECCIONES: Seccion[] = [
   { href: "/admin/resenas", label: "Reseñas", icon: "star", roles: GESTION, grupo: "gestion" },
   { href: "/admin/mesas", label: "Mesas y QR", icon: "qr", roles: GESTION, grupo: "ajustes" },
   { href: "/admin/configuracion", label: "Configuración", icon: "settings", roles: ["admin"], grupo: "ajustes" },
-  { href: "/admin/staff", label: "Equipo", icon: "users", roles: ["admin"], grupo: "ajustes" },
+  { href: "/admin/staff", label: "Equipo", icon: "briefcase", roles: ["admin"], grupo: "ajustes" },
 ];
 
 export function puedeVer(rol: Rol | null | undefined, href: string): boolean {
