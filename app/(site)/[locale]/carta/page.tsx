@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     locale,
     path: "/carta",
     title: "Carta",
-    description: "Carta de La Ofi en Derio: desayunos y tostadas, pintxos, cocina a la brasa y platos de temporada, con información de alérgenos.",
+    description: "Carta de La Ofi en Derio: tostadas de desayuno y, en El Despacho, entrantes, brasa, carnes, pescados y postres, con precios, ingredientes y valores nutricionales.",
   });
 }
 

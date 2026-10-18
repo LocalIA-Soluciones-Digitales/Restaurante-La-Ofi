@@ -118,7 +118,7 @@ propio, `laofi`**, sin tablas compartidas con otros proyectos. Detalle y barrera
   de sala el 2026-10-02).
 - `supabase/seed/la_ofi_tenant.sql` — alta en `public.clientes` (aplicado). Devuelve la `site_key`.
 - `supabase/seed/la_ofi_contenido_publicado.sql` — carta y horario publicados en internet (aplicado).
-- `supabase/seed/la_ofi_carta_oficial.sql` — carta oficial del restaurante (desayunos y El Despacho, sept. 2026); sustituye «Para picotear» y «Brasa» (pendiente de aplicar).
+- `supabase/seed/la_ofi_carta_oficial.sql` — carta oficial del restaurante (desayunos y El Despacho, sept. 2026); sustituye «Para picotear» y «Brasa» (aplicado).
 - `supabase/seed/la_ofi_carta_enriquecida.sql` — opcional, requiere la carta extendida (no aplicado).
 - `supabase/seed/la_ofi_salon_provisional.sql` — zonas y mesas provisionales según las fotos públicas (aplicado).
 - `supabase/seed/dev_local.sql` — solo para el backend local (incluye un servicio en marcha de prueba); **no** ejecutar en Supabase.

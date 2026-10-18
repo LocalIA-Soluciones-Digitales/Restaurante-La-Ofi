@@ -210,5 +210,6 @@ Generadas el **2026-10-18** con Gemini a partir de dos fotos reales como referen
 marca «Imagen ilustrativa» (`esIlustrativa`). Se asignan en `src/lib/carta-fichas.ts`; una foto subida
 desde /admin las sustituye. **Pendiente: visto bueno de Carlos** plato a plato.
 
-Faltan (sin foto, «Foto pendiente»): tabla de ibérico, espárragos, ensalada de la casa, bol de lechuga y
-cebolla, entrecot, pastel vasco, tarta de queso, arroz con leche, helados y los cuatro vinos dulces.
+Recortadas en cuadrado centradas en el plato o la copa. Faltan (sin foto, «Foto pendiente»): **tabla de
+ibérico** y **espárragos sobre mahonesa de aguacate** (prompts en `docs/prompts-gemini-platos.md`).
+Salmón, burrata, revuelta y bonita usan sus fotos reales de Instagram (`src/lib/carta-fotos.ts`).

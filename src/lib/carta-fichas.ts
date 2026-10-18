@@ -57,10 +57,10 @@ const FICHAS: Ficha[] = [
   { seccion: "entrantes-brasa", nombre: "Flor de alcachofa con papada ibérica y huevo", foto: "alcachofa", ingredientes: ["Alcachofa a la brasa", "Papada ibérica", "Huevo", AOVE], macros: [16, 12, 30] },
 
   // Ensaladas
-  { seccion: "ensaladas", nombre: "Ensalada de la casa", ingredientes: ["Mezclum", "Tartar de tomate", "Aguacate", AOVE], macros: [4, 12, 24] },
+  { seccion: "ensaladas", nombre: "Ensalada de la casa", foto: "ensalada-casa", ingredientes: ["Mezclum", "Tartar de tomate", "Aguacate", AOVE], macros: [4, 12, 24] },
   { seccion: "ensaladas", nombre: "Ensalada de burrata", foto: "ensalada-burrata", ingredientes: ["Burrata", "Lechugas variadas", "Tomate", AOVE], macros: [20, 10, 34] },
   { seccion: "ensaladas", nombre: "Ensalada de ventresca con pimientos asados", foto: "ensalada-ventresca", ingredientes: ["Ventresca de bonito", "Pimiento rojo asado", "Cebolleta", "Aceite de oliva"], macros: [28, 14, 30] },
-  { seccion: "ensaladas", nombre: "Bol de lechuga y cebolla", ingredientes: ["Lechuga", "Cebolla", "Aceite de oliva", "Vinagre"], macros: [2, 8, 10] },
+  { seccion: "ensaladas", nombre: "Bol de lechuga y cebolla", foto: "bol-lechuga", ingredientes: ["Lechuga", "Cebolla", "Aceite de oliva", "Vinagre"], macros: [2, 8, 10] },
   { seccion: "ensaladas", nombre: "Bol de tomate, lechuga y cebolla", foto: "bol-tomate", ingredientes: ["Lechuga", "Tomate", "Cebolla", "Aceite de oliva", "Vinagre"], macros: [3, 12, 10] },
 
   // Carnes
@@ -70,7 +70,7 @@ const FICHAS: Ficha[] = [
   { seccion: "carnes", nombre: "Costilla a baja temperatura agridulce", foto: "costilla", ingredientes: ["Costilla de cerdo a baja temperatura", "Salsa agridulce"], macros: [38, 25, 45] },
   { seccion: "carnes", nombre: "Secreto ibérico a la brasa", foto: "secreto", ingredientes: ["Secreto ibérico", "Sal en escamas", "Patatas fritas"], macros: [32, 35, 42] },
   { seccion: "carnes", nombre: "Presa ibérica", foto: "presa", ingredientes: ["Presa ibérica", "Sal en escamas"], macros: [34, 0, 28] },
-  { seccion: "carnes", nombre: "Entrecot a la brasa", ingredientes: ["Entrecot de vacuno", "Pimientos verdes", "Sal en escamas"], macros: [50, 4, 32] },
+  { seccion: "carnes", nombre: "Entrecot a la brasa", foto: "entrecot", ingredientes: ["Entrecot de vacuno", "Pimientos verdes", "Sal en escamas"], macros: [50, 4, 32] },
   { seccion: "carnes", nombre: "Chuleta de ganado mayor", foto: "chuleta", ingredientes: ["Chuleta de vacuno mayor a la brasa", "Sal en escamas"], macros: [110, 0, 100], racion: "500 g" },
 
   // Pescados
@@ -79,16 +79,16 @@ const FICHAS: Ficha[] = [
 
   // Postres
   { seccion: "postres", nombre: "Tarta de limón", foto: "tarta-limon", ingredientes: ["Masa quebrada", "Crema de limón", "Merengue", "Huevo", "Mantequilla", "Azúcar"], macros: [5, 50, 18] },
-  { seccion: "postres", nombre: "Pastel vasco", ingredientes: ["Harina de trigo", "Mantequilla", "Huevo", "Azúcar", "Crema pastelera"], macros: [6, 48, 20] },
-  { seccion: "postres", nombre: "Tarta de queso", ingredientes: ["Queso crema", "Nata", "Huevo", "Azúcar"], macros: [9, 30, 30] },
-  { seccion: "postres", nombre: "Arroz con leche", ingredientes: ["Arroz", "Leche", "Azúcar", "Canela", "Limón"], macros: [8, 48, 8] },
-  { seccion: "postres", nombre: "Helados artesanales", ingredientes: ["Helado artesanal (sabores del día)"], macros: [5, 30, 12] },
+  { seccion: "postres", nombre: "Pastel vasco", foto: "pastel-vasco", ingredientes: ["Harina de trigo", "Mantequilla", "Huevo", "Azúcar", "Crema pastelera"], macros: [6, 48, 20] },
+  { seccion: "postres", nombre: "Tarta de queso", foto: "tarta-queso", ingredientes: ["Queso crema", "Nata", "Huevo", "Azúcar"], macros: [9, 30, 30] },
+  { seccion: "postres", nombre: "Arroz con leche", foto: "arroz-con-leche", ingredientes: ["Arroz", "Leche", "Azúcar", "Canela", "Limón"], macros: [8, 48, 8] },
+  { seccion: "postres", nombre: "Helados artesanales", foto: "helados", ingredientes: ["Helado artesanal (sabores del día)"], macros: [5, 30, 12] },
 
   // Vinos dulces (copa de 7 cl)
-  { seccion: "vinos-dulces", nombre: "Finca Antigua", ingredientes: ["Uva moscatel"], macros: [0, 12, 0], kcal: 110, racion: "copa de 7 cl" },
-  { seccion: "vinos-dulces", nombre: "Harveys", ingredientes: ["Uva Pedro Ximénez"], macros: [0, 25, 0], kcal: 150, racion: "copa de 7 cl" },
-  { seccion: "vinos-dulces", nombre: "Libamus", ingredientes: ["Uva mencía"], macros: [0, 10, 0], kcal: 100, racion: "copa de 7 cl" },
-  { seccion: "vinos-dulces", nombre: "Graham's Tawny", ingredientes: ["Variedades tintas del Duero (oporto tawny)"], macros: [0, 8, 0], kcal: 110, racion: "copa de 7 cl" },
+  { seccion: "vinos-dulces", nombre: "Finca Antigua", foto: "finca-antigua", ingredientes: ["Uva moscatel"], macros: [0, 12, 0], kcal: 110, racion: "copa de 7 cl" },
+  { seccion: "vinos-dulces", nombre: "Harveys", foto: "harveys", ingredientes: ["Uva Pedro Ximénez"], macros: [0, 25, 0], kcal: 150, racion: "copa de 7 cl" },
+  { seccion: "vinos-dulces", nombre: "Libamus", foto: "libamus", ingredientes: ["Uva mencía"], macros: [0, 10, 0], kcal: 100, racion: "copa de 7 cl" },
+  { seccion: "vinos-dulces", nombre: "Graham's Tawny", foto: "grahams-tawny", ingredientes: ["Variedades tintas del Duero (oporto tawny)"], macros: [0, 8, 0], kcal: 110, racion: "copa de 7 cl" },
 ];
 
 const POR_CLAVE = new Map(FICHAS.map((f) => [`${f.seccion}|${normalizarNombre(f.nombre)}`, f]));
