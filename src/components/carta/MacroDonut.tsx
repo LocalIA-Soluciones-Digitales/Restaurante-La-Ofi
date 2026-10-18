@@ -7,13 +7,13 @@ export const MACRO_COLORES: Record<MacroSegmento["key"], string> = {
 };
 
 /** Donut del reparto de kcal por macronutriente (decorativo: la leyenda lleva los datos). */
-export function MacroDonut({ segmentos, kcal }: { segmentos: MacroSegmento[]; kcal: number | null }) {
+export function MacroDonut({ segmentos, kcal, className = "h-28 w-28" }: { segmentos: MacroSegmento[]; kcal: number | null; className?: string }) {
   const r = 34;
   const c = 2 * Math.PI * r;
   const hueco = 3;
   let acumulado = 0;
   return (
-    <div className="relative h-28 w-28 shrink-0">
+    <div className={`relative shrink-0 ${className}`}>
       <svg viewBox="0 0 88 88" className="h-full w-full" aria-hidden="true">
         <g transform="rotate(-90 44 44)">
           <circle cx="44" cy="44" r={r} fill="none" strokeWidth="12" className="stroke-arena" />

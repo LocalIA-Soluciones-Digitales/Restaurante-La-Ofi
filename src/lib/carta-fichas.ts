@@ -4,7 +4,8 @@ import type { CartaItem, CartaSeccion, ImagenRef } from "@/lib/restaurant/types"
 // Ficha de cada plato de la carta oficial (septiembre de 2026): foto, ingredientes
 // y valores nutricionales ORIENTATIVOS.
 //  - Fotos: recreaciones generadas con Gemini a partir de fotos reales del local
-//    (public/images/carta/platos). La web las marca como "Imagen ilustrativa".
+//    (public/images/platos), recortadas en cuadrado centradas en el plato.
+//    La web las marca como "Imagen ilustrativa".
 //  - Ingredientes: los que dicen la carta y la receta tradicional del plato.
 //  - Nutrición: estimación por ración estándar con tablas de composición de
 //    alimentos (fuente "estimacion"; la web lo dice). Las kcal salen de los
@@ -97,7 +98,7 @@ export function fichaDe(seccion: string, nombre: string): Ficha | undefined {
 }
 
 export function fotoDeFicha(f: Ficha): ImagenRef | null {
-  return f.foto ? { src: `/images/carta/platos/${f.foto}.webp`, alt: `${f.nombre} en El Despacho de La Ofi` } : null;
+  return f.foto ? { src: `/images/platos/${f.foto}.webp`, alt: `${f.nombre} en El Despacho de La Ofi` } : null;
 }
 
 /** kcal redondeadas a la decena: es una estimación, no una medida. */

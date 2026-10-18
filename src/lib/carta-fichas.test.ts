@@ -20,14 +20,14 @@ describe("fichas de la carta", () => {
   });
 
   it("cada foto de ficha existe en public/", () => {
-    const faltan = FOTOS_FICHA.filter((f) => !existsSync(path.join(process.cwd(), "public/images/carta/platos", `${f}.webp`)));
+    const faltan = FOTOS_FICHA.filter((f) => !existsSync(path.join(process.cwd(), "public/images/platos", `${f}.webp`)));
     expect(faltan).toEqual([]);
   });
 
   it("completa foto, ingredientes y nutrición estimada (kcal de los macros)", () => {
     const [s] = conFichas([seccion("carnes", ["Carrilleras de ternera al PX"])]);
     const item = s!.items[0]!;
-    expect(item.imagen?.src).toBe("/images/carta/platos/carrilleras.webp");
+    expect(item.imagen?.src).toBe("/images/platos/carrilleras.webp");
     expect(item.ingredientes).toContain("Carrillera de ternera");
     expect(item.nutricion).toMatchObject({ fuente: "estimacion", proteinas: 45, carbohidratos: 35, grasas: 30, calorias: 590 });
   });

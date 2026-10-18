@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { Photo } from "@/components/media/Photo";
-import { encuadrePlato, imageKeyBySrc } from "@/lib/images";
+import { imageKeyBySrc } from "@/lib/images";
 import type { ImagenRef } from "@/lib/restaurant/types";
 
 /**
@@ -26,6 +26,6 @@ export function DishPhoto({
   const key = imageKeyBySrc(imagen.src);
   if (key) return <Photo img={key} sizes={sizes} priority={priority} decorative={decorative} mobileBelow={mobileBelow} className={className} />;
   return (
-    <Image src={imagen.src} alt={decorative ? "" : imagen.alt} fill sizes={sizes} priority={priority} className={`object-cover ${encuadrePlato(imagen.src)} ${className}`} />
+    <Image src={imagen.src} alt={decorative ? "" : imagen.alt} fill sizes={sizes} priority={priority} className={`object-cover ${className}`} />
   );
 }

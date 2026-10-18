@@ -202,7 +202,7 @@ Colocarlas en `public/images/<carpeta>/` (hero, carta, pintxos, local, eventos, 
 `src/lib/images.ts` y en esta tabla. Lo ideal es pedir al propietario los **originales a máxima
 resolución**: las de Instagram llegan comprimidas a 1080 px.
 
-## Fotos de plato de la carta (`public/images/carta/platos/`)
+## Fotos de plato de la carta (`public/images/platos/`)
 
 Generadas el **2026-10-18** con Gemini a partir de dos fotos reales como referencia de escena:
 `local/pro/despacho.webp` (El Despacho) y `ia/tostada-burrata.webp` (desayunos). Prompts en
