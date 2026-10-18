@@ -133,7 +133,8 @@ export function KitchenBoard({ inicial }: { inicial: PedidoKds[] }) {
     setPedidos((lista) =>
       lista
         .map((x) => (x.id === p.id ? { ...x, items: x.items.map((i) => (i.estado !== "CANCELLED" && (!estacion || i.estacion === estacion) ? { ...i, estado } : i)) } : x))
-        .filter((x) => !(x.id === p.id && estado === "DELIVERED")),
+        // Entregado desde «Todos» quita la comanda; desde una estación, solo sus líneas (el resto sigue en la otra).
+        .filter((x) => !(x.id === p.id && estado === "DELIVERED" && !estacion)),
     );
     const r = await avanzarPedido<PedidoKds>(p.id, estado, estacion);
     if (!r.ok) {
@@ -345,7 +346,8 @@ export function KitchenBoard({ inicial }: { inicial: PedidoKds[] }) {
                               {sig.label}
                             </button>
                           ) : null}
-                          {p.estado === "READY" ? (
+                          {/* Según las líneas de esta vista, no el pedido entero: barra entrega sus bebidas aunque cocina siga con los platos. */}
+                          {prog === "READY" ? (
                             <button type="button" onClick={() => void avanzar(p, "DELIVERED")} className="min-h-14 flex-1 rounded-xl bg-[#1F9D74] px-4 text-lg font-bold text-white transition-transform active:scale-[0.98]">
                               Entregado
                             </button>
