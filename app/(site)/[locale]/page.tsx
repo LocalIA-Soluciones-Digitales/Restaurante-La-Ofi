@@ -44,7 +44,7 @@ export default async function HomePage({ params }: Params) {
 
   const momentos: Momento[] = [
     { titulo: "Menú del día", texto: "Plato del día casero de lunes a viernes, con bebida, pan y postre.", href: href(locale, "/menu-del-dia"), img: "comedorRatan" },
-    { titulo: "La carta", texto: "Tostadas de masa madre, para picotear y brasa.", href: href(locale, "/carta"), img: "barra" },
+    { titulo: "La carta", texto: "Tostadas de masa madre, entrantes, brasa y postres.", href: href(locale, "/carta"), img: "barra" },
     { titulo: "Comidas de empresa", texto: "El Despacho, pedidos de grupo y factura a nombre de tu empresa.", href: href(locale, "/empresas"), img: "despacho" },
     { titulo: "Eventos y celebraciones", texto: "Menús concertados para comidas de empresa y celebraciones familiares.", href: href(locale, "/eventos"), img: "salonNoche" },
     { titulo: "Los espacios", texto: "Comedor, barra, El Despacho y terraza cubierta.", href: href(locale, "/espacios"), img: "comedorPanoramica" },

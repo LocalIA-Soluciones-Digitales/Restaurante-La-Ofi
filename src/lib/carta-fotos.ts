@@ -11,7 +11,7 @@ const FOTOS_DE_PLATO: { seccion: string; nombre: string; img: ImageKey }[] = [
   { seccion: "desayunos", nombre: "bonita", img: "tostadaBonita" },
   { seccion: "desayunos", nombre: "revuelta", img: "tostadaRevuelta" },
   { seccion: "desayunos", nombre: "salmon", img: "tostadaSalmon" },
-  { seccion: "para-picotear", nombre: "pulpo a la parrilla", img: "pulpoBrasa" },
+  { seccion: "entrantes-brasa", nombre: "pulpo", img: "pulpoBrasa" },
 ];
 
 /** Fotos reales aún sin versión mejorada: con FOTOS_PLANTILLA no se asignan. */

@@ -1,19 +1,17 @@
 import { cartaItem } from "@/lib/carta";
 import { IMAGES } from "@/lib/images";
-import type { CartaItem, CartaSeccion, EventoView, MenuDiaView } from "@/lib/restaurant/types";
+import type { CartaItem, CartaSeccion, Etiqueta, EventoView, MenuDiaView } from "@/lib/restaurant/types";
 
 // Contenido para la DEMO cuando Supabase todavía no tiene datos de La Ofi.
 // Solo se usa con NEXT_PUBLIC_SHOW_DEMO_CONTENT=true y SIEMPRE se marca en
 // pantalla. Reglas:
 //  - fuente "instagram": publicado por el propio restaurante (@laofiparke). Real,
 //    pero se muestra "precios según Instagram, confirmar en el local".
-//  - fuente "prensa": plato citado por Deia (13/09/2025). Real, sin precio.
-//  - fuente "carta": plato de una foto de la carta subida por un cliente (2025). Sin precio legible.
+//  - fuente "carta": carta oficial facilitada por el restaurante (septiembre de 2026).
 //  - fuente "opiniones": dato publicado por clientes (reseñas). Confirmar en el local.
 //  - fuente "ejemplo": estructura ilustrativa. Sin precios ni fechas inventadas.
 // Nunca se inventan precios, alérgenos ni fechas. Las etiquetas solo se derivan
-// del propio dato publicado (categoría "Para picotear", "a la parrilla", horario de
-// desayunos). Los únicos valores ilustrativos son los nutricionales de dos platos,
+// del propio dato publicado (entrantes, "a la brasa", horario de desayunos). Los únicos valores ilustrativos son los nutricionales de dos platos,
 // con fuente "ejemplo" (la web los marca "Valores de ejemplo, no reales").
 
 const img = (key: keyof typeof IMAGES) => ({ src: IMAGES[key].src.src, alt: IMAGES[key].alt });
@@ -48,12 +46,101 @@ const EXTRA_TOSTADAS: Record<string, Partial<CartaItem>> = {
   },
 };
 
+// Carta oficial de El Despacho de la Ofi (PDF facilitado por el restaurante,
+// septiembre de 2026). Igual que supabase/seed/la_ofi_carta_oficial.sql.
+type ItemDespacho = [nombre: string, precio: number | null, descripcion?: string | null, etiquetas?: Etiqueta[]];
+const PICAR: Etiqueta[] = ["para_picar"];
+const PICAR_BRASA: Etiqueta[] = ["para_picar", "brasa"];
+const DESPACHO: { slug: string; nombre: string; nota?: string; items: ItemDespacho[] }[] = [
+  {
+    slug: "entrantes",
+    nombre: "Entrantes",
+    nota: "Carta de El Despacho de la Ofi. Servicio de pan: 2 € por persona.",
+    items: [
+      ["Cecina de Angus", 1900, null, PICAR],
+      ["Tabla de ibérico", 2400, null, PICAR],
+      ["Paletilla ibérica", 1600, null, PICAR],
+      ["Queso de la casa", 1600, null, PICAR],
+      ["Anchoas 00", 2300, "Selección Especial Casa Santoña", PICAR],
+      ["Gambas al ajillo", 1600, null, PICAR],
+      ["Croquetas de la casa", 230, "Precio por unidad", ["para_picar", "casero"]],
+    ],
+  },
+  {
+    slug: "entrantes-brasa",
+    nombre: "Entrantes a la brasa",
+    items: [
+      ["Puerros con salsa de hongos", 1200, null, PICAR_BRASA],
+      ["Espárragos sobre mahonesa de aguacate", 1500, null, PICAR_BRASA],
+      ["Pulpo", 2300, null, PICAR_BRASA],
+      ["Morcilla de Burgos con pimientos asados", 1500, null, PICAR_BRASA],
+      ["Morcilla de puerro de Zamudio", 1500, null, PICAR_BRASA],
+      ["Flor de alcachofa con papada ibérica y huevo", 1500, null, PICAR_BRASA],
+    ],
+  },
+  {
+    slug: "ensaladas",
+    nombre: "Nuestras ensaladas",
+    items: [
+      ["Ensalada de la casa", 1500, "Mezclum, tartar de tomate y aguacate"],
+      ["Ensalada de burrata", 1600],
+      ["Ensalada de ventresca con pimientos asados", 1800],
+      ["Bol de lechuga y cebolla", 700],
+      ["Bol de tomate, lechuga y cebolla", 900],
+    ],
+  },
+  {
+    slug: "carnes",
+    nombre: "Nuestras carnes",
+    nota: "Servicio de pan: 2 € por persona.",
+    items: [
+      ["Escalope milanesa", 1600],
+      ["Carrilleras de ternera al PX", 2000],
+      ["Rabo guisado", 2000],
+      ["Costilla a baja temperatura agridulce", 2000],
+      ["Secreto ibérico a la brasa", 1800, null, ["brasa"]],
+      ["Presa ibérica", 1900],
+      ["Entrecot a la brasa", 1800, null, ["brasa"]],
+      ["Chuleta de ganado mayor", null, "59 € el kilo", ["brasa"]],
+    ],
+  },
+  {
+    slug: "pescados",
+    nombre: "Nuestros pescados",
+    items: [
+      ["Bacalao", 2400],
+      ["Pescado de temporada a la brasa", null, "Por encargo", ["brasa", "temporada"]],
+    ],
+  },
+  {
+    slug: "postres",
+    nombre: "Postres",
+    items: [
+      ["Tarta de limón", 600],
+      ["Pastel vasco", 600],
+      ["Tarta de queso", 900],
+      ["Arroz con leche", 600],
+      ["Helados artesanales", 600],
+    ],
+  },
+  {
+    slug: "vinos-dulces",
+    nombre: "Vinos dulces",
+    items: [
+      ["Finca Antigua", 300, "Moscatel"],
+      ["Harveys", 400, "Pedro Ximénez"],
+      ["Libamus", 400, "Mencía"],
+      ["Graham's Tawny", 400, "Oporto"],
+    ],
+  },
+];
+
 export const DEMO_CARTA: CartaSeccion[] = [
   {
     id: "demo-desayunos",
     slug: "desayunos",
     nombre: "Desayunos y tostadas",
-    nota: "Carta de tostadas en pan de masa madre publicada por La Ofi en Instagram (servicio de 9:00 a 11:30). Precios según esa publicación: confírmalos en el local.",
+    nota: "Tostadas en pan de masa madre, de 9:00 a 11:30. Suplemento: 0,90 €.",
     items: [
       { n: "Clásica", d: "Mermelada, mantequilla, aceite o tomate", p: 210 },
       { n: "Ibérico", d: "Tomate, aceite y jamón", p: 390 },
@@ -73,61 +160,28 @@ export const DEMO_CARTA: CartaSeccion[] = [
         imagen: t.i ?? null,
         momento: ["desayuno"],
         estacion: "barra",
-        fuente: "instagram",
+        fuente: "carta",
         ...EXTRA_TOSTADAS[t.n],
       }),
     ),
   },
-  {
-    id: "demo-picotear",
-    slug: "para-picotear",
-    nombre: "Para picotear",
-    nota: "Platos de la carta de La Ofi según una foto subida por un cliente a Restaurant Guru (2025). Los precios no se leen en la foto: consúltalos en el local.",
-    items: [
-      { n: "Tabla de ibérico", d: null },
-      { n: "Paletilla ibérica", d: null },
-      { n: "Queso de la casa", d: null },
-      { n: "Croquetas variadas", d: "6 unidades" },
-      { n: "Puerros a la parrilla", d: "Sobre una base de salsa de hongos" },
-      { n: "Espárragos a la parrilla", d: "Sobre una mahonesa de aguacate" },
-      { n: "Pimientos del país", d: "12 unidades" },
-      { n: "Pulpo a la parrilla", d: null, i: img("pulpoBrasa") },
-      { n: "Gambas al ajillo", d: "10 unidades" },
-      { n: "Morcilla a la brasa", d: null },
-    ].map((t, idx) =>
+  ...DESPACHO.map((sec) => ({
+    id: `demo-${sec.slug}`,
+    slug: sec.slug,
+    nombre: sec.nombre,
+    nota: sec.nota,
+    items: sec.items.map(([n, p, d, etiquetas = []], idx) =>
       cartaItem({
-        id: `demo-picotear-${idx}`,
-        nombre: t.n,
-        descripcion: t.d,
-        imagen: t.i ?? null,
-        etiquetas: /parrilla|brasa/i.test(t.n) ? ["para_picar", "brasa"] : ["para_picar"],
+        id: `demo-${sec.slug}-${idx}`,
+        nombre: n,
+        descripcion: d ?? null,
+        precioCentimos: p,
+        etiquetas,
+        estacion: sec.slug === "vinos-dulces" ? "barra" : "cocina",
         fuente: "carta",
       }),
     ),
-  },
-  {
-    id: "demo-brasa",
-    slug: "brasa",
-    nombre: "Carnes y pescados a la brasa",
-    nota: "Especialidades citadas por Deia (septiembre de 2025). Disponibilidad y precio según mercado: pregunta en el local.",
-    items: [
-      { n: "Pescado del día a la parrilla", d: "Según mercado: lenguado, rodaballo, lubina, bonito, chicharro… Salvaje bajo reserva." },
-      { n: "Solomillo a la brasa", d: null },
-      { n: "Entrecot a la brasa", d: null },
-      { n: "Secreto ibérico a la brasa", d: null },
-      { n: "Rabo de toro", d: "Cocido y dorado en la parrilla" },
-      { n: "Carrilleras al Pedro Ximénez", d: null },
-    ].map((t, idx) =>
-      cartaItem({
-        id: `demo-brasa-${idx}`,
-        nombre: t.n,
-        descripcion: t.d,
-        etiquetas: /brasa|parrilla/i.test(`${t.n} ${t.d ?? ""}`) ? ["brasa"] : [],
-        momento: ["mediodia", "tarde"],
-        fuente: "prensa",
-      }),
-    ),
-  },
+  })),
 ];
 
 // Plato del día según opiniones publicadas por clientes (agregadas por
