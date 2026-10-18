@@ -7,6 +7,7 @@ import { ProductoCard } from "@/components/carta/ProductoCard";
 import { ProductoDetalle, type OrigenRect } from "@/components/carta/ProductoDetalle";
 import type { CartaCartControls } from "@/components/carta/types";
 import { Icon } from "@/components/ui/Icon";
+import { prefersReducedMotion } from "@/hooks/useReducedMotion";
 import { SourceBadge } from "@/components/ui/SourceBadge";
 import type { AlergenoKey } from "@/lib/allergens";
 import { FILTROS_RAPIDOS, MOMENTOS, filtrarCarta, hayFiltros, SIN_FILTROS, type FiltroRapido, type FiltrosCarta } from "@/lib/carta";
@@ -45,37 +46,68 @@ export function CartaInteractiva({
   const total = conItems.reduce((a, s) => a + s.items.length, 0);
   const nFiltros = (filtros.texto ? 1 : 0) + (filtros.momento ? 1 : 0) + filtros.rapidos.size + filtros.sinAlergenos.size;
 
-  // Scroll-spy: la sección más visible bajo la barra pegajosa.
+  // Scroll-spy: la categoría activa es la última cuyo inicio ya ha pasado bajo la
+  // barra pegajosa. Se calcula una vez por fotograma (rAF) con la posición real
+  // de cada sección: es estable en las fronteras (no alterna entre dos).
   useEffect(() => {
-    const io = new IntersectionObserver(
-      (entries) => {
-        const vis = entries.filter((e) => e.isIntersecting);
-        if (vis.length === 0) return;
-        const top = vis.reduce((a, b) => (a.boundingClientRect.top < b.boundingClientRect.top ? a : b));
-        setActiva(top.target.id);
-      },
-      { rootMargin: "-170px 0px -55% 0px", threshold: 0 },
-    );
-    conItems.forEach((s) => {
-      const el = document.getElementById(s.slug);
-      if (el) io.observe(el);
-    });
-    // Por encima de la primera categoría ninguna cruza la franja: activa la primera.
-    const primera = conItems[0] ? document.getElementById(conItems[0].slug) : null;
-    const onScroll = () => {
-      if (primera && primera.getBoundingClientRect().top > 170) setActiva(conItems[0]!.slug);
+    let raf = 0;
+    // Línea de activación = donde deja cada sección un salto a su ancla
+    // (scroll-margin de la sección + scroll-padding de la página), con holgura:
+    // así, al pulsar una categoría, queda activa esa y no la anterior.
+    const linea = (el: HTMLElement) =>
+      (parseFloat(getComputedStyle(el).scrollMarginTop) || 0) + (parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0) + 24;
+    const calcular = () => {
+      raf = 0;
+      let actual = conItems[0]?.slug ?? null;
+      for (const s of conItems) {
+        const el = document.getElementById(s.slug);
+        if (el && el.getBoundingClientRect().top <= linea(el)) actual = s.slug;
+        else break;
+      }
+      // Al fondo de la página, la última (puede ser tan corta que nunca llegue a la línea).
+      const alFondo = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
+      if (alFondo && conItems.length > 0) actual = conItems[conItems.length - 1]!.slug;
+      setActiva((prev) => (prev === actual ? prev : actual));
     };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(calcular);
+    };
+    calcular();
     window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
     return () => {
-      io.disconnect();
+      if (raf) cancelAnimationFrame(raf);
       window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
     };
   }, [conItems]);
 
-  // La categoría activa siempre visible en la barra horizontal.
+  // La categoría activa siempre visible en la barra horizontal. Solo se desplaza
+  // la propia barra y con animación propia (rAF): scrollIntoView movía también la
+  // página en vertical, y un scroll "smooth" del navegador en la barra cancela en
+  // Chrome el desplazamiento suave de la página (saltos al cruzar categorías y
+  // pestañas que no llevaban a su sección).
   useEffect(() => {
-    const pill = navRef.current?.querySelector<HTMLElement>(`[data-slug="${activa}"]`);
-    pill?.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
+    const nav = navRef.current;
+    const pill = nav?.querySelector<HTMLElement>(`[data-slug="${activa}"]`);
+    if (!nav || !pill) return;
+    const n = nav.getBoundingClientRect();
+    const p = pill.getBoundingClientRect();
+    const max = nav.scrollWidth - nav.clientWidth;
+    const destino = Math.min(max, Math.max(0, nav.scrollLeft + (p.left - n.left) - (n.width - p.width) / 2));
+    const origen = nav.scrollLeft;
+    if (Math.abs(destino - origen) < 1) return;
+    if (prefersReducedMotion()) {
+      nav.scrollLeft = destino;
+      return;
+    }
+    const inicio = performance.now();
+    let raf = requestAnimationFrame(function paso(t) {
+      const k = Math.min(1, (t - inicio) / 260);
+      nav.scrollLeft = origen + (destino - origen) * (1 - (1 - k) ** 3);
+      if (k < 1) raf = requestAnimationFrame(paso);
+    });
+    return () => cancelAnimationFrame(raf);
   }, [activa]);
 
   const set = (p: Partial<FiltrosCarta>) => setFiltros((f) => ({ ...f, ...p }));
