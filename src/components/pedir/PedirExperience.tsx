@@ -155,7 +155,7 @@ function Interior({ secciones, config, modo }: { secciones: CartaSeccion[]; conf
       )}
 
       {controles ? <CartBar onOpen={() => setCesta(true)} /> : null}
-      {cesta && config ? <CartDrawer contexto={contextoCesta} config={config} onClose={() => setCesta(false)} /> : null}
+      {cesta && config ? <CartDrawer contexto={contextoCesta} config={config} secciones={secciones} onClose={() => setCesta(false)} /> : null}
       {cuenta ? <CuentaMesaDrawer pagoOnline={Boolean(config?.pagos.online)} onClose={() => setCuenta(false)} /> : null}
     </div>
   );

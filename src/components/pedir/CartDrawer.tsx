@@ -1,7 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useCart, type CambioCarta, type CartLinea } from "@/components/pedir/cart-context";
 import { useTableSession } from "@/components/pedir/table-session-context";
 import { Icon } from "@/components/ui/Icon";
@@ -12,6 +13,7 @@ import { cartaActual, crearPedido } from "@/lib/pedidos/actions";
 import { guardarReciente } from "@/lib/pedidos/recientes";
 import { repartirLinea } from "@/lib/pedidos/reparto";
 import type { ConfigPedidos, GrupoPublico, PedidoInput } from "@/lib/pedidos/types";
+import type { CartaSeccion } from "@/lib/restaurant/types";
 
 export type PedirContexto = { tipo: "mesa" } | { tipo: "recogida" } | { tipo: "grupo"; grupo: GrupoPublico };
 
@@ -23,7 +25,22 @@ const HORA = new Intl.DateTimeFormat("es-ES", { hour: "2-digit", minute: "2-digi
  * y pide revisarlo (nunca se envía un importe caducado). El servidor vuelve a
  * comprobarlo todo (total_esperado_centimos → PRECIO_CAMBIADO).
  */
-export function CartDrawer({ contexto, config, onClose }: { contexto: PedirContexto; config: ConfigPedidos; onClose: () => void }) {
+export function CartDrawer({
+  contexto,
+  config,
+  secciones,
+  onClose,
+}: {
+  contexto: PedirContexto;
+  config: ConfigPedidos;
+  /** Carta actual: de ahí sale la foto de cada línea (también en cestas guardadas). */
+  secciones: CartaSeccion[];
+  onClose: () => void;
+}) {
+  const fotos = useMemo(
+    () => new Map(secciones.flatMap((s) => s.items).flatMap((i) => (i.imagen ? [[i.id, i.imagen.src] as const] : []))),
+    [secciones],
+  );
   const cart = useCart();
   const mesa = useTableSession();
   const router = useRouter();
@@ -170,6 +187,7 @@ export function CartDrawer({ contexto, config, onClose }: { contexto: PedirConte
           <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-5">
             <ResumenPedido
               lineas={cart.lineas}
+              fotos={fotos}
               datos={[
                 contexto.tipo === "recogida" && franja ? ["Recogida", `Hoy a las ${HORA.format(new Date(franja))}`] : null,
                 contexto.tipo === "grupo" ? ["Recogida", `Grupo «${contexto.grupo.nombre}» · ${HORA.format(new Date(contexto.grupo.recogida_en))}`] : null,
@@ -212,6 +230,7 @@ export function CartDrawer({ contexto, config, onClose }: { contexto: PedirConte
               {cart.lineas.map((l) => (
                 <li key={l.key} className="py-4">
                   <div className="flex items-start gap-3">
+                    <Miniatura src={fotos.get(l.productoId)} className="h-16 w-16" />
                     <div className="min-w-0 flex-1">
                       <p className="font-display text-lg leading-tight text-carbon">{l.nombre}</p>
                       {l.resumen ? <p className="text-sm text-carbon-muted">{l.resumen}</p> : null}
@@ -393,8 +412,19 @@ export function CartDrawer({ contexto, config, onClose }: { contexto: PedirConte
   );
 }
 
+/** Foto pequeña del plato; sin foto, un hueco con el icono de la carta. */
+function Miniatura({ src, className }: { src?: string; className: string }) {
+  return src ? (
+    <Image src={src} alt="" width={128} height={128} className={`${className} shrink-0 rounded-xl object-cover`} />
+  ) : (
+    <span aria-hidden="true" className={`${className} grid shrink-0 place-items-center rounded-xl bg-arena text-carbon-muted`}>
+      <Icon name="utensils" className="h-5 w-5" />
+    </span>
+  );
+}
+
 /** Resumen de solo lectura del pedido: lo que se va a enviar, tal cual. */
-function ResumenPedido({ lineas, datos }: { lineas: CartLinea[]; datos: ([string, string] | null)[] }) {
+function ResumenPedido({ lineas, fotos, datos }: { lineas: CartLinea[]; fotos: Map<string, string>; datos: ([string, string] | null)[] }) {
   return (
     <section aria-labelledby="resumen-titulo" className="grid gap-5">
       <div>
@@ -405,7 +435,8 @@ function ResumenPedido({ lineas, datos }: { lineas: CartLinea[]; datos: ([string
       </div>
       <ul className="divide-y divide-carbon/10 rounded-2xl border border-carbon/10 bg-white px-4">
         {lineas.map((l) => (
-          <li key={l.key} className="flex items-start gap-3 py-3">
+          <li key={l.key} className="flex items-center gap-3 py-3">
+            <Miniatura src={fotos.get(l.productoId)} className="h-12 w-12" />
             <span className="min-w-8 font-semibold tabular-nums text-marino">{l.cantidad} ×</span>
             <div className="min-w-0 flex-1">
               <p className="font-display text-lg leading-tight text-carbon">{l.nombre}</p>
