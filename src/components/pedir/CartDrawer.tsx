@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useCart, type CambioCarta } from "@/components/pedir/cart-context";
+import { useCart, type CambioCarta, type CartLinea } from "@/components/pedir/cart-context";
 import { useTableSession } from "@/components/pedir/table-session-context";
 import { Icon } from "@/components/ui/Icon";
 import { useDialogA11y } from "@/hooks/useDialogA11y";
@@ -42,6 +42,8 @@ export function CartDrawer({ contexto, config, onClose }: { contexto: PedirConte
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cambios, setCambios] = useState<CambioCarta[] | null>(null);
+  // Paso de revisión: antes de enviar se enseña un resumen de todo el pedido.
+  const [revisando, setRevisando] = useState(false);
 
   const recogida = contexto.tipo !== "mesa";
   // Recogida sin franjas hoy (fuera de horario o desactivada): la cesta se guarda, pero no se envía.
@@ -63,6 +65,7 @@ export function CartDrawer({ contexto, config, onClose }: { contexto: PedirConte
         const c = cart.aplicarCarta(fresca);
         if (c.length > 0) {
           setCambios(c);
+          setRevisando(false);
           return;
         }
       }
@@ -98,6 +101,7 @@ export function CartDrawer({ contexto, config, onClose }: { contexto: PedirConte
         if (r.codigo === "PRECIO_CAMBIADO" || r.codigo === "AGOTADO") {
           const otra = await cartaActual();
           if (otra) setCambios(cart.aplicarCarta(otra));
+          setRevisando(false);
         }
         setError(r.error);
         return;
@@ -162,6 +166,29 @@ export function CartDrawer({ contexto, config, onClose }: { contexto: PedirConte
           </button>
         </header>
 
+        {revisando ? (
+          <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-5">
+            <ResumenPedido
+              lineas={cart.lineas}
+              datos={[
+                contexto.tipo === "recogida" && franja ? ["Recogida", `Hoy a las ${HORA.format(new Date(franja))}`] : null,
+                contexto.tipo === "grupo" ? ["Recogida", `Grupo «${contexto.grupo.nombre}» · ${HORA.format(new Date(contexto.grupo.recogida_en))}`] : null,
+                contexto.tipo === "mesa" ? ["Mesa", `${mesa?.mesa.nombre ?? `Mesa ${mesa?.mesa.numero}`}${separado && mesa?.participante ? ` · ${mesa.participante.nombre}` : ""}`] : null,
+                recogida ? ["Nombre", nombre.trim()] : null,
+                recogida && telefono.trim() ? ["Teléfono", telefono.trim()] : null,
+                notas.trim() ? ["Notas", notas.trim()] : null,
+                separado
+                  ? ["Pago", "Cada uno su parte, desde «Cuenta de la mesa»"]
+                  : ["Pago", pago === "ONLINE" ? "Ahora, con tarjeta" : recogida ? "Al recoger, en barra" : "En el local"],
+              ]}
+            />
+            {error ? (
+              <p role="alert" className="text-sm font-semibold text-terracota">
+                {error}
+              </p>
+            ) : null}
+          </div>
+        ) : (
         <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-5">
           {cambios && cambios.length > 0 ? (
             <div role="alert" className="rounded-2xl border border-terracota/30 bg-terracota-soft/60 p-4 text-sm text-terracota">
@@ -326,18 +353,80 @@ export function CartDrawer({ contexto, config, onClose }: { contexto: PedirConte
             </p>
           ) : null}
         </div>
+        )}
 
         <footer className="border-t border-carbon/10 px-6 py-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
           <div className="mb-3 flex items-baseline justify-between">
             <span className="text-carbon-muted">Total</span>
             <span className="font-display text-3xl tabular-nums text-carbon">{formatCentimos(cart.totalCentimos)}</span>
           </div>
-          <button type="button" onClick={() => void confirmar()} disabled={faltaDato || enviando} className="btn-primary w-full disabled:opacity-50">
-            {enviando ? "Enviando…" : pago === "ONLINE" && !separado ? "Pagar y enviar pedido" : "Enviar pedido"}
-          </button>
+          {revisando ? (
+            <div className="grid grid-cols-[auto_1fr] gap-2">
+              <button type="button" onClick={() => setRevisando(false)} disabled={enviando} className="btn-secondary">
+                Modificar
+              </button>
+              <button type="button" onClick={() => void confirmar()} disabled={faltaDato || enviando} className="btn-primary w-full disabled:opacity-50">
+                {enviando ? "Enviando…" : pago === "ONLINE" && !separado ? "Pagar y enviar pedido" : "Confirmar y enviar"}
+              </button>
+            </div>
+          ) : (
+            <>
+              {recogida && !sinRecogida && cart.lineas.length > 0 && !nombre.trim() ? (
+                <p className="mb-2 text-center text-sm text-carbon-muted">Escribe tu nombre para continuar.</p>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => {
+                  setError(null);
+                  setRevisando(true);
+                }}
+                disabled={faltaDato}
+                className="btn-primary w-full disabled:opacity-50"
+              >
+                Revisar pedido
+              </button>
+            </>
+          )}
         </footer>
       </div>
     </div>
+  );
+}
+
+/** Resumen de solo lectura del pedido: lo que se va a enviar, tal cual. */
+function ResumenPedido({ lineas, datos }: { lineas: CartLinea[]; datos: ([string, string] | null)[] }) {
+  return (
+    <section aria-labelledby="resumen-titulo" className="grid gap-5">
+      <div>
+        <h3 id="resumen-titulo" className="font-sans text-sm font-semibold uppercase tracking-eyebrow text-carbon">
+          Revisa tu pedido
+        </h3>
+        <p className="mt-1 text-sm text-carbon-muted">Comprueba que todo está bien antes de enviarlo a cocina.</p>
+      </div>
+      <ul className="divide-y divide-carbon/10 rounded-2xl border border-carbon/10 bg-white px-4">
+        {lineas.map((l) => (
+          <li key={l.key} className="flex items-start gap-3 py-3">
+            <span className="min-w-8 font-semibold tabular-nums text-marino">{l.cantidad} ×</span>
+            <div className="min-w-0 flex-1">
+              <p className="font-display text-lg leading-tight text-carbon">{l.nombre}</p>
+              {l.resumen ? <p className="text-sm text-carbon-muted">{l.resumen}</p> : null}
+              {l.notas ? <p className="text-sm italic text-carbon-muted">«{l.notas}»</p> : null}
+            </div>
+            <p className="font-semibold tabular-nums text-carbon">{formatCentimos(l.precioUnitario * l.cantidad)}</p>
+          </li>
+        ))}
+      </ul>
+      <dl className="grid gap-2 text-sm">
+        {datos
+          .filter((d): d is [string, string] => d !== null)
+          .map(([k, v]) => (
+            <div key={k} className="flex gap-4 border-b border-carbon/10 pb-2">
+              <dt className="w-24 shrink-0 text-carbon-muted">{k}</dt>
+              <dd className="min-w-0 flex-1 break-words font-semibold text-carbon">{v}</dd>
+            </div>
+          ))}
+      </dl>
+    </section>
   );
 }
 
