@@ -32,7 +32,7 @@ const FICHAS: Ficha[] = [
   { seccion: "desayunos", nombre: "Clásica", foto: "clasica", ingredientes: [PAN, "A elegir: mermelada, mantequilla, aceite o tomate"], macros: [7, 40, 8] },
   { seccion: "desayunos", nombre: "Ibérico", foto: "iberico", ingredientes: [PAN, "Tomate rallado", AOVE, "Jamón ibérico"], macros: [17, 41, 11] },
   { seccion: "desayunos", nombre: "Aguacate", foto: "aguacate", ingredientes: [PAN, "Aguacate", "Tomate", "Jamón ibérico", AOVE], macros: [16, 44, 20] },
-  { seccion: "desayunos", nombre: "Salmón", ingredientes: [PAN, "Salmón ahumado", "Queso crema", "Sésamo"], macros: [20, 42, 17] },
+  { seccion: "desayunos", nombre: "Salmón", foto: "salmon", ingredientes: [PAN, "Salmón ahumado", "Queso crema", "Sésamo"], macros: [20, 42, 17] },
   { seccion: "desayunos", nombre: "Burrata", ingredientes: [PAN, "Burrata", "Melocotón a la plancha", "Jamón ibérico", AOVE], macros: [20, 46, 24] },
   { seccion: "desayunos", nombre: "Revuelta", ingredientes: [PAN, "Queso cottage", "Huevo revuelto", "Jamón ibérico"], macros: [27, 40, 20] },
   { seccion: "desayunos", nombre: "Bonita", ingredientes: [PAN, "Tortilla francesa", "Bonito", "Aguacate"], macros: [24, 40, 19] },

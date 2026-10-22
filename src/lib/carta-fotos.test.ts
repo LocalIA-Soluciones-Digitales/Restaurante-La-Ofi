@@ -19,8 +19,7 @@ describe("fotos de plato", () => {
     expect(brasa!.items[0]!.imagen).toBeNull();
   });
 
-  it("con fotos de plantilla no mezcla la foto real de un plato sin equivalente", () => {
-    // FOTOS_PLANTILLA está activo por defecto: «Salmón» no tiene foto ilustrativa equivalente.
+  it("el salmón ya no lleva la foto de Instagram (la pone su ficha, carta-fichas.ts)", () => {
     const [s] = conFotosDePlato([seccion("desayunos", ["Salmón", "Burrata"])]);
     expect(s!.items[0]!.imagen).toBeNull();
     expect(s!.items[1]!.imagen).not.toBeNull();
