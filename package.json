@@ -3,13 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/copiar-ocr.mjs",
     "dev": "next dev",
+    "prebuild": "node scripts/copiar-ocr.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "dev:local": "node scripts/dev-local.mjs"
+    "dev:local": "node scripts/dev-local.mjs",
+    "postinstall": "node scripts/copiar-ocr.mjs"
   },
   "dependencies": {
     "@react-three/drei": "10.7.9",
@@ -17,6 +20,9 @@
     "@supabase/ssr": "0.12.4",
     "@supabase/supabase-js": "2.112.3",
     "next": "15.5.27",
+    "onnxruntime-web": "1.30.0",
+    "pdfjs-dist": "6.4.299",
+    "ppu-paddle-ocr": "6.6.1",
     "qrcode": "1.5.4",
     "react": "19.0.8",
     "react-dom": "19.0.8",

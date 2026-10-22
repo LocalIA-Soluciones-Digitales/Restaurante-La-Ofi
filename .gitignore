@@ -44,3 +44,7 @@ __pycache__/
 
 # Capturas de Playwright MCP
 .playwright-mcp/
+
+# lector de gastos: motor WASM y worker de pdf.js (los copia scripts/copiar-ocr.mjs)
+/public/ocr/ort-wasm-simd-threaded.wasm
+/public/ocr/pdf.worker.min.mjs

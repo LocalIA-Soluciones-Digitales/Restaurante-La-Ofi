@@ -130,16 +130,21 @@ export const AYUDA: Record<string, AyudaSeccion> = {
     ],
     consejos: ["Los cierres anteriores quedan en el historial de abajo."],
   },
+  "/admin/gastos": {
+    resumen: "Albaranes, facturas y tickets de proveedores. El lector los lee en el propio dispositivo y aprende de lo que corriges.",
+    pasos: [
+      "Pulsa «Hacer foto» (o sube una foto o un PDF). La primera vez descarga el lector; después va directo.",
+      "Revisa proveedor, fecha, total e IVA con la foto al lado y guarda.",
+      "La próxima vez reconoce al proveedor por su CIF y le pone su categoría.",
+    ],
+    consejos: ["Exporta el mes en CSV para la gestoría."],
+  },
   "/admin/fidelizacion": {
     resumen: "Premios para clientes habituales. Viene apagada: al activarla, las reservas reconocen al cliente por su teléfono y cada N visitas se le concede un premio.",
     pasos: [
       "Activa la fidelización.",
       "Define cada cuántas visitas hay premio y cuál es.",
     ],
-  },
-  "/admin/resenas": {
-    resumen: "Reseñas que dejan los clientes. Solo se publican las que apruebas, tal cual las escribieron.",
-    pasos: ["Lee las pendientes.", "Apruébalas o recházalas. Nunca se editan."],
   },
   "/admin/mesas": {
     resumen: "Las zonas y mesas del local, su sitio en el plano y sus códigos QR.",

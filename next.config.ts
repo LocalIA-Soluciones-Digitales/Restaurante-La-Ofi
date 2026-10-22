@@ -15,6 +15,15 @@ const nextConfig: NextConfig = {
     // CSS crítico incrustado en el HTML: elimina la petición CSS que bloquea el
     // primer render (mejora el LCP en móvil; el CSS total es pequeño, ~8 KB).
     inlineCss: true,
+    // La copia JPEG de un gasto (300-500 KB, hasta ~1,5 MB un PDF de 3 páginas).
+    serverActions: { bodySizeLimit: "6mb" },
+  },
+  webpack(config) {
+    // El lector de gastos (ppu-paddle-ocr) solo usa el motor WASM: así no se
+    // empaquetan las variantes WebGPU/JSEP (otros ~30 MB). El .wasm se sirve
+    // desde public/ocr (scripts/copiar-ocr.mjs).
+    config.resolve.alias = { ...config.resolve.alias, "onnxruntime-web$": "onnxruntime-web/wasm" };
+    return config;
   },
   images: {
     // Sin la optimización de Vercel: el plan agotó su cuota de transformaciones
