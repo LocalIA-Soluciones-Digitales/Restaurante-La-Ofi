@@ -6,6 +6,7 @@ import { Icon } from "@/components/ui/Icon";
 import { SectionRule } from "@/components/ui/SectionRule";
 import { VINOS } from "@/lib/home-content";
 import { href, type Locale } from "@/lib/i18n";
+import { SITE } from "@/lib/site";
 import type { ImageKey } from "@/lib/images";
 
 // Tres fotos verticales del local (fotógrafo, 2026-10-17). mobileBelow alto: se
@@ -69,7 +70,10 @@ export function Presentacion({ locale }: { locale: Locale }) {
           <Columna titulo="Reconocimientos">
             <ul className="divide-y divide-tinta-line border-y border-tinta-line">
               <li className="flex items-baseline justify-between gap-4 py-3">
-                <span>Valoración en Google</span>
+                {/* Las reseñas viven en la ficha de Google Business: no se moderan aquí. */}
+                <a href={SITE.maps.place} target="_blank" rel="noopener noreferrer" className="link-arrow">
+                  Valoración en Google
+                </a>
                 <span className="font-display text-xl text-carbon">
                   <CountUp value={4.4} decimals={1} />
                 </span>
