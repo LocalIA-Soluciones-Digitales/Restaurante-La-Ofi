@@ -177,7 +177,7 @@ export function MenuDiaEditor() {
           {platos.map((p, i) => (
             <li key={p.key} className="rounded-2xl bg-arena p-3 dark:bg-noche-3">
               <div className="flex gap-2">
-                <select value={p.tipo} onChange={(e) => cambiar(p.key, { tipo: e.target.value as TipoPlato })} className={`${input} w-32 shrink-0`} aria-label="Tipo">
+                <select value={p.tipo} onChange={(e) => cambiar(p.key, { tipo: e.target.value as TipoPlato })} className={`${input} max-w-32 shrink-0`} aria-label="Tipo">
                   {TIPOS.map((t) => (
                     <option key={t.key} value={t.key}>
                       {t.label}

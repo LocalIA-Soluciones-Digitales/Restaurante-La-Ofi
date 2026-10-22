@@ -17,6 +17,10 @@ const nextConfig: NextConfig = {
     inlineCss: true,
   },
   images: {
+    // Sin la optimización de Vercel: el plan agotó su cuota de transformaciones
+    // (402 OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED) y las fotos nuevas o en tamaños
+    // nuevos salían rotas. Las fotos ya están en WebP y a tamaño razonable.
+    unoptimized: true,
     formats: ["image/avif", "image/webp"],
     // Calidades permitidas (obligatorio desde Next 16): 60 fondos, 75 general, 80 fotos de plato grandes.
     qualities: [60, 75, 80],
