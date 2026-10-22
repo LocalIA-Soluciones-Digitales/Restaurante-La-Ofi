@@ -5,11 +5,11 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useCart, type CambioCarta, type CartLinea } from "@/components/pedir/cart-context";
 import { useTableSession } from "@/components/pedir/table-session-context";
-import { Icon } from "@/components/ui/Icon";
+import { Icon, type IconName } from "@/components/ui/Icon";
 import { useDialogA11y } from "@/hooks/useDialogA11y";
 import { formatCentimos } from "@/lib/format";
 import { vibrar } from "@/lib/haptics";
-import { cartaActual, crearPedido } from "@/lib/pedidos/actions";
+import { cartaActual, crearPedido, mesaPorNumero } from "@/lib/pedidos/actions";
 import { guardarReciente } from "@/lib/pedidos/recientes";
 import { repartirLinea } from "@/lib/pedidos/reparto";
 import type { ConfigPedidos, GrupoPublico, PedidoInput } from "@/lib/pedidos/types";
@@ -61,16 +61,46 @@ export function CartDrawer({
   const [cambios, setCambios] = useState<CambioCarta[] | null>(null);
   // Paso de revisión: antes de enviar se enseña un resumen de todo el pedido.
   const [revisando, setRevisando] = useState(false);
+  // Sin QR (carta o /pedir): el cliente puede decir que está sentado y dar el número
+  // de su mesa. Solo vale si sala ya la ha abierto (laofi_mesa_por_numero).
+  const [destino, setDestino] = useState<"recogida" | "mesa">(config.recogida_activa ? "recogida" : "mesa");
+  const [numeroMesa, setNumeroMesa] = useState("");
+  const [mesaDestino, setMesaDestino] = useState<{ token: string; etiqueta: string } | null>(null);
+  const [comprobando, setComprobando] = useState(false);
 
-  const recogida = contexto.tipo !== "mesa";
+  const enMesa = contexto.tipo === "recogida" && destino === "mesa";
+  const recogida = contexto.tipo !== "mesa" && !enMesa;
   // Recogida sin franjas hoy (fuera de horario o desactivada): la cesta se guarda, pero no se envía.
   const sinRecogida = contexto.tipo === "recogida" && !config.recogida_activa;
   const faltaDato =
-    sinRecogida ||
+    (sinRecogida && !enMesa) ||
     cart.lineas.length === 0 ||
     (recogida && !nombre.trim()) ||
-    (contexto.tipo === "recogida" && !franja) ||
+    (contexto.tipo === "recogida" && !enMesa && !franja) ||
+    (enMesa && !numeroMesa.trim()) ||
     (separado && !mesa?.participante);
+
+  const revisar = async () => {
+    setError(null);
+    if (enMesa) {
+      setComprobando(true);
+      try {
+        const r = await mesaPorNumero(numeroMesa);
+        const n = numeroMesa.trim().toUpperCase().replace(/^MESA\s*/, "");
+        if (!r.ok) return setError(r.error);
+        if (!r.data) return setError(`No encontramos la mesa «${n}». Comprueba el número en la mesa o pregunta al personal.`);
+        if (r.data.estado === "cerrada") {
+          return setError(
+            `La mesa ${n} aún no está abierta. Pide a un camarero que la abra y vuelve a intentarlo${config.recogida_activa ? ", o elige «Para recoger»." : "."}`,
+          );
+        }
+        setMesaDestino({ token: r.data.token, etiqueta: `Mesa ${n}` });
+      } finally {
+        setComprobando(false);
+      }
+    }
+    setRevisando(true);
+  };
 
   const confirmar = async () => {
     setError(null);
@@ -90,7 +120,7 @@ export function CartDrawer({
       // 2) Pedido. El servidor recalcula y valida todo.
       const yo = mesa?.participante?.id;
       const pedido: PedidoInput = {
-        tipo: contexto.tipo === "mesa" ? "MESA" : "RECOGIDA",
+        tipo: contexto.tipo === "mesa" || enMesa ? "MESA" : "RECOGIDA",
         payment_method: pago,
         total_esperado_centimos: cart.totalCentimos,
         notas: notas.trim() || undefined,
@@ -106,6 +136,10 @@ export function CartDrawer({
         pedido.mesa_token = mesa.token;
         if (mesa.sesion) pedido.sesion_id = mesa.sesion.id;
         if (yo) pedido.participante_id = yo;
+      } else if (enMesa) {
+        // Sin sesión de mesa: el pedido suma a la cuenta de la mesa, como una comanda del TPV.
+        if (!mesaDestino) return;
+        pedido.mesa_token = mesaDestino.token;
       } else {
         pedido.nombre = nombre.trim();
         pedido.telefono = telefono.trim() || undefined;
@@ -174,7 +208,9 @@ export function CartDrawer({
                 ? `${mesa?.mesa.nombre ?? `Mesa ${mesa?.mesa.numero}`}${separado && mesa?.participante ? ` · ${mesa.participante.nombre}` : ""}`
                 : contexto.tipo === "grupo"
                   ? `Grupo «${contexto.grupo.nombre}» · recogida ${HORA.format(new Date(contexto.grupo.recogida_en))}`
-                  : "Para recoger"}
+                  : enMesa
+                    ? "En tu mesa"
+                    : "Para recoger"}
             </p>
           </div>
           <button type="button" onClick={onClose} className="grid h-11 w-11 place-items-center rounded-full border border-carbon/15">
@@ -189,7 +225,8 @@ export function CartDrawer({
               lineas={cart.lineas}
               fotos={fotos}
               datos={[
-                contexto.tipo === "recogida" && franja ? ["Recogida", `Hoy a las ${HORA.format(new Date(franja))}`] : null,
+                enMesa && mesaDestino ? ["Mesa", `${mesaDestino.etiqueta} · te lo llevamos`] : null,
+                contexto.tipo === "recogida" && !enMesa && franja ? ["Recogida", `Hoy a las ${HORA.format(new Date(franja))}`] : null,
                 contexto.tipo === "grupo" ? ["Recogida", `Grupo «${contexto.grupo.nombre}» · ${HORA.format(new Date(contexto.grupo.recogida_en))}`] : null,
                 contexto.tipo === "mesa" ? ["Mesa", `${mesa?.mesa.nombre ?? `Mesa ${mesa?.mesa.numero}`}${separado && mesa?.participante ? ` · ${mesa.participante.nombre}` : ""}`] : null,
                 recogida ? ["Nombre", nombre.trim()] : null,
@@ -275,11 +312,57 @@ export function CartDrawer({
             </ul>
           )}
 
-          {sinRecogida && cart.lineas.length > 0 ? (
+          {contexto.tipo === "recogida" && cart.lineas.length > 0 ? (
+            <fieldset className="grid gap-3">
+              <legend className="mb-2 font-sans text-sm font-semibold uppercase tracking-eyebrow text-carbon">¿Dónde lo quieres?</legend>
+              <div className="grid grid-cols-2 gap-2">
+                <PagoOpcion
+                  activo={destino === "mesa"}
+                  onClick={() => {
+                    setDestino("mesa");
+                    setError(null);
+                  }}
+                  icon="utensils"
+                  titulo="En mi mesa"
+                  texto="Ya estoy sentado: te lo llevamos."
+                />
+                <PagoOpcion
+                  activo={destino === "recogida"}
+                  onClick={() => {
+                    setDestino("recogida");
+                    setError(null);
+                  }}
+                  icon="bag"
+                  titulo="Para recoger"
+                  texto="En barra, a la hora que elijas."
+                />
+              </div>
+              {enMesa ? (
+                <label className="grid gap-1 text-sm">
+                  <span className="font-semibold text-carbon">Número de mesa</span>
+                  <input
+                    value={numeroMesa}
+                    onChange={(e) => {
+                      setNumeroMesa(e.target.value.slice(0, 20));
+                      setMesaDestino(null);
+                      setError(null);
+                    }}
+                    placeholder="Ej. 12 o T3"
+                    autoComplete="off"
+                    autoCapitalize="characters"
+                    className="h-12 rounded-2xl border border-carbon/15 bg-white px-4 text-base focus:border-marino focus:outline-none"
+                  />
+                  <span className="text-xs text-carbon-muted">Lo verás en la mesa. ¿No lo encuentras? Pregúntalo al personal.</span>
+                </label>
+              ) : null}
+            </fieldset>
+          ) : null}
+
+          {sinRecogida && !enMesa && cart.lineas.length > 0 ? (
             <p className="flex gap-2 rounded-2xl bg-arena p-4 text-sm text-carbon-muted">
               <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-marino" />
-              Ahora mismo no hay horas de recogida disponibles. Guardamos tu pedido en este dispositivo unas horas: vuelve en horario
-              de apertura para enviarlo, o pídelo en barra.
+              Ahora mismo no hay horas de recogida disponibles. Si ya estás sentado, elige «En mi mesa». Si no, guardamos tu pedido en
+              este dispositivo unas horas: vuelve en horario de apertura para enviarlo, o pídelo en barra.
             </p>
           ) : null}
 
@@ -366,11 +449,6 @@ export function CartDrawer({
             </>
           ) : null}
 
-          {error ? (
-            <p role="alert" className="text-sm font-semibold text-terracota">
-              {error}
-            </p>
-          ) : null}
         </div>
         )}
 
@@ -390,19 +468,19 @@ export function CartDrawer({
             </div>
           ) : (
             <>
-              {recogida && !sinRecogida && cart.lineas.length > 0 && !nombre.trim() ? (
+              {!error && recogida && !sinRecogida && cart.lineas.length > 0 && !nombre.trim() ? (
                 <p className="mb-2 text-center text-sm text-carbon-muted">Escribe tu nombre para continuar.</p>
               ) : null}
-              <button
-                type="button"
-                onClick={() => {
-                  setError(null);
-                  setRevisando(true);
-                }}
-                disabled={faltaDato}
-                className="btn-primary w-full disabled:opacity-50"
-              >
-                Revisar pedido
+              {!error && enMesa && cart.lineas.length > 0 && !numeroMesa.trim() ? (
+                <p className="mb-2 text-center text-sm text-carbon-muted">Escribe el número de tu mesa para continuar.</p>
+              ) : null}
+              {error ? (
+                <p role="alert" className="mb-2 text-center text-sm font-semibold text-terracota">
+                  {error}
+                </p>
+              ) : null}
+              <button type="button" onClick={() => void revisar()} disabled={faltaDato || comprobando} className="btn-primary w-full disabled:opacity-50">
+                {comprobando ? "Comprobando la mesa…" : "Revisar pedido"}
               </button>
             </>
           )}
@@ -470,7 +548,7 @@ function PagoOpcion({
 }: {
   activo: boolean;
   onClick: () => void;
-  icon: "card" | "cash";
+  icon: IconName;
   titulo: string;
   texto: string;
 }) {
