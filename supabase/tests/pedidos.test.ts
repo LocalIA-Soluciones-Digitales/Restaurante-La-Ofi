@@ -42,6 +42,25 @@ describe("mesa y sesión", () => {
   });
 });
 
+describe("mesa por número (sin QR)", () => {
+  it("solo da la llave de una mesa abierta, y acepta «mesa 7», «t-3»…", async () => {
+    const { id: zona } = await t.one<{ id: string }>("select id from laofi.zonas where slug = 'comedor'");
+    await t.db.query("insert into laofi.mesas (zona_id, numero) values ($1, '8'), ($1, 'T3')", [zona]);
+    // La 7 tiene sesión activa (bloque anterior); la 8 y la T3 están vacías.
+    expect(await rpc("laofi_mesa_por_numero", t.laOfi.site_key, "Mesa 7")).toEqual({ estado: "abierta", token: mesaToken });
+    expect(await rpc("laofi_mesa_por_numero", t.laOfi.site_key, "8")).toEqual({ estado: "cerrada" });
+    expect(await rpc("laofi_mesa_por_numero", t.laOfi.site_key, " t-3 ")).toEqual({ estado: "cerrada" });
+    await t.db.query("update laofi.mesas set ocupada = true where numero = 'T3'");
+    expect(await rpc<{ estado: string }>("laofi_mesa_por_numero", t.laOfi.site_key, "t3")).toMatchObject({ estado: "abierta" });
+  });
+
+  it("no existe, vacía o con otra site_key: nada", async () => {
+    expect(await rpc("laofi_mesa_por_numero", t.laOfi.site_key, "99")).toBeNull();
+    expect(await rpc("laofi_mesa_por_numero", t.laOfi.site_key, "  ")).toBeNull();
+    expect(await rpc("laofi_mesa_por_numero", t.otro.site_key, "7")).toBeNull();
+  });
+});
+
 describe("pedido en mesa", () => {
   it("calcula el precio en servidor e ignora cualquier precio del navegador", async () => {
     const r = await crearPedido({

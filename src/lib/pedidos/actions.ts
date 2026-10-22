@@ -56,6 +56,13 @@ export async function validarMesa(token: string): Promise<ResultadoAccion<MesaPu
   return llamar<MesaPublica | null>("laofi_validar_mesa", { p_token: token });
 }
 
+/** Pedir en mesa sin QR: la llave de la mesa solo se da si sala ya la ha abierto. */
+export async function mesaPorNumero(numero: string): Promise<ResultadoAccion<{ estado: "abierta"; token: string } | { estado: "cerrada" } | null>> {
+  const limpio = numero.trim().slice(0, 20);
+  if (!limpio) return { ok: false, error: "Escribe el número de tu mesa.", codigo: "ERROR" };
+  return llamar("laofi_mesa_por_numero", { p_numero: limpio });
+}
+
 export async function iniciarSesionMesa(token: string, modo: ModoSesion): Promise<ResultadoAccion<{ id: string; modo: ModoSesion }>> {
   if (!TOKEN.test(token)) return invalido("Código de mesa");
   return llamar("laofi_iniciar_sesion_mesa", { p_token: token, p_modo: modo });

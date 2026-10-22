@@ -26,6 +26,7 @@ const PUBLICAS_ANON = [
   "laofi_get_resenas",
   "laofi_get_sesion",
   "laofi_iniciar_sesion_mesa",
+  "laofi_mesa_por_numero",
   "laofi_unirse_sesion",
   "laofi_validar_mesa",
 ].sort();

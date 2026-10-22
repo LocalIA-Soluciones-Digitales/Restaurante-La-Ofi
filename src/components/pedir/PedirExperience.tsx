@@ -9,6 +9,7 @@ import { CartDrawer, type PedirContexto } from "@/components/pedir/CartDrawer";
 import { CartProvider, useCart } from "@/components/pedir/cart-context";
 import { CuentaMesaDrawer } from "@/components/pedir/CuentaMesaDrawer";
 import { CrearGrupo } from "@/components/pedir/CrearGrupo";
+import { MesaPorNumero } from "@/components/pedir/MesaPorNumero";
 import { SessionNotifications } from "@/components/pedir/SessionNotifications";
 import { TableEntry } from "@/components/pedir/TableEntry";
 import { TableSessionProvider, useTableSession } from "@/components/pedir/table-session-context";
@@ -136,6 +137,8 @@ function Interior({ secciones, config, modo }: { secciones: CartaSeccion[]; conf
       ) : null}
 
       <div className="mb-4 space-y-3">
+        {/* Sin QR: pedir en mesa con su número (aunque hoy no haya franjas de recogida). */}
+        {modo.tipo === "recogida" && config ? <MesaPorNumero hayRecogida={config.recogida_activa} /> : null}
         <ActiveOrderBanner />
         {motivoNoPedir ? (
           <p className="flex gap-2 rounded-2xl bg-arena p-4 text-sm text-carbon-muted">
