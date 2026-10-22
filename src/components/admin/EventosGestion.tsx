@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Modal } from "@/components/admin/Modal";
 import { AvisoFlotante } from "@/components/admin/AvisoFlotante";
-import { Aviso, aCentimos, aEuros, botonPeligro, botonPrimario, card, input } from "@/components/admin/ui";
+import { Aviso, aCentimos, aEuros, botonPeligro, botonPrimario, botonSecundario, card, input } from "@/components/admin/ui";
 import { Icon } from "@/components/ui/Icon";
 import { borrar, guardar } from "@/lib/admin/actions";
+import { firmarSubidaEvento } from "@/lib/admin/eventos-actions";
 import { formatCentimos, formatearFechaLarga } from "@/lib/format";
-import type { EstadoEvento } from "@/lib/restaurant/types";
+import type { EstadoEvento, MediaEvento } from "@/lib/restaurant/types";
+import { supabaseNavegador } from "@/lib/supabase/browser";
 
 export interface EventoBd {
   id: string;
@@ -23,6 +25,7 @@ export interface EventoBd {
   estado: EstadoEvento;
   enlace_reserva: string | null;
   publicado: boolean;
+  media?: MediaEvento[];
 }
 
 const slugify = (s: string) =>
@@ -104,9 +107,35 @@ function EventoForm({ evento, onClose, onGuardado, onBorrado }: { evento: Evento
     enlace_reserva: e?.enlace_reserva ?? "",
     imagen_url: e?.imagen_url ?? "",
     publicado: e?.publicado ?? false,
+    media: e?.media ?? ([] as MediaEvento[]),
   });
   const [error, setError] = useState<string | null>(null);
+  const [subiendo, setSubiendo] = useState<string | null>(null);
+  const archivoRef = useRef<HTMLInputElement>(null);
   const set = (p: Partial<typeof f>) => setF((x) => ({ ...x, ...p }));
+
+  /** Sube cada archivo directo a Storage (subida firmada en el servidor) y lo añade a la galería. */
+  const subir = async (archivos: File[]) => {
+    const sb = supabaseNavegador();
+    if (!sb) return setError("Las fotos y vídeos no están disponibles en este entorno.");
+    setError(null);
+    for (const [i, archivo] of archivos.entries()) {
+      setSubiendo(archivos.length > 1 ? `Subiendo ${i + 1} de ${archivos.length}…` : "Subiendo…");
+      const firma = await firmarSubidaEvento(archivo.type, archivo.size);
+      if (!firma.ok) {
+        setError(`${archivo.name}: ${firma.error}`);
+        continue;
+      }
+      const { error: errSubida } = await sb.storage.from("laofi-eventos").uploadToSignedUrl(firma.data.ruta, firma.data.token, archivo, { contentType: archivo.type });
+      if (errSubida) {
+        setError(`${archivo.name}: no se ha podido subir. Inténtalo de nuevo.`);
+        continue;
+      }
+      const nuevo: MediaEvento = { tipo: archivo.type.startsWith("video/") ? "video" : "imagen", url: firma.data.url };
+      setF((x) => ({ ...x, media: [...x.media, nuevo] }));
+    }
+    setSubiendo(null);
+  };
 
   const enviar = async () => {
     setError(null);
@@ -123,6 +152,7 @@ function EventoForm({ evento, onClose, onGuardado, onBorrado }: { evento: Evento
       estado: f.estado,
       enlace_reserva: f.enlace_reserva.trim() || null,
       imagen_url: f.imagen_url.trim() || null,
+      media: f.media,
       publicado: f.publicado,
     });
     if (!r.ok) return setError(r.error);
@@ -173,8 +203,57 @@ function EventoForm({ evento, onClose, onGuardado, onBorrado }: { evento: Evento
           <span className="font-semibold">Descripción</span>
           <textarea value={f.descripcion} onChange={(x) => set({ descripcion: x.target.value })} rows={3} className={`${input} h-auto py-2`} />
         </label>
+        <div className="grid gap-2 text-sm sm:col-span-2">
+          <span className="font-semibold">Fotos y vídeos (solo reales del local o del evento; hasta 50 MB cada uno)</span>
+          {f.media.length > 0 ? (
+            <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+              {f.media.map((m) => (
+                <li key={m.url} className="relative aspect-square overflow-hidden rounded-xl bg-arena dark:bg-noche-3">
+                  {m.tipo === "video" ? (
+                    <video src={m.url} muted playsInline preload="metadata" className="h-full w-full object-cover" />
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element -- miniatura del panel
+                    <img src={m.url} alt="" className="h-full w-full object-cover" />
+                  )}
+                  {m.tipo === "video" ? (
+                    <span className="absolute bottom-1 left-1 rounded-full bg-carbon/70 p-1 text-crema">
+                      <Icon name="play" className="h-3 w-3" />
+                    </span>
+                  ) : null}
+                  {!f.imagen_url.trim() && m.url === f.media.find((x) => x.tipo === "imagen")?.url ? (
+                    <span className="absolute left-1 top-1 rounded-full bg-ratan px-2 py-0.5 text-xs font-semibold text-carbon">Portada</span>
+                  ) : null}
+                  <button
+                    type="button"
+                    aria-label="Quitar"
+                    onClick={() => set({ media: f.media.filter((x) => x.url !== m.url) })}
+                    className="absolute right-1 top-1 rounded-full bg-carbon/70 p-1 text-crema hover:bg-terracota"
+                  >
+                    <Icon name="close" className="h-4 w-4" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          <input
+            ref={archivoRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
+            multiple
+            hidden
+            onChange={(x) => {
+              const archivos = Array.from(x.target.files ?? []);
+              x.target.value = "";
+              if (archivos.length) void subir(archivos);
+            }}
+          />
+          <button type="button" onClick={() => archivoRef.current?.click()} disabled={subiendo !== null} className={`${botonSecundario} justify-self-start`}>
+            <Icon name="plus" className="h-4 w-4" />
+            {subiendo ?? "Añadir fotos o vídeos"}
+          </button>
+        </div>
         <label className="grid gap-1 text-sm sm:col-span-2">
-          <span className="font-semibold">Imagen (URL o /images/…; solo fotos reales del local o del evento)</span>
+          <span className="font-semibold">Portada (opcional: URL o /images/…; vacía = la primera foto subida)</span>
           <input value={f.imagen_url} onChange={(x) => set({ imagen_url: x.target.value })} className={input} />
         </label>
         <label className="grid gap-1 text-sm sm:col-span-2">
@@ -191,7 +270,7 @@ function EventoForm({ evento, onClose, onGuardado, onBorrado }: { evento: Evento
           </div>
         ) : null}
         <div className="flex gap-2 sm:col-span-2">
-          <button type="button" onClick={() => void enviar()} disabled={!f.titulo.trim() || !f.fecha} className={`${botonPrimario} flex-1`}>
+          <button type="button" onClick={() => void enviar()} disabled={!f.titulo.trim() || !f.fecha || subiendo !== null} className={`${botonPrimario} flex-1`}>
             Guardar
           </button>
           {e ? (

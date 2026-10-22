@@ -73,6 +73,19 @@ export default async function EventoPage({ params }: Params) {
           </div>
         ) : null}
         <p className="mt-8 whitespace-pre-line text-lg leading-relaxed text-carbon">{evento.descripcion}</p>
+        {evento.media && evento.media.length > 0 ? (
+          <ul className="mt-8 grid gap-4 sm:grid-cols-2">
+            {evento.media.map((m) => (
+              <li key={m.url} className="relative aspect-[4/3] overflow-hidden rounded-[1.5rem] bg-arena">
+                {m.tipo === "video" ? (
+                  <video src={m.url} controls playsInline preload="metadata" className="h-full w-full bg-carbon object-cover" />
+                ) : (
+                  <Image src={m.url} alt={evento.titulo} fill sizes="(min-width: 768px) 384px, 100vw" className="object-cover" />
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : null}
         {evento.estado === "proximo" ? (
           <a
             href={evento.enlaceReserva ?? SITE.phone.href}

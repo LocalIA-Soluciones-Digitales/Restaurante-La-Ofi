@@ -65,13 +65,17 @@ export async function getMenuDiaContent(fecha = hoyEnMadrid()): Promise<ContentS
 }
 
 export function eventoView(e: Evento): EventoView {
+  const media = e.media ?? [];
+  // Portada: la imagen indicada o, si no hay, la primera foto subida.
+  const portada = e.imagen_url ?? media.find((m) => m.tipo === "imagen")?.url ?? null;
   return {
     id: e.id,
     slug: e.slug,
     titulo: e.titulo,
     tipo: e.tipo ?? "Evento",
     descripcion: e.descripcion ?? "",
-    imagen: e.imagen_url ? { src: e.imagen_url, alt: e.titulo } : null,
+    imagen: portada ? { src: portada, alt: e.titulo } : null,
+    media: media.filter((m) => m.url !== portada),
     fecha: e.fecha,
     hora: e.hora,
     precioCentimos: e.precio_centimos,

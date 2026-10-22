@@ -103,6 +103,12 @@ export interface MenuDia {
 
 export type EstadoEvento = "proximo" | "agotado" | "finalizado" | "cancelado";
 
+/** Foto o vídeo de un evento (bucket público laofi-eventos o URL externa). */
+export interface MediaEvento {
+  tipo: "imagen" | "video";
+  url: string;
+}
+
 export interface Evento {
   id: string;
   titulo: string;
@@ -116,6 +122,7 @@ export interface Evento {
   aforo: number | null;
   estado: EstadoEvento;
   enlace_reserva: string | null;
+  media?: MediaEvento[];
 }
 
 // --- Procedencia del contenido ---------------------------------------------
@@ -208,6 +215,7 @@ export interface EventoView {
   aforo: number | null;
   estado: EstadoEvento;
   enlaceReserva: string | null;
+  media?: MediaEvento[];
   fuente: Fuente;
 }
 
