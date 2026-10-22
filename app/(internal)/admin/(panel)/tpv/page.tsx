@@ -20,6 +20,7 @@ export default async function TpvPage({ searchParams }: { searchParams: Promise<
     <BarraPOS
       carta={carta.data}
       mesas={s.data.mesas.filter((m) => !m.bloqueada)}
+      zonas={s.data.zonas.filter((z) => z.activa)}
       mesaInicial={mesa && s.data.mesas.some((m) => m.id === mesa) ? mesa : null}
       rol={sesion.rol}
       fiscal={ajustes.ok ? (ajustes.data[0]?.valor ?? {}) : {}}

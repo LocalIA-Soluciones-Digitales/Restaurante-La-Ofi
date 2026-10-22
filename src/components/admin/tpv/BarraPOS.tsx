@@ -9,7 +9,7 @@ import { Aviso, aCentimos, botonPrimario, botonSecundario, card, input } from "@
 import { Icon } from "@/components/ui/Icon";
 import { cobrar, crearComanda } from "@/lib/admin/actions";
 import type { Rol } from "@/lib/admin/roles";
-import { etiquetaPedido, type MesaSalon, type PedidoKds } from "@/lib/admin/types";
+import { etiquetaPedido, type MesaSalon, type PedidoKds, type Zona } from "@/lib/admin/types";
 import { precioConModificadores, resumenModificadores, validarSeleccion, type SeleccionModificador } from "@/lib/carta";
 import { formatCentimos } from "@/lib/format";
 import { vibrar } from "@/lib/haptics";
@@ -39,12 +39,14 @@ const unitario = (l: Linea) => (l.item.precioCentimos === null ? (l.precioManual
 export function BarraPOS({
   carta,
   mesas,
+  zonas,
   mesaInicial,
   rol,
   fiscal,
 }: {
   carta: CartaSeccion[];
   mesas: MesaSalon[];
+  zonas: Zona[];
   mesaInicial: string | null;
   rol: Rol;
   fiscal: DatosFiscales;
@@ -79,7 +81,16 @@ export function BarraPOS({
     return n;
   }, [lineas]);
   const unidades = lineas.reduce((a, l) => a + l.cantidad, 0);
-  const mesasOrdenadas = useMemo(() => [...mesas].sort((x, y) => x.numero.localeCompare(y.numero, "es", { numeric: true })), [mesas]);
+  // Un grupo por zona (Barra, Comedor, Terraza…) en el orden del plano; dentro, ocupadas
+  // primero (es donde se suele añadir) y en orden natural: 1, 2… 10, no 1, 10, 2.
+  const gruposMesas = useMemo(() => {
+    const orden = (x: MesaSalon, y: MesaSalon) => Number(y.ocupada) - Number(x.ocupada) || x.numero.localeCompare(y.numero, "es", { numeric: true });
+    const grupos = [...zonas]
+      .sort((a, b) => a.orden - b.orden || a.nombre.localeCompare(b.nombre, "es"))
+      .map((z) => ({ id: z.id, label: z.nombre, lista: mesas.filter((m) => m.zona_id === z.id).sort(orden) }));
+    const sinZona = mesas.filter((m) => !zonas.some((z) => z.id === m.zona_id)).sort(orden);
+    return [...grupos, { id: "sin-zona", label: grupos.length ? "Otras" : "Mesas", lista: sinZona }].filter((g) => g.lista.length);
+  }, [mesas, zonas]);
 
   const anadir = (item: CartaItem, seleccion: SeleccionModificador[] = [], precioManual: number | null = null) => {
     vibrar(10);
@@ -228,22 +239,16 @@ export function BarraPOS({
           <span className="font-semibold">Para</span>
           <select value={destino} onChange={(e) => setDestino(e.target.value)} className={input}>
             <option value="BARRA">Barra (sin mesa)</option>
-            {/* Ocupadas primero (es donde se suele añadir) y en orden natural: 1, 2… 10, no 1, 10, 2. */}
-            {[
-              { label: "Ocupadas", lista: mesasOrdenadas.filter((m) => m.ocupada) },
-              { label: "Libres", lista: mesasOrdenadas.filter((m) => !m.ocupada) },
-            ].map((g) =>
-              g.lista.length ? (
-                <optgroup key={g.label} label={g.label}>
-                  {g.lista.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.nombre ?? `Mesa ${m.numero}`}
-                      {m.ocupada ? ` · ${m.comensales}p` : " · libre"}
-                    </option>
-                  ))}
-                </optgroup>
-              ) : null,
-            )}
+            {gruposMesas.map((g) => (
+              <optgroup key={g.id} label={g.label}>
+                {g.lista.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.nombre ?? `Mesa ${m.numero}`}
+                    {m.ocupada ? ` · ${m.comensales}p` : " · libre"}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
           </select>
         </label>
         {!mesa ? <input value={nombre} onChange={(e) => setNombre(e.target.value.slice(0, 60))} placeholder="Nombre (opcional)" className={`${input} mt-2`} /> : null}
