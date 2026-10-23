@@ -2,13 +2,15 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Etiqueta, FotoMarcada } from "@/components/admin/GastoMarcado";
 import { Modal } from "@/components/admin/Modal";
 import { Aviso, Campo, Cifra, aEuros, botonPeligro, botonPrimario, botonSecundario, card, input } from "@/components/admin/ui";
 import { Icon } from "@/components/ui/Icon";
 import { borrarGasto, editarProveedorGasto, guardarGasto, subirDocumentoGasto, verDocumentoGasto } from "@/lib/admin/gastos-actions";
 import { descargarCsv } from "@/lib/export-csv";
 import { formatCentimos } from "@/lib/format";
-import type { EstadoLectura } from "@/lib/gastos/documento";
+import type { DocumentoLeido, EstadoLectura } from "@/lib/gastos/documento";
+import { calcularMarcas, type MarcasGasto, type TipoMarca } from "@/lib/gastos/marcas";
 import { leerGasto, sumaLineas, type CategoriaGasto, type GastoLeido, type ProveedorMemoria, type TipoGasto } from "@/lib/gastos/ocr";
 
 export interface Gasto {
@@ -64,6 +66,8 @@ function centimos(texto: string): number | null {
 const euros = (n: number | null | undefined) => (n == null ? "" : String(Math.round(n * 100) / 100).replace(".", ","));
 const eurosC = (c: number | null | undefined) => (c == null ? "" : c < 0 ? `-${aEuros(-c)}` : aEuros(c));
 const hoy = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Madrid" }).format(new Date());
+const nombreDeMes = (fecha: string) =>
+  new Intl.DateTimeFormat("es-ES", { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(Date.UTC(Number(fecha.slice(0, 4)), Number(fecha.slice(5, 7)) - 1, 1)));
 
 interface Borrador {
   id?: string;
@@ -82,6 +86,7 @@ interface Borrador {
   // Solo al escanear:
   jpeg?: Blob;
   leido?: GastoLeido;
+  marcas?: MarcasGasto;
   ms?: number;
 }
 
@@ -116,7 +121,7 @@ const deGasto = (g: Gasto): Borrador => ({
   documento_path: g.documento_path,
 });
 
-const deLectura = (r: GastoLeido, jpeg: Blob, ms: number): Borrador => ({
+const deLectura = (r: GastoLeido, doc: DocumentoLeido): Borrador => ({
   ...vacio(),
   fecha: r.fecha ?? hoy(),
   tipo: r.tipo,
@@ -128,9 +133,10 @@ const deLectura = (r: GastoLeido, jpeg: Blob, ms: number): Borrador => ({
   iva: r.iva.map((i) => ({ tipo: String(i.tipo), base: euros(i.base), cuota: euros(i.cuota) })),
   lineas: r.lineas.map((l) => ({ texto: l.texto, cantidad: l.cantidad == null ? "" : String(l.cantidad).replace(".", ","), precio: euros(l.precio), importe: euros(l.importe) })),
   metodo_pago: r.tipo === "ticket" ? "tarjeta" : "",
-  jpeg,
+  jpeg: doc.jpeg,
   leido: r,
-  ms,
+  marcas: calcularMarcas(doc.cajas, r, doc.ancho, doc.alto),
+  ms: doc.ms,
 });
 
 export function GastosPanel({
@@ -163,7 +169,7 @@ export function GastosPanel({
   const lista = filtro ? gastos.filter((g) => g.categoria === filtro) : gastos;
 
   const [anio, numMes] = mes.split("-").map(Number) as [number, number];
-  const nombreMes = new Intl.DateTimeFormat("es-ES", { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(Date.UTC(anio, numMes - 1, 1)));
+  const nombreMes = nombreDeMes(mes);
   const irMes = (delta: number) => {
     const d = new Date(Date.UTC(anio, numMes - 1 + delta, 1));
     router.push(`/admin/gastos?mes=${d.toISOString().slice(0, 7)}`);
@@ -177,7 +183,7 @@ export function GastosPanel({
       const { leerDocumento } = await import("@/lib/gastos/documento");
       const doc = await leerDocumento(file, setLeyendo);
       const r = leerGasto(doc.cajas, { memoria: proveedores, propios });
-      setEditando(deLectura(r, doc.jpeg, doc.ms));
+      setEditando(deLectura(r, doc));
     } catch (e) {
       setAviso({ tono: "error", texto: e instanceof Error ? `No se ha podido leer: ${e.message}` : "No se ha podido leer el documento." });
     } finally {
@@ -298,10 +304,17 @@ export function GastosPanel({
           inicial={editando}
           proveedores={proveedores}
           onClose={() => setEditando(null)}
-          onGuardado={(texto) => {
+          onGuardado={(texto, fecha) => {
             setEditando(null);
-            setAviso({ tono: "ok", texto });
-            router.refresh();
+            // Un gasto de otro mes (la fecha es la del documento) no saldría
+            // en el que se está viendo: se va a su mes.
+            if (fecha && fecha.slice(0, 7) !== mes) {
+              setAviso({ tono: "ok", texto: `${texto} Está en ${nombreDeMes(fecha)}, que es la fecha del documento.` });
+              router.push(`/admin/gastos?mes=${fecha.slice(0, 7)}`);
+            } else {
+              setAviso({ tono: "ok", texto });
+              router.refresh();
+            }
           }}
         />
       ) : null}
@@ -411,7 +424,7 @@ function EditorGasto({
   inicial: Borrador;
   proveedores: ProveedorGasto[];
   onClose: () => void;
-  onGuardado: (texto: string) => void;
+  onGuardado: (texto: string, fecha?: string) => void;
 }) {
   const [b, setB] = useState(inicial);
   const [error, setError] = useState<string | null>(null);
@@ -419,6 +432,11 @@ function EditorGasto({
   const [imagen, setImagen] = useState<string | null>(null);
   const [verTexto, setVerTexto] = useState(false);
   const set = (p: Partial<Borrador>) => setB((x) => ({ ...x, ...p }));
+  // El punto de color junto a cada casilla, solo si ese dato está marcado en la foto.
+  const marcados = useMemo(() => new Set(b.marcas?.m.map(([k]) => k)), [b.marcas]);
+  const m = (k: TipoMarca) => (marcados.has(k) ? k : undefined);
+  // Lo leído de un documento de otro mes no sale en el mes actual: se avisa.
+  const fueraDeMes = !!b.leido && b.fecha.slice(0, 7) !== hoy().slice(0, 7);
 
   // Vista previa: la foto recién leída o, al editar, un enlace temporal.
   useEffect(() => {
@@ -491,11 +509,11 @@ function EditorGasto({
       documento_path,
       proveedor_leido: b.leido?.proveedorLeido ?? null,
       ocr_texto: texto ? texto.join("\n") : null,
-      ocr_lectura: b.leido ? { ...lectura, ms: b.ms } : null,
+      ocr_lectura: b.leido ? { ...lectura, ms: b.ms, marcas: b.marcas ?? null } : null,
     });
     setGuardando(false);
     if (!r.ok) return setError(r.error);
-    onGuardado(b.id ? "Gasto actualizado." : "Gasto guardado. El lector ya recuerda a este proveedor.");
+    onGuardado(b.id ? "Gasto actualizado." : "Gasto guardado. El lector ya recuerda a este proveedor.", b.fecha);
   };
 
   const eliminar = async () => {
@@ -513,18 +531,18 @@ function EditorGasto({
       <div className={imagen ? "grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]" : "grid gap-5"}>
         {imagen ? (
           <div className="lg:sticky lg:top-0 lg:max-h-[78svh] lg:overflow-auto">
-            {/* eslint-disable-next-line @next/next/no-img-element -- blob: o enlace firmado temporal */}
-            <img src={imagen} alt="Documento del gasto" className="w-full rounded-xl border border-carbon/10 bg-white dark:border-crema/10" />
+            <FotoMarcada src={imagen} marcas={b.marcas ?? null} />
           </div>
         ) : null}
         <div className="grid content-start gap-4">
           {b.leido ? (
             <Aviso tono="info">
-              Leído en el dispositivo{b.ms ? ` en ${(b.ms / 1000).toFixed(1)} s` : ""}. Revisa los datos con la foto: lo que corrijas lo aprende para la próxima vez.
+              Leído en el dispositivo{b.ms ? ` en ${(b.ms / 1000).toFixed(1)} s` : ""}. Los colores de la foto marcan de dónde sale cada dato: revísalos y lo que
+              corrijas lo aprende para la próxima vez.
             </Aviso>
           ) : null}
           <div className="grid gap-3 sm:grid-cols-2">
-            <Campo label="Proveedor">
+            <Campo label={<Etiqueta tipo={m("proveedor")}>Proveedor</Etiqueta>}>
               <input list="gastos-proveedores" value={b.proveedor} onChange={(e) => elegirProveedor(e.target.value)} className={input} />
               <datalist id="gastos-proveedores">
                 {proveedores.map((p) => (
@@ -532,7 +550,7 @@ function EditorGasto({
                 ))}
               </datalist>
             </Campo>
-            <Campo label="CIF / NIF">
+            <Campo label={<Etiqueta tipo={m("cif")}>CIF / NIF</Etiqueta>}>
               <input value={b.cif} onChange={(e) => set({ cif: e.target.value.toUpperCase() })} className={input} />
             </Campo>
             <Campo label="Tipo">
@@ -544,10 +562,10 @@ function EditorGasto({
                 ))}
               </select>
             </Campo>
-            <Campo label="Número">
+            <Campo label={<Etiqueta tipo={m("numero")}>Número</Etiqueta>}>
               <input value={b.numero} onChange={(e) => set({ numero: e.target.value })} className={input} />
             </Campo>
-            <Campo label="Fecha">
+            <Campo label={<Etiqueta tipo={m("fecha")}>Fecha</Etiqueta>} ayuda={fueraDeMes ? `Se apuntará en ${nombreDeMes(b.fecha)}. Cámbiala si el gasto es de otro día.` : undefined}>
               <input type="date" value={b.fecha} onChange={(e) => set({ fecha: e.target.value })} className={input} />
             </Campo>
             <Campo label="Categoría">
@@ -559,7 +577,7 @@ function EditorGasto({
                 ))}
               </select>
             </Campo>
-            <Campo label="Total (€)" ayuda="Negativo si es un abono.">
+            <Campo label={<Etiqueta tipo={m("total")}>Total (€)</Etiqueta>} ayuda="Negativo si es un abono.">
               <input inputMode="decimal" value={b.total} onChange={(e) => set({ total: e.target.value })} className={`${input} font-semibold`} />
             </Campo>
             <Campo label="Forma de pago">
@@ -575,7 +593,9 @@ function EditorGasto({
           </div>
 
           <fieldset className="grid gap-2">
-            <legend className="text-sm font-semibold">Desglose de IVA</legend>
+            <legend className="text-sm font-semibold">
+              <Etiqueta tipo={m("iva")}>Desglose de IVA</Etiqueta>
+            </legend>
             {b.iva.map((i, k) => (
               <div key={k} className="grid grid-cols-[5rem_1fr_1fr_auto] items-center gap-2">
                 <input aria-label="Tipo de IVA (%)" inputMode="decimal" value={i.tipo} onChange={(e) => ivaCambia(k, { tipo: e.target.value })} className={input} />
@@ -599,6 +619,14 @@ function EditorGasto({
           <details open={b.lineas.length > 0 && b.lineas.length <= 12} className="grid gap-2">
             <summary className="cursor-pointer text-sm font-semibold">Líneas ({b.lineas.length})</summary>
             <div className="mt-2 grid gap-2">
+              {b.lineas.length && b.marcas ? (
+                <div className="grid grid-cols-[minmax(0,1fr)_4.5rem_5.5rem_5.5rem_2.25rem] gap-1.5 text-xs font-semibold text-carbon-muted dark:text-crema/60">
+                  <Etiqueta tipo={m("producto")}>Concepto</Etiqueta>
+                  <Etiqueta tipo={m("cantidad")}>Cant.</Etiqueta>
+                  <Etiqueta tipo={m("precio")}>Precio</Etiqueta>
+                  <Etiqueta tipo={m("importe")}>Importe</Etiqueta>
+                </div>
+              ) : null}
               {b.lineas.map((l, k) => (
                 <div key={k} className="grid grid-cols-[minmax(0,1fr)_4.5rem_5.5rem_5.5rem_auto] items-center gap-1.5">
                   <input aria-label="Concepto" value={l.texto} onChange={(e) => lineaCambia(k, { texto: e.target.value })} className={`${input} px-2 text-sm`} />

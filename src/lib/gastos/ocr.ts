@@ -321,11 +321,15 @@ function leerNumero(filas: string[], tipo: TipoGasto): string | null {
       l.match(new RegExp(String.raw`\bn[º°o.]{1,2}\s*(?:de\s+)?(?:factura|doc(?:umento)?\.?|ticket)?\s*:?\s*(${NUM_DOC})`, "i"));
     if (m?.[1] && !leerFecha(m[1])) return m[1].replace(/\s+/g, " ").trim();
   }
-  // El nº debajo de los títulos («NÚMERO  FECHA  CLIENTE» → «21779  15/10/2026  …»).
+  // El nº debajo de los títulos («NÚMERO  FECHA  CLIENTE» → «21779  15/10/2026  …»,
+  // «Nº Albarán  Fecha Albarán» → «A / 129  28-04-2023»).
   for (let i = 0; i + 1 < filas.length; i++) {
     const cab = filas[i]!;
-    if (/\d/.test(cab) || !/\bn[uú]mero\b|\bn[º°]\b/i.test(cab) || !/\bfecha\b/i.test(cab)) continue;
-    const n = filas[i + 1]!.split(/\s+/).find((t) => /^[A-Z]{0,3}\d{3,}$/.test(t));
+    if (/\d/.test(cab) || !/\bn[uú]mero\b|\bn[º°]\.?(?=\s|$)/i.test(cab) || !/\bfecha\b/i.test(cab)) continue;
+    const debajo = filas[i + 1]!;
+    const serie = debajo.match(/(?:^|\s)([A-Z]{1,3}\s?[/-]\s?\d{2,})(?=\s|$)/);
+    if (serie && !leerFecha(serie[1]!)) return serie[1]!.replace(/\s+/g, " ").trim();
+    const n = debajo.split(/\s+/).find((t) => /^[A-Z]{0,3}\d{3,}$/.test(t));
     if (n) return n;
   }
   return null;

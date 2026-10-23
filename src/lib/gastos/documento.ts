@@ -17,6 +17,9 @@ export type EstadoLectura = "preparando" | "cargando-lector" | "leyendo";
 export interface DocumentoLeido {
   cajas: OcrCaja[];
   jpeg: Blob;
+  // Tamaño del lienzo en el que están las posiciones de las cajas.
+  ancho: number;
+  alto: number;
   ms: number;
   origen: "foto" | "pdf-texto" | "pdf-escaneado";
 }
@@ -215,7 +218,7 @@ async function leerPdf(file: File, estado: (e: EstadoLectura) => void): Promise<
   const jpeg = await aJpeg(reducir(total, Math.max(LADO_GUARDADO, Math.min(total.height, 1400 * paginas.length))));
 
   const letras = cajas.reduce((t, c) => t + c.text.replace(/\s/g, "").length, 0);
-  if (letras >= 30) return { cajas, jpeg, ms: 0, origen: "pdf-texto" };
+  if (letras >= 30) return { cajas, jpeg, ancho: total.width, alto: total.height, ms: 0, origen: "pdf-texto" };
 
   // Escaneado: OCR página a página, con la posición desplazada.
   estado(listo ? "leyendo" : "cargando-lector");
@@ -229,7 +232,7 @@ async function leerPdf(file: File, estado: (e: EstadoLectura) => void): Promise<
     ms += r.ms;
     dy += p.height;
   }
-  return { cajas: leidas, jpeg, ms, origen: "pdf-escaneado" };
+  return { cajas: leidas, jpeg, ancho: total.width, alto: total.height, ms, origen: "pdf-escaneado" };
 }
 
 export async function leerDocumento(file: File, estado: (e: EstadoLectura) => void = () => {}): Promise<DocumentoLeido> {
@@ -246,5 +249,5 @@ export async function leerDocumento(file: File, estado: (e: EstadoLectura) => vo
   const jpeg = await aJpeg(reducir(recto, LADO_GUARDADO));
   estado(listo ? "leyendo" : "cargando-lector");
   const r = await ocr(recto);
-  return { cajas: r.cajas, jpeg, ms: r.ms, origen: "foto" };
+  return { cajas: r.cajas, jpeg, ancho: recto.width, alto: recto.height, ms: r.ms, origen: "foto" };
 }

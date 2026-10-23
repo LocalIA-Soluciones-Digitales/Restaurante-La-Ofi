@@ -45,7 +45,7 @@ export function Cifra({ label, valor, icon, tono = "neutro" }: { label: string; 
   );
 }
 
-export function Campo({ label, children, ayuda }: { label: string; children: ReactNode; ayuda?: string }) {
+export function Campo({ label, children, ayuda }: { label: ReactNode; children: ReactNode; ayuda?: ReactNode }) {
   return (
     <label className="grid gap-1.5 text-sm">
       <span className="font-semibold">{label}</span>
