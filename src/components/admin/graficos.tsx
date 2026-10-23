@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { card } from "@/components/admin/ui";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { signoPct } from "@/lib/admin/analitica";
@@ -104,6 +104,20 @@ export function Progreso({ valor, objetivo, etiqueta }: { valor: number; objetiv
   );
 }
 
+/** Ancho real del contenedor en px, para dibujar el SVG sin escalar el texto. */
+function useAncho(inicial = 640) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [ancho, setAncho] = useState(inicial);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([e]) => e && setAncho(Math.round(e.contentRect.width)));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return [ref, ancho] as const;
+}
+
 export interface BarraPrevista {
   etiqueta: string;
   valor: number;
@@ -123,12 +137,15 @@ export interface BarraPrevista {
 export function BarrasPrevision({ titulo, datos, formato, media, alto = 200 }: { titulo: string; datos: BarraPrevista[]; formato: (v: number) => string; media?: number; alto?: number }) {
   const [activo, setActivo] = useState<number | null>(null);
   const max = Math.max(1, ...datos.map((d) => Math.max(d.valor, d.alto ?? 0, d.referencia ?? 0)), media ?? 0) * 1.08;
-  const ancho = Math.max(320, datos.length * 26);
+  const [caja, disponible] = useAncho();
+  const ancho = Math.max(320, disponible, datos.length * 12);
   const barra = ancho / Math.max(1, datos.length);
   const y = (v: number) => alto - (v / max) * (alto - 4);
   const rayado = `rayado-${useId().replace(/[^a-zA-Z0-9-]/g, "")}`;
   const hayPrevision = datos.some((d) => d.prevista);
-  const paso = Math.ceil(datos.length / 14);
+  // Una etiqueta cada `paso` barras para que nunca se pisen (≈6,5 px por carácter a 11 px).
+  const anchoEtiqueta = Math.max(0, ...datos.map((d) => d.etiqueta.length)) * 6.5 + 10;
+  const paso = Math.max(1, Math.ceil(anchoEtiqueta / barra));
 
   return (
     <figure className="relative">
@@ -153,8 +170,8 @@ export function BarrasPrevision({ titulo, datos, formato, media, alto = 200 }: {
       {datos.length === 0 ? (
         <p className="py-8 text-center text-sm opacity-60">Sin datos en este periodo.</p>
       ) : (
-        <div className="overflow-x-auto">
-          <svg viewBox={`0 0 ${ancho} ${alto + 22}`} className="h-auto w-full min-w-[320px]" role="img" aria-label={`${titulo}: gráfico de barras`}>
+        <div ref={caja} className="overflow-x-auto">
+          <svg viewBox={`0 0 ${ancho} ${alto + 22}`} width={ancho} height={alto + 22} className="block" role="img" aria-label={`${titulo}: gráfico de barras`}>
             <defs>
               <pattern id={rayado} patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
                 <line x1="0" y1="0" x2="0" y2="6" strokeWidth="2.5" className="stroke-marino/45 dark:stroke-neon/50" />
@@ -197,7 +214,7 @@ export function BarrasPrevision({ titulo, datos, formato, media, alto = 200 }: {
                   )}
                   {d.referencia ? <line x1={x} x2={x + w} y1={y(d.referencia)} y2={y(d.referencia)} strokeWidth="2" className={`stroke-ratan ${atenuar}`} /> : null}
                   {i % paso === 0 ? (
-                    <text x={x + w / 2} y={alto + 15} textAnchor="middle" fontSize="10" className="fill-carbon-muted dark:fill-crema/60">
+                    <text x={Math.min(ancho - anchoEtiqueta / 2, Math.max(anchoEtiqueta / 2, x + w / 2))} y={alto + 16} textAnchor="middle" fontSize="11" className="fill-carbon-muted dark:fill-crema/60">
                       {d.etiqueta}
                     </text>
                   ) : null}

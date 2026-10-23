@@ -398,7 +398,7 @@ export function VentasPanel() {
                   </Hallazgo>
                 ) : null}
                 {a.hayHistoria && a.mejorDiaSemana.media > 0 ? (
-                  <Hallazgo icon="calendar" titulo={`Los ${nombreDia(a.mejorDiaSemana.dia)}s son tu mejor día`}>
+                  <Hallazgo icon="calendar" titulo={`Los ${nombreDia(a.mejorDiaSemana.dia).replace(/([^s])$/, "$1s")} son tu mejor día`}>
                     Media de {formatCentimos(Math.round(a.mejorDiaSemana.media))} en las últimas {SEMANAS_HISTORIA} semanas
                     {a.peorDiaSemana && a.peorDiaSemana.dia !== a.mejorDiaSemana.dia ? `; el más flojo, ${nombreDia(a.peorDiaSemana.dia)} (${formatCentimos(Math.round(a.peorDiaSemana.media))}): buen día para una promoción.` : "."}
                   </Hallazgo>
