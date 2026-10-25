@@ -43,13 +43,13 @@ export function HoyEnLaOfi({ locale, menu, horario }: { locale: Locale; menu: Co
           {/* Vídeo del plato en bucle: llena el hueco con movimiento, no con más texto. */}
           <figure className="mt-12 hidden w-full max-w-[30rem] lg:block">
             <div className="relative aspect-[16/10] overflow-hidden rounded-2xl bg-noche">
-              <AmbientVideo video={VIDEOS.heroMediodia} />
+              <AmbientVideo video={VIDEOS.brasa} />
               <span className="absolute left-4 top-4 inline-flex items-center gap-2 rounded-full bg-noche/55 px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-crema backdrop-blur-md">
                 <span className="h-1.5 w-1.5 rounded-full bg-brasa motion-safe:animate-pulse" />
                 De la brasa
               </span>
             </div>
-            <figcaption className="mt-2 text-[0.68rem] text-carbon-muted">Pulpo a la brasa · {creditoVideo(VIDEOS.heroMediodia)}</figcaption>
+            <figcaption className="mt-2 text-[0.68rem] text-carbon-muted">Pescado y pimientos a la brasa · {creditoVideo(VIDEOS.brasa)}</figcaption>
           </figure>
         </div>
 

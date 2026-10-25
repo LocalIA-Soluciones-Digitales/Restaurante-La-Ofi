@@ -414,6 +414,12 @@
       animation-timeline: --reel;
       animation-range: contain 0% contain 62%;
     }
+    /* La foto se aleja un poco mientras se abre (profundidad). */
+    .reel-zoom {
+      animation: reel-zoom linear both;
+      animation-timeline: --reel;
+      animation-range: contain 0% contain 80%;
+    }
     .reel-l,
     .reel-r {
       animation-timeline: --reel;
@@ -473,6 +479,14 @@
   }
   to {
     clip-path: inset(0 0 round 0);
+  }
+}
+@keyframes reel-zoom {
+  from {
+    transform: scale(1.25);
+  }
+  to {
+    transform: scale(1);
   }
 }
 @keyframes reel-out-l {

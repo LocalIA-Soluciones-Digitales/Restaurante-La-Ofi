@@ -1,21 +1,21 @@
-import { AmbientVideo } from "@/components/media/AmbientVideo";
-import { creditoVideo, VIDEOS } from "@/lib/media";
+import { Photo } from "@/components/media/Photo";
 
 /**
- * Vídeo que crece con el scroll: la sección se ancla, un vídeo pequeño en el
- * centro se abre hasta ocupar toda la pantalla mientras la frase se separa hacia
- * los lados, y al final aparece el lema sobre el vídeo (CSS .reel-*, ligado al
- * scroll). Sin soporte o con "reducir movimiento": vídeo a pantalla completa con
- * el lema encima.
+ * Imagen que crece con el scroll: la sección se ancla, el comedor de día (foto
+ * del fotógrafo) se abre desde un óvalo central hasta la pantalla completa
+ * mientras la frase se separa y se aleja un poco, y al final aparece el lema
+ * (CSS .reel-*, ligado al scroll). El vídeo queda solo en el hero: de noche, el
+ * salón; aquí, el día. Sin soporte o con "reducir movimiento": foto entera y lema.
  */
 export function Declaracion() {
-  const video = VIDEOS.heroNoche;
   return (
     <section aria-labelledby="reel-title" className="reel bg-crema">
       <div className="reel-sticky relative h-[100svh] overflow-hidden">
         <div className="reel-media absolute inset-0 bg-noche">
-          <AmbientVideo video={video} threshold={0.05} />
-          <span aria-hidden="true" className="absolute inset-0 bg-noche/45" />
+          <div className="reel-zoom absolute inset-0">
+            <Photo img="comedorPanoramica" sizes="100vw" mobileBelow={768} decorative />
+          </div>
+          <span aria-hidden="true" className="absolute inset-0 bg-noche/50" />
         </div>
 
         {/* Columnas a cada lado del hueco del vídeo (30vw, el mismo del recorte inicial). */}
@@ -33,7 +33,6 @@ export function Declaracion() {
             </h2>
           </div>
         </div>
-        {creditoVideo(video) ? <p className="reel-end absolute bottom-4 right-5 text-[0.64rem] text-crema/60">{creditoVideo(video)}</p> : null}
       </div>
     </section>
   );

@@ -1,8 +1,10 @@
-import { LugarVisor } from "@/components/map/LugarVisor";
+import { MapEmbed } from "@/components/map/MapEmbed";
+import { Photo } from "@/components/media/Photo";
 import { Icon } from "@/components/ui/Icon";
 import { SectionRule } from "@/components/ui/SectionRule";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { agruparHorario, type HorarioResuelto } from "@/lib/horario";
+import { IMAGES } from "@/lib/images";
 import { SITE } from "@/lib/site";
 
 export function Horario({ horario }: { horario: HorarioResuelto }) {
@@ -40,6 +42,13 @@ export function Ubicacion({
       <div className="container-wide grid gap-12 lg:grid-cols-12 lg:gap-16">
         <div className="lg:col-span-5">
           <SectionRule as={headingLevel} id="ubicacion-title" title="Edificio 502 del Parque Tecnológico, en Derio" aside={<span>Cómo llegar</span>} />
+          {/* La fachada con la carpa, en franja baja: para reconocerlo al llegar. */}
+          <figure className="parallax relative mt-6 aspect-[16/6] overflow-hidden rounded-xl bg-papel-3">
+            <Photo img="terrazaCarpa" sizes="(min-width: 1024px) 38vw, 100vw" mobileBelow={0} priority={mapPriority} />
+            <figcaption className="absolute bottom-2.5 left-3 rounded-full bg-noche/55 px-2.5 py-1 text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-crema backdrop-blur-md">
+              Así se ve al llegar
+            </figcaption>
+          </figure>
           <p className="lead mt-6">
             Dentro del campus Zamudio-Derio del Parque Científico y Tecnológico de Bizkaia: se llega andando desde las
             oficinas, y en coche hay aparcamiento para 220 plazas.
@@ -53,9 +62,6 @@ export function Ubicacion({
                 <span className="block text-carbon">{SITE.address.street}</span>
                 <span className="block text-carbon-muted">
                   {SITE.address.postalCode} {SITE.address.locality}, {SITE.address.region}
-                </span>
-                <span className="mt-1 block text-sm text-carbon-muted">
-                  En Google Maps: <span className="font-mono text-[0.85rem]">74WM+54 Derio</span>
                 </span>
               </p>
             </div>
@@ -91,7 +97,7 @@ export function Ubicacion({
           </div>
         </div>
         <div className="lg:col-span-7">
-          <LugarVisor embedUrl={SITE.maps.embed} inicial={mapPriority ? "mapa" : "local"} priority={mapPriority} />
+          <MapEmbed image={IMAGES.mapa.src} alt={IMAGES.mapa.alt} embedUrl={SITE.maps.embed} priority={mapPriority} />
         </div>
       </div>
     </section>
