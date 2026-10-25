@@ -55,7 +55,7 @@ export default async function EspaciosPage({ params }: Params) {
             const accion = cta(e, locale);
             const par = i % 2 === 1;
             return (
-              <li key={e.id} className="grid gap-8 border-t border-tinta-line pt-10 lg:grid-cols-12 lg:items-center lg:gap-14">
+              <li key={e.id} id={e.id} className="scroll-mt-24 grid gap-8 border-t border-tinta-line pt-10 lg:grid-cols-12 lg:items-center lg:gap-14">
                 <div className={`lg:col-span-7 ${par ? "lg:order-2" : ""}`}>
                   {key ? (
                     <figure>

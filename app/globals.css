@@ -328,57 +328,36 @@
       animation-range: cover;
     }
 
-    /* Piezas que flotan a distinta velocidad (--f = recorrido). */
-    .float-y {
-      animation: float-y linear both;
-      animation-timeline: view();
-      animation-range: cover;
+    /* Frase que se ilumina palabra a palabra mientras la sección está anclada. */
+    .reveal-text {
+      height: 170vh;
+      view-timeline: --rt block;
     }
-
-    /* Filas de texto que se desplazan en sentidos opuestos con el scroll. */
-    .drift-l {
-      animation: drift-l linear both;
-      animation-timeline: view();
-      animation-range: cover;
-    }
-    .drift-r {
-      animation: drift-r linear both;
-      animation-timeline: view();
-      animation-range: cover;
-    }
-
-    /* Sección horizontal anclada (solo escritorio): el scroll vertical mueve la pista. */
     @media (min-width: 1024px) {
-      .hscroll {
-        height: 360vh;
-        view-timeline: --hs block;
+      .reveal-text {
+        height: 230vh;
       }
-      .hscroll-sticky {
-        position: sticky;
-        top: 0;
-        display: flex;
-        height: 100svh;
-        flex-direction: column;
-        justify-content: center;
-        overflow: hidden;
-      }
-      .hscroll-track {
-        width: max-content;
-        overflow: visible;
-        animation: hs-move linear both;
-        animation-timeline: --hs;
-        animation-range: contain 0% contain 100%;
-      }
-      .hscroll-bar {
-        transform-origin: left;
-        animation: rule-in linear both;
-        animation-timeline: --hs;
-        animation-range: contain 0% contain 100%;
-      }
+    }
+    .reveal-text-sticky {
+      position: sticky;
+      top: 0;
+      min-height: 100svh;
+    }
+    .rt-word {
+      animation: rt-on linear both;
+      animation-timeline: --rt;
     }
   }
 }
 
+@keyframes rt-on {
+  from {
+    opacity: 0.14;
+  }
+  to {
+    opacity: 1;
+  }
+}
 @keyframes wm-draw {
   to {
     stroke-dashoffset: 0;
@@ -458,38 +437,6 @@
   }
   to {
     transform: translateY(7%) scale(1.16);
-  }
-}
-@keyframes float-y {
-  from {
-    transform: translateY(var(--f, 60px));
-  }
-  to {
-    transform: translateY(calc(var(--f, 60px) * -1));
-  }
-}
-@keyframes drift-l {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-28%);
-  }
-}
-@keyframes drift-r {
-  from {
-    transform: translateX(-28%);
-  }
-  to {
-    transform: translateX(0);
-  }
-}
-@keyframes hs-move {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(calc(-100% + 100vw));
   }
 }
 
