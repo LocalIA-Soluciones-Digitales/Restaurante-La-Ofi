@@ -16,7 +16,7 @@ import { pageMetadata } from "@/lib/seo";
 import { SITE } from "@/lib/site";
 
 // El menú del día cambia a diario: se regenera como mucho cada 5 minutos.
-export const revalidate = 300;
+export const revalidate = 3600;
 
 type Params = { params: Promise<{ locale: Locale }> };
 

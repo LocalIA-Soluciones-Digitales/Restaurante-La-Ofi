@@ -8,7 +8,7 @@ import type { Locale } from "@/lib/i18n";
 import { getHorario } from "@/lib/restaurant/queries";
 import { pageMetadata } from "@/lib/seo";
 
-export const revalidate = 300;
+export const revalidate = 3600;
 
 type Params = { params: Promise<{ locale: Locale }> };
 

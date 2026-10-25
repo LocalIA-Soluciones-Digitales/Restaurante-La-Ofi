@@ -16,7 +16,7 @@ import { pageMetadata } from "@/lib/seo";
 import { SITE } from "@/lib/site";
 
 // La agenda de eventos cambia desde /admin: se regenera como mucho cada 5 minutos.
-export const revalidate = 300;
+export const revalidate = 86400;
 
 type Params = { params: Promise<{ locale: Locale }> };
 

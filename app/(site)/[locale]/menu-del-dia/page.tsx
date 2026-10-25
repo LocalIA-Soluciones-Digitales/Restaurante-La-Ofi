@@ -13,7 +13,7 @@ import { getHorario } from "@/lib/restaurant/queries";
 import { pageMetadata } from "@/lib/seo";
 import { SITE } from "@/lib/site";
 
-export const revalidate = 300;
+export const revalidate = 3600;
 
 type Params = { params: Promise<{ locale: Locale }> };
 
