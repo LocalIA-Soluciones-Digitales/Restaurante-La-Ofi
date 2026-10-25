@@ -113,12 +113,16 @@ export const AYUDA: Record<string, AyudaSeccion> = {
       "Publícalo cuando esté listo.",
     ],
   },
-  "/admin/ventas": {
-    resumen: "Cómo va el negocio: ventas por día y por hora, productos, camareros, tipo de pedido, método de cobro y uso de las mesas.",
+  "/admin/contabilidad": {
+    resumen: "Ventas y gastos juntos. «Resumen» cruza el mes: lo vendido, lo gastado, la diferencia y el IVA soportado. «Ventas» son los informes (por día, hora, producto, camarero y mesa). «Gastos» guarda albaranes, facturas y tickets.",
     pasos: [
-      "Elige el periodo.",
-      "Revisa las gráficas (cada una tiene su tabla).",
-      "Exporta a CSV o imprime el informe en A4.",
+      "En «Resumen», elige el mes con las flechas.",
+      "En «Ventas», elige el periodo, revisa las gráficas y exporta a CSV o imprime el informe.",
+      "En «Gastos», pulsa «Hacer foto» (o sube una foto o un PDF), revisa proveedor, fecha, total e IVA con la foto al lado y guarda.",
+    ],
+    consejos: [
+      "El lector de gastos reconoce al proveedor por su CIF la próxima vez y le pone su categoría.",
+      "Exporta los gastos del mes en CSV para la gestoría.",
     ],
   },
   "/admin/caja": {
@@ -129,15 +133,6 @@ export const AYUDA: Record<string, AyudaSeccion> = {
       "Revisa el descuadre y cierra. Se puede imprimir el arqueo.",
     ],
     consejos: ["Los cierres anteriores quedan en el historial de abajo."],
-  },
-  "/admin/gastos": {
-    resumen: "Albaranes, facturas y tickets de proveedores. El lector los lee en el propio dispositivo y aprende de lo que corriges.",
-    pasos: [
-      "Pulsa «Hacer foto» (o sube una foto o un PDF). La primera vez descarga el lector; después va directo.",
-      "Revisa proveedor, fecha, total e IVA con la foto al lado y guarda.",
-      "La próxima vez reconoce al proveedor por su CIF y le pone su categoría.",
-    ],
-    consejos: ["Exporta el mes en CSV para la gestoría."],
   },
   "/admin/fidelizacion": {
     resumen: "Premios para clientes habituales. Viene apagada: al activarla, las reservas reconocen al cliente por su teléfono y cada N visitas se le concede un premio.",
@@ -162,13 +157,6 @@ export const AYUDA: Record<string, AyudaSeccion> = {
     pasos: [
       "Revisa cada bloque y guarda.",
       "El horario que pongas aquí sustituye al publicado en la web.",
-    ],
-  },
-  "/admin/staff": {
-    resumen: "Las cuentas del equipo y su rol (administración, encargado/a, sala, cocina). El rol decide qué menús ve cada persona.",
-    pasos: [
-      "Da de alta a la persona con su email y rol.",
-      "Para que deje de entrar, dala de baja: su historial se conserva.",
     ],
   },
 };

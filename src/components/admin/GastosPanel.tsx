@@ -172,7 +172,7 @@ export function GastosPanel({
   const nombreMes = nombreDeMes(mes);
   const irMes = (delta: number) => {
     const d = new Date(Date.UTC(anio, numMes - 1 + delta, 1));
-    router.push(`/admin/gastos?mes=${d.toISOString().slice(0, 7)}`);
+    router.push(`/admin/contabilidad?vista=gastos&mes=${d.toISOString().slice(0, 7)}`);
   };
 
   const escanear = async (file: File | undefined) => {
@@ -254,7 +254,7 @@ export function GastosPanel({
       ) : null}
       {aviso ? <Aviso tono={aviso.tono}>{aviso.texto}</Aviso> : null}
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
         <Cifra label="Gastos del mes" valor={formatCentimos(total)} icon="receipt" />
         <Cifra label="IVA soportado" valor={formatCentimos(iva)} icon="tag" />
         <Cifra label="Documentos" valor={gastos.length} icon="grid" />
@@ -310,7 +310,7 @@ export function GastosPanel({
             // en el que se está viendo: se va a su mes.
             if (fecha && fecha.slice(0, 7) !== mes) {
               setAviso({ tono: "ok", texto: `${texto} Está en ${nombreDeMes(fecha)}, que es la fecha del documento.` });
-              router.push(`/admin/gastos?mes=${fecha.slice(0, 7)}`);
+              router.push(`/admin/contabilidad?vista=gastos&mes=${fecha.slice(0, 7)}`);
             } else {
               setAviso({ tono: "ok", texto });
               router.refresh();

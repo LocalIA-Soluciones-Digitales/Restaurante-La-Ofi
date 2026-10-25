@@ -104,7 +104,7 @@ app/
     espacios/ empresas/ menu-del-dia/ eventos/ galeria/ contacto/ legales
   (internal)/admin/           raíz independiente (PWA), login y panel por roles:
     Hoy · Salón (2D/3D) · TPV · Cocina y barra (KDS) · Reservas · Menú del día · Carta ·
-    Eventos · Ventas · Caja · Mesas y QR · Equipo · Configuración · Fidelización y Reseñas (apagadas)
+    Eventos · Caja · Contabilidad (resumen, ventas, gastos) · Mesas y QR · Configuración · Fidelización y Reseñas (apagadas)
   api/stripe/{checkout,checkout-participante,webhook}   pagos (confirmación SOLO por webhook)
   api/ticketbai/emitir        andamiaje: 503 salvo TICKETBAI_ENABLED=true
 middleware.ts                 /x → /es/x (conserva la query de los QR); sesión de /admin
@@ -160,7 +160,7 @@ Procedencia del contenido (`ContentState`): `real` (Supabase) → `demo` (solo c
 1. ~~Aplicar las migraciones del rediseño~~ (hecho el 2026-10-02).
 2. Variables en Vercel: `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
    (webhook en `/api/stripe/webhook`).
-3. Dar de alta al staff desde `/admin/staff` (o el dashboard de Supabase) y crear mesas y QR.
+3. Dar de alta al staff desde el dashboard de Supabase (Auth + `laofi.staff`) y crear mesas y QR.
 4. Contenido real del restaurante: ver `CONTENT_NEEDED.md`.
 5. TicketBAI: ver `src/lib/ticketbai/README.md`.
 

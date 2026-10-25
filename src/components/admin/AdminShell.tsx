@@ -130,7 +130,7 @@ export function AdminShell({ nombre, rol, local, children }: { nombre: string; r
       </aside>
       {abierto ? <div className="fixed inset-0 z-30 bg-carbon/50 lg:hidden" onClick={() => setAbierto(false)} aria-hidden="true" /> : null}
 
-      <div className="flex min-w-0 flex-1 flex-col lg:pl-60 print:pl-0">
+      <div className="flex min-w-0 flex-1 flex-col overflow-x-clip lg:pl-60 print:pl-0">
         {/* En cocina la pantalla es siempre oscura (KDS): la cabecera la acompaña. */}
         <header
           data-theme={pathname.startsWith("/admin/cocina") ? "dark" : undefined}

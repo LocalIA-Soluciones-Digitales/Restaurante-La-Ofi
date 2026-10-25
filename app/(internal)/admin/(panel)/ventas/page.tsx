@@ -1,15 +1,6 @@
-import type { Metadata } from "next";
-import { VentasPanel } from "@/components/admin/VentasPanel";
-import { Cabecera } from "@/components/admin/ui";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = { title: "Ventas e informes" };
-export const dynamic = "force-dynamic";
-
+/** Ventas e informes vive ahora en Contabilidad; se mantiene la ruta para enlaces y marcadores antiguos. */
 export default function VentasAdmin() {
-  return (
-    <>
-      <Cabecera titulo="Ventas e informes" texto="Qué se vende, cuándo y quién lo vende. Exporta a CSV o imprime el informe en PDF." />
-      <VentasPanel />
-    </>
-  );
+  redirect("/admin/contabilidad?vista=ventas");
 }

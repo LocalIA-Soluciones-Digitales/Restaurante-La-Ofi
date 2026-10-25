@@ -33,13 +33,11 @@ export const SECCIONES: Seccion[] = [
   { href: "/admin/menu-del-dia", label: "Menú del día", icon: "sun", roles: GESTION, grupo: "gestion" },
   { href: "/admin/carta", label: "Carta", icon: "utensils", roles: GESTION, grupo: "gestion" },
   { href: "/admin/eventos", label: "Eventos", icon: "music", roles: GESTION, grupo: "gestion" },
-  { href: "/admin/ventas", label: "Ventas e informes", icon: "chart", roles: GESTION, grupo: "gestion" },
   { href: "/admin/caja", label: "Cierre de caja", icon: "receipt", roles: GESTION, grupo: "gestion" },
-  { href: "/admin/gastos", label: "Gastos", icon: "tag", roles: GESTION, grupo: "gestion" },
+  { href: "/admin/contabilidad", label: "Contabilidad", icon: "chart", roles: GESTION, grupo: "gestion" },
   { href: "/admin/fidelizacion", label: "Fidelización", icon: "gift", roles: GESTION, grupo: "gestion" },
   { href: "/admin/mesas", label: "Mesas y QR", icon: "qr", roles: GESTION, grupo: "ajustes" },
   { href: "/admin/configuracion", label: "Configuración", icon: "settings", roles: ["admin"], grupo: "ajustes" },
-  { href: "/admin/staff", label: "Equipo", icon: "briefcase", roles: ["admin"], grupo: "ajustes" },
 ];
 
 export function puedeVer(rol: Rol | null | undefined, href: string): boolean {

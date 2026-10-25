@@ -191,30 +191,35 @@ export function VentasPanel() {
 
   return (
     <div className="grid gap-4">
-      <div className="flex flex-wrap items-end gap-2 print:hidden">
-        {PRESETS.map((p) => (
-          <button
-            key={p.label}
-            type="button"
-            aria-pressed={hasta === hoy && desde === sumarDias(hoy, -p.dias)}
-            onClick={() => {
-              setHasta(hoy);
-              setDesde(sumarDias(hoy, -p.dias));
-            }}
-            className={`${botonSecundario} aria-pressed:border-marino aria-pressed:bg-marino aria-pressed:text-crema dark:aria-pressed:border-neon dark:aria-pressed:bg-neon dark:aria-pressed:text-noche`}
-          >
-            {p.label}
-          </button>
-        ))}
-        <label className="grid gap-1 text-xs">
-          Desde
-          <input type="date" value={desde} max={hasta} onChange={(e) => e.target.value && setDesde(e.target.value)} className={`${input} w-40`} />
-        </label>
-        <label className="grid gap-1 text-xs">
-          Hasta
-          <input type="date" value={hasta} min={desde} onChange={(e) => e.target.value && setHasta(e.target.value)} className={`${input} w-40`} />
-        </label>
-        <div className="ml-auto flex flex-wrap gap-2">
+      {/* En móvil: periodos en cuatro columnas iguales, fechas a medias y exportaciones repartidas (antes se montaban unas sobre otras). */}
+      <div className="grid gap-2 print:hidden lg:flex lg:flex-wrap lg:items-end">
+        <div className="grid grid-cols-4 gap-2 lg:flex">
+          {PRESETS.map((p) => (
+            <button
+              key={p.label}
+              type="button"
+              aria-pressed={hasta === hoy && desde === sumarDias(hoy, -p.dias)}
+              onClick={() => {
+                setHasta(hoy);
+                setDesde(sumarDias(hoy, -p.dias));
+              }}
+              className={`${botonSecundario} max-sm:px-1 aria-pressed:border-marino aria-pressed:bg-marino aria-pressed:text-crema dark:aria-pressed:border-neon dark:aria-pressed:bg-neon dark:aria-pressed:text-noche`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+        <div className="grid grid-cols-2 gap-2 lg:flex">
+          <label className="grid gap-1 text-xs">
+            Desde
+            <input type="date" value={desde} max={hasta} onChange={(e) => e.target.value && setDesde(e.target.value)} className={`${input} lg:w-40`} />
+          </label>
+          <label className="grid gap-1 text-xs">
+            Hasta
+            <input type="date" value={hasta} min={desde} onChange={(e) => e.target.value && setHasta(e.target.value)} className={`${input} lg:w-40`} />
+          </label>
+        </div>
+        <div className="flex flex-wrap gap-2 max-lg:[&>*]:grow lg:ml-auto">
           <button
             type="button"
             disabled={!v}
@@ -604,36 +609,39 @@ export function VentasPanel() {
                     <Cifra label="Comensales" valor={o.resumen.comensales} icon="utensils" />
                     <Cifra label="Gasto por comensal" valor={formatCentimos(o.resumen.comensales ? Math.round((o.resumen.importe_medio_centimos * o.resumen.ocupaciones) / o.resumen.comensales) : 0)} icon="cash" />
                   </div>
-                  <table className="mt-4 w-full text-sm">
-                    <thead>
-                      <tr className="text-left text-xs uppercase tracking-wider opacity-60">
-                        <th className="pb-2">Zona</th>
-                        <th className="pb-2 text-right">Mesas</th>
-                        <th className="pb-2 text-right">Servidas</th>
-                        <th className="pb-2 text-right" title="Veces que se ocupa cada mesa al día, de media">
-                          Rotación/día
-                        </th>
-                        <th className="pb-2 text-right">Tiempo medio</th>
-                        <th className="pb-2 text-right">Importe medio</th>
-                        <th className="pb-2 text-right" title="Importe medio por mesa dividido entre su tiempo medio de ocupación">
-                          €/hora de mesa
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-carbon/10 dark:divide-crema/10">
-                      {o.por_zona.map((z) => (
-                        <tr key={z.zona}>
-                          <td className="py-1.5 font-semibold">{z.zona}</td>
-                          <td className="py-1.5 text-right tabular-nums">{z.mesas}</td>
-                          <td className="py-1.5 text-right tabular-nums">{z.ocupaciones}</td>
-                          <td className="py-1.5 text-right tabular-nums">{z.ocupaciones ? Number(z.rotacion).toLocaleString("es-ES", { maximumFractionDigits: 2 }) : "—"}</td>
-                          <td className="py-1.5 text-right tabular-nums">{z.ocupaciones ? duracion(z.minutos_medios) : "—"}</td>
-                          <td className="py-1.5 text-right tabular-nums">{z.ocupaciones ? formatCentimos(z.importe_medio_centimos) : "—"}</td>
-                          <td className="py-1.5 text-right tabular-nums">{z.ocupaciones && z.minutos_medios ? formatCentimos(Math.round((z.importe_medio_centimos * 60) / z.minutos_medios)) : "—"}</td>
+                  {/* Siete columnas no caben en un móvil: la tabla se desliza dentro de la tarjeta en vez de ensanchar la página. */}
+                  <div className="-mx-5 mt-4 overflow-x-auto px-5">
+                    <table className="w-full min-w-[40rem] whitespace-nowrap text-sm">
+                      <thead>
+                        <tr className="text-left text-xs uppercase tracking-wider opacity-60">
+                          <th className="pb-2">Zona</th>
+                          <th className="pb-2 text-right">Mesas</th>
+                          <th className="pb-2 text-right">Servidas</th>
+                          <th className="pb-2 text-right" title="Veces que se ocupa cada mesa al día, de media">
+                            Rotación/día
+                          </th>
+                          <th className="pb-2 text-right">Tiempo medio</th>
+                          <th className="pb-2 text-right">Importe medio</th>
+                          <th className="pb-2 text-right" title="Importe medio por mesa dividido entre su tiempo medio de ocupación">
+                            €/hora de mesa
+                          </th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-carbon/10 dark:divide-crema/10">
+                        {o.por_zona.map((z) => (
+                          <tr key={z.zona}>
+                            <td className="py-1.5 font-semibold">{z.zona}</td>
+                            <td className="py-1.5 text-right tabular-nums">{z.mesas}</td>
+                            <td className="py-1.5 text-right tabular-nums">{z.ocupaciones}</td>
+                            <td className="py-1.5 text-right tabular-nums">{z.ocupaciones ? Number(z.rotacion).toLocaleString("es-ES", { maximumFractionDigits: 2 }) : "—"}</td>
+                            <td className="py-1.5 text-right tabular-nums">{z.ocupaciones ? duracion(z.minutos_medios) : "—"}</td>
+                            <td className="py-1.5 text-right tabular-nums">{z.ocupaciones ? formatCentimos(z.importe_medio_centimos) : "—"}</td>
+                            <td className="py-1.5 text-right tabular-nums">{z.ocupaciones && z.minutos_medios ? formatCentimos(Math.round((z.importe_medio_centimos * 60) / z.minutos_medios)) : "—"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </>
               )}
             </section>
@@ -641,30 +649,32 @@ export function VentasPanel() {
 
           <section className={`${card} p-5 break-inside-avoid`}>
             <h2 className="font-display text-xl">Detalle por día</h2>
-            <table className="mt-3 w-full text-sm">
-              <thead>
-                <tr className="text-left text-xs uppercase tracking-wider opacity-60">
-                  <th className="pb-2">Día</th>
-                  <th className="pb-2 text-right">Pedidos</th>
-                  <th className="pb-2 text-right">Ventas</th>
-                  <th className="pb-2 text-right">Ticket medio</th>
-                  <th className="pb-2 text-right">vs media</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-carbon/10 dark:divide-crema/10">
-                {a.serie.map((d) => (
-                  <tr key={d.fecha}>
-                    <td className="py-1.5">
-                      {capital(nombreDia(diaSemana(d.fecha)))} {corta(d.fecha)}
-                    </td>
-                    <td className="py-1.5 text-right tabular-nums">{d.pedidos}</td>
-                    <td className="py-1.5 text-right tabular-nums">{formatCentimos(d.ventas)}</td>
-                    <td className="py-1.5 text-right tabular-nums">{d.pedidos ? formatCentimos(Math.round(d.ventas / d.pedidos)) : "—"}</td>
-                    <td className="py-1.5 text-right tabular-nums">{d.ventas && a.est.media ? signoPct(d.ventas / a.est.media - 1) : "—"}</td>
+            <div className="-mx-5 mt-3 overflow-x-auto px-5">
+              <table className="w-full min-w-[26rem] whitespace-nowrap text-sm">
+                <thead>
+                  <tr className="text-left text-xs uppercase tracking-wider opacity-60">
+                    <th className="pb-2">Día</th>
+                    <th className="pb-2 text-right">Pedidos</th>
+                    <th className="pb-2 text-right">Ventas</th>
+                    <th className="pb-2 text-right">Ticket medio</th>
+                    <th className="pb-2 text-right">vs media</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-carbon/10 dark:divide-crema/10">
+                  {a.serie.map((d) => (
+                    <tr key={d.fecha}>
+                      <td className="py-1.5">
+                        {capital(nombreDia(diaSemana(d.fecha)))} {corta(d.fecha)}
+                      </td>
+                      <td className="py-1.5 text-right tabular-nums">{d.pedidos}</td>
+                      <td className="py-1.5 text-right tabular-nums">{formatCentimos(d.ventas)}</td>
+                      <td className="py-1.5 text-right tabular-nums">{d.pedidos ? formatCentimos(Math.round(d.ventas / d.pedidos)) : "—"}</td>
+                      <td className="py-1.5 text-right tabular-nums">{d.ventas && a.est.media ? signoPct(d.ventas / a.est.media - 1) : "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </section>
         </div>
       ) : null}

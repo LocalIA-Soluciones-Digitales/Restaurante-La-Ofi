@@ -58,7 +58,7 @@ Sin variables de Supabase la web funciona igual: muestra contenido de ejemplo (s
 | `/es/pedir`, `/es/pedido/[id]` | Pedido en mesa por QR (cuenta compartida, "cada uno lo suyo"), recogida por franja, pedido de grupo; estado en vivo |
 | `/es/reservar` | Reserva online si está activada en `/admin/configuracion`; si no, teléfono |
 | `/es/espacios`, `/es/empresas` | Comedor, terraza y El Despacho; comidas de empresa |
-| `/admin` | Panel por roles: Hoy (servicio en vivo en una pantalla: atender ya, pedidos en marcha, próximas reservas), Salón 2D/3D, TPV, Cocina y barra, Reservas, Menú del día, Carta, Eventos, Ventas, Caja, Mesas y QR, Equipo, Configuración |
+| `/admin` | Panel por roles: Hoy (servicio en vivo en una pantalla: atender ya, pedidos en marcha, próximas reservas), Salón 2D/3D, TPV, Cocina y barra, Reservas, Menú del día, Carta, Eventos, Cierre de caja, Contabilidad (resumen del mes, ventas e informes, gastos), Fidelización, Mesas y QR, Configuración |
 | [`docs/manual/`](./docs/manual/) | Manual de servicio para el equipo (del QR al cierre de caja) con capturas reales: [`Manual-servicio-La-Ofi.pdf`](./docs/manual/Manual-servicio-La-Ofi.pdf) y su versión HTML. Se regenera con `python scripts/manual/generar.py`. En el panel, el botón «i» de cada pantalla explica esa sección |
 | `/es/menu-del-dia` | Menú del día (Supabase) |
 | `/es/eventos`, `/es/eventos/[slug]` | Eventos (Supabase) |
@@ -84,7 +84,7 @@ Todas documentadas en [`.env.example`](./.env.example).
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | opcional | Clave anon/publishable (Supabase → Project Settings → API) |
 | `LAOFI_SITE_KEY` (solo servidor, secreta) | opcional | `site_key` devuelto por el seed del tenant |
 
-| `SUPABASE_SERVICE_ROLE_KEY` (secreta) | — | Pagos con Stripe y alta de staff desde el panel |
+| `SUPABASE_SERVICE_ROLE_KEY` (secreta) | — | Pagos con Stripe |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` (secretas) | — | Pago online; sin ellas se paga en el local |
 | `TICKETBAI_*` | — | Apagado hasta tener certificado (ver `src/lib/ticketbai/README.md`) |
 | `LAOFI_PGLITE` | — | Solo desarrollo local (`npm run dev:local`). **Nunca** en Vercel |
