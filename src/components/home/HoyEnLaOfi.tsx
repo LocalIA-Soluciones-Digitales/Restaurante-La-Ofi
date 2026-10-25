@@ -1,10 +1,12 @@
 import Link from "next/link";
+import { AmbientVideo } from "@/components/media/AmbientVideo";
 import { Photo } from "@/components/media/Photo";
 import { MenuDelDia } from "@/components/menu/MenuDelDia";
 import { EstadoAhora } from "@/components/ui/EstadoAhora";
 import { Icon } from "@/components/ui/Icon";
 import { estadoAhora, type HorarioResuelto } from "@/lib/horario";
 import { href, type Locale } from "@/lib/i18n";
+import { creditoVideo, VIDEOS } from "@/lib/media";
 import type { ContentState, MenuDiaView } from "@/lib/restaurant/types";
 
 /**
@@ -37,6 +39,18 @@ export function HoyEnLaOfi({ locale, menu, horario }: { locale: Locale; menu: Co
             Ver con alérgenos
             <Icon name="arrow" className="h-4 w-4" />
           </Link>
+
+          {/* Vídeo del plato en bucle: llena el hueco con movimiento, no con más texto. */}
+          <figure className="mt-12 hidden w-full max-w-[30rem] lg:block">
+            <div className="relative aspect-[16/10] overflow-hidden rounded-2xl bg-noche">
+              <AmbientVideo video={VIDEOS.heroMediodia} />
+              <span className="absolute left-4 top-4 inline-flex items-center gap-2 rounded-full bg-noche/55 px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-crema backdrop-blur-md">
+                <span className="h-1.5 w-1.5 rounded-full bg-brasa motion-safe:animate-pulse" />
+                De la brasa
+              </span>
+            </div>
+            <figcaption className="mt-2 text-[0.68rem] text-carbon-muted">Pulpo a la brasa · {creditoVideo(VIDEOS.heroMediodia)}</figcaption>
+          </figure>
         </div>
 
         {/* La foto del comedor detrás y la tarjeta del menú montada encima. */}

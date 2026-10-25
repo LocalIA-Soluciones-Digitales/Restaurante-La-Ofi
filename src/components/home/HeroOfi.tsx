@@ -11,7 +11,6 @@ import { MOMENTOS_HERO } from "@/lib/home-content";
 import { creditoFoto, IMAGES } from "@/lib/images";
 import { creditoVideo, franjaDelDia, type Franja } from "@/lib/media";
 
-/** Retardo de entrada de cada pieza del hero (CSS .line-mask / .intro-up). */
 const d = (s: number) => ({ "--d": `${s}s` }) as CSSProperties;
 
 interface Props {
@@ -22,19 +21,28 @@ interface Props {
   labels: { verCarta: string; reservar: string };
 }
 
+/** Palabra cuyas letras suben una a una tras una máscara (CSS .char-up). */
+function Letras({ texto, desde, className = "" }: { texto: string; desde: number; className?: string }) {
+  return (
+    <span aria-hidden="true" className={`block overflow-hidden pb-[0.06em] ${className}`}>
+      {[...texto].map((c, i) => (
+        <span key={i} className="char-up inline-block" style={d(desde + i * 0.035)}>
+          {c}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 /**
- * Hero partido: la foto del momento del día a la izquierda y, a la derecha, un
- * panel oscuro con el titular grande (la última palabra calada) y una sola
- * acción principal. Al cargar, una cortina color brasa se retira y destapa la
- * foto, que se posa desde un ligero zoom; las líneas suben tras una máscara.
- * Con "reducir movimiento" todo aparece ya en su sitio.
+ * Hero a pantalla completa con el vídeo del momento del día y el titular
+ * centrado, letra a letra. Al hacer scroll el vídeo se recoge en una tarjeta con
+ * esquinas redondeadas (clip-path ligado al scroll) y el texto se retira.
  */
 export function HeroOfi({ franjaInicial, estadoInicial, semana, links, labels }: Props) {
   const [franja, setFranja] = useState<Franja>(franjaInicial);
-  // Vídeo solo en escritorio: en móvil la foto nítida carga antes y no gasta datos.
   const [conVideo, setConVideo] = useState(false);
   useEffect(() => setConVideo(window.matchMedia("(min-width: 1024px)").matches), []);
-  // La página se cachea: la franja real es la del reloj del visitante.
   useEffect(() => setFranja(franjaDelDia()), []);
 
   const actual = MOMENTOS_HERO.find((m) => m.franja === franja) ?? MOMENTOS_HERO[0]!;
@@ -43,57 +51,40 @@ export function HeroOfi({ franjaInicial, estadoInicial, semana, links, labels }:
   const pie = principal.kind === "ilustrativa" ? credito : [actual.pie, credito].filter(Boolean).join(" · ");
 
   return (
-    <section aria-labelledby="hero-title" data-header="light" className="relative isolate grid min-h-[100svh] bg-noche text-crema lg:grid-cols-12">
-      {/* Foto: cortina de entrada + zoom ligado al scroll */}
-      <div className="relative h-[56svh] overflow-hidden lg:col-span-7 lg:h-auto">
+    <section aria-labelledby="hero-title" data-header="light" className="relative isolate min-h-[100svh] bg-crema">
+      <div className="hero-frame absolute inset-0 overflow-hidden bg-noche">
         <div className="hero-zoom absolute inset-0">
           <div key={actual.franja} aria-hidden="true" className="hero-img-in absolute inset-0">
-            <Photo img={actual.principal} sizes="(min-width: 1024px) 58vw, 100vw" priority={actual.franja === franjaInicial} decorative quality={80} />
+            <Photo img={actual.principal} sizes="100vw" priority={actual.franja === franjaInicial} decorative quality={80} />
             {actual.video && conVideo ? (
               <div className="absolute inset-0">
-                <AmbientVideo video={actual.video} threshold={0.01} showPoster={false} afterLoadMs={1500} revealOnPlay />
+                <AmbientVideo video={actual.video} threshold={0.01} showPoster={false} afterLoadMs={1200} revealOnPlay />
               </div>
             ) : null}
           </div>
         </div>
-        <span aria-hidden="true" className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-noche/60 to-transparent" />
-        <span aria-hidden="true" className="hero-curtain absolute inset-0 bg-brasa" />
-        {pie ? <p className="absolute bottom-4 left-4 right-4 text-[0.66rem] leading-snug text-crema/75 sm:left-6">{pie}</p> : null}
+        <span aria-hidden="true" className="absolute inset-0 bg-noche/45" />
+        <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-noche/80 to-transparent" />
       </div>
 
-      {/* Panel de texto */}
-      <div className="hero-out relative flex flex-col justify-end px-5 pb-10 pt-10 sm:px-8 lg:col-span-5 lg:px-12 lg:pb-12 lg:pt-28 xl:px-16">
-        <div>
-          <p className="kicker intro-up text-ratan" style={d(0.55)}>
-            Parque Tecnológico de Bizkaia
-          </p>
-          <h1 id="hero-title" className="mt-5 font-display text-[clamp(3.1rem,1.6rem+4.6vw,6rem)] font-light leading-[0.95] tracking-[-0.03em]">
-            <span className="sr-only">La Ofi, restaurante en Derio: </span>
-            <span className="line-mask" style={d(0.65)}>
-              <span>Desayunar.</span>
-            </span>
-            <span className="line-mask" style={d(0.78)}>
-              <span>Comer.</span>
-            </span>
-            <span className="line-mask" style={d(0.91)}>
-              <span className="italic text-transparent [-webkit-text-stroke:1.2px_theme(colors.ratan)]">Quedarse.</span>
-            </span>
-          </h1>
-          <p className="intro-up mt-6 max-w-[26rem] text-[1.02rem] leading-relaxed text-crema/75" style={d(1.1)}>
-            Del primer café a la última copa, en el edificio 502 del Parque.
-          </p>
-          <div className="intro-up" style={d(1.2)}>
-            <EstadoAhora
-              semana={semana}
-              inicial={estadoInicial}
-              tone="light"
-              className="mt-6 rounded-full border border-crema/20 bg-noche-3/60 px-3.5 py-1.5 text-crema"
-            />
-          </div>
-          <div className="intro-up mt-9 flex flex-wrap items-center gap-x-7 gap-y-4" style={d(1.3)}>
-            <Link href={links.reservar} className="group inline-flex min-h-14 items-center gap-3 bg-crema px-7 font-display text-lg text-carbon transition-colors duration-300 hover:bg-white">
+      <div className="hero-out relative flex min-h-[100svh] flex-col items-center justify-center px-5 pb-28 pt-28 text-center text-crema">
+        <p className="kicker intro-up text-ratan" style={d(1.5)}>
+          Parque Tecnológico de Bizkaia · Derio
+        </p>
+        <h1 id="hero-title" className="mt-6 font-display text-[clamp(3.2rem,1.4rem+7vw,8.5rem)] font-light leading-[0.92] tracking-[-0.035em]">
+          <span className="sr-only">La Ofi, restaurante en Derio. Desayunar, comer, quedarse.</span>
+          <Letras texto="Desayunar." desde={1.55} />
+          <Letras texto="Comer." desde={1.85} />
+          <Letras texto="Quedarse." desde={2.05} className="italic text-ratan" />
+        </h1>
+        <div className="intro-up mt-10 flex flex-col items-center gap-5" style={d(2.5)}>
+          <EstadoAhora semana={semana} inicial={estadoInicial} tone="light" className="rounded-full border border-crema/25 bg-noche/40 px-3.5 py-1.5 text-crema backdrop-blur-md" />
+          <div className="flex flex-wrap items-center justify-center gap-x-7 gap-y-4">
+            <Link href={links.reservar} className="group inline-flex min-h-14 items-center gap-3 rounded-full bg-crema px-8 font-display text-lg text-carbon transition-[background-color,transform] duration-300 ease-out-expo hover:bg-white active:scale-[0.98]">
               {labels.reservar}
-              <Icon name="arrow" className="h-4 w-4 transition-transform duration-300 ease-out-expo group-hover:translate-x-1" />
+              <span className="grid h-8 w-8 place-items-center rounded-full bg-carbon text-crema transition-transform duration-300 ease-out-expo group-hover:translate-x-1">
+                <Icon name="arrow" className="h-4 w-4" />
+              </span>
             </Link>
             <Link href={links.menu} className="link-arrow text-crema decoration-crema/40 hover:decoration-crema">
               Menú de hoy
@@ -102,6 +93,16 @@ export function HeroOfi({ franjaInicial, estadoInicial, semana, links, labels }:
               {labels.verCarta}
             </Link>
           </div>
+        </div>
+
+        <div className="absolute inset-x-5 bottom-6 flex items-end justify-between gap-6 text-left sm:inset-x-8">
+          <span aria-hidden="true" className="intro-up hidden items-center gap-3 text-[0.68rem] uppercase tracking-[0.2em] text-crema/70 sm:flex" style={d(2.8)}>
+            <span className="relative block h-10 w-px overflow-hidden bg-crema/25">
+              <span className="absolute inset-x-0 top-0 h-1/2 bg-crema scroll-line" />
+            </span>
+            Desliza
+          </span>
+          {pie ? <p className="max-w-[26rem] text-right text-[0.66rem] leading-snug text-crema/65">{pie}</p> : null}
         </div>
       </div>
     </section>

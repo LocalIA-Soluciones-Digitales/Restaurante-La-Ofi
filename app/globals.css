@@ -307,19 +307,47 @@
     animation-delay: var(--d, 0s);
   }
 
-  /* Hero: una cortina color brasa se retira hacia arriba y destapa la foto,
-     que se posa desde un ligero zoom. */
-  .hero-curtain {
-    animation: curtain-up 1.15s cubic-bezier(0.77, 0, 0.175, 1) 0.15s both;
-  }
+  /* Hero: la foto se posa desde un ligero zoom mientras sube la entrada. */
   .hero-img-in {
-    animation: img-settle 1.8s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both;
+    animation: img-settle 2.2s cubic-bezier(0.16, 1, 0.3, 1) 0.9s both;
+  }
+
+  /* Entrada (GEM): el rótulo se dibuja y la cortina sube. Nunca captura clics. */
+  .intro-ofi {
+    animation: curtain-up 1s cubic-bezier(0.77, 0, 0.175, 1) 1.35s both;
+  }
+  .intro-ofi-sub {
+    animation: intro-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.5s both;
+  }
+
+  /* Titular del hero letra a letra, tras una máscara. */
+  .char-up {
+    animation: line-up 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: var(--d, 0s);
+  }
+
+  /* Indicador "Desliza": un trazo que recorre la línea. */
+  .scroll-line {
+    animation: scroll-line 1.8s cubic-bezier(0.77, 0, 0.175, 1) infinite;
   }
 }
 
-/* Sin animaciones (reducir movimiento) la cortina no debe tapar la foto. */
+/* Sin animaciones ligadas al scroll (o con "reducir movimiento") el vídeo de
+   la frase se ve entero con el lema: la frase partida no se monta encima. */
+@supports not (animation-timeline: view()) {
+  .reel-words {
+    display: none;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
-  .hero-curtain {
+  .reel-words {
+    display: none;
+  }
+}
+
+/* Con "reducir movimiento" no hay entrada que tape el hero. */
+@media (prefers-reduced-motion: reduce) {
+  .intro-ofi {
     display: none;
   }
 }
@@ -358,11 +386,51 @@
       animation-range: cover;
     }
 
-    /* Fotos intercaladas en una frase: se abren desde el centro al entrar
-       (el tramo de cada una va en línea, para escalonarlas). */
-    .pill-in {
-      animation: pill-in linear both;
-      animation-timeline: view();
+    /* Hero: al bajar, el vídeo se recoge en una tarjeta redondeada. */
+    .hero-frame {
+      animation: hero-shrink linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 90vh;
+    }
+
+    /* Vídeo que crece con el scroll: la sección se ancla, el vídeo se abre
+       desde un recorte central, la frase se separa y aparece el lema. */
+    .reel {
+      height: 280vh;
+      view-timeline: --reel block;
+    }
+    .reel-sticky {
+      position: sticky;
+      top: 0;
+      height: 100svh;
+    }
+    @media (max-width: 1023px) {
+      .reel-media {
+        animation-name: reel-grow-m !important;
+      }
+    }
+    .reel-media {
+      animation: reel-grow linear both;
+      animation-timeline: --reel;
+      animation-range: contain 0% contain 62%;
+    }
+    .reel-l,
+    .reel-r {
+      animation-timeline: --reel;
+      animation-range: contain 0% contain 55%;
+      animation-fill-mode: both;
+      animation-timing-function: linear;
+    }
+    .reel-l {
+      animation-name: reel-out-l;
+    }
+    .reel-r {
+      animation-name: reel-out-r;
+    }
+    .reel-end {
+      animation: reel-end linear both;
+      animation-timeline: --reel;
+      animation-range: contain 58% contain 80%;
     }
   }
 }
@@ -383,12 +451,58 @@
     transform: scale(1);
   }
 }
-@keyframes pill-in {
+@keyframes hero-shrink {
   from {
-    clip-path: inset(0 45% round 999px);
+    clip-path: inset(0 0 round 0);
   }
   to {
-    clip-path: inset(0 0 round 999px);
+    clip-path: inset(7% 3% 0 3% round 28px);
+  }
+}
+@keyframes reel-grow {
+  from {
+    clip-path: inset(32% 35% round 999px);
+  }
+  to {
+    clip-path: inset(0 0 round 0);
+  }
+}
+@keyframes reel-grow-m {
+  from {
+    clip-path: inset(37% 12% round 999px);
+  }
+  to {
+    clip-path: inset(0 0 round 0);
+  }
+}
+@keyframes reel-out-l {
+  to {
+    opacity: 0;
+    transform: translateX(-30vw);
+  }
+}
+@keyframes reel-out-r {
+  to {
+    opacity: 0;
+    transform: translateX(30vw);
+  }
+}
+@keyframes reel-end {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes scroll-line {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(200%);
   }
 }
 @keyframes wm-draw {

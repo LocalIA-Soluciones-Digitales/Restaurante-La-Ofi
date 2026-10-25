@@ -1,42 +1,40 @@
-import Link from "next/link";
-import { Photo } from "@/components/media/Photo";
-import { href, type Locale } from "@/lib/i18n";
-import type { ImageKey } from "@/lib/images";
+import { AmbientVideo } from "@/components/media/AmbientVideo";
+import { creditoVideo, VIDEOS } from "@/lib/media";
 
 /**
- * Una sola frase con fotos pequeñas del local intercaladas entre las palabras.
- * Cada foto se abre desde el centro al entrar en pantalla (CSS .pill-in,
- * clip-path ligado al scroll, escalonadas). Sin soporte se ven abiertas.
+ * Vídeo que crece con el scroll: la sección se ancla, un vídeo pequeño en el
+ * centro se abre hasta ocupar toda la pantalla mientras la frase se separa hacia
+ * los lados, y al final aparece el lema sobre el vídeo (CSS .reel-*, ligado al
+ * scroll). Sin soporte o con "reducir movimiento": vídeo a pantalla completa con
+ * el lema encima.
  */
-export function Declaracion({ locale }: { locale: Locale }) {
+export function Declaracion() {
+  const video = VIDEOS.heroNoche;
   return (
-    <section aria-labelledby="declaracion-title" className="section bg-crema">
-      <div className="container-wide flex flex-col items-center text-center">
-        <p className="kicker text-brasa">La Ofi</p>
-        <h2
-          id="declaracion-title"
-          className="title-in mt-8 max-w-[15em] font-display text-[clamp(2rem,0.9rem+4.4vw,5.2rem)] font-light leading-[1.14] tracking-[-0.025em] text-carbon"
-        >
-          Del primer café <Pastilla img="barra" orden={0} /> a la última copa <Pastilla img="terraza" orden={1} /> del viernes,{" "}
-          <em className="text-madera">a un paseo</em> <Pastilla img="comedorRatan" orden={2} /> de tu oficina.
-        </h2>
-        <Link href={href(locale, "/espacios")} className="btn-line mt-12 text-carbon">
-          <span>Conoce el local</span>
-          <span aria-hidden="true">→</span>
-        </Link>
+    <section aria-labelledby="reel-title" className="reel bg-crema">
+      <div className="reel-sticky relative h-[100svh] overflow-hidden">
+        <div className="reel-media absolute inset-0 bg-noche">
+          <AmbientVideo video={video} threshold={0.05} />
+          <span aria-hidden="true" className="absolute inset-0 bg-noche/45" />
+        </div>
+
+        {/* Columnas a cada lado del hueco del vídeo (30vw, el mismo del recorte inicial). */}
+        <p aria-hidden="true" className="reel-words relative grid h-full w-full grid-rows-[1fr_36svh_1fr] items-center px-5 text-center font-display text-[clamp(2.1rem,1rem+3vw,4.2rem)] font-light leading-[1.02] tracking-[-0.03em] text-carbon lg:grid-cols-[1fr_30vw_1fr] lg:grid-rows-1 lg:px-0">
+          <span className="reel-l self-end pb-6 lg:self-auto lg:pb-0 lg:pr-[2.5vw] lg:text-right">Del primer café</span>
+          <span />
+          <span className="reel-r self-start pt-6 italic text-madera lg:self-auto lg:pt-0 lg:pl-[2.5vw] lg:text-left">a la última copa</span>
+        </p>
+
+        <div className="reel-end absolute inset-0 grid place-items-center px-6 text-center text-crema">
+          <div>
+            <p className="kicker text-ratan">La Ofi</p>
+            <h2 id="reel-title" className="mt-5 max-w-[14em] font-display text-[clamp(2rem,1rem+3.6vw,4.6rem)] font-light leading-[1.08] tracking-[-0.02em]">
+              Durante el día, el restaurante del Parque. <em className="text-ratan">Cuando acaba la oficina, empieza La Ofi.</em>
+            </h2>
+          </div>
+        </div>
+        {creditoVideo(video) ? <p className="reel-end absolute bottom-4 right-5 text-[0.64rem] text-crema/60">{creditoVideo(video)}</p> : null}
       </div>
     </section>
-  );
-}
-
-function Pastilla({ img, orden }: { img: ImageKey; orden: number }) {
-  return (
-    <span
-      aria-hidden="true"
-      className="pill-in relative mx-[0.08em] inline-block h-[0.78em] w-[1.85em] -translate-y-[0.06em] overflow-hidden rounded-full bg-papel-3 align-middle"
-      style={{ animationRange: `entry ${20 + orden * 12}% cover ${42 + orden * 8}%` }}
-    >
-      <Photo img={img} sizes="10rem" mobileBelow={0} decorative />
-    </span>
   );
 }
