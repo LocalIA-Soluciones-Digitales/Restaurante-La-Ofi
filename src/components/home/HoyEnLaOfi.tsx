@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Photo } from "@/components/media/Photo";
 import { MenuDelDia } from "@/components/menu/MenuDelDia";
 import { EstadoAhora } from "@/components/ui/EstadoAhora";
 import { Icon } from "@/components/ui/Icon";
@@ -8,7 +9,7 @@ import type { ContentState, MenuDiaView } from "@/lib/restaurant/types";
 
 /**
  * El menú del día en una sola pantalla: título, si está abierto y dos acciones a
- * un lado, centrados en vertical con la tarjeta del menú al otro.
+ * un lado y, al otro, la tarjeta del menú montada sobre una foto del comedor.
  * Dirección, teléfono y horario completo viven en "Cómo llegar" y en el pie.
  */
 export function HoyEnLaOfi({ locale, menu, horario }: { locale: Locale; menu: ContentState<MenuDiaView>; horario: HorarioResuelto }) {
@@ -38,8 +39,14 @@ export function HoyEnLaOfi({ locale, menu, horario }: { locale: Locale; menu: Co
           </Link>
         </div>
 
-        <div className="w-full lg:col-span-7">
-          <MenuDelDia state={menu} live />
+        {/* La foto del comedor detrás y la tarjeta del menú montada encima. */}
+        <div className="relative w-full lg:col-span-7 lg:min-h-[46rem]">
+          <div className="parallax relative aspect-[4/3] overflow-hidden bg-papel-3 lg:absolute lg:inset-y-0 lg:right-0 lg:aspect-auto lg:w-[60%]">
+            <Photo img="comedorRatan" sizes="(min-width: 1024px) 34vw, 100vw" mobileBelow={0} />
+          </div>
+          <div className="relative z-10 mx-3 -mt-20 sm:mx-10 lg:absolute lg:left-0 lg:top-1/2 lg:mx-0 lg:mt-0 lg:w-[64%] lg:-translate-y-1/2">
+            <MenuDelDia state={menu} live />
+          </div>
         </div>
       </div>
     </section>

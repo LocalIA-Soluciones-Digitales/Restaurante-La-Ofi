@@ -16,14 +16,17 @@ import type { CartaItem, CartaSeccion, ContentState } from "@/lib/restaurant/typ
 export function PlatosQueApetecen({ locale, carta }: { locale: Locale; carta: ContentState<CartaSeccion[]> }) {
   if (carta.status === "empty") return null;
   const platos = carta.data.flatMap((s) => s.items.map((item) => ({ item, seccion: s }))).filter(({ item }) => item.imagen);
-  // Abre el plato destacado; después, las mejores fotos (las subidas desde /admin, al final del orden fijo).
+  // Orden fijo de fotos (PRIORIDAD_FOTO; las subidas desde /admin, al final) y, a igualdad, el destacado.
   const rango = (i: CartaItem) => {
     const k = imageKeyBySrc(i.imagen!.src);
     const p = k ? PRIORIDAD_FOTO.indexOf(k) : -1;
     return p === -1 ? PRIORIDAD_FOTO.length : p;
   };
-  platos.sort((a, b) => Number(b.item.destacado) - Number(a.item.destacado) || rango(a.item) - rango(b.item));
-  const lista = platos.slice(0, 5);
+  platos.sort((a, b) => rango(a.item) - rango(b.item) || Number(b.item.destacado) - Number(a.item.destacado));
+  // Variedad: primero un plato de cada sección (la brasa no queda escondida tras cuatro tostadas).
+  const vistas = new Set<string>();
+  const primeros = platos.filter(({ seccion }) => (vistas.has(seccion.slug) ? false : vistas.add(seccion.slug)));
+  const lista = [...primeros, ...platos.filter((p) => !primeros.includes(p))].slice(0, 5);
   if (lista.length === 0) return null;
   const fuente = lista[0]!.item.fuente;
   // Composición asimétrica (grande + 2×2) solo con 5 platos; con menos, columnas

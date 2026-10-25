@@ -1,4 +1,5 @@
 import { MapEmbed } from "@/components/map/MapEmbed";
+import { Photo } from "@/components/media/Photo";
 import { Icon } from "@/components/ui/Icon";
 import { SectionRule } from "@/components/ui/SectionRule";
 import type { Dictionary } from "@/i18n/dictionaries";
@@ -91,8 +92,15 @@ export function Ubicacion({
             ) : null}
           </div>
         </div>
-        <div className="lg:col-span-7">
+        {/* Mapa con una foto pequeña del local (la carpa) montada en su esquina: se reconoce al llegar. */}
+        <div className="relative pb-10 lg:col-span-7 lg:pb-0">
           <MapEmbed image={IMAGES.mapa.src} alt={IMAGES.mapa.alt} embedUrl={SITE.maps.embed} priority={mapPriority} />
+          <figure className="absolute bottom-0 left-4 w-40 border-[6px] border-papel-2 bg-papel-2 shadow-lift sm:w-52 lg:-bottom-8 lg:-left-8 lg:w-60">
+            <div className="relative aspect-[4/3] overflow-hidden">
+              <Photo img="terrazaCarpa" sizes="15rem" mobileBelow={0} />
+            </div>
+            <figcaption className="kicker px-1 pb-0.5 pt-2 text-[0.6rem] text-carbon-muted">Así se ve al llegar</figcaption>
+          </figure>
         </div>
       </div>
     </section>

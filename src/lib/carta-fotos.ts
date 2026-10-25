@@ -9,6 +9,9 @@ const FOTOS_DE_PLATO: { seccion: string; nombre: string; img: ImageKey }[] = [
   { seccion: "desayunos", nombre: "burrata", img: "tostadaBurrata" },
   { seccion: "desayunos", nombre: "bonita", img: "tostadaBonita" },
   { seccion: "desayunos", nombre: "revuelta", img: "tostadaRevuelta" },
+  // El pulpo de La Ofi fotografiado por Deia (09/2025): carta oficial y contenido publicado.
+  { seccion: "entrantes-brasa", nombre: "pulpo", img: "pulpoBrasa" },
+  { seccion: "para-picotear", nombre: "pulpo a la parrilla", img: "pulpoBrasa" },
 ];
 
 export const normalizarNombre = (s: string) =>
@@ -31,5 +34,5 @@ export function conFotosDePlato(secciones: CartaSeccion[]): CartaSeccion[] {
   return secciones.map((s) => ({ ...s, items: s.items.map((i) => conFoto(i, s.slug)) }));
 }
 
-/** Orden de las fotos de plato por calidad (la mejor abre la sección de la home). */
-export const PRIORIDAD_FOTO: ImageKey[] = ["tostadaBurrata", "pulpoBrasa", "tostadaBonita", "tostadaRevuelta", "tostadaSalmon"];
+/** Orden de las fotos de plato en la home: abre la brasa (el pulpo) y siguen las tostadas. */
+export const PRIORIDAD_FOTO: ImageKey[] = ["pulpoBrasa", "tostadaBurrata", "tostadaBonita", "tostadaRevuelta", "tostadaSalmon"];

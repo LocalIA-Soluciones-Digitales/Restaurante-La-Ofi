@@ -1,36 +1,42 @@
-const TEXTO = "Del primer café de la mañana a la última copa del viernes. Un restaurante en el Parque Tecnológico, a un paseo de tu oficina.";
-// A partir de esta palabra, en cursiva y color ratán (el giro de la frase).
-const CORTE = "Un";
+import Link from "next/link";
+import { Photo } from "@/components/media/Photo";
+import { href, type Locale } from "@/lib/i18n";
+import type { ImageKey } from "@/lib/images";
 
 /**
- * Una sola frase que se ilumina palabra a palabra mientras la sección está
- * anclada en pantalla (CSS .reveal-text, scroll-driven). Sin soporte o con
- * "reducir movimiento" la frase se ve entera y la sección mide lo normal.
+ * Una sola frase con fotos pequeñas del local intercaladas entre las palabras.
+ * Cada foto se abre desde el centro al entrar en pantalla (CSS .pill-in,
+ * clip-path ligado al scroll, escalonadas). Sin soporte se ven abiertas.
  */
-export function Declaracion() {
-  const palabras = TEXTO.split(" ");
-  const corte = palabras.indexOf(CORTE);
-  const n = palabras.length;
+export function Declaracion({ locale }: { locale: Locale }) {
   return (
-    <section aria-label="La Ofi" className="reveal-text bg-crema">
-      <div className="reveal-text-sticky flex items-center py-28 sm:py-40">
-        <div className="container-wide">
-          <p className="mx-auto max-w-[17em] text-center font-display text-[clamp(1.9rem,1rem+3.6vw,4.4rem)] font-light leading-[1.12] tracking-[-0.02em] text-carbon">
-            {palabras.map((p, i) => {
-              // Cada palabra se enciende en su tramo del recorrido anclado (0–85 %).
-              const a = ((i / n) * 85).toFixed(2);
-              const b = (((i + 1) / n) * 85).toFixed(2);
-              return (
-                <span key={i}>
-                  <span className={`rt-word ${i >= corte ? "italic text-madera" : ""}`} style={{ animationRange: `contain ${a}% contain ${b}%` }}>
-                    {p}
-                  </span>{" "}
-                </span>
-              );
-            })}
-          </p>
-        </div>
+    <section aria-labelledby="declaracion-title" className="section bg-crema">
+      <div className="container-wide flex flex-col items-center text-center">
+        <p className="kicker text-brasa">La Ofi</p>
+        <h2
+          id="declaracion-title"
+          className="title-in mt-8 max-w-[15em] font-display text-[clamp(2rem,0.9rem+4.4vw,5.2rem)] font-light leading-[1.14] tracking-[-0.025em] text-carbon"
+        >
+          Del primer café <Pastilla img="barra" orden={0} /> a la última copa <Pastilla img="terraza" orden={1} /> del viernes,{" "}
+          <em className="text-madera">a un paseo</em> <Pastilla img="comedorRatan" orden={2} /> de tu oficina.
+        </h2>
+        <Link href={href(locale, "/espacios")} className="btn-line mt-12 text-carbon">
+          <span>Conoce el local</span>
+          <span aria-hidden="true">→</span>
+        </Link>
       </div>
     </section>
+  );
+}
+
+function Pastilla({ img, orden }: { img: ImageKey; orden: number }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="pill-in relative mx-[0.08em] inline-block h-[0.78em] w-[1.85em] -translate-y-[0.06em] overflow-hidden rounded-full bg-papel-3 align-middle"
+      style={{ animationRange: `entry ${20 + orden * 12}% cover ${42 + orden * 8}%` }}
+    >
+      <Photo img={img} sizes="10rem" mobileBelow={0} decorative />
+    </span>
   );
 }

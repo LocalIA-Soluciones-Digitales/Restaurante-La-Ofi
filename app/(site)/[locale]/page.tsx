@@ -49,7 +49,7 @@ export default async function HomePage({ params }: Params) {
         links={{ carta: href(locale, "/carta"), reservar: href(locale, "/reservar"), menu: href(locale, "#hoy") }}
         labels={{ verCarta: t.cta.verCarta, reservar: t.cta.reservarMesa }}
       />
-      <Declaracion />
+      <Declaracion locale={locale} />
       <EspaciosPaneles locale={locale} />
       <HoyEnLaOfi locale={locale} menu={menu} horario={resuelto} />
       <PlatosQueApetecen locale={locale} carta={carta} />
