@@ -104,7 +104,7 @@ export function FidelizacionPanel({ activa: a0, reglas: r0, premios: p0, comensa
           ))}
         </ul>
         <form
-          className="mt-4 grid gap-2 sm:grid-cols-[2fr_6rem_6rem_2fr_auto]"
+          className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-[2fr_6rem_6rem_2fr_auto] sm:items-end"
           onSubmit={async (e) => {
             e.preventDefault();
             const r = await guardar<Regla>("reglas_promocion", { ...nueva, ventana_dias: nueva.ventana_dias ? Number(nueva.ventana_dias) : null });
@@ -113,11 +113,24 @@ export function FidelizacionPanel({ activa: a0, reglas: r0, premios: p0, comensa
             setNueva({ nombre: "", visitas_requeridas: 5, ventana_dias: "", premio: "" });
           }}
         >
-          <input required value={nueva.nombre} onChange={(e) => setNueva({ ...nueva, nombre: e.target.value })} placeholder="Nombre (p. ej. Menú del día)" className={input} />
-          <input type="number" min={1} value={nueva.visitas_requeridas} onChange={(e) => setNueva({ ...nueva, visitas_requeridas: Number(e.target.value) })} aria-label="Visitas" className={input} />
-          <input value={nueva.ventana_dias} onChange={(e) => setNueva({ ...nueva, ventana_dias: e.target.value.replace(/\D/g, "") })} placeholder="Días" aria-label="Ventana en días (opcional)" className={input} />
-          <input required value={nueva.premio} onChange={(e) => setNueva({ ...nueva, premio: e.target.value })} placeholder="Premio (p. ej. café gratis)" className={input} />
-          <button type="submit" className={botonPrimario}>
+          {/* Con etiqueta visible: un «5» suelto no decía que son visitas. */}
+          <label className="col-span-2 grid gap-1 text-xs font-semibold sm:col-span-1">
+            Nombre
+            <input required value={nueva.nombre} onChange={(e) => setNueva({ ...nueva, nombre: e.target.value })} placeholder="p. ej. Menú del día" className={input} />
+          </label>
+          <label className="grid gap-1 text-xs font-semibold">
+            Visitas
+            <input type="number" inputMode="numeric" min={1} value={nueva.visitas_requeridas} onChange={(e) => setNueva({ ...nueva, visitas_requeridas: Number(e.target.value) })} className={input} />
+          </label>
+          <label className="grid gap-1 text-xs font-semibold">
+            En días (opcional)
+            <input inputMode="numeric" value={nueva.ventana_dias} onChange={(e) => setNueva({ ...nueva, ventana_dias: e.target.value.replace(/\D/g, "") })} placeholder="Sin límite" className={input} />
+          </label>
+          <label className="col-span-2 grid gap-1 text-xs font-semibold sm:col-span-1">
+            Premio
+            <input required value={nueva.premio} onChange={(e) => setNueva({ ...nueva, premio: e.target.value })} placeholder="p. ej. café gratis" className={input} />
+          </label>
+          <button type="submit" className={`${botonPrimario} col-span-2 sm:col-span-1`}>
             Añadir
           </button>
         </form>

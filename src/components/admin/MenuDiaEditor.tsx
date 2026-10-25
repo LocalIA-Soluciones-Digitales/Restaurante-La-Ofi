@@ -176,8 +176,9 @@ export function MenuDiaEditor() {
         <ul className="grid gap-3">
           {platos.map((p, i) => (
             <li key={p.key} className="rounded-2xl bg-arena p-3 dark:bg-noche-3">
-              <div className="flex gap-2">
-                <select value={p.tipo} onChange={(e) => cambiar(p.key, { tipo: e.target.value as TipoPlato })} className={`${input} max-w-32 shrink-0`} aria-label="Tipo">
+              {/* En móvil el nombre del plato va en su propia línea: al lado del tipo quedaba en «Lentejas es…». */}
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:grid-cols-[8rem_minmax(0,1fr)_auto]">
+                <select value={p.tipo} onChange={(e) => cambiar(p.key, { tipo: e.target.value as TipoPlato })} className={input} aria-label="Tipo">
                   {TIPOS.map((t) => (
                     <option key={t.key} value={t.key}>
                       {t.label}
@@ -197,7 +198,7 @@ export function MenuDiaEditor() {
                   }}
                   placeholder="Lentejas estofadas…"
                   aria-label={`Plato ${i + 1}`}
-                  className={input}
+                  className={`${input} max-sm:order-last max-sm:col-span-2`}
                 />
                 <button type="button" onClick={() => setPlatos((l) => (l.length > 1 ? l.filter((x) => x.key !== p.key) : [nuevo()]))} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-carbon/15 dark:border-crema/15">
                   <Icon name="trash" className="h-4 w-4" />
@@ -241,10 +242,13 @@ export function MenuDiaEditor() {
       </fieldset>
 
       {aviso ? <Aviso tono={aviso.tono}>{aviso.texto}</Aviso> : null}
-      <button type="button" onClick={() => void publicar()} disabled={cargando || guardando || !platos.some((p) => p.nombre.trim())} className={`${botonPrimario} sticky bottom-4 min-h-14 text-base shadow-lift`}>
-        <Icon name="check" className="h-5 w-5" />
-        {guardando ? "Publicando…" : "Publicar menú"}
-      </button>
+      {/* Fondo opaco bajo el botón fijo: desactivado (semitransparente) dejaba ver los campos de debajo. */}
+      <div className="sticky bottom-0 -mx-4 bg-gradient-to-t from-crema from-60% to-transparent px-4 pb-4 pt-6 dark:from-noche sm:mx-0 sm:px-0">
+        <button type="button" onClick={() => void publicar()} disabled={cargando || guardando || !platos.some((p) => p.nombre.trim())} className={`${botonPrimario} min-h-14 w-full text-base shadow-lift`}>
+          <Icon name="check" className="h-5 w-5" />
+          {guardando ? "Publicando…" : "Publicar menú"}
+        </button>
+      </div>
     </div>
   );
 }

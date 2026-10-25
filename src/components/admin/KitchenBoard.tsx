@@ -172,7 +172,7 @@ export function KitchenBoard({ inicial }: { inicial: PedidoKds[] }) {
     // y su propio desplazamiento; las comandas se distinguen por su cabecera.
     <div data-theme="dark" className="-m-4 flex min-h-[calc(100dvh-4rem)] flex-col bg-[#070d18] p-3 text-crema sm:-m-6 sm:p-4 lg:h-[calc(100dvh-4rem)]">
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <div role="tablist" aria-label="Estación" className="flex rounded-2xl bg-noche-2 p-1 ring-1 ring-crema/10">
+        <div role="tablist" aria-label="Estación" className="flex rounded-2xl bg-noche-2 p-1 ring-1 ring-crema/10 max-sm:w-full">
           {(["todos", "cocina", "barra"] as const).map((v) => (
             <button
               key={v}
@@ -182,7 +182,7 @@ export function KitchenBoard({ inicial }: { inicial: PedidoKds[] }) {
                 setHistorial(null);
                 cambiarVista(v);
               }}
-              className="inline-flex min-h-11 items-center gap-2 rounded-xl px-5 text-base font-semibold text-crema/65 transition-colors aria-selected:bg-neon aria-selected:text-noche"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-5 text-base font-semibold text-crema/65 transition-colors aria-selected:bg-neon aria-selected:text-noche max-sm:flex-1 max-sm:px-2"
             >
               <Icon name={v === "cocina" ? "flame" : v === "barra" ? "wine" : "grid"} className="h-4 w-4" />
               {v === "todos" ? "Todos" : v === "cocina" ? "Cocina" : "Barra"}
@@ -219,7 +219,7 @@ export function KitchenBoard({ inicial }: { inicial: PedidoKds[] }) {
             </div>
           ) : null}
         </dl>
-        <div className="ml-auto flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 sm:ml-auto">
           <button
             type="button"
             onClick={() => setSonido(activarSonido())}

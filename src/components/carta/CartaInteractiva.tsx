@@ -129,7 +129,7 @@ export function CartaInteractiva({
         type="search"
         value={filtros.texto}
         onChange={(e) => set({ texto: e.target.value })}
-        placeholder="Buscar plato o ingrediente"
+        placeholder="Plato o ingrediente"
         className={`h-11 w-full border border-carbon/20 bg-white pl-10 pr-4 text-base text-carbon placeholder:text-carbon-muted focus:border-carbon focus:outline-none ${editorial ? "rounded-md" : "rounded-full"}`}
       />
     </label>
@@ -151,7 +151,7 @@ export function CartaInteractiva({
   );
 
   const chips = (
-    <div className="no-scrollbar flex gap-2 overflow-x-auto pb-0.5" role="group" aria-label="Filtros rápidos">
+    <div className="no-scrollbar fade-x flex gap-2 overflow-x-auto pb-0.5" role="group" aria-label="Filtros rápidos">
       {MOMENTOS.map((m) => (
         <Chip
           key={m.key}
@@ -178,7 +178,7 @@ export function CartaInteractiva({
         <div data-header-fixed className={`sticky ${stickyTop} z-20 -mx-4 border-b border-tinta-line bg-crema/95 px-4 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-10 lg:px-10`}>
           <div className="flex items-center gap-4">
             <nav aria-label="Categorías de la carta" className="min-w-0 flex-1">
-              <ul ref={navRef} className="no-scrollbar flex gap-6 overflow-x-auto">
+              <ul ref={navRef} className="no-scrollbar fade-x flex gap-6 overflow-x-auto">
                 {conItems.map((s) => (
                   <li key={s.id} className="shrink-0">
                     <a
@@ -219,7 +219,7 @@ export function CartaInteractiva({
       ) : (
         <div data-header-fixed className={`sticky ${stickyTop} z-20 -mx-4 border-b border-carbon/10 bg-crema/95 px-4 pb-3 pt-3 backdrop-blur sm:-mx-6 sm:px-6 lg:mx-0 lg:rounded-b-3xl lg:px-4`}>
           <nav aria-label="Categorías de la carta">
-            <ul ref={navRef} className="no-scrollbar flex gap-2 overflow-x-auto">
+            <ul ref={navRef} className="no-scrollbar fade-x flex gap-2 overflow-x-auto">
               {conItems.map((s) => (
                 <li key={s.id} className="shrink-0">
                   <a

@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import plugin from "tailwindcss/plugin";
 
 // Paleta derivada del propio local: crema/arena de las paredes, madera y ratán
 // de mobiliario y lámparas, azul marino del frontal de la barra, oliva del
@@ -10,11 +11,6 @@ const config: Config = {
   darkMode: ["selector", '[data-theme="dark"]'],
   theme: {
     extend: {
-      screens: {
-        // Pantallas altas (monitor, tablet en vertical): el menú del panel recupera
-        // los botones de 44 px; en pantallas bajas se compacta para no hacer scroll.
-        alto: { raw: "(min-height: 900px)" },
-      },
       colors: {
         crema: "#FAF5EC",
         arena: { DEFAULT: "#F1E8D8", 2: "#E6D8BF" },
@@ -111,7 +107,13 @@ const config: Config = {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    // Pantallas altas (monitor, tablet en vertical): el menú del panel recupera
+    // los botones de 44 px; en pantallas bajas se compacta para no hacer scroll.
+    // Variante propia y no un «screen»: un screen «raw» desactiva todas las
+    // variantes max-* (max-sm:, max-lg:…) de Tailwind.
+    plugin(({ addVariant }) => addVariant("alto", "@media (min-height: 960px)")),
+  ],
 };
 
 export default config;

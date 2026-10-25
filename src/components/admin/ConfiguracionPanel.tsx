@@ -75,10 +75,11 @@ export function ConfiguracionPanel({ ajustes, horario, ticketbai }: { ajustes: A
               <option value="consultar">Consultar</option>
             </select>
             {d.estado === "abierto" ? (
-              <>
+              // En móvil, abre y cierra en su propia fila a partes iguales (antes la primera hora caía en la columna de 6rem del día y se cortaba).
+              <div className="col-span-2 grid grid-cols-2 gap-2 sm:contents">
                 <input type="time" value={d.desde ?? ""} onChange={(e) => setDias((l) => l.map((x) => (x.dia === d.dia ? { ...x, desde: e.target.value } : x)))} className={input} aria-label={`${DIAS[i]}: abre`} />
                 <input type="time" value={d.hasta ?? ""} onChange={(e) => setDias((l) => l.map((x) => (x.dia === d.dia ? { ...x, hasta: e.target.value } : x)))} className={input} aria-label={`${DIAS[i]}: cierra (00:00 = medianoche)`} />
-              </>
+              </div>
             ) : null}
           </div>
         ))}

@@ -33,28 +33,31 @@ export default async function QrPage({ searchParams }: { searchParams: Promise<{
         <BotonImprimir />
       </div>
       <style>{`@page { size: A4; margin: 0; } @media print { body { background: #fff !important; } }`}</style>
-      <div className="mx-auto grid w-[210mm] justify-center gap-0 bg-white print:w-[210mm]" style={{ gridTemplateColumns: `repeat(${p.cols}, ${p.ancho})` }}>
-        {mesas.data.map((m, i) => (
-          <article
-            key={m.id}
-            className="flex break-inside-avoid flex-col items-center justify-between border border-dashed border-carbon/20 p-[6mm] text-center text-noche print:border-carbon/10"
-            style={{ width: p.ancho, height: p.alto, background: "#FAF5EC" }}
-          >
-            <p className="font-display text-[22pt] font-semibold lowercase leading-none" style={{ color: "#1E3557" }}>
-              la ofi
-            </p>
-            <div style={{ width: p.qr, height: p.qr }} dangerouslySetInnerHTML={{ __html: qrs[i]! }} />
-            <div>
-              <p className={`font-display font-semibold leading-none ${p.titulo}`}>{m.nombre ?? `Mesa ${m.numero}`}</p>
-              {plantilla !== "pegatina" ? (
-                <>
-                  {zona(m.zona_id) ? <p className="mt-1 text-[9pt] uppercase tracking-[0.2em] opacity-60">{zona(m.zona_id)}</p> : null}
-                  <p className="mt-3 text-[10pt] leading-snug">Escanea y pide desde tu móvil.<br />Juntos o cada uno lo suyo.</p>
-                </>
-              ) : null}
-            </div>
-          </article>
-        ))}
+      {/* La hoja mide 210 mm: en pantallas estrechas se desliza dentro de su marco en vez de sacar la página de la pantalla. */}
+      <div className="-mx-4 overflow-x-auto px-4 sm:-mx-6 sm:px-6 print:m-0 print:overflow-visible print:p-0">
+        <div className="mx-auto grid w-[210mm] justify-center gap-0 bg-white print:w-[210mm]" style={{ gridTemplateColumns: `repeat(${p.cols}, ${p.ancho})` }}>
+          {mesas.data.map((m, i) => (
+            <article
+              key={m.id}
+              className="flex break-inside-avoid flex-col items-center justify-between border border-dashed border-carbon/20 p-[6mm] text-center text-noche print:border-carbon/10"
+              style={{ width: p.ancho, height: p.alto, background: "#FAF5EC" }}
+            >
+              <p className="font-display text-[22pt] font-semibold lowercase leading-none" style={{ color: "#1E3557" }}>
+                la ofi
+              </p>
+              <div style={{ width: p.qr, height: p.qr }} dangerouslySetInnerHTML={{ __html: qrs[i]! }} />
+              <div>
+                <p className={`font-display font-semibold leading-none ${p.titulo}`}>{m.nombre ?? `Mesa ${m.numero}`}</p>
+                {plantilla !== "pegatina" ? (
+                  <>
+                    {zona(m.zona_id) ? <p className="mt-1 text-[9pt] uppercase tracking-[0.2em] opacity-60">{zona(m.zona_id)}</p> : null}
+                    <p className="mt-3 text-[10pt] leading-snug">Escanea y pide desde tu móvil.<br />Juntos o cada uno lo suyo.</p>
+                  </>
+                ) : null}
+              </div>
+            </article>
+          ))}
+        </div>
       </div>
     </div>
   );

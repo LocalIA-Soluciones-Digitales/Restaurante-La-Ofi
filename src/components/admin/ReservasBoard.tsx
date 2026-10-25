@@ -100,18 +100,21 @@ export function ReservasBoard({ mesas, zonas, eventos }: { mesas: MesaSalon[]; z
   return (
     <div className="grid gap-4">
       <div className="flex flex-wrap items-center gap-2">
-        <button type="button" onClick={() => setFecha(desplazar(fecha, -1))} className={botonSecundario}>
-          <Icon name="chevronLeft" className="h-4 w-4" />
-          <span className="sr-only">Día anterior</span>
-        </button>
-        <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className={`${input} w-44`} aria-label="Día" />
-        <button type="button" onClick={() => setFecha(desplazar(fecha, 1))} className={botonSecundario}>
-          <Icon name="chevronRight" className="h-4 w-4" />
-          <span className="sr-only">Día siguiente</span>
-        </button>
-        <button type="button" onClick={() => setFecha(hoyEnMadrid())} className={botonSecundario}>
-          Hoy
-        </button>
+        {/* Anterior · día · siguiente · hoy siempre en una fila (en móvil se partían en tres). */}
+        <div className="flex w-full items-center gap-2 sm:w-auto">
+          <button type="button" onClick={() => setFecha(desplazar(fecha, -1))} className={`${botonSecundario} shrink-0 px-3`}>
+            <Icon name="chevronLeft" className="h-4 w-4" />
+            <span className="sr-only">Día anterior</span>
+          </button>
+          <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className={`${input} min-w-0 flex-1 sm:w-44 sm:flex-none`} aria-label="Día" />
+          <button type="button" onClick={() => setFecha(desplazar(fecha, 1))} className={`${botonSecundario} shrink-0 px-3`}>
+            <Icon name="chevronRight" className="h-4 w-4" />
+            <span className="sr-only">Día siguiente</span>
+          </button>
+          <button type="button" onClick={() => setFecha(hoyEnMadrid())} className={`${botonSecundario} shrink-0`}>
+            Hoy
+          </button>
+        </div>
         <div role="tablist" className="flex rounded-xl bg-arena p-1 dark:bg-noche-2">
           {(["lista", "linea"] as const).map((v) => (
             <button key={v} role="tab" aria-selected={vista === v} onClick={() => setVista(v)} className="min-h-9 rounded-lg px-3 text-sm font-semibold aria-selected:bg-[theme(colors.marino.DEFAULT)] aria-selected:text-crema dark:aria-selected:bg-neon dark:aria-selected:text-noche">
@@ -148,7 +151,7 @@ export function ReservasBoard({ mesas, zonas, eventos }: { mesas: MesaSalon[]; z
                 </span>
               </button>
               <span className={`rounded-full px-3 py-1 text-xs font-semibold ${ESTADO[r.estado].clase}`}>{ESTADO[r.estado].label}</span>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-1.5 max-sm:w-full max-sm:[&>*]:grow">
                 {r.estado === "PENDIENTE" ? (
                   <button type="button" onClick={() => void estado(r, "CONFIRMADA")} className={botonSecundario}>
                     Confirmar
@@ -368,7 +371,7 @@ function ReservaForm({
             Mesas {f.mesas.length ? `· ${plazas} plazas para ${f.personas} personas` : ""}
           </legend>
           <div className="mt-2 flex flex-wrap gap-1.5">
-            {mesas.map((m) => (
+            {[...mesas].sort((a, b) => a.numero.localeCompare(b.numero, "es", { numeric: true })).map((m) => (
               <button
                 key={m.id}
                 type="button"

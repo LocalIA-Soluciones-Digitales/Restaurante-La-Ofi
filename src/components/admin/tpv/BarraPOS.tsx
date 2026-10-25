@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CobroModal } from "@/components/admin/CobroModal";
 import { Modal } from "@/components/admin/Modal";
 import { Aviso, aCentimos, botonPrimario, botonSecundario, card, input } from "@/components/admin/ui";
@@ -64,6 +64,16 @@ export function BarraPOS({
   const [aviso, setAviso] = useState<{ tono: "ok" | "error"; texto: string } | null>(null);
   const [enviando, setEnviando] = useState(false);
   const puedeDescontar = rol === "admin" || rol === "encargado";
+  // En móvil la comanda queda bajo la rejilla: una barra fija la resume mientras no se ve.
+  const comandaRef = useRef<HTMLElement>(null);
+  const [comandaVisible, setComandaVisible] = useState(false);
+  useEffect(() => {
+    const el = comandaRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([e]) => setComandaVisible(!!e?.isIntersecting), { rootMargin: "0px 0px -35% 0px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   const productos = useMemo(() => {
     const q = busca.trim().toLowerCase();
@@ -161,7 +171,7 @@ export function BarraPOS({
   };
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[1fr_24rem]">
+    <div className={`grid gap-4 lg:grid-cols-[1fr_24rem] ${unidades ? "max-lg:pb-20" : ""}`}>
       {/* Productos */}
       <section aria-label="Productos" className="min-w-0">
         <div className="flex flex-wrap gap-2">
@@ -172,7 +182,7 @@ export function BarraPOS({
           </label>
         </div>
         {!busca ? (
-          <div role="tablist" aria-label="Categorías" className="no-scrollbar mt-3 flex gap-2 overflow-x-auto pb-1">
+          <div role="tablist" aria-label="Categorías" className="no-scrollbar fade-x mt-3 flex gap-2 overflow-x-auto pb-1">
             {carta.map((s) => (
               <button
                 key={s.id}
@@ -188,7 +198,7 @@ export function BarraPOS({
           </div>
         ) : null}
         {/* Tarjetas con miniatura del plato: se reconocen de un vistazo y la cantidad ya pedida se ve en la esquina. */}
-        <ul className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-4">
+        <ul className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3 2xl:grid-cols-4">
           {productos.length === 0 ? <li className="col-span-full py-10 text-center text-sm opacity-60">Nada coincide con «{busca}».</li> : null}
           {productos.map((p) => {
             const n = enComanda.get(p.id) ?? 0;
@@ -197,11 +207,11 @@ export function BarraPOS({
                 <button
                   type="button"
                   onClick={() => tocarProducto(p)}
-                  className={`group relative flex h-full min-h-[5.5rem] w-full items-stretch gap-3 overflow-hidden rounded-2xl border bg-white p-2 text-left shadow-card transition-[transform,border-color,box-shadow] duration-150 hover:shadow-lift active:scale-[0.97] dark:bg-noche-2 ${
+                  className={`group relative flex h-full min-h-[5.5rem] w-full items-stretch gap-2 overflow-hidden sm:gap-3 rounded-2xl border bg-white p-2 text-left shadow-card transition-[transform,border-color,box-shadow] duration-150 hover:shadow-lift active:scale-[0.97] dark:bg-noche-2 ${
                     n ? "border-marino ring-1 ring-marino dark:border-neon dark:ring-neon" : "border-carbon/10 dark:border-crema/10"
                   }`}
                 >
-                  <span className="relative aspect-square w-[4.5rem] shrink-0 overflow-hidden rounded-xl bg-arena dark:bg-noche-3">
+                  <span className="relative aspect-square w-14 shrink-0 self-center overflow-hidden rounded-xl bg-arena dark:bg-noche-3 sm:w-[4.5rem] sm:self-auto">
                     {p.imagen ? (
                       <Image src={p.imagen.src} alt="" fill sizes="72px" className="object-cover transition-transform duration-300 group-hover:scale-105" />
                     ) : (
@@ -211,9 +221,9 @@ export function BarraPOS({
                     )}
                   </span>
                   <span className="flex min-w-0 flex-1 flex-col justify-between py-0.5 pr-1">
-                    <span className="line-clamp-2 font-semibold leading-tight">{p.nombre}</span>
-                    <span className="mt-1 flex items-center justify-between gap-1">
-                      <span className="font-display text-lg tabular-nums text-marino dark:text-neon">{p.precioCentimos !== null ? formatCentimos(p.precioCentimos) : "S/M"}</span>
+                    <span className="line-clamp-2 hyphens-auto text-[0.9375rem] font-semibold leading-tight sm:text-base" lang="es">{p.nombre}</span>
+                    <span className="mt-1 flex flex-wrap items-center justify-between gap-1">
+                      <span className="whitespace-nowrap font-display text-lg tabular-nums text-marino dark:text-neon">{p.precioCentimos !== null ? formatCentimos(p.precioCentimos) : "S/M"}</span>
                       {p.modificadores.length > 0 ? (
                         <span title="Con opciones" className="rounded-md bg-carbon/[0.06] px-1.5 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide text-carbon/60 dark:bg-crema/10 dark:text-crema/60">
                           Opciones
@@ -234,7 +244,7 @@ export function BarraPOS({
       </section>
 
       {/* Comanda */}
-      <section aria-label="Comanda" className={`${card} flex h-fit flex-col p-4 lg:sticky lg:top-20 lg:max-h-[calc(100dvh-7rem)]`}>
+      <section ref={comandaRef} id="comanda" aria-label="Comanda" className={`${card} flex h-fit scroll-mt-20 flex-col p-4 lg:sticky lg:top-20 lg:max-h-[calc(100dvh-7rem)]`}>
         <label className="grid gap-1 text-sm">
           <span className="font-semibold">Para</span>
           <select value={destino} onChange={(e) => setDestino(e.target.value)} className={input}>
@@ -329,6 +339,20 @@ export function BarraPOS({
           ) : null}
         </div>
       </section>
+
+      {unidades && !comandaVisible ? (
+        <button
+          type="button"
+          onClick={() => comandaRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+          className="fixed inset-x-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-20 flex min-h-14 items-center justify-between gap-3 rounded-2xl bg-marino px-5 text-crema shadow-lift motion-safe:animate-sheet-up dark:bg-neon dark:text-noche lg:hidden"
+        >
+          <span className="flex items-center gap-2 font-semibold">
+            <span className="grid h-7 min-w-7 place-items-center rounded-full bg-crema/15 px-2 text-sm tabular-nums dark:bg-noche/15">{unidades}</span>
+            Ver comanda
+          </span>
+          <span className="font-display text-xl tabular-nums">{formatCentimos(total)}</span>
+        </button>
+      ) : null}
 
       {eligiendo ? <ElegirOpciones item={eligiendo} onClose={() => setEligiendo(null)} onAnadir={(sel, precio) => (anadir(eligiendo, sel, precio), setEligiendo(null))} /> : null}
 

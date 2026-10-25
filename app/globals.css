@@ -38,6 +38,14 @@
   [data-header="light"] :focus-visible {
     outline-color: theme("colors.neon.DEFAULT");
   }
+
+  /* Panel: una rejilla sin columnas explícitas crea una columna «auto» que se
+     ensancha hasta el contenido más ancho (una fila de chips con scroll, una
+     tabla…) y saca la página de la pantalla en móvil. Sus hijos pueden encogerse;
+     especificidad cero para que cualquier min-w-* siga mandando. */
+  :where(#contenido .grid) > * {
+    min-width: 0;
+  }
 }
 
 @layer components {
@@ -212,6 +220,15 @@
 
   .no-scrollbar::-webkit-scrollbar {
     display: none;
+  }
+
+  /* Fila con scroll horizontal: se desvanece a la derecha para que se note que
+     sigue (antes la última pestaña se cortaba en seco, «Carne»). El padding deja
+     que el último elemento salga entero del degradado al llegar al final. */
+  .fade-x {
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 2rem), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 2rem), transparent);
+    padding-right: 2rem;
   }
 }
 

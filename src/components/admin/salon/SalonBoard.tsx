@@ -425,7 +425,7 @@ export function SalonBoard({
         </div>
 
         {/* Estados con contador: pulsar uno resalta esas mesas en el plano. Las reservas de hoy, en la misma fila. */}
-        <div role="group" aria-label="Filtrar mesas por estado" className="no-scrollbar flex gap-1.5 overflow-x-auto">
+        <div role="group" aria-label="Filtrar mesas por estado" className="no-scrollbar fade-x flex gap-1.5 overflow-x-auto">
           {(Object.entries(ESTADO_MESA) as [EstadoMesa, (typeof ESTADO_MESA)[EstadoMesa]][]).map(([clave, e]) => {
             const n = conteo[clave];
             const activo = filtro === clave;
@@ -502,9 +502,11 @@ export function SalonBoard({
         ) : null}
         {error && !mesa ? <Aviso>{error}</Aviso> : null}
 
-        {/* Hueco del plano: el lienzo (proporción fija 1000×620) se ajusta al alto y al ancho que quedan. */}
-        <div className="grid min-h-0 flex-1 place-items-center lg:[container-type:size]">
-          <div className="relative aspect-[1000/620] w-full lg:w-[min(100cqw,calc(100cqh*1000/620))]">
+        {/* Hueco del plano: el lienzo (proporción fija 1000×620) se ajusta al alto y al ancho que quedan.
+            En el móvil, a ancho de pantalla cada mesa medía ~14 px: el plano mantiene un ancho tocable y se desliza. */}
+        <p className="-mb-1 text-xs text-carbon-muted dark:text-crema/55 sm:hidden">Desliza el plano para ver todo el salón.</p>
+        <div className="grid min-h-0 flex-1 place-items-center max-sm:-mx-4 max-sm:block max-sm:overflow-x-auto max-sm:px-4 max-sm:pb-2 lg:[container-type:size]">
+          <div className="relative aspect-[1000/620] w-full max-sm:w-[50rem] lg:w-[min(100cqw,calc(100cqh*1000/620))]">
             {vista === "2d" ? (
               <Plano2D
                 zonas={data.zonas}
