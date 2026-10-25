@@ -24,7 +24,7 @@ export function EmpresasHome({ locale }: { locale: Locale }) {
       titulo: "El Despacho",
       texto: "Comidas de trabajo con reserva, pedidos de grupo y factura a nombre de tu empresa.",
       cta: "Comidas de empresa",
-      href: href(locale, "/empresas"),
+      href: href(locale, "/grupos#empresas"),
     },
     {
       img: "salonNoche",
@@ -32,7 +32,7 @@ export function EmpresasHome({ locale }: { locale: Locale }) {
       titulo: "Celebraciones",
       texto: "Comidas de empresa, bautizos, comuniones o postbodas, con menú concertado.",
       cta: "Eventos y celebraciones",
-      href: href(locale, "/eventos"),
+      href: href(locale, "/grupos#celebraciones"),
     },
   ];
 

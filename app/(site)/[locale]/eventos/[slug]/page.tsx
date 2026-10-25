@@ -41,7 +41,7 @@ export default async function EventoPage({ params }: Params) {
     <article className="pb-16 pt-28 sm:pt-32">
       {jsonLd ? <JsonLd data={jsonLd} /> : null}
       <div className="container-page max-w-3xl">
-        <Link href={href(locale, "/eventos")} className="inline-flex items-center gap-1 text-sm font-semibold text-terracota hover:underline">
+        <Link href={href(locale, "/grupos#agenda")} className="inline-flex items-center gap-1 text-sm font-semibold text-terracota hover:underline">
           <Icon name="chevronLeft" className="h-4 w-4" />
           Todos los eventos
         </Link>

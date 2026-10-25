@@ -42,6 +42,15 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // /empresas y /eventos se fusionaron en /grupos (el detalle /eventos/[slug] sigue).
+  // El idioma va acotado (LOCALES de src/lib/i18n.ts): con un ":locale" libre,
+  // /admin/eventos también casaba y el panel acababa en /admin/grupos (404).
+  async redirects() {
+    return [
+      { source: "/:locale(es|eu)/empresas", destination: "/:locale/grupos", permanent: true },
+      { source: "/:locale(es|eu)/eventos", destination: "/:locale/grupos#agenda", permanent: true },
+    ];
+  },
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },

@@ -13,8 +13,7 @@ export function mainNav(locale: Locale, t: Dictionary): NavItem[] {
     { href: href(locale, "/menu-del-dia"), label: t.nav.menuDelDia },
     { href: href(locale, "/carta"), label: t.nav.carta },
     { href: href(locale, "/espacios"), label: t.nav.espacios },
-    { href: href(locale, "/empresas"), label: t.nav.empresas },
-    { href: href(locale, "/eventos"), label: t.nav.eventos },
+    { href: href(locale, "/grupos"), label: t.nav.grupos },
     { href: href(locale, "/galeria"), label: t.nav.galeria },
     { href: href(locale, "/contacto"), label: t.nav.contacto },
   ];

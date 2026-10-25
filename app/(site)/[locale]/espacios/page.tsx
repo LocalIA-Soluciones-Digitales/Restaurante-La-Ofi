@@ -30,7 +30,7 @@ const EXTRA: Partial<Record<Espacio["id"], ImageKey>> = { barra: "barraMesasAlta
 
 function cta(e: Espacio, locale: Locale) {
   if (e.cta === "pedir") return { href: href(locale, "/pedir"), label: "Pedir para recoger" };
-  if (e.cta === "presupuesto") return { href: href(locale, "/empresas#contacto"), label: "Pedir presupuesto" };
+  if (e.cta === "presupuesto") return { href: href(locale, "/grupos#contacto"), label: "Pedir presupuesto" };
   return { href: href(locale, "/reservar"), label: "Reservar mesa" };
 }
 
@@ -111,23 +111,13 @@ export default async function EspaciosPage({ params }: Params) {
           </figure>
         </section>
 
-        <section aria-labelledby="celebrar-title" className="mt-24 grid gap-8 bg-marino-900 p-6 text-crema sm:p-10 lg:grid-cols-12 lg:items-center lg:gap-14 lg:p-14">
-          <div className="lg:col-span-6">
-            <SectionRule dark id="celebrar-title" title="Comidas de empresa, bautizos, comuniones o postbodas" aside={<span>Celebraciones</span>} />
-            <p className="mt-4 max-w-md text-crema/75">Menús concertados en el comedor privado o en la terraza cubierta. Cuéntanos qué necesitas.</p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link href={href(locale, "/empresas#contacto")} className="btn-light">
-                Pedir presupuesto
-              </Link>
-              <Link href={href(locale, "/reservar")} className="btn-ghost-light">
-                Reservar mesa
-              </Link>
-            </div>
-          </div>
-          <div className="relative aspect-[3/2] overflow-hidden lg:col-span-6">
-            <Photo img="comedorPanoramica" sizes="(min-width: 1024px) 45vw, 100vw" mobileBelow={0} />
-          </div>
-        </section>
+        <p className="mt-20 text-center text-carbon-muted">
+          ¿Una comida de empresa o una celebración?{" "}
+          <Link href={href(locale, "/grupos")} className="link-arrow">
+            Grupos y eventos
+            <Icon name="arrow" className="h-4 w-4" />
+          </Link>
+        </p>
       </div>
     </>
   );
