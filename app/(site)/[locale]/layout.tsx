@@ -102,11 +102,11 @@ export default async function LocaleLayout({
         </main>
         <Footer locale={locale} items={items} />
         <BottomBar
-          hoyHref={href(locale, "/menu-del-dia")}
-          cartaHref={href(locale, "/carta")}
+          cartaHref={href(locale, "/menu-del-dia")}
+          cartaMatch={[href(locale, "/menu-del-dia"), href(locale, "/carta")]}
           reservarHref={href(locale, "/reservar")}
           directionsHref={SITE.maps.directions}
-          labels={{ hoy: t.nav.hoy, carta: t.nav.carta, reservar: t.cta.reservar, llegar: t.cta.llegar }}
+          labels={{ carta: t.nav.cartaYMenu, reservar: t.cta.reservar, llegar: t.cta.llegar }}
         />
         <ReservarFlotante href={href(locale, "/reservar")} label={t.cta.reservarMesa} />
       </body>

@@ -10,9 +10,9 @@ import { Icon } from "@/components/ui/Icon";
 import { useDialogA11y } from "@/hooks/useDialogA11y";
 import type { ImageKey } from "@/lib/images";
 
-// Foto del panel del menú para cada página, en el orden de mainNav (inicio, menú del día,
-// carta, espacios, grupos y eventos, galería, contacto).
-const MENU_FOTOS: ImageKey[] = ["comedorPanoramica", "comedorRatan", "barra", "barraMesasAltas", "despacho", "rotuloAguila", "terrazaCarpa"];
+// Foto del panel del menú para cada página, en el orden de mainNav (inicio, carta y
+// menú, espacios, grupos y eventos, galería, contacto).
+const MENU_FOTOS: ImageKey[] = ["comedorPanoramica", "comedorRatan", "barraMesasAltas", "despacho", "rotuloAguila", "terrazaCarpa"];
 
 interface Props {
   homeHref: string;
@@ -140,7 +140,7 @@ export function Header({ homeHref, pedirHref, reservarHref, items, primary, phon
       {open ? (
         <MenuPanel
           items={items}
-          isActive={isActive}
+          isActive={isActiveItem}
           onClose={() => setOpen(false)}
           phoneHref={phoneHref}
           phoneDisplay={phoneDisplay}
@@ -167,7 +167,7 @@ function MenuPanel({
   labels,
 }: {
   items: NavItem[];
-  isActive: (href: string) => boolean;
+  isActive: (item: NavItem) => boolean;
   onClose: () => void;
   phoneHref: string;
   phoneDisplay: string;
@@ -214,7 +214,7 @@ function MenuPanel({
                     onClick={onClose}
                     onPointerEnter={() => setFoto(i)}
                     onFocus={() => setFoto(i)}
-                    aria-current={isActive(item.href) ? "page" : undefined}
+                    aria-current={isActive(item) ? "page" : undefined}
                     className="group flex min-h-14 items-baseline gap-5 py-3 text-carbon aria-[current=page]:text-brasa lg:py-4"
                   >
                     <span aria-hidden="true" className="w-6 text-xs tabular-nums text-carbon-muted">

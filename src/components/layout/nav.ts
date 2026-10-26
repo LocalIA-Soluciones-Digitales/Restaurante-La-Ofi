@@ -12,8 +12,7 @@ export interface NavItem {
 export function mainNav(locale: Locale, t: Dictionary): NavItem[] {
   return [
     { href: href(locale), label: t.nav.inicio },
-    { href: href(locale, "/menu-del-dia"), label: t.nav.menuDelDia },
-    { href: href(locale, "/carta"), label: t.nav.carta },
+    cartaYMenu(locale, t),
     { href: href(locale, "/espacios"), label: t.nav.espacios },
     { href: href(locale, "/grupos"), label: t.nav.grupos },
     { href: href(locale, "/galeria"), label: t.nav.galeria },
@@ -28,11 +27,14 @@ export function mainNav(locale: Locale, t: Dictionary): NavItem[] {
  * en el menú desplegable.
  */
 export function primaryNav(locale: Locale, t: Dictionary): NavItem[] {
-  return [
-    {
-      href: href(locale, "/menu-del-dia"),
-      label: t.nav.cartaYMenu,
-      match: [href(locale, "/menu-del-dia"), href(locale, "/carta")],
-    },
-  ];
+  return [cartaYMenu(locale, t)];
+}
+
+/** Menú del día y carta: una sola entrada en toda la navegación. */
+export function cartaYMenu(locale: Locale, t: Dictionary): NavItem {
+  return {
+    href: href(locale, "/menu-del-dia"),
+    label: t.nav.cartaYMenu,
+    match: [href(locale, "/menu-del-dia"), href(locale, "/carta")],
+  };
 }
