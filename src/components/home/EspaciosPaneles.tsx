@@ -41,9 +41,9 @@ export function EspaciosPaneles({ locale }: { locale: Locale }) {
         </p>
       </div>
 
-      <div className="container-wide relative -mt-[3.5vw]">
+      <div className="relative -mt-[3.5vw] px-4 sm:px-6 lg:px-0">
         {/* Escritorio: paneles que se abren */}
-        <ul className="relative hidden h-[68svh] min-h-[32rem] gap-3 lg:flex">
+        <ul className="relative hidden h-[78svh] min-h-[34rem] gap-2 lg:flex">
           {PANELES.map((p, i) => {
             const abierto = activo === i;
             return (
@@ -60,7 +60,7 @@ export function EspaciosPaneles({ locale }: { locale: Locale }) {
                   className="absolute inset-0 block text-crema"
                 >
                   <span className={`absolute inset-0 transition-transform duration-[1.2s] ease-out-expo ${abierto ? "scale-100" : "scale-110"}`}>
-                    <Photo img={p.img} sizes="60vw" mobileBelow={0} decorative />
+                    <Photo img={p.img} sizes="75vw" mobileBelow={0} decorative />
                   </span>
                   <span
                     aria-hidden="true"
