@@ -1,5 +1,7 @@
-const FILA_1 = ["Desayunar", "Comer", "Brasa", "Quedarse"];
-const FILA_2 = ["La Ofi", "Parque Tecnológico", "Derio", "Desde las 7:30"];
+// Lo que se hace en La Ofi, en el orden del día (todo publicado: carta, horario,
+// tardeo mensual, El Despacho y celebraciones).
+const FILA_1 = ["Café", "Tostadas", "Menú del día", "Brasa", "Copas"];
+const FILA_2 = ["Comidas de empresa", "Reuniones", "Tardeos", "Celebraciones"];
 
 /**
  * Dos filas de letras caladas a gran tamaño que se desplazan en sentidos
