@@ -3,65 +3,55 @@ import { Photo } from "@/components/media/Photo";
 import { MenuDelDia } from "@/components/menu/MenuDelDia";
 import { EstadoAhora } from "@/components/ui/EstadoAhora";
 import { Icon } from "@/components/ui/Icon";
-import { estadoAhora, type HorarioResuelto } from "@/lib/horario";
+import { estadoAhora, horarioDeHoy, type HorarioResuelto } from "@/lib/horario";
 import { href, type Locale } from "@/lib/i18n";
+import { creditoFoto, IMAGES } from "@/lib/images";
 import type { ContentState, MenuDiaView } from "@/lib/restaurant/types";
 
 /**
- * El menú del día en una sola pantalla: título, si está abierto y dos acciones a
- * un lado y, al otro, la tarjeta del menú montada sobre una foto del comedor.
- * Dirección, teléfono y horario completo viven en "Cómo llegar" y en el pie.
+ * El menú del día igual que en /menu-del-dia: el comedor a todo el ancho y la
+ * hoja del menú centrada encima. Entre dos secciones claras hace de banda oscura
+ * que corta el ritmo. Dirección y horario completo viven en "Cómo llegar".
  */
 export function HoyEnLaOfi({ locale, menu, horario }: { locale: Locale; menu: ContentState<MenuDiaView>; horario: HorarioResuelto }) {
+  const hoy = horarioDeHoy(horario.semana);
+  const comedor = IMAGES.comedorRatan;
+
   return (
-    <section id="hoy" aria-labelledby="hoy-title" className="section scroll-mt-16 bg-papel-2">
-      <div className="container-wide grid items-center gap-12 lg:grid-cols-12 lg:gap-16">
-        <div className="flex flex-col items-center text-center lg:col-span-5 lg:items-start lg:text-left">
-          <p className="kicker text-brasa">Hoy en La Ofi</p>
-          <h2 id="hoy-title" className="t-display mt-4 font-light text-carbon">
-            El menú
-            <em className="block text-madera">del día</em>
-          </h2>
-          <EstadoAhora semana={horario.semana} inicial={estadoAhora(horario.semana)} className="mt-6 text-sm text-carbon-muted" />
-          <div className="mt-9 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
-            <Link href={href(locale, "/reservar?para=hoy")} className="btn-dark px-7">
-              Reservar para hoy
-              <Icon name="arrow" className="h-4 w-4" />
-            </Link>
-            <Link href={href(locale, "/pedir")} className="btn-secondary px-6">
-              <Icon name="bag" className="h-4 w-4" />
-              Pedir para recoger
-            </Link>
-          </div>
-          <Link href={href(locale, "/menu-del-dia")} className="link-arrow mt-4 text-sm">
-            Ver con alérgenos
+    <section id="hoy" aria-labelledby="hoy-title" className="relative isolate scroll-mt-16 overflow-hidden bg-carbon py-20 text-crema sm:py-28">
+      <Photo img="comedorRatan" sizes="100vw" mobileBelow={0} decorative imgClassName="motion-safe:animate-kenburns" />
+      <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-carbon/75 via-carbon/40 to-carbon/85" />
+
+      <div className="container-wide relative flex flex-col items-center text-center">
+        <p className="kicker text-crema/75">Hoy en La Ofi · Lunes a viernes</p>
+        <h2 id="hoy-title" className="t-display mt-4 text-crema">
+          Menú <em className="text-[#E2B98A]">del día</em>
+        </h2>
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm text-crema/80">
+          <EstadoAhora semana={horario.semana} inicial={estadoAhora(horario.semana)} tone="light" />
+          {hoy ? <span aria-hidden="true">·</span> : null}
+          {hoy ? <span>Hoy {hoy}</span> : null}
+        </div>
+
+        <div className="reveal mt-10 w-full max-w-xl text-left sm:mt-14">
+          <MenuDelDia state={menu} live />
+        </div>
+
+        <div className="mt-10 flex flex-wrap justify-center gap-3">
+          <Link href={href(locale, "/reservar?para=hoy")} className="btn-primary">
+            Reservar para hoy
             <Icon name="arrow" className="h-4 w-4" />
           </Link>
-
-          {/* Tres datos cortos en vez de más imagen: la foto del comedor ya hace de fondo. */}
-          <ul className="mt-12 hidden w-full max-w-[26rem] border-t border-tinta-line lg:block">
-            {[
-              ["Cambia cada día", "Lo publicamos aquí cada mañana"],
-              ["Para tomar aquí o llevar", "Encárgalo y pasa a recogerlo"],
-              ["Con alérgenos", "Consúltalos antes de pedir"],
-            ].map(([titulo, detalle]) => (
-              <li key={titulo} className="flex items-baseline justify-between gap-6 border-b border-tinta-line py-4">
-                <span className="font-display text-lg text-carbon">{titulo}</span>
-                <span className="text-right text-xs text-carbon-muted">{detalle}</span>
-              </li>
-            ))}
-          </ul>
+          <Link href={href(locale, "/pedir")} className="btn border border-crema/40 text-crema hover:bg-crema hover:text-carbon">
+            <Icon name="bag" className="h-4 w-4" />
+            Pedir para recoger
+          </Link>
         </div>
-
-        {/* La foto del comedor detrás y la tarjeta del menú montada encima. */}
-        <div className="relative w-full lg:col-span-7 lg:min-h-[42rem]">
-          <div className="fog-in parallax relative aspect-[4/3] overflow-hidden bg-papel-3 lg:absolute lg:inset-y-0 lg:right-0 lg:aspect-auto lg:w-[60%]">
-            <Photo img="comedorRatan" sizes="(min-width: 1024px) 34vw, 100vw" mobileBelow={0} />
-          </div>
-          <div className="relative z-10 mx-3 -mt-20 sm:mx-10 lg:absolute lg:left-0 lg:top-1/2 lg:mx-0 lg:mt-0 lg:w-[64%] lg:-translate-y-1/2">
-            <MenuDelDia state={menu} live />
-          </div>
-        </div>
+        <Link href={href(locale, "/menu-del-dia")} className="mt-6 inline-flex items-center gap-2 text-sm text-crema/75 underline decoration-crema/30 underline-offset-4 hover:text-crema">
+          Ver con alérgenos y la carta
+          <Icon name="arrow" className="h-4 w-4" />
+        </Link>
+        {comedor.kind === "ilustrativa" ? <p className="mt-6 text-xs text-crema/50">{creditoFoto(comedor)}</p> : null}
       </div>
     </section>
   );
