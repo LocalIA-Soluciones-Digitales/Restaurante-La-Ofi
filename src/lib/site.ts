@@ -43,6 +43,6 @@ export const SITE = {
     directions: `https://www.google.com/maps/dir/?api=1&destination=${LAT},${LNG}`,
     embed: `https://www.google.com/maps?q=${LAT},${LNG}&z=16&output=embed`,
     // Satélite con nombres de calles (t=h), algo más cerca para ver el edificio.
-    embedSatelite: `https://www.google.com/maps?q=${LAT},${LNG}&z=17&t=h&output=embed`,
+    embedSatelite: `https://www.google.com/maps?q=${LAT},${LNG}&z=13&t=h&output=embed`,
   },
 } as const;
