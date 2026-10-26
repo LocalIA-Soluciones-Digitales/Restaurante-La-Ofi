@@ -36,9 +36,9 @@ export function Declaracion() {
 
         <div className="reel-end absolute inset-0 grid place-items-center px-6 text-center text-crema">
           <div>
-            <p className="kicker text-ratan">La Ofi · Derio</p>
-            <h2 id="reel-title" className="mt-5 max-w-[14em] font-display text-[clamp(2rem,1rem+3.6vw,4.6rem)] font-light leading-[1.08] tracking-[-0.02em]">
-              Durante el día, el restaurante del Parque. <em className="text-ratan">Cuando acaba la oficina, empieza La Ofi.</em>
+            <p className="kicker text-ratan">Parque Tecnológico de Bizkaia · Derio</p>
+            <h2 id="reel-title" className="mt-6 font-display text-[clamp(2.4rem,1rem+5vw,6.2rem)] font-light leading-[1.02] tracking-[-0.03em]">
+              La mejor reunión del día <em className="block text-ratan">es en La Ofi.</em>
             </h2>
           </div>
         </div>
