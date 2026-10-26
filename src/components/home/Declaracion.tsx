@@ -1,28 +1,25 @@
-import { AmbientVideo } from "@/components/media/AmbientVideo";
-import { creditoVideo, VIDEOS } from "@/lib/media";
+import { Photo } from "@/components/media/Photo";
 
 /**
  * Primera pantalla de la home (tras la entrada con el rótulo): la sección se
- * ancla, el vídeo del salón se abre desde un óvalo central hasta la pantalla
- * completa mientras «Del primer café · a la última copa» se separan, y al final
- * aparece el lema (CSS .reel-*, ligado al scroll). Es el único vídeo de la
- * cabecera de la home. Sin soporte o con "reducir movimiento": vídeo entero y lema.
+ * ancla, la foto del comedor (fotógrafo) se abre desde un óvalo central hasta la
+ * pantalla completa mientras «Del primer café · a la última copa» se separan, y
+ * al final aparece el lema (CSS .reel-*, ligado al scroll). Sin soporte o con
+ * "reducir movimiento": foto entera y lema.
  */
 export function Declaracion() {
-  const video = VIDEOS.heroNoche;
-  const credito = creditoVideo(video);
   return (
     <section aria-labelledby="reel-title" className="reel bg-crema">
       <h1 className="sr-only">La Ofi, restaurante en el Parque Tecnológico de Bizkaia (Derio)</h1>
       <div className="reel-sticky relative h-[100svh] overflow-hidden">
         <div className="reel-media absolute inset-0 bg-noche">
           <div className="reel-zoom absolute inset-0">
-            <AmbientVideo video={video} threshold={0.01} />
+            <Photo img="comedorPanoramica" sizes="100vw" mobileBelow={768} priority decorative />
           </div>
-          <span aria-hidden="true" className="absolute inset-0 bg-noche/45" />
+          <span aria-hidden="true" className="absolute inset-0 bg-noche/50" />
         </div>
 
-        {/* Columnas a cada lado del hueco del vídeo (30vw, el mismo del recorte inicial). */}
+        {/* Columnas a cada lado del hueco de la foto (30vw, el mismo del recorte inicial). */}
         <p aria-hidden="true" className="reel-words relative grid h-full w-full grid-rows-[1fr_36svh_1fr] items-center px-5 text-center font-display text-[clamp(2.1rem,1rem+3vw,4.2rem)] font-light leading-[1.02] tracking-[-0.03em] text-carbon lg:grid-cols-[1fr_30vw_1fr] lg:grid-rows-1 lg:px-0">
           <span className="reel-l self-end pb-6 lg:self-auto lg:pb-0 lg:pr-[2.5vw] lg:text-right">Del primer café</span>
           <span />
@@ -45,7 +42,6 @@ export function Declaracion() {
             </h2>
           </div>
         </div>
-        {credito ? <p className="reel-end absolute bottom-4 right-5 text-[0.64rem] text-crema/60">{credito}</p> : null}
       </div>
     </section>
   );
