@@ -1,5 +1,4 @@
 import { MapEmbed } from "@/components/map/MapEmbed";
-import { Photo } from "@/components/media/Photo";
 import { Icon } from "@/components/ui/Icon";
 import { SectionRule } from "@/components/ui/SectionRule";
 import type { Dictionary } from "@/i18n/dictionaries";
@@ -39,65 +38,73 @@ export function Ubicacion({
 }) {
   return (
     <section id="ubicacion" aria-labelledby="ubicacion-title" className="cv-auto section bg-papel-2">
-      <div className="container-wide grid gap-12 lg:grid-cols-12 lg:gap-16">
-        <div className="lg:col-span-5">
-          <SectionRule as={headingLevel} id="ubicacion-title" title="Edificio 502 del Parque Tecnológico, en Derio" aside={<span>Cómo llegar</span>} />
-          {/* La fachada con la carpa, en franja baja: para reconocerlo al llegar. */}
-          <figure className="parallax relative mt-6 aspect-[16/6] overflow-hidden rounded-xl bg-papel-3">
-            <Photo img="terrazaCarpa" sizes="(min-width: 1024px) 38vw, 100vw" mobileBelow={0} priority={mapPriority} />
-            <figcaption className="absolute bottom-2.5 left-3 rounded-full bg-noche/55 px-2.5 py-1 text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-crema backdrop-blur-md">
-              Así se ve al llegar
-            </figcaption>
-          </figure>
-          <p className="lead mt-6">
-            Dentro del campus Zamudio-Derio del Parque Científico y Tecnológico de Bizkaia: se llega andando desde las
-            oficinas, y en coche hay aparcamiento para 220 plazas.
-          </p>
+      <div className="container-wide">
+        <SectionRule as={headingLevel} id="ubicacion-title" title="Edificio 502 del Parque Tecnológico, en Derio" aside={<span>Cómo llegar</span>} />
 
-          <address className="mt-8 grid gap-6 not-italic">
-            <div className="flex gap-4">
-              <Icon name="pin" className="mt-1 h-5 w-5 shrink-0 text-brasa" />
-              <p>
-                <span className="block font-display text-xl text-carbon">{SITE.name}</span>
-                <span className="block text-carbon">{SITE.address.street}</span>
-                <span className="block text-carbon-muted">
-                  {SITE.address.postalCode} {SITE.address.locality}, {SITE.address.region}
-                </span>
+        <div className="mt-10 grid gap-10 lg:grid-cols-12 lg:gap-14">
+          {/* Los datos en dos columnas: dónde y cómo contactar a un lado, horario al otro. */}
+          <div className="grid gap-10 sm:grid-cols-2 lg:col-span-7">
+            <div>
+              <p className="text-[0.95rem] leading-relaxed text-carbon-muted">
+                Dentro del campus Zamudio-Derio del Parque Científico y Tecnológico de Bizkaia: se llega andando desde
+                las oficinas y hay aparcamiento para 220 coches.
               </p>
+              <address className="mt-6 grid gap-4 not-italic">
+                <div className="flex gap-3">
+                  <Icon name="pin" className="mt-1 h-4 w-4 shrink-0 text-brasa" />
+                  <p className="text-[0.95rem]">
+                    <span className="block font-display text-lg text-carbon">{SITE.name}</span>
+                    <span className="block text-carbon">{SITE.address.street}</span>
+                    <span className="block text-carbon-muted">
+                      {SITE.address.postalCode} {SITE.address.locality}, {SITE.address.region}
+                    </span>
+                  </p>
+                </div>
+                <div className="flex gap-3">
+                  <Icon name="phone" className="mt-1 h-4 w-4 shrink-0 text-brasa" />
+                  <a href={SITE.phone.href} className="font-display text-lg text-carbon underline decoration-carbon/25 underline-offset-4 hover:decoration-brasa">
+                    {SITE.phone.display}
+                  </a>
+                </div>
+              </address>
             </div>
-            <div className="flex gap-4">
-              <Icon name="phone" className="mt-1 h-5 w-5 shrink-0 text-brasa" />
-              <a href={SITE.phone.href} className="font-display text-xl text-carbon underline decoration-carbon/25 underline-offset-4 hover:decoration-brasa">
-                {SITE.phone.display}
-              </a>
-            </div>
-            <div className="flex gap-4">
-              <Icon name="clock" className="mt-1 h-5 w-5 shrink-0 text-brasa" />
-              <div className="flex-1">
+            <div>
+              <p className="kicker flex items-center gap-2 text-carbon-muted">
+                <Icon name="clock" className="h-4 w-4 text-brasa" />
+                Horario
+              </p>
+              <div className="mt-4">
                 <Horario horario={horario} />
               </div>
             </div>
-          </address>
-
-          <div className="mt-8 flex flex-wrap gap-3">
-            <a href={SITE.maps.directions} target="_blank" rel="noopener noreferrer" className="btn-primary">
-              <Icon name="pin" className="h-4 w-4" />
-              {t.cta.comoLlegar}
-            </a>
-            <a href={SITE.phone.href} className="btn-secondary">
-              <Icon name="phone" className="h-4 w-4" />
-              {t.cta.llamar}
-            </a>
-            {SITE.whatsapp ? (
-              <a href={SITE.whatsapp.href} target="_blank" rel="noopener noreferrer" className="btn-secondary">
-                <Icon name="whatsapp" className="h-4 w-4" />
-                WhatsApp
+            <div className="flex flex-wrap gap-3 sm:col-span-2">
+              <a href={SITE.maps.directions} target="_blank" rel="noopener noreferrer" className="btn-primary">
+                <Icon name="pin" className="h-4 w-4" />
+                {t.cta.comoLlegar}
               </a>
-            ) : null}
+              <a href={SITE.phone.href} className="btn-secondary">
+                <Icon name="phone" className="h-4 w-4" />
+                {t.cta.llamar}
+              </a>
+              {SITE.whatsapp ? (
+                <a href={SITE.whatsapp.href} target="_blank" rel="noopener noreferrer" className="btn-secondary">
+                  <Icon name="whatsapp" className="h-4 w-4" />
+                  WhatsApp
+                </a>
+              ) : null}
+            </div>
           </div>
-        </div>
-        <div className="lg:col-span-7">
-          <MapEmbed image={IMAGES.mapa.src} alt={IMAGES.mapa.alt} embedUrl={SITE.maps.embed} priority={mapPriority} />
+
+          {/* Mapa contenido: basta para situarse, el botón abre la ruta en Google Maps. */}
+          <div className="lg:col-span-5">
+            <MapEmbed
+              image={IMAGES.mapa.src}
+              alt={IMAGES.mapa.alt}
+              embedUrl={SITE.maps.embed}
+              priority={mapPriority}
+              className="aspect-[4/3] rounded-xl lg:aspect-auto lg:h-full lg:min-h-[20rem]"
+            />
+          </div>
         </div>
       </div>
     </section>

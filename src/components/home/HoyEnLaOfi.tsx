@@ -1,12 +1,10 @@
 import Link from "next/link";
-import { AmbientVideo } from "@/components/media/AmbientVideo";
 import { Photo } from "@/components/media/Photo";
 import { MenuDelDia } from "@/components/menu/MenuDelDia";
 import { EstadoAhora } from "@/components/ui/EstadoAhora";
 import { Icon } from "@/components/ui/Icon";
 import { estadoAhora, type HorarioResuelto } from "@/lib/horario";
 import { href, type Locale } from "@/lib/i18n";
-import { creditoVideo, VIDEOS } from "@/lib/media";
 import type { ContentState, MenuDiaView } from "@/lib/restaurant/types";
 
 /**
@@ -40,21 +38,23 @@ export function HoyEnLaOfi({ locale, menu, horario }: { locale: Locale; menu: Co
             <Icon name="arrow" className="h-4 w-4" />
           </Link>
 
-          {/* Vídeo del plato en bucle: llena el hueco con movimiento, no con más texto. */}
-          <figure className="mt-12 hidden w-full max-w-[30rem] lg:block">
-            <div className="relative aspect-[16/10] overflow-hidden rounded-2xl bg-noche">
-              <AmbientVideo video={VIDEOS.brasa} />
-              <span className="absolute left-4 top-4 inline-flex items-center gap-2 rounded-full bg-noche/55 px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-crema backdrop-blur-md">
-                <span className="h-1.5 w-1.5 rounded-full bg-brasa motion-safe:animate-pulse" />
-                De la brasa
-              </span>
-            </div>
-            <figcaption className="mt-2 text-[0.68rem] text-carbon-muted">Pescado y pimientos a la brasa · {creditoVideo(VIDEOS.brasa)}</figcaption>
-          </figure>
+          {/* Tres datos cortos en vez de más imagen: la foto del comedor ya hace de fondo. */}
+          <ul className="mt-12 hidden w-full max-w-[26rem] border-t border-tinta-line lg:block">
+            {[
+              ["Cambia cada día", "Lo publicamos aquí cada mañana"],
+              ["Para tomar aquí o llevar", "Encárgalo y pasa a recogerlo"],
+              ["Con alérgenos", "Consúltalos antes de pedir"],
+            ].map(([titulo, detalle]) => (
+              <li key={titulo} className="flex items-baseline justify-between gap-6 border-b border-tinta-line py-4">
+                <span className="font-display text-lg text-carbon">{titulo}</span>
+                <span className="text-right text-xs text-carbon-muted">{detalle}</span>
+              </li>
+            ))}
+          </ul>
         </div>
 
         {/* La foto del comedor detrás y la tarjeta del menú montada encima. */}
-        <div className="relative w-full lg:col-span-7 lg:min-h-[46rem]">
+        <div className="relative w-full lg:col-span-7 lg:min-h-[42rem]">
           <div className="parallax relative aspect-[4/3] overflow-hidden bg-papel-3 lg:absolute lg:inset-y-0 lg:right-0 lg:aspect-auto lg:w-[60%]">
             <Photo img="comedorRatan" sizes="(min-width: 1024px) 34vw, 100vw" mobileBelow={0} />
           </div>
