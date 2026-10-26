@@ -105,14 +105,14 @@ export function Footer({ locale, items }: { locale: Locale; items: NavItem[] }) 
   );
 }
 
-/** Manchas de color difuminadas (acuarela) con los tonos del local, flotando a distinto ritmo. */
+/** Manchas difuminadas (acuarela) solo en tonos cálidos del local: ratán, madera, arena y un toque de brasa. */
 function Manchas() {
   const manchas = [
-    "left-[6%] top-[8%] h-[16vw] w-[16vw] bg-ratan/45",
-    "left-[30%] top-[38%] h-[11vw] w-[11vw] bg-brasa/25",
-    "left-[52%] top-[2%] h-[14vw] w-[14vw] bg-oliva/25",
-    "right-[8%] top-[30%] h-[18vw] w-[18vw] bg-neon/45",
-    "right-[30%] bottom-[0%] h-[10vw] w-[10vw] bg-ratan/35",
+    "left-[6%] top-[10%] h-[16vw] w-[16vw] bg-ratan/30",
+    "left-[34%] top-[40%] h-[12vw] w-[12vw] bg-madera/15",
+    "left-[54%] top-[4%] h-[14vw] w-[14vw] bg-arena-2/70",
+    "right-[8%] top-[28%] h-[18vw] w-[18vw] bg-ratan/25",
+    "right-[30%] bottom-[0%] h-[10vw] w-[10vw] bg-brasa/10",
   ];
   return (
     <>

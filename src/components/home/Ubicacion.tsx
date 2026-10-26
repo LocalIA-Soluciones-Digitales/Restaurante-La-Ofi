@@ -38,23 +38,24 @@ export function Ubicacion({
   mapPriority?: boolean;
 }) {
   return (
-    <section id="ubicacion" aria-labelledby="ubicacion-title" className="cv-auto section bg-papel-2">
+    <section id="ubicacion" aria-labelledby="ubicacion-title" className="cv-auto bg-papel-2 pt-8 sm:pt-12">
       <div className="container-wide">
         <SectionRule as={headingLevel} id="ubicacion-title" title="Edificio 502 del Parque Tecnológico, en Derio" aside={<span>Cómo llegar</span>} />
+      </div>
 
-        {/* El mapa llena todo el marco, en tonos cálidos; la ficha flota encima a la
-            izquierda, donde no tapa el punto (el mapa se centra en el local). */}
-        <div className="relative mt-10 lg:h-[32rem]">
-          <MapEmbed
-            image={IMAGES.mapa.src}
-            alt={IMAGES.mapa.alt}
-            embedUrl={SITE.maps.embed}
-            priority={mapPriority}
-            className="aspect-[4/3] rounded-2xl ring-1 ring-tinta-line sm:aspect-[16/9] lg:absolute lg:inset-0 lg:aspect-auto"
-            iframeClassName="[filter:grayscale(.45)_sepia(.18)_contrast(.96)]"
-          />
+      {/* Satélite a todo el ancho: se reconoce el edificio y el aparcamiento. La
+          ficha flota a la izquierda, dentro de la retícula, sin tapar el punto. */}
+      <div className="relative mt-10 lg:h-[36rem]">
+        <MapEmbed
+          image={IMAGES.mapa.src}
+          alt={IMAGES.mapa.alt}
+          embedUrl={SITE.maps.embedSatelite}
+          priority={mapPriority}
+          className="aspect-[4/3] sm:aspect-[16/9] lg:absolute lg:inset-0 lg:aspect-auto"
+        />
 
-          <div className="relative z-10 mt-4 rounded-2xl bg-crema p-7 shadow-[0_30px_70px_-25px_rgb(40_30_20/0.35)] ring-1 ring-tinta-line sm:p-8 lg:absolute lg:inset-y-6 lg:left-6 lg:mx-0 lg:mt-0 lg:flex lg:w-[27rem] lg:flex-col">
+        <div className="container-wide relative z-10 mt-4 pb-16 lg:pointer-events-none lg:absolute lg:inset-0 lg:mt-0 lg:flex lg:items-center lg:pb-0">
+          <div className="rounded-2xl bg-crema p-7 shadow-[0_30px_70px_-25px_rgb(0_0_0/0.55)] ring-1 ring-tinta-line sm:p-8 lg:pointer-events-auto lg:w-[27rem]">
             <EstadoAhora semana={horario.semana} inicial={estadoAhora(horario.semana)} className="text-carbon-muted" />
 
             <address className="mt-5 not-italic">
@@ -69,7 +70,7 @@ export function Ubicacion({
               <Horario horario={horario} compact />
             </div>
 
-            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:mt-auto">
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
               <a href={SITE.maps.directions} target="_blank" rel="noopener noreferrer" className="btn-primary">
                 <Icon name="pin" className="h-4 w-4" />
                 {t.cta.comoLlegar}

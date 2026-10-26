@@ -15,6 +15,7 @@ interface Puerta {
 /**
  * Dos puertas a pantalla completa, una junto a otra: empresas del Parque y
  * celebraciones. Cada mitad es un enlace entero; el detalle vive en su página.
+ * Abajo funden al fondo claro de "Cómo llegar".
  */
 export function EmpresasHome({ locale }: { locale: Locale }) {
   const puertas: Puerta[] = [
@@ -57,7 +58,9 @@ export function EmpresasHome({ locale }: { locale: Locale }) {
               <span>{p.cta}</span>
               <span aria-hidden="true">→</span>
             </span>
-            {credito ? <span className="absolute bottom-3 right-4 text-[0.64rem] text-crema/60">{credito}</span> : null}
+            {credito ? <span className="absolute right-4 top-3 text-[0.64rem] text-crema/60">{credito}</span> : null}
+            {/* Fundido al color de "Cómo llegar", que entra justo debajo. */}
+            <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-noche/0 to-papel-2" />
           </Link>
         );
       })}
