@@ -34,6 +34,9 @@ export function Declaracion() {
           </span>
         </span>
 
+        {/* Al final, la foto se funde en niebla hacia la sección oscura siguiente. */}
+        <span aria-hidden="true" className="reel-fog absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-b from-transparent via-noche/70 to-noche" />
+
         <div className="reel-end absolute inset-0 grid place-items-center px-6 text-center text-crema">
           <div>
             <p className="kicker text-ratan">Parque Tecnológico de Bizkaia · Derio</p>

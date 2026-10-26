@@ -312,6 +312,18 @@
 
 /* Sin animaciones ligadas al scroll (o con "reducir movimiento") el vídeo de
    la frase se ve entero con el lema: la frase partida no se monta encima. */
+.route-dot {
+  display: none;
+}
+
+/* Las animaciones con view() miden contra el contenedor de scroll más cercano, y
+   overflow:hidden crea uno (aunque no se desplace): la animación se congelaba.
+   overflow:clip recorta igual sin crear contenedor de scroll. */
+.parallax,
+.overflow-hidden:has(.parallax, .fog-in, .drift-l, .drift-r, .title-in, .footer-name) {
+  overflow: clip;
+}
+
 @supports not (animation-timeline: view()) {
   .reel-words,
   .reel-cue {
@@ -399,6 +411,86 @@
       animation-timeline: --reel;
       animation-range: contain 0% contain 8%;
     }
+    /* Filas de letras que se cruzan con el scroll (Restaurant GEM). */
+    .drift-l {
+      animation: drift-l linear both;
+      animation-timeline: view();
+      animation-range: cover;
+    }
+    .drift-r {
+      animation: drift-r linear both;
+      animation-timeline: view();
+      animation-range: cover;
+    }
+
+    /* Imagen que entra desde la niebla y se enfoca (White Desert). */
+    .fog-in {
+      animation: fog-in linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 45%;
+    }
+
+    /* Ruta que se dibuja con el scroll (White Desert): la sección se ancla, la
+       línea avanza, un punto la recorre y el destino se enciende al llegar. */
+    .route {
+      height: 260vh;
+      view-timeline: --route block;
+    }
+    .route-sticky {
+      position: sticky;
+      top: 0;
+    }
+    .route-zoom {
+      animation: route-zoom linear both;
+      animation-timeline: --route;
+      animation-range: contain 10% contain 88%;
+    }
+    .route-line {
+      stroke-dasharray: 1;
+      animation: route-draw linear both;
+      animation-timeline: --route;
+      animation-range: contain 5% contain 80%;
+    }
+    .route-dot {
+      display: inline;
+      stroke-dasharray: 0 1;
+      animation: route-dot linear both;
+      animation-timeline: --route;
+      animation-range: contain 5% contain 80%;
+    }
+    .route-end {
+      animation: route-end linear both;
+      animation-timeline: --route;
+      animation-range: contain 74% contain 88%;
+    }
+
+    /* El nombre del pie sube al entrar (The Fat Duck). */
+    .footer-name {
+      animation: footer-name linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 90%;
+    }
+
+    .footer-draw path,
+    .footer-draw circle,
+    .footer-draw ellipse {
+      stroke-dasharray: 1;
+      animation: route-draw linear both;
+      animation-timeline: view();
+      animation-range: entry 10% cover 55%;
+    }
+    .footer-blob {
+      animation: footer-blob linear both;
+      animation-timeline: view();
+      animation-range: cover;
+    }
+
+    .reel-fog {
+      animation: reel-end linear both;
+      animation-timeline: --reel;
+      animation-range: contain 60% contain 95%;
+    }
+
     .reel-end {
       animation: reel-end linear both;
       animation-timeline: --reel;
@@ -429,6 +521,84 @@
   }
   to {
     clip-path: inset(0 0 round 0);
+  }
+}
+@keyframes drift-l {
+  from {
+    transform: translateX(-2%);
+  }
+  to {
+    transform: translateX(-12%);
+  }
+}
+@keyframes drift-r {
+  from {
+    transform: translateX(-12%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@keyframes fog-in {
+  from {
+    filter: blur(18px);
+    opacity: 0.35;
+    transform: scale(1.06);
+  }
+  to {
+    filter: blur(0);
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes route-zoom {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.7);
+  }
+}
+@keyframes route-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes route-dot {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -1;
+  }
+}
+@keyframes route-end {
+  from {
+    opacity: 0.2;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes footer-blob {
+  from {
+    transform: translateY(40px) scale(0.92);
+  }
+  to {
+    transform: translateY(-40px) scale(1.04);
+  }
+}
+@keyframes footer-name {
+  from {
+    opacity: 0;
+    transform: translateY(30%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 @keyframes reel-cue {

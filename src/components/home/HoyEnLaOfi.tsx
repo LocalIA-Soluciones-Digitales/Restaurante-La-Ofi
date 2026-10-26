@@ -55,7 +55,7 @@ export function HoyEnLaOfi({ locale, menu, horario }: { locale: Locale; menu: Co
 
         {/* La foto del comedor detrás y la tarjeta del menú montada encima. */}
         <div className="relative w-full lg:col-span-7 lg:min-h-[42rem]">
-          <div className="parallax relative aspect-[4/3] overflow-hidden bg-papel-3 lg:absolute lg:inset-y-0 lg:right-0 lg:aspect-auto lg:w-[60%]">
+          <div className="fog-in parallax relative aspect-[4/3] overflow-hidden bg-papel-3 lg:absolute lg:inset-y-0 lg:right-0 lg:aspect-auto lg:w-[60%]">
             <Photo img="comedorRatan" sizes="(min-width: 1024px) 34vw, 100vw" mobileBelow={0} />
           </div>
           <div className="relative z-10 mx-3 -mt-20 sm:mx-10 lg:absolute lg:left-0 lg:top-1/2 lg:mx-0 lg:mt-0 lg:w-[64%] lg:-translate-y-1/2">

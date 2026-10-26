@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { Declaracion } from "@/components/home/Declaracion";
 import { EmpresasHome } from "@/components/home/EmpresasHome";
 import { EspaciosPaneles } from "@/components/home/EspaciosPaneles";
+import { LetrasScroll } from "@/components/home/LetrasScroll";
+import { RutaOfi } from "@/components/home/RutaOfi";
+import { VentanaFija } from "@/components/home/VentanaFija";
 import { IntroOfi } from "@/components/home/IntroOfi";
 import { HoyEnLaOfi } from "@/components/home/HoyEnLaOfi";
 import { PlatosQueApetecen } from "@/components/home/PlatosQueApetecen";
@@ -43,10 +46,13 @@ export default async function HomePage({ params }: Params) {
     <>
       <IntroOfi />
       <Declaracion />
+      <LetrasScroll />
       <EspaciosPaneles locale={locale} />
       <HoyEnLaOfi locale={locale} menu={menu} horario={resuelto} />
       <PlatosQueApetecen locale={locale} carta={carta} />
+      <VentanaFija locale={locale} />
       <EmpresasHome locale={locale} />
+      <RutaOfi />
       <Ubicacion t={t} horario={resuelto} />
     </>
   );

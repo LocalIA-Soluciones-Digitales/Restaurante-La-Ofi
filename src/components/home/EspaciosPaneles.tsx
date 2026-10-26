@@ -31,9 +31,19 @@ export function EspaciosPaneles({ locale }: { locale: Locale }) {
             Cuatro espacios bajo el mismo techo
           </h2>
         </div>
+      </div>
 
+      {/* Como Lingers: el nombre enorme, entero y tenue, y los paneles montados
+          sobre su parte baja (letras y fotos en una sola pieza). */}
+      <div aria-hidden="true" className="pointer-events-none mt-10 select-none overflow-clip">
+        <p className="title-in text-center font-display text-[19vw] font-light uppercase leading-[0.82] tracking-[0.02em] text-carbon/[0.14]">
+          La Ofi
+        </p>
+      </div>
+
+      <div className="container-wide relative -mt-[3.5vw]">
         {/* Escritorio: paneles que se abren */}
-        <ul className="mt-12 hidden h-[68svh] min-h-[32rem] gap-3 lg:flex">
+        <ul className="relative hidden h-[68svh] min-h-[32rem] gap-3 lg:flex">
           {PANELES.map((p, i) => {
             const abierto = activo === i;
             return (
@@ -93,7 +103,7 @@ export function EspaciosPaneles({ locale }: { locale: Locale }) {
         </ul>
 
         {/* Móvil y tableta: carrusel */}
-        <ul className="no-scrollbar -mx-4 mt-10 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 sm:-mx-6 sm:scroll-px-6 sm:px-6 lg:hidden">
+        <ul className="no-scrollbar -mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 sm:-mx-6 sm:scroll-px-6 sm:px-6 lg:hidden">
           {PANELES.map((p) => (
             <li key={p.id} className="w-[78vw] max-w-[22rem] shrink-0 snap-start">
               <Link href={href(locale, `/espacios#${p.id}`)} className="relative block aspect-[3/4] overflow-hidden bg-noche text-crema">
