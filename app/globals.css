@@ -291,25 +291,9 @@
     animation: wm-flicker 1.2s linear 1.5s both;
   }
 
-  /* Titulares del hero: cada línea sube desde detrás de una máscara. */
-  .line-mask {
-    display: block;
-    overflow: hidden;
-    padding-bottom: 0.08em;
-  }
-  .line-mask > span {
-    display: block;
-    animation: line-up 1.1s cubic-bezier(0.16, 1, 0.3, 1) both;
-    animation-delay: var(--d, 0s);
-  }
   .intro-up {
     animation: intro-up 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
     animation-delay: var(--d, 0s);
-  }
-
-  /* Hero: la foto se posa desde un ligero zoom mientras sube la entrada. */
-  .hero-img-in {
-    animation: img-settle 2.2s cubic-bezier(0.16, 1, 0.3, 1) 0.9s both;
   }
 
   /* Entrada (GEM): el rótulo se dibuja y la cortina sube. Nunca captura clics. */
@@ -318,12 +302,6 @@
   }
   .intro-ofi-sub {
     animation: intro-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.5s both;
-  }
-
-  /* Titular del hero letra a letra, tras una máscara. */
-  .char-up {
-    animation: line-up 1s cubic-bezier(0.16, 1, 0.3, 1) both;
-    animation-delay: var(--d, 0s);
   }
 
   /* Indicador "Desliza": un trazo que recorre la línea. */
@@ -335,17 +313,19 @@
 /* Sin animaciones ligadas al scroll (o con "reducir movimiento") el vídeo de
    la frase se ve entero con el lema: la frase partida no se monta encima. */
 @supports not (animation-timeline: view()) {
-  .reel-words {
+  .reel-words,
+  .reel-cue {
     display: none;
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .reel-words {
+  .reel-words,
+  .reel-cue {
     display: none;
   }
 }
 
-/* Con "reducir movimiento" no hay entrada que tape el hero. */
+/* Con "reducir movimiento" no hay entrada que tape la página. */
 @media (prefers-reduced-motion: reduce) {
   .intro-ofi {
     display: none;
@@ -354,18 +334,6 @@
 
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {
-    /* Hero: la foto se acerca y el texto se va mientras bajas. */
-    .hero-zoom {
-      animation: hero-zoom linear both;
-      animation-timeline: scroll(root);
-      animation-range: 0 100vh;
-    }
-    .hero-out {
-      animation: hero-out linear both;
-      animation-timeline: scroll(root);
-      animation-range: 0 75vh;
-    }
-
     /* Cabeceras de sección: el filete se dibuja y el titular sube. */
     .rule-line {
       transform-origin: left;
@@ -384,13 +352,6 @@
       animation: parallax linear both;
       animation-timeline: view();
       animation-range: cover;
-    }
-
-    /* Hero: al bajar, el vídeo se recoge en una tarjeta redondeada. */
-    .hero-frame {
-      animation: hero-shrink linear both;
-      animation-timeline: scroll(root);
-      animation-range: 0 90vh;
     }
 
     /* Vídeo que crece con el scroll: la sección se ancla, el vídeo se abre
@@ -433,6 +394,11 @@
     .reel-r {
       animation-name: reel-out-r;
     }
+    .reel-cue {
+      animation: reel-cue linear both;
+      animation-timeline: --reel;
+      animation-range: contain 0% contain 8%;
+    }
     .reel-end {
       animation: reel-end linear both;
       animation-timeline: --reel;
@@ -449,22 +415,6 @@
     transform: translateY(-101%);
   }
 }
-@keyframes img-settle {
-  from {
-    transform: scale(1.18);
-  }
-  to {
-    transform: scale(1);
-  }
-}
-@keyframes hero-shrink {
-  from {
-    clip-path: inset(0 0 round 0);
-  }
-  to {
-    clip-path: inset(7% 3% 0 3% round 28px);
-  }
-}
 @keyframes reel-grow {
   from {
     clip-path: inset(32% 35% round 999px);
@@ -479,6 +429,11 @@
   }
   to {
     clip-path: inset(0 0 round 0);
+  }
+}
+@keyframes reel-cue {
+  to {
+    opacity: 0;
   }
 }
 @keyframes reel-zoom {
@@ -545,14 +500,6 @@
     opacity: 0.85;
   }
 }
-@keyframes line-up {
-  from {
-    transform: translateY(105%);
-  }
-  to {
-    transform: translateY(0);
-  }
-}
 @keyframes intro-up {
   from {
     opacity: 0;
@@ -561,17 +508,6 @@
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-@keyframes hero-zoom {
-  to {
-    transform: scale(1.12);
-  }
-}
-@keyframes hero-out {
-  to {
-    opacity: 0;
-    transform: translateY(-64px);
   }
 }
 @keyframes rule-in {

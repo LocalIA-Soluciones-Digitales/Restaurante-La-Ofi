@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Declaracion } from "@/components/home/Declaracion";
 import { EmpresasHome } from "@/components/home/EmpresasHome";
 import { EspaciosPaneles } from "@/components/home/EspaciosPaneles";
-import { HeroOfi } from "@/components/home/HeroOfi";
 import { IntroOfi } from "@/components/home/IntroOfi";
 import { HoyEnLaOfi } from "@/components/home/HoyEnLaOfi";
 import { PlatosQueApetecen } from "@/components/home/PlatosQueApetecen";
@@ -10,7 +9,6 @@ import { Ubicacion } from "@/components/home/Ubicacion";
 import { getDictionary } from "@/i18n/dictionaries";
 import { estadoAhora, resolverHorario } from "@/lib/horario";
 import { href, type Locale } from "@/lib/i18n";
-import { franjaDelDia } from "@/lib/media";
 import { getCartaContent, getMenuDiaContent } from "@/lib/restaurant/content";
 import { getHorario } from "@/lib/restaurant/queries";
 import { pageMetadata } from "@/lib/seo";
@@ -44,13 +42,6 @@ export default async function HomePage({ params }: Params) {
   return (
     <>
       <IntroOfi />
-      <HeroOfi
-        franjaInicial={franjaDelDia()}
-        estadoInicial={estadoAhora(resuelto.semana)}
-        semana={resuelto.semana}
-        links={{ carta: href(locale, "/carta"), reservar: href(locale, "/reservar"), menu: href(locale, "#hoy") }}
-        labels={{ verCarta: t.cta.verCarta, reservar: t.cta.reservarMesa }}
-      />
       <Declaracion />
       <EspaciosPaneles locale={locale} />
       <HoyEnLaOfi locale={locale} menu={menu} horario={resuelto} />

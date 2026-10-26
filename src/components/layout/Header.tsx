@@ -37,9 +37,9 @@ export function Header({ homeHref, pedirHref, reservarHref, items, primary, phon
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
   const pathname = usePathname();
-  // La home abre con hero oscuro: ya en el HTML del servidor la cabecera va en claro
-  // (sin destello de texto oscuro sobre la foto); el efecto de abajo lo confirma.
-  const [overHero, setOverHero] = useState(pathname === homeHref);
+  // Texto claro solo sobre una cabecera de foto oscura (data-header="light"); la
+  // home ya abre sobre crema, así que se parte de la versión oscura en todas.
+  const [overHero, setOverHero] = useState(false);
   const [open, setOpen] = useState(false);
   const lastY = useRef(0);
 
