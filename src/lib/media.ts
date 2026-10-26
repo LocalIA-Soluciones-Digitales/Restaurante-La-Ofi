@@ -39,12 +39,6 @@ export function videoSources(v: VideoAsset): { poster: string; sources: { src: s
   };
 }
 
-/** Pie obligatorio de un vídeo según su procedencia. */
-export function creditoVideo(v: VideoAsset): string | null {
-  if (v.kind === "ia") return "Vídeo generado con IA a partir de una foto del local";
-  if (v.kind === "ia-ilustrativo") return "Imagen ilustrativa";
-  return null;
-}
 
 const ia = (nombre: string, label: string, kind: VideoKind = "ia"): VideoAsset => ({
   base: `/videos/ia/${nombre}`,

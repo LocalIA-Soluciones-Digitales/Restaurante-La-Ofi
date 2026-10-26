@@ -99,9 +99,7 @@ export default async function ReservarPage({ params, searchParams }: Props) {
               </div>
               <figcaption className="mt-3 flex flex-wrap items-center justify-between gap-4 text-sm text-carbon-muted">
                 <span>
-                  {IMAGES.comedorRatan.kind === "ilustrativa"
-                    ? creditoFoto(IMAGES.comedorRatan)
-                    : ["El comedor de La Ofi", creditoFoto(IMAGES.comedorRatan)].filter(Boolean).join(" · ")}
+                  {["El comedor de La Ofi", creditoFoto(IMAGES.comedorRatan)].filter(Boolean).join(" · ")}
                 </span>
                 <span className="flex gap-6">
                   <Link href={href(locale, "/menu-del-dia")} className="link-arrow">

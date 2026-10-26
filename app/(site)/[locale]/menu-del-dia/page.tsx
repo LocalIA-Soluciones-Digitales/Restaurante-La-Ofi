@@ -9,7 +9,6 @@ import { JsonLd } from "@/components/ui/JsonLd";
 import { IS_DEMO } from "@/lib/env";
 import { estadoAhora, horarioDeHoy, resolverHorario } from "@/lib/horario";
 import { href, type Locale } from "@/lib/i18n";
-import { creditoFoto, IMAGES } from "@/lib/images";
 import { obtenerConfigPedidos } from "@/lib/pedidos/actions";
 import { getCartaContent, getMenuDiaContent } from "@/lib/restaurant/content";
 import { menuJsonLd } from "@/lib/restaurant/jsonld";
@@ -42,7 +41,6 @@ export default async function MenuDelDiaPage({ params }: Params) {
   const [state, horarioBd, carta, configR] = await Promise.all([getMenuDiaContent(), getHorario(), getCartaContent(), obtenerConfigPedidos()]);
   const horario = resolverHorario(horarioBd);
   const hoy = horarioDeHoy(horario.semana);
-  const comedor = IMAGES.comedorRatan;
 
   return (
     <>
@@ -89,7 +87,6 @@ export default async function MenuDelDiaPage({ params }: Params) {
               Edificio 502 · Cómo llegar
             </a>
           </p>
-          {comedor.kind === "ilustrativa" ? <p className="mt-6 text-xs text-crema/50">{creditoFoto(comedor)}</p> : null}
         </div>
       </section>
 

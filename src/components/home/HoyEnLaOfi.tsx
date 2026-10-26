@@ -5,7 +5,6 @@ import { EstadoAhora } from "@/components/ui/EstadoAhora";
 import { Icon } from "@/components/ui/Icon";
 import { estadoAhora, horarioDeHoy, type HorarioResuelto } from "@/lib/horario";
 import { href, type Locale } from "@/lib/i18n";
-import { creditoFoto, IMAGES } from "@/lib/images";
 import type { ContentState, MenuDiaView } from "@/lib/restaurant/types";
 
 /**
@@ -15,7 +14,6 @@ import type { ContentState, MenuDiaView } from "@/lib/restaurant/types";
  */
 export function HoyEnLaOfi({ locale, menu, horario }: { locale: Locale; menu: ContentState<MenuDiaView>; horario: HorarioResuelto }) {
   const hoy = horarioDeHoy(horario.semana);
-  const comedor = IMAGES.comedorRatan;
 
   return (
     <section id="hoy" aria-labelledby="hoy-title" className="relative isolate scroll-mt-16 overflow-hidden bg-carbon py-20 text-crema sm:py-28">
@@ -51,7 +49,6 @@ export function HoyEnLaOfi({ locale, menu, horario }: { locale: Locale; menu: Co
           Ver con alérgenos y la carta
           <Icon name="arrow" className="h-4 w-4" />
         </Link>
-        {comedor.kind === "ilustrativa" ? <p className="mt-6 text-xs text-crema/50">{creditoFoto(comedor)}</p> : null}
       </div>
     </section>
   );

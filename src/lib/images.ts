@@ -220,13 +220,11 @@ export function esIlustrativa(src: string): boolean {
   return Object.values(IMAGES).some((v) => v.src.src === src && v.kind === "ilustrativa");
 }
 
-/** Pie de foto obligatorio según procedencia (null = foto propia sin retocar con IA, sin pie). */
+/** Pie de foto: solo la autoría de fotos de terceros. Las de IA o plantilla ya no llevan pie. */
 export function creditoFoto(img: SiteImage): string | null {
   if (img.pie) return img.pie;
-  if (img.kind === "ilustrativa") return "Imagen ilustrativa";
-  const ia = img.ia ? "mejorada con IA" : null;
-  if (img.kind === "tercero") return [`Foto: ${img.credit}`, ia].filter(Boolean).join(" · ");
-  return ia ? `Foto ${ia}` : null;
+  if (img.kind === "tercero") return `Foto: ${img.credit}`;
+  return null;
 }
 
 // --- Dirección de arte responsive ------------------------------------------

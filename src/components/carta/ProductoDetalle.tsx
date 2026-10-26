@@ -19,7 +19,6 @@ import {
   type SeleccionModificador,
 } from "@/lib/carta";
 import { formatCentimos } from "@/lib/format";
-import { esIlustrativa } from "@/lib/images";
 import { vibrar } from "@/lib/haptics";
 import type { CartaItem } from "@/lib/restaurant/types";
 
@@ -206,14 +205,7 @@ function Detalle({
           {item.video ? (
             <video src={item.video} muted loop playsInline autoPlay={!prefersReducedMotion()} preload="metadata" className="h-full w-full object-cover" aria-label={item.nombre} />
           ) : imagen ? (
-            <>
-              <Image src={imagen.src} alt={imagen.alt} fill sizes="(min-width: 1024px) 680px, 100vw" className="object-cover" />
-              {esIlustrativa(imagen.src) ? (
-                <span className="absolute left-3 top-3 rounded-full bg-carbon/60 px-2.5 py-1 text-[0.68rem] font-medium text-crema backdrop-blur">
-                  Imagen ilustrativa
-                </span>
-              ) : null}
-            </>
+            <Image src={imagen.src} alt={imagen.alt} fill sizes="(min-width: 1024px) 680px, 100vw" className="object-cover" />
           ) : (
             <BrandPlaceholder label={item.nombre} icon="utensils" />
           )}

@@ -13,7 +13,6 @@ import { SourceBadge } from "@/components/ui/SourceBadge";
 import { getAlergeno, normalizarAlergenos } from "@/lib/allergens";
 import { ETIQUETAS } from "@/lib/carta";
 import { formatCentimos } from "@/lib/format";
-import { esIlustrativa } from "@/lib/images";
 import type { CartaItem, CartaSeccion } from "@/lib/restaurant/types";
 
 /**
@@ -104,9 +103,6 @@ function PlatoCard({ item, cart, onOpen }: { item: CartaItem; cart?: CartaCartCo
             </Chip>
           ) : null}
         </div>
-        {item.imagen && esIlustrativa(item.imagen.src) ? (
-          <span className="absolute bottom-2 left-3 text-[0.65rem] font-medium text-crema/85">Imagen ilustrativa</span>
-        ) : null}
       </div>
 
       <div className="flex flex-1 flex-col p-5">
