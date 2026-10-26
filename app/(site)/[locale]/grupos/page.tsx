@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { EventCard } from "@/components/eventos/EventCard";
 import { Photo } from "@/components/media/Photo";
+import { VentanaFija } from "@/components/media/VentanaFija";
 import { Icon } from "@/components/ui/Icon";
 import { JsonLd } from "@/components/ui/JsonLd";
 import { PageHero } from "@/components/ui/PageHero";
@@ -171,6 +172,23 @@ export default async function GruposPage({ params }: Params) {
           </div>
         </section>
       ) : null}
+
+      <VentanaFija
+        id="sobremesa-title"
+        img="salonNoche"
+        kicker="Celebraciones"
+        title={
+          <>
+            La comida acaba. <em className="text-ratan">La sobremesa, no.</em>
+          </>
+        }
+        lead="Bombillas encendidas, mesas vestidas y el salón para vosotros: cenas de empresa, cumpleaños y despedidas con menú concertado."
+      >
+        <a href="#contacto" className="btn-line mt-9 text-crema">
+          <span>Pedir presupuesto</span>
+          <span aria-hidden="true">→</span>
+        </a>
+      </VentanaFija>
 
       <section id="contacto" aria-labelledby="contacto-grupos-title" className="section scroll-mt-20 bg-marino-900 text-crema">
         <div className="container-wide grid gap-10 lg:grid-cols-12 lg:items-end">
