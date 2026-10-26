@@ -41,43 +41,31 @@ export function Ubicacion({
       <div className="container-wide">
         <SectionRule as={headingLevel} id="ubicacion-title" title="Edificio 502 del Parque Tecnológico, en Derio" aside={<span>Cómo llegar</span>} />
 
-        <div className="mt-10 grid gap-10 lg:grid-cols-12 lg:gap-14">
-          {/* Los datos en dos columnas: dónde y cómo contactar a un lado, horario al otro. */}
-          <div className="grid gap-10 sm:grid-cols-2 lg:col-span-7">
-            <div>
-              <p className="text-[0.95rem] leading-relaxed text-carbon-muted">
-                Dentro del campus Zamudio-Derio del Parque Científico y Tecnológico de Bizkaia: se llega andando desde
-                las oficinas y hay aparcamiento para 220 coches.
+        {/* Una sola tarjeta: los datos a la izquierda y el mapa llenando el resto, todo en el mismo marco. */}
+        <div className="mt-10 grid overflow-hidden rounded-2xl bg-crema ring-1 ring-tinta-line lg:grid-cols-2">
+          <div className="flex flex-col p-7 sm:p-10">
+            <address className="not-italic">
+              <p className="font-display text-2xl text-carbon">{SITE.name}</p>
+              <p className="mt-1 text-carbon">{SITE.address.street}</p>
+              <p className="text-carbon-muted">
+                {SITE.address.postalCode} {SITE.address.locality}, {SITE.address.region}
               </p>
-              <address className="mt-6 grid gap-4 not-italic">
-                <div className="flex gap-3">
-                  <Icon name="pin" className="mt-1 h-4 w-4 shrink-0 text-brasa" />
-                  <p className="text-[0.95rem]">
-                    <span className="block font-display text-lg text-carbon">{SITE.name}</span>
-                    <span className="block text-carbon">{SITE.address.street}</span>
-                    <span className="block text-carbon-muted">
-                      {SITE.address.postalCode} {SITE.address.locality}, {SITE.address.region}
-                    </span>
-                  </p>
-                </div>
-                <div className="flex gap-3">
-                  <Icon name="phone" className="mt-1 h-4 w-4 shrink-0 text-brasa" />
-                  <a href={SITE.phone.href} className="font-display text-lg text-carbon underline decoration-carbon/25 underline-offset-4 hover:decoration-brasa">
-                    {SITE.phone.display}
-                  </a>
-                </div>
-              </address>
-            </div>
-            <div>
-              <p className="kicker flex items-center gap-2 text-carbon-muted">
+              <a href={SITE.phone.href} className="mt-3 inline-flex items-center gap-2 font-display text-xl text-carbon underline decoration-carbon/25 underline-offset-4 hover:decoration-brasa">
+                <Icon name="phone" className="h-4 w-4 text-brasa" />
+                {SITE.phone.display}
+              </a>
+            </address>
+            <p className="mt-4 text-sm text-carbon-muted">Parque Tecnológico de Bizkaia · Aparcamiento para 220 coches</p>
+
+            <div className="mt-7 border-t border-tinta-line pt-5">
+              <p className="kicker mb-3 flex items-center gap-2 text-carbon-muted">
                 <Icon name="clock" className="h-4 w-4 text-brasa" />
                 Horario
               </p>
-              <div className="mt-4">
-                <Horario horario={horario} />
-              </div>
+              <Horario horario={horario} />
             </div>
-            <div className="flex flex-wrap gap-3 sm:col-span-2">
+
+            <div className="mt-auto flex flex-wrap gap-3 pt-8">
               <a href={SITE.maps.directions} target="_blank" rel="noopener noreferrer" className="btn-primary">
                 <Icon name="pin" className="h-4 w-4" />
                 {t.cta.comoLlegar}
@@ -95,16 +83,13 @@ export function Ubicacion({
             </div>
           </div>
 
-          {/* Mapa contenido: basta para situarse, el botón abre la ruta en Google Maps. */}
-          <div className="lg:col-span-5">
-            <MapEmbed
-              image={IMAGES.mapa.src}
-              alt={IMAGES.mapa.alt}
-              embedUrl={SITE.maps.embed}
-              priority={mapPriority}
-              className="aspect-[4/3] rounded-xl lg:aspect-auto lg:h-full lg:min-h-[20rem]"
-            />
-          </div>
+          <MapEmbed
+            image={IMAGES.mapa.src}
+            alt={IMAGES.mapa.alt}
+            embedUrl={SITE.maps.embed}
+            priority={mapPriority}
+            className="aspect-[4/3] border-t border-tinta-line sm:aspect-[16/9] lg:aspect-auto lg:h-full lg:min-h-[26rem] lg:border-l lg:border-t-0"
+          />
         </div>
       </div>
     </section>

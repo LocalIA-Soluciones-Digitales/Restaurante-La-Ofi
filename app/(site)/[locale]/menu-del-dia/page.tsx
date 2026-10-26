@@ -29,8 +29,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 }
 
 /**
- * El menú del día primero (en móvil, sin cabecera de foto delante): qué hay,
- * precio e incluidos; al lado, abierto/horario, reservar, llamar y llegar.
+ * A un lado, el título y una tarjeta de "hoy" (horario, estado, incluidos) con
+ * las acciones; al otro, la tarjeta del menú montada sobre la foto del comedor.
  */
 export default async function MenuDelDiaPage({ params }: Params) {
   const { locale } = await params;
@@ -38,6 +38,7 @@ export default async function MenuDelDiaPage({ params }: Params) {
   const horario = resolverHorario(horarioBd);
   const hoy = horarioDeHoy(horario.semana);
   const comedor = IMAGES.comedorRatan;
+  const incluye = state.status === "empty" ? [] : state.data.incluye;
 
   return (
     <>
@@ -45,60 +46,63 @@ export default async function MenuDelDiaPage({ params }: Params) {
         <div className="container-wide mb-10 lg:mb-14">
           <CartaTabs locale={locale} actual="menu" />
         </div>
-        <div className="container-wide grid gap-10 lg:grid-cols-12 lg:grid-rows-[auto_1fr] lg:gap-x-14 lg:gap-y-0">
-          <div className="order-1 lg:order-none lg:col-span-4 lg:row-start-1">
+        <div className="container-wide grid gap-12 lg:grid-cols-12 lg:items-center lg:gap-14">
+          <div className="lg:col-span-4">
             <p className="kicker text-brasa">Mediodía · Lunes a viernes</p>
             <h1 id="menu-dia-title" className="t-display mt-4 text-carbon">
-              Menú del día
+              Menú <em className="text-madera">del día</em>
             </h1>
-            <p className="lead mt-4">Cocina casera para bajar a comer desde la oficina. Lo publicamos aquí cada día.</p>
-          </div>
 
-          <div className="order-3 lg:order-none lg:col-span-4 lg:row-start-2">
-            <div className="border-t border-tinta-line lg:mt-8">
-              <div className="border-b border-tinta-line py-4">
-                <EstadoAhora semana={horario.semana} inicial={estadoAhora(horario.semana)} className="text-base text-carbon" />
-                <p className="mt-1 text-sm text-carbon-muted">{hoy ? `Hoy: ${hoy}` : "Hoy: consulta el horario por teléfono"}</p>
+            {/* Tarjeta oscura de "hoy": lo que se mira de un vistazo, sin párrafos. */}
+            <div className="mt-10 overflow-hidden rounded-2xl bg-carbon text-crema shadow-[0_30px_60px_-30px_rgb(0_0_0/0.5)]">
+              <div className="px-7 pb-6 pt-7">
+                <p className="kicker text-crema/60">Hoy</p>
+                <p className="mt-2 font-display text-4xl tabular-nums tracking-tight">{hoy ?? "Consúltanos"}</p>
+                <EstadoAhora semana={horario.semana} inicial={estadoAhora(horario.semana)} tone="light" className="mt-3 text-crema/80" />
               </div>
-              <p className="flex items-start gap-3 border-b border-tinta-line py-4 text-sm text-carbon-muted">
-                <Icon name="pin" className="mt-0.5 h-4 w-4 shrink-0 text-brasa" />
-                Edificio 502 del Parque Tecnológico, {SITE.address.locality}. Aparcamiento para 220 coches.
-              </p>
+              {incluye.length > 0 ? (
+                <div
+                  className="grid border-t border-crema/10 text-center text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-crema/70"
+                  style={{ gridTemplateColumns: `repeat(${incluye.length}, minmax(0, 1fr))` }}
+                >
+                  {incluye.map((x, i) => (
+                    <span key={x} className={`py-3.5 ${i ? "border-l border-crema/10" : ""}`}>
+                      {x}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
             </div>
 
-            <div className="mt-8 grid gap-3 sm:flex sm:flex-wrap">
+            <div className="mt-6 flex flex-wrap gap-3">
               <Link href={href(locale, "/reservar?para=hoy")} className="btn-primary">
                 Reservar para hoy
-              </Link>
-              <a href={SITE.phone.href} className="btn-secondary">
-                <Icon name="phone" className="h-4 w-4" />
-                {SITE.phone.display}
-              </a>
-              <a href={SITE.maps.directions} target="_blank" rel="noopener noreferrer" className="btn-secondary">
-                <Icon name="pin" className="h-4 w-4" />
-                Cómo llegar
-              </a>
-            </div>
-          </div>
-
-          <div className="order-2 lg:order-none lg:col-span-8 lg:col-start-5 lg:row-span-2 lg:row-start-1">
-            <div className="grid gap-8 xl:grid-cols-[1fr_17rem] xl:items-start">
-              <MenuDelDia state={state} detalle live headingLevel="h2" />
-              <figure className="hidden xl:block">
-                <div className="relative aspect-[3/4] overflow-hidden bg-papel-3">
-                  <Photo img="comedorRatan" sizes="17rem" mobileBelow={0} />
-                </div>
-                <figcaption className="mt-2 text-xs text-carbon-muted">
-                  {comedor.kind === "ilustrativa" ? creditoFoto(comedor) : ["El comedor", creditoFoto(comedor)].filter(Boolean).join(" · ")}
-                </figcaption>
-              </figure>
-            </div>
-            <p className="mt-6">
-              <Link href={href(locale, "/carta")} className="link-arrow">
-                ¿Prefieres carta? Ver la carta completa
                 <Icon name="arrow" className="h-4 w-4" />
               </Link>
-            </p>
+              <a href={SITE.phone.href} className="btn-secondary" aria-label={`Llamar al ${SITE.phone.display}`}>
+                <Icon name="phone" className="h-4 w-4" />
+              </a>
+              <a href={SITE.maps.directions} target="_blank" rel="noopener noreferrer" className="btn-secondary" aria-label="Cómo llegar">
+                <Icon name="pin" className="h-4 w-4" />
+              </a>
+            </div>
+            <Link href={href(locale, "/carta")} className="link-arrow mt-6 text-sm">
+              ¿Prefieres carta? Ver la carta completa
+              <Icon name="arrow" className="h-4 w-4" />
+            </Link>
+          </div>
+
+          {/* La foto del comedor detrás y la tarjeta del menú montada encima, como en la home. */}
+          <div className="relative lg:col-span-8">
+            <div className="parallax relative aspect-[4/3] overflow-hidden bg-papel-3 lg:absolute lg:inset-y-0 lg:right-0 lg:aspect-auto lg:w-[60%]">
+              <Photo img="comedorRatan" sizes="(min-width: 1024px) 30vw, 100vw" mobileBelow={0} />
+            </div>
+            <div className="relative z-10 mx-3 -mt-20 sm:mx-10 lg:mx-0 lg:my-16 lg:w-[64%]">
+              <MenuDelDia state={state} detalle live headingLevel="h2" />
+            </div>
+            {comedor.kind === "ilustrativa" ? (
+              <p className="mt-3 text-right text-xs text-carbon-muted">{creditoFoto(comedor)}</p>
+            ) : null}
           </div>
         </div>
       </div>
