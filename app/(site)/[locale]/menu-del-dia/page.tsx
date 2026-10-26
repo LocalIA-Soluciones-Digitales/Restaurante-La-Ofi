@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CartaTabs } from "@/components/carta/CartaTabs";
 import { Photo } from "@/components/media/Photo";
 import { AllergenLegend } from "@/components/menu/AllergenLegend";
 import { MenuDelDia } from "@/components/menu/MenuDelDia";
@@ -41,6 +42,9 @@ export default async function MenuDelDiaPage({ params }: Params) {
   return (
     <>
       <div className="bg-papel-2 pb-16 pt-24 sm:pb-24 lg:pt-32">
+        <div className="container-wide mb-10 lg:mb-14">
+          <CartaTabs locale={locale} actual="menu" />
+        </div>
         <div className="container-wide grid gap-10 lg:grid-cols-12 lg:grid-rows-[auto_1fr] lg:gap-x-14 lg:gap-y-0">
           <div className="order-1 lg:order-none lg:col-span-4 lg:row-start-1">
             <p className="kicker text-brasa">Mediodía · Lunes a viernes</p>

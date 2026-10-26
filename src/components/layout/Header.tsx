@@ -66,6 +66,7 @@ export function Header({ homeHref, pedirHref, reservarHref, items, primary, phon
 
   const isActive = (itemHref: string) =>
     !itemHref.includes("#") && (itemHref === homeHref ? pathname === homeHref : pathname.startsWith(itemHref));
+  const isActiveItem = (item: NavItem) => (item.match ?? [item.href]).some(isActive);
 
   const line = light ? "border-crema/20" : "border-tinta-line";
   const cell = `hidden h-full items-center border-l px-6 text-[0.72rem] font-semibold uppercase tracking-[0.2em] transition-colors lg:flex ${line} ${
@@ -114,7 +115,7 @@ export function Header({ homeHref, pedirHref, reservarHref, items, primary, phon
           {/* Derecha: páginas clave + Reservar */}
           <nav aria-label="Principal" className="ml-auto flex h-full items-stretch">
             {primary.map((item) => (
-              <Link key={item.href} href={item.href} aria-current={isActive(item.href) ? "page" : undefined} className={`${cell} aria-[current=page]:underline aria-[current=page]:underline-offset-8`}>
+              <Link key={item.href} href={item.href} aria-current={isActiveItem(item) ? "page" : undefined} className={`${cell} aria-[current=page]:underline aria-[current=page]:underline-offset-8`}>
                 {item.label}
               </Link>
             ))}
