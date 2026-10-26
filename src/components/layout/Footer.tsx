@@ -129,14 +129,14 @@ function Dibujos() {
   return (
     <>
       {/* Taza de café con vapor */}
-      <svg viewBox="0 0 120 120" className="footer-draw pointer-events-none absolute left-[3%] top-[-18%] hidden w-[11vw] max-w-[9rem] text-carbon/70 md:block">
+      <svg viewBox="0 0 120 120" className="footer-draw pointer-events-none absolute left-[3%] top-[-34%] w-[16vw] max-w-[9rem] text-carbon/70 md:top-[-18%] md:w-[11vw]">
         <path {...trazo} d="M24 52h58v22a26 26 0 0 1-26 26h-6a26 26 0 0 1-26-26z" />
         <path {...trazo} d="M82 60h8a11 11 0 0 1 0 22h-9" />
         <path {...trazo} d="M16 106h80" />
         <path {...trazo} d="M42 42c-6-8 6-12 0-22M56 42c-6-8 6-12 0-22M70 42c-6-8 6-12 0-22" />
       </svg>
       {/* Copa de vino */}
-      <svg viewBox="0 0 120 160" className="footer-draw pointer-events-none absolute right-[4%] top-[-30%] hidden w-[8vw] max-w-[7rem] text-carbon/70 md:block">
+      <svg viewBox="0 0 120 160" className="footer-draw pointer-events-none absolute right-[5%] top-[-46%] w-[11vw] max-w-[7rem] text-carbon/70 md:right-[4%] md:top-[-30%] md:w-[8vw]">
         <path {...trazo} d="M36 14h48c4 30 0 58-24 64-24-6-28-34-24-64z" />
         <path {...trazo} d="M40 44c12 6 28 6 40 0" />
         <path {...trazo} d="M60 78v56M38 146h44" />

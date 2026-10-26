@@ -39,7 +39,10 @@ export function Declaracion() {
 
         <div className="reel-end absolute inset-0 grid place-items-center px-6 text-center text-crema">
           <div>
-            <p className="kicker text-ratan">Parque Tecnológico de Bizkaia · Derio</p>
+            <p className="kicker text-ratan">
+              <span className="sm:hidden">Parque Tecnológico · Derio</span>
+              <span className="hidden sm:inline">Parque Tecnológico de Bizkaia · Derio</span>
+            </p>
             <h2 id="reel-title" className="mt-6 font-display text-[clamp(2.4rem,1rem+5vw,6.2rem)] font-light leading-[1.02] tracking-[-0.03em]">
               La mejor reunión del día <em className="block text-ratan">es en La Ofi.</em>
             </h2>

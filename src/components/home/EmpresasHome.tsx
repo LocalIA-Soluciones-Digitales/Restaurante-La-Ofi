@@ -60,7 +60,7 @@ export function EmpresasHome({ locale }: { locale: Locale }) {
             </span>
             {credito ? <span className="absolute right-4 top-3 text-[0.64rem] text-crema/60">{credito}</span> : null}
             {/* Fundido al color de "Cómo llegar", que entra justo debajo. */}
-            <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-noche/0 to-papel-2" />
+            <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-b from-noche/0 to-papel-2 md:h-40" />
           </Link>
         );
       })}

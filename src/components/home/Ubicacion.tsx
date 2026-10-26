@@ -57,12 +57,12 @@ export function Ubicacion({
         <div className="container-wide relative z-10 mt-4 pb-16 lg:pointer-events-none lg:absolute lg:inset-0 lg:mt-0 lg:flex lg:items-center lg:pb-0">
           {/* Ficha editorial: panel oscuro translúcido, esquinas rectas, filete dorado a
               la izquierda y separadores finos (como las fichas de datos de White Desert). */}
-          <div className="relative border-l-2 border-ratan bg-noche/[0.88] p-7 text-crema shadow-[0_40px_90px_-30px_rgb(0_0_0/0.7)] backdrop-blur-xl sm:p-9 lg:pointer-events-auto lg:w-[26rem]">
+          <div className="relative border-l-2 border-ratan bg-noche/[0.88] p-6 text-crema shadow-[0_40px_90px_-30px_rgb(0_0_0/0.7)] backdrop-blur-xl sm:p-9 lg:pointer-events-auto lg:w-[26rem]">
             <p className="kicker whitespace-nowrap text-ratan">Cómo llegar</p>
             <EstadoAhora semana={horario.semana} inicial={estadoAhora(horario.semana)} tone="light" className="mt-3 text-[0.8rem] text-crema/70" />
 
             <address className="mt-6 not-italic">
-              <p className="font-display text-[2rem] font-light leading-none">{SITE.name}</p>
+              <p className="font-display text-[1.65rem] font-light leading-none sm:text-[2rem]">{SITE.name}</p>
               <p className="mt-3 text-crema/85">
                 {SITE.address.street} · {SITE.address.postalCode} {SITE.address.locality}
               </p>

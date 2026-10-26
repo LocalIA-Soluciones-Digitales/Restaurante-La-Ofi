@@ -35,13 +35,13 @@ export function EspaciosPaneles({ locale }: { locale: Locale }) {
 
       {/* Como Lingers: el nombre enorme, entero y tenue, y los paneles montados
           sobre su parte baja (letras y fotos en una sola pieza). */}
-      <div aria-hidden="true" className="pointer-events-none mt-10 select-none overflow-clip">
+      <div aria-hidden="true" className="pointer-events-none mt-6 select-none overflow-clip lg:mt-10">
         <p className="title-in text-center font-display text-[19vw] font-light uppercase leading-[0.82] tracking-[0.02em] text-carbon/[0.14]">
           La Ofi
         </p>
       </div>
 
-      <div className="relative -mt-[3.5vw] px-4 sm:px-6 lg:px-0">
+      <div className="relative mt-4 px-4 sm:px-6 lg:-mt-[3.5vw] lg:px-0">
         {/* Escritorio: paneles que se abren */}
         <ul className="relative hidden h-[78svh] min-h-[34rem] gap-2 lg:flex">
           {PANELES.map((p, i) => {
