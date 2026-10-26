@@ -33,9 +33,9 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 }
 
 /**
- * "Carta y menú" en una sola página: arriba lo de hoy (la tarjeta del menú sobre
- * la foto del comedor) y, al seguir bajando, la carta completa. Nadie tiene que
- * encontrar una pestaña para ver la carta.
+ * "Carta y menú" en una sola página: arriba lo de hoy (la hoja del menú centrada
+ * sobre el comedor a todo el ancho) y, al seguir bajando, la carta completa.
+ * Nadie tiene que encontrar una pestaña para ver la carta.
  */
 export default async function MenuDelDiaPage({ params }: Params) {
   const { locale } = await params;
@@ -44,66 +44,52 @@ export default async function MenuDelDiaPage({ params }: Params) {
   const hoy = horarioDeHoy(horario.semana);
   const comedor = IMAGES.comedorRatan;
 
-  const datos = [
-    { label: "Hoy", value: <EstadoAhora semana={horario.semana} inicial={estadoAhora(horario.semana)} className="text-carbon" />, nota: hoy ?? "Consulta el horario por teléfono" },
-    { label: "Dónde", value: <span className="text-carbon">Edificio 502, Parque Tecnológico</span>, nota: "Aparcamiento para 220 coches" },
-  ];
-
   return (
     <>
       {carta.status === "real" && !IS_DEMO ? <JsonLd data={menuJsonLd(carta.data)} /> : null}
-      <section aria-labelledby="menu-dia-title" className="overflow-hidden bg-papel-2 pb-20 pt-24 sm:pb-28 lg:pt-32">
-        <div className="container-wide grid gap-14 lg:grid-cols-12 lg:items-center lg:gap-14">
-          <div className="lg:col-span-4">
-            <p className="kicker text-brasa">Mediodía · Lunes a viernes</p>
-            <h1 id="menu-dia-title" className="t-display mt-4 text-carbon">
-              Menú <em className="text-madera">del día</em>
-            </h1>
-            <p className="lead mt-5">Cocina casera que cambia cada día. Y si prefieres carta, la tienes justo debajo.</p>
+      {/* El comedor a todo el ancho y la hoja del menú en el centro, por encima. */}
+      <section aria-labelledby="menu-dia-title" data-header="light" className="relative isolate overflow-hidden bg-carbon pb-16 pt-28 text-crema sm:pb-24 lg:pt-36">
+        <Photo img="comedorRatan" sizes="100vw" priority mobileBelow={0} decorative imgClassName="motion-safe:animate-kenburns" />
+        <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-carbon/75 via-carbon/40 to-carbon/85" />
 
-            <dl className="mt-10 border-t border-tinta-line">
-              {datos.map((d) => (
-                <div key={d.label} className="grid grid-cols-[5.5rem_1fr] gap-4 border-b border-tinta-line py-4">
-                  <dt className="pt-0.5 text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-carbon-muted">{d.label}</dt>
-                  <dd className="text-[0.95rem]">
-                    {d.value}
-                    {d.nota ? <span className="mt-0.5 block text-sm text-carbon-muted">{d.nota}</span> : null}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link href={href(locale, "/reservar?para=hoy")} className="btn-primary">
-                Reservar para hoy
-              </Link>
-              <a href="#la-carta" className="btn-secondary">
-                Ver la carta
-                <Icon name="arrow" className="h-4 w-4 rotate-90" />
-              </a>
-            </div>
-            <p className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm">
-              <a href={SITE.phone.href} className="inline-flex items-center gap-2 text-carbon-muted hover:text-carbon">
-                <Icon name="phone" className="h-4 w-4 text-brasa" />
-                {SITE.phone.display}
-              </a>
-              <a href={SITE.maps.directions} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-carbon-muted hover:text-carbon">
-                <Icon name="pin" className="h-4 w-4 text-brasa" />
-                Cómo llegar
-              </a>
-            </p>
+        <div className="container-wide relative flex flex-col items-center text-center">
+          <p className="kicker text-crema/75">Mediodía · Lunes a viernes</p>
+          <h1 id="menu-dia-title" className="t-display mt-4 text-crema">
+            Menú <em className="text-[#E2B98A]">del día</em>
+          </h1>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm text-crema/80">
+            <EstadoAhora semana={horario.semana} inicial={estadoAhora(horario.semana)} tone="light" />
+            {hoy ? <span aria-hidden="true">·</span> : null}
+            {hoy ? <span>Hoy {hoy}</span> : null}
           </div>
 
-          {/* La foto del comedor detrás y la tarjeta del menú montada encima, como en la home. */}
-          <div className="relative lg:col-span-8">
-            <div className="parallax relative aspect-[4/3] overflow-hidden bg-papel-3 lg:absolute lg:inset-y-0 lg:right-0 lg:aspect-auto lg:w-[60%]">
-              <Photo img="comedorRatan" sizes="(min-width: 1024px) 30vw, 100vw" mobileBelow={0} />
-            </div>
-            <div className="relative z-10 mx-3 -mt-20 sm:mx-10 lg:mx-0 lg:my-16 lg:w-[64%]">
-              <MenuDelDia state={state} detalle live headingLevel="h2" />
-            </div>
-            {comedor.kind === "ilustrativa" ? <p className="mt-3 text-right text-xs text-carbon-muted">{creditoFoto(comedor)}</p> : null}
+          <div className="mt-10 w-full max-w-xl text-left motion-safe:animate-fade-up sm:mt-14">
+            <MenuDelDia state={state} detalle live headingLevel="h2" />
           </div>
+
+          <div className="mt-10 flex flex-wrap justify-center gap-3">
+            <Link href={href(locale, "/reservar?para=hoy")} className="btn-primary">
+              Reservar para hoy
+            </Link>
+            <a
+              href="#la-carta"
+              className="btn border border-crema/40 text-crema hover:bg-crema hover:text-carbon"
+            >
+              Ver la carta
+              <Icon name="arrow" className="h-4 w-4 rotate-90" />
+            </a>
+          </div>
+          <p className="mt-6 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-crema/75">
+            <a href={SITE.phone.href} className="inline-flex items-center gap-2 hover:text-crema">
+              <Icon name="phone" className="h-4 w-4" />
+              {SITE.phone.display}
+            </a>
+            <a href={SITE.maps.directions} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 hover:text-crema">
+              <Icon name="pin" className="h-4 w-4" />
+              Edificio 502 · Cómo llegar
+            </a>
+          </p>
+          {comedor.kind === "ilustrativa" ? <p className="mt-6 text-xs text-crema/50">{creditoFoto(comedor)}</p> : null}
         </div>
       </section>
 
