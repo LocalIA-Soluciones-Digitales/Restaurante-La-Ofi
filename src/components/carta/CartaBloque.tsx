@@ -1,17 +1,16 @@
-import Image from "next/image";
 import { AllergenLegend } from "@/components/menu/AllergenLegend";
+import { CartaIndice } from "@/components/carta/CartaIndice";
 import { CartaConPedido } from "@/components/carta/CartaConPedido";
 import { CartaInteractiva } from "@/components/carta/CartaInteractiva";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { Icon } from "@/components/ui/Icon";
 import { formatCentimos } from "@/lib/format";
 import type { ConfigPedidos } from "@/lib/pedidos/types";
 import type { CartaSeccion, ContentState } from "@/lib/restaurant/types";
 import { SITE } from "@/lib/site";
 
 /**
- * La carta completa: titular claro ("La carta"), un índice visual con una foto
- * por sección y, debajo, los platos. Va tras el menú del día en /menu-del-dia
+ * La carta completa: titular claro ("La carta"), el índice de secciones como el
+ * de una carta impresa y, debajo, los platos. Va tras el menú del día en /menu-del-dia
  * (h2) y sola en /carta (h1).
  */
 export function CartaBloque({
@@ -49,44 +48,21 @@ export function CartaBloque({
           </div>
         </div>
 
-        {/* Índice visual: una foto por sección, con platos y precio desde. Lleva a cada sección. */}
         {secciones.length > 0 ? (
-          <nav aria-label="Secciones de la carta" className="mt-10 lg:mt-14">
-            <ul className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-              {secciones.map((s, i) => {
-                const foto = s.items.find((it) => it.imagen)?.imagen ?? null;
+          <div className="mt-10 lg:mt-14">
+            <CartaIndice
+              entradas={secciones.map((s) => {
                 const precios = s.items.map((it) => it.precioCentimos).filter((p): p is number => p !== null);
-                const desde = precios.length > 0 ? Math.min(...precios) : null;
-                return (
-                  <li key={s.slug}>
-                    <a href={`#${s.slug}`} className="group relative isolate flex aspect-[4/5] flex-col justify-end overflow-hidden rounded-xl bg-carbon p-3.5 text-crema sm:aspect-[5/4] sm:p-5">
-                      {foto ? (
-                        <Image
-                          src={foto.src}
-                          alt=""
-                          fill
-                          sizes="(min-width: 1024px) 25vw, 50vw"
-                          className="-z-10 object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                        />
-                      ) : (
-                        <Icon name="wine" className="absolute right-5 top-5 h-8 w-8 text-crema/30" />
-                      )}
-                      <span aria-hidden="true" className="absolute inset-0 -z-10 bg-gradient-to-t from-carbon/85 via-carbon/30 to-transparent" />
-                      <span className="text-[0.7rem] tabular-nums text-crema/70">{String(i + 1).padStart(2, "0")}</span>
-                      <span className="mt-1 font-display text-lg leading-tight sm:text-2xl">{s.nombre}</span>
-                      <span className="mt-1.5 flex items-center justify-between gap-2 text-xs text-crema/80 sm:text-sm">
-                        <span>
-                          {s.items.length} {s.items.length === 1 ? "plato" : "platos"}
-                          {desde !== null ? <span className="hidden sm:inline"> · desde {formatCentimos(desde)}</span> : null}
-                        </span>
-                        <Icon name="arrow" className="hidden h-4 w-4 rotate-90 transition-transform group-hover:translate-y-0.5 sm:block" />
-                      </span>
-                    </a>
-                  </li>
-                );
+                return {
+                  slug: s.slug,
+                  nombre: s.nombre,
+                  platos: s.items.length,
+                  desde: precios.length > 0 ? formatCentimos(Math.min(...precios)) : null,
+                  foto: s.items.find((it) => it.imagen)?.imagen ?? null,
+                };
               })}
-            </ul>
-          </nav>
+            />
+          </div>
         ) : null}
       </div>
       <div className="container-wide pb-16 pt-12 sm:pb-24">
