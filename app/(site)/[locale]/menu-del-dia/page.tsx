@@ -1,15 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CartaTabs } from "@/components/carta/CartaTabs";
+import { CartaBloque } from "@/components/carta/CartaBloque";
 import { Photo } from "@/components/media/Photo";
-import { AllergenLegend } from "@/components/menu/AllergenLegend";
 import { MenuDelDia } from "@/components/menu/MenuDelDia";
 import { EstadoAhora } from "@/components/ui/EstadoAhora";
 import { Icon } from "@/components/ui/Icon";
+import { JsonLd } from "@/components/ui/JsonLd";
+import { IS_DEMO } from "@/lib/env";
 import { estadoAhora, horarioDeHoy, resolverHorario } from "@/lib/horario";
 import { href, type Locale } from "@/lib/i18n";
 import { creditoFoto, IMAGES } from "@/lib/images";
-import { getMenuDiaContent } from "@/lib/restaurant/content";
+import { obtenerConfigPedidos } from "@/lib/pedidos/actions";
+import { getCartaContent, getMenuDiaContent } from "@/lib/restaurant/content";
+import { menuJsonLd } from "@/lib/restaurant/jsonld";
 import { getHorario } from "@/lib/restaurant/queries";
 import { pageMetadata } from "@/lib/seo";
 import { SITE } from "@/lib/site";
@@ -23,73 +26,72 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   return pageMetadata({
     locale,
     path: "/menu-del-dia",
-    title: "Menú del día",
-    description: "Menú del día de La Ofi en Derio (Parque Tecnológico de Bizkaia): plato del día casero de lunes a viernes, actualizado cada día.",
+    title: "Menú del día y carta",
+    description:
+      "Menú del día de La Ofi en Derio (Parque Tecnológico de Bizkaia): plato del día casero de lunes a viernes, actualizado cada día, y la carta completa con precios y alérgenos.",
   });
 }
 
 /**
- * A un lado, el título y una tarjeta de "hoy" (horario, estado, incluidos) con
- * las acciones; al otro, la tarjeta del menú montada sobre la foto del comedor.
+ * "Carta y menú" en una sola página: arriba lo de hoy (la tarjeta del menú sobre
+ * la foto del comedor) y, al seguir bajando, la carta completa. Nadie tiene que
+ * encontrar una pestaña para ver la carta.
  */
 export default async function MenuDelDiaPage({ params }: Params) {
   const { locale } = await params;
-  const [state, horarioBd] = await Promise.all([getMenuDiaContent(), getHorario()]);
+  const [state, horarioBd, carta, configR] = await Promise.all([getMenuDiaContent(), getHorario(), getCartaContent(), obtenerConfigPedidos()]);
   const horario = resolverHorario(horarioBd);
   const hoy = horarioDeHoy(horario.semana);
   const comedor = IMAGES.comedorRatan;
-  const incluye = state.status === "empty" ? [] : state.data.incluye;
+
+  const datos = [
+    { label: "Hoy", value: <EstadoAhora semana={horario.semana} inicial={estadoAhora(horario.semana)} className="text-carbon" />, nota: hoy ?? "Consulta el horario por teléfono" },
+    { label: "Dónde", value: <span className="text-carbon">Edificio 502, Parque Tecnológico</span>, nota: "Aparcamiento para 220 coches" },
+  ];
 
   return (
     <>
-      <div className="bg-papel-2 pb-16 pt-24 sm:pb-24 lg:pt-32">
-        <div className="container-wide mb-10 lg:mb-14">
-          <CartaTabs locale={locale} actual="menu" />
-        </div>
-        <div className="container-wide grid gap-12 lg:grid-cols-12 lg:items-center lg:gap-14">
+      {carta.status === "real" && !IS_DEMO ? <JsonLd data={menuJsonLd(carta.data)} /> : null}
+      <section aria-labelledby="menu-dia-title" className="overflow-hidden bg-papel-2 pb-20 pt-24 sm:pb-28 lg:pt-32">
+        <div className="container-wide grid gap-14 lg:grid-cols-12 lg:items-center lg:gap-14">
           <div className="lg:col-span-4">
             <p className="kicker text-brasa">Mediodía · Lunes a viernes</p>
             <h1 id="menu-dia-title" className="t-display mt-4 text-carbon">
               Menú <em className="text-madera">del día</em>
             </h1>
+            <p className="lead mt-5">Cocina casera que cambia cada día. Y si prefieres carta, la tienes justo debajo.</p>
 
-            {/* Tarjeta oscura de "hoy": lo que se mira de un vistazo, sin párrafos. */}
-            <div className="mt-10 overflow-hidden rounded-2xl bg-carbon text-crema shadow-[0_30px_60px_-30px_rgb(0_0_0/0.5)]">
-              <div className="px-7 pb-6 pt-7">
-                <p className="kicker text-crema/60">Hoy</p>
-                <p className="mt-2 font-display text-4xl tabular-nums tracking-tight">{hoy ?? "Consúltanos"}</p>
-                <EstadoAhora semana={horario.semana} inicial={estadoAhora(horario.semana)} tone="light" className="mt-3 text-crema/80" />
-              </div>
-              {incluye.length > 0 ? (
-                <div
-                  className="grid border-t border-crema/10 text-center text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-crema/70"
-                  style={{ gridTemplateColumns: `repeat(${incluye.length}, minmax(0, 1fr))` }}
-                >
-                  {incluye.map((x, i) => (
-                    <span key={x} className={`py-3.5 ${i ? "border-l border-crema/10" : ""}`}>
-                      {x}
-                    </span>
-                  ))}
+            <dl className="mt-10 border-t border-tinta-line">
+              {datos.map((d) => (
+                <div key={d.label} className="grid grid-cols-[5.5rem_1fr] gap-4 border-b border-tinta-line py-4">
+                  <dt className="pt-0.5 text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-carbon-muted">{d.label}</dt>
+                  <dd className="text-[0.95rem]">
+                    {d.value}
+                    {d.nota ? <span className="mt-0.5 block text-sm text-carbon-muted">{d.nota}</span> : null}
+                  </dd>
                 </div>
-              ) : null}
-            </div>
+              ))}
+            </dl>
 
-            <div className="mt-6 flex flex-wrap gap-3">
+            <div className="mt-8 flex flex-wrap gap-3">
               <Link href={href(locale, "/reservar?para=hoy")} className="btn-primary">
                 Reservar para hoy
-                <Icon name="arrow" className="h-4 w-4" />
               </Link>
-              <a href={SITE.phone.href} className="btn-secondary" aria-label={`Llamar al ${SITE.phone.display}`}>
-                <Icon name="phone" className="h-4 w-4" />
-              </a>
-              <a href={SITE.maps.directions} target="_blank" rel="noopener noreferrer" className="btn-secondary" aria-label="Cómo llegar">
-                <Icon name="pin" className="h-4 w-4" />
+              <a href="#la-carta" className="btn-secondary">
+                Ver la carta
+                <Icon name="arrow" className="h-4 w-4 rotate-90" />
               </a>
             </div>
-            <Link href={href(locale, "/carta")} className="link-arrow mt-6 text-sm">
-              ¿Prefieres carta? Ver la carta completa
-              <Icon name="arrow" className="h-4 w-4" />
-            </Link>
+            <p className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+              <a href={SITE.phone.href} className="inline-flex items-center gap-2 text-carbon-muted hover:text-carbon">
+                <Icon name="phone" className="h-4 w-4 text-brasa" />
+                {SITE.phone.display}
+              </a>
+              <a href={SITE.maps.directions} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-carbon-muted hover:text-carbon">
+                <Icon name="pin" className="h-4 w-4 text-brasa" />
+                Cómo llegar
+              </a>
+            </p>
           </div>
 
           {/* La foto del comedor detrás y la tarjeta del menú montada encima, como en la home. */}
@@ -100,15 +102,12 @@ export default async function MenuDelDiaPage({ params }: Params) {
             <div className="relative z-10 mx-3 -mt-20 sm:mx-10 lg:mx-0 lg:my-16 lg:w-[64%]">
               <MenuDelDia state={state} detalle live headingLevel="h2" />
             </div>
-            {comedor.kind === "ilustrativa" ? (
-              <p className="mt-3 text-right text-xs text-carbon-muted">{creditoFoto(comedor)}</p>
-            ) : null}
+            {comedor.kind === "ilustrativa" ? <p className="mt-3 text-right text-xs text-carbon-muted">{creditoFoto(comedor)}</p> : null}
           </div>
         </div>
-      </div>
-      <div className="container-wide py-16">
-        <AllergenLegend />
-      </div>
+      </section>
+
+      <CartaBloque state={carta} config={configR.ok ? configR.data : null} />
     </>
   );
 }
