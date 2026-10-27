@@ -55,48 +55,64 @@ export function Ubicacion({
         />
 
         <div className="container-wide relative z-10 mt-4 pb-16 lg:pointer-events-none lg:absolute lg:inset-0 lg:mt-0 lg:flex lg:items-center lg:pb-0">
-          {/* Ficha editorial: panel oscuro translúcido, esquinas rectas, filete dorado a
-              la izquierda y separadores finos (como las fichas de datos de White Desert). */}
-          <div className="relative border-l-2 border-ratan bg-noche/[0.88] p-6 text-crema shadow-[0_40px_90px_-30px_rgb(0_0_0/0.7)] backdrop-blur-xl sm:p-9 lg:pointer-events-auto lg:w-[26rem]">
-            <p className="kicker whitespace-nowrap text-ratan">Cómo llegar</p>
-            <EstadoAhora semana={horario.semana} inicial={estadoAhora(horario.semana)} tone="light" className="mt-3 text-[0.8rem] text-crema/70" />
+          {/* Ficha en papel crema sobre el satélite: filete grueso arriba como los
+              titulares de sección, datos clave en tres casillas y una sola acción. */}
+          <div className="relative bg-crema text-carbon shadow-[0_40px_90px_-30px_rgb(0_0_0/0.65)] lg:pointer-events-auto lg:w-[27rem]">
+            <span aria-hidden="true" className="block h-[3px] bg-carbon" />
+            <div className="p-6 sm:p-8">
+              <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+                <p className="kicker whitespace-nowrap text-brasa">Cómo llegar</p>
+                <EstadoAhora semana={horario.semana} inicial={estadoAhora(horario.semana)} className="text-[0.8rem] text-carbon-muted" />
+              </div>
 
-            <address className="mt-6 not-italic">
-              <p className="font-display text-[1.65rem] font-light leading-none sm:text-[2rem]">{SITE.name}</p>
-              <p className="mt-3 text-crema/85">
-                {SITE.address.street} · {SITE.address.postalCode} {SITE.address.locality}
-              </p>
-              <p className="mt-1 text-sm text-crema/55">Parque Tecnológico de Bizkaia · Parking 220 plazas</p>
-            </address>
+              <address className="mt-5 not-italic">
+                <p className="font-display text-[1.75rem] leading-none sm:text-[2rem]">{SITE.name}</p>
+                <p className="mt-3 text-carbon-muted">
+                  {SITE.address.street} · {SITE.address.postalCode} {SITE.address.locality}
+                </p>
+              </address>
 
-            <div className="mt-7 border-t border-crema/15 pt-5">
-              <p className="mb-3 font-display text-base italic text-crema/60">Horario</p>
-              <Horario horario={horario} compact light />
-            </div>
+              <dl className="mt-6 grid grid-cols-3 border-y border-tinta-line text-center">
+                <div className="py-3.5">
+                  <dt className="text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-carbon-muted">Edificio</dt>
+                  <dd className="mt-1 font-display text-xl">502</dd>
+                </div>
+                <div className="border-x border-tinta-line py-3.5">
+                  <dt className="text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-carbon-muted">Parking</dt>
+                  <dd className="mt-1 font-display text-xl">220</dd>
+                </div>
+                <div className="py-3.5">
+                  <dt className="text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-carbon-muted">Llamar</dt>
+                  <dd className="mt-1">
+                    <a href={SITE.phone.href} className="font-display text-base tabular-nums underline decoration-carbon/25 underline-offset-4 hover:decoration-brasa">
+                      {SITE.phone.display}
+                    </a>
+                  </dd>
+                </div>
+              </dl>
 
-            <div className="mt-8 grid gap-2 sm:grid-cols-2">
+              <div className="mt-5">
+                <Horario horario={horario} compact />
+              </div>
+
               <a
                 href={SITE.maps.directions}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group inline-flex min-h-12 items-center justify-between gap-3 whitespace-nowrap bg-crema px-5 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-carbon transition-colors duration-300 hover:bg-white"
+                className="group mt-7 flex min-h-12 items-center justify-between gap-3 bg-brasa px-5 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-crema transition-colors duration-300 hover:bg-brasa-700"
               >
-                {t.cta.comoLlegar}
+                <span className="inline-flex items-center gap-2">
+                  <Icon name="pin" className="h-4 w-4" />
+                  {t.cta.comoLlegar}
+                </span>
                 <Icon name="arrow" className="h-4 w-4 transition-transform duration-300 ease-out-expo group-hover:translate-x-1" />
-              </a>
-              <a
-                href={SITE.phone.href}
-                className="inline-flex min-h-12 items-center justify-center gap-2 whitespace-nowrap border border-crema/30 px-4 text-[0.95rem] tabular-nums text-crema transition-colors duration-300 hover:border-crema hover:bg-crema/10"
-              >
-                <Icon name="phone" className="h-4 w-4" />
-                {SITE.phone.display}
               </a>
               {SITE.whatsapp ? (
                 <a
                   href={SITE.whatsapp.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex min-h-12 items-center justify-center gap-2 border border-crema/30 text-crema transition-colors duration-300 hover:border-crema hover:bg-crema/10 sm:col-span-2"
+                  className="mt-2 flex min-h-12 items-center justify-center gap-2 border border-carbon/25 text-carbon transition-colors duration-300 hover:border-carbon/60"
                 >
                   <Icon name="whatsapp" className="h-4 w-4" />
                   WhatsApp
