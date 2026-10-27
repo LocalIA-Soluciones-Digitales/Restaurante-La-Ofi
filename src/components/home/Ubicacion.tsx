@@ -1,10 +1,10 @@
-import { MapEmbed } from "@/components/map/MapEmbed";
+import { MapaOfi } from "@/components/map/MapaOfi";
+import { ComoLlegarModos } from "@/components/home/ComoLlegarModos";
 import { EstadoAhora } from "@/components/ui/EstadoAhora";
 import { Icon } from "@/components/ui/Icon";
 import { SectionRule } from "@/components/ui/SectionRule";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { agruparHorario, estadoAhora, type HorarioResuelto } from "@/lib/horario";
-import { IMAGES } from "@/lib/images";
 import { SITE } from "@/lib/site";
 
 export function Horario({ horario, compact = false, light = false }: { horario: HorarioResuelto; compact?: boolean; light?: boolean }) {
@@ -29,13 +29,10 @@ export function Ubicacion({
   t,
   horario,
   headingLevel = "h2",
-  mapPriority = false,
 }: {
   t: Dictionary;
   horario: HorarioResuelto;
   headingLevel?: "h1" | "h2";
-  /** En /contacto el mapa es lo más grande de la primera pantalla en escritorio. */
-  mapPriority?: boolean;
 }) {
   return (
     <section id="ubicacion" aria-labelledby="ubicacion-title" className="cv-auto bg-papel-2 pt-8 sm:pt-12">
@@ -43,21 +40,16 @@ export function Ubicacion({
         <SectionRule as={headingLevel} id="ubicacion-title" title="Edificio 502 del Parque Tecnológico, en Derio" aside={<span>Cómo llegar</span>} />
       </div>
 
-      {/* Satélite a todo el ancho: se reconoce el edificio y el aparcamiento. La
-          ficha flota a la izquierda, dentro de la retícula, sin tapar el punto. */}
+      {/* Mapa propio a todo el ancho, en los colores de la web. La
+          ficha flota a la izquierda, dentro de la retícula, sin tapar el punto.
+          En móvil el mapa es más alto y la ficha sube sobre su mitad baja. */}
       <div className="relative mt-10 lg:h-[36rem]">
-        <MapEmbed
-          image={IMAGES.mapa.src}
-          alt={IMAGES.mapa.alt}
-          embedUrl={SITE.maps.embedSatelite}
-          priority={mapPriority}
-          className="aspect-[4/3] sm:aspect-[16/9] lg:absolute lg:inset-0 lg:aspect-auto"
-        />
+        <MapaOfi idFicha="ficha-ubicacion" className="aspect-[4/5] sm:aspect-[16/10] lg:absolute lg:inset-0 lg:aspect-auto" />
 
-        <div className="container-wide relative z-10 mt-4 pb-16 lg:pointer-events-none lg:absolute lg:inset-0 lg:mt-0 lg:flex lg:items-center lg:pb-0">
-          {/* Ficha en papel crema sobre el satélite: filete grueso arriba como los
+        <div className="container-wide pointer-events-none relative z-10 -mt-[38vw] sm:-mt-[22vw] lg:absolute lg:inset-0 lg:mt-0 lg:flex lg:items-center lg:pb-0">
+          {/* Ficha en papel crema sobre el mapa: filete grueso arriba como los
               titulares de sección, datos clave en tres casillas y una sola acción. */}
-          <div className="relative bg-crema text-carbon shadow-[0_40px_90px_-30px_rgb(0_0_0/0.65)] lg:pointer-events-auto lg:w-[27rem]">
+          <div id="ficha-ubicacion" className="pointer-events-auto relative bg-crema text-carbon shadow-[0_40px_90px_-30px_rgb(0_0_0/0.65)] sm:max-w-[27rem] lg:w-[27rem]">
             <span aria-hidden="true" className="block h-[3px] bg-carbon" />
             <div className="p-6 sm:p-8">
               <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
@@ -122,6 +114,7 @@ export function Ubicacion({
           </div>
         </div>
       </div>
+      <ComoLlegarModos />
     </section>
   );
 }

@@ -41,8 +41,5 @@ export const SITE = {
     // Enlace de la ficha de Google Business facilitado por LocalIA.
     place: "https://share.google/xLJ2KFgDF9i40yuDY",
     directions: `https://www.google.com/maps/dir/?api=1&destination=${LAT},${LNG}`,
-    embed: `https://www.google.com/maps?q=${LAT},${LNG}&z=16&output=embed`,
-    // Satélite con nombres de calles (t=h), algo más cerca para ver el edificio.
-    embedSatelite: `https://www.google.com/maps?q=${LAT},${LNG}&z=13&t=h&output=embed`,
   },
 } as const;
