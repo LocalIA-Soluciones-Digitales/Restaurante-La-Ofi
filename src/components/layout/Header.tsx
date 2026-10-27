@@ -29,9 +29,10 @@ interface Props {
 }
 
 /**
- * Cabecera en casillas separadas por filetes: menú y dirección a la izquierda,
- * logotipo centrado y, a la derecha, las dos páginas más buscadas y un bloque
- * sólido de "Reservar". Sobre el hero oscuro va transparente con texto claro.
+ * Cabecera limpia, sin casillas: menú y las páginas más buscadas a la izquierda,
+ * logotipo centrado y, a la derecha, teléfono y "Reservar" en píldora. Sobre una
+ * foto oscura va transparente con texto claro; al bajar, crema translúcida con
+ * un filete fino debajo.
  */
 export function Header({ homeHref, pedirHref, reservarHref, items, primary, phoneHref, phoneDisplay, labels, directionsHref }: Props) {
   const [scrolled, setScrolled] = useState(false);
@@ -68,58 +69,53 @@ export function Header({ homeHref, pedirHref, reservarHref, items, primary, phon
     !itemHref.includes("#") && (itemHref === homeHref ? pathname === homeHref : pathname.startsWith(itemHref));
   const isActiveItem = (item: NavItem) => (item.match ?? [item.href]).some(isActive);
 
-  const line = light ? "border-crema/20" : "border-tinta-line";
-  const cell = `hidden h-full items-center border-l px-6 text-[0.72rem] font-semibold uppercase tracking-[0.2em] transition-colors lg:flex ${line} ${
-    light ? "text-crema/90 hover:bg-crema/10 hover:text-crema" : "text-carbon/80 hover:bg-papel-2 hover:text-carbon"
-  }`;
+  const muted = light ? "text-crema/80 hover:text-crema" : "text-carbon/70 hover:text-carbon";
 
   return (
     <>
       <header
-        className={`fixed inset-x-0 top-0 z-40 border-b transition-[transform,background-color,border-color] duration-300 ease-out motion-reduce:transition-none ${
+        className={`fixed inset-x-0 top-0 z-40 border-b transition-[transform,background-color,border-color,color] duration-300 ease-out motion-reduce:transition-none ${
           hidden && !open ? "-translate-y-full" : "translate-y-0"
-        } ${scrolled ? "bg-crema/95 backdrop-blur-md" : "bg-transparent"} ${line} ${light ? "text-crema" : "text-carbon"}`}
+        } ${scrolled ? "border-tinta-line bg-crema/90 backdrop-blur-md backdrop-saturate-150" : "border-transparent bg-transparent"} ${light ? "text-crema" : "text-carbon"}`}
       >
-        <div className="relative flex h-16 items-stretch lg:h-[4.5rem]">
-          {/* Izquierda: menú + dirección y teléfono */}
+        <div className="container-wide relative flex h-16 items-center gap-8 lg:h-[4.5rem]">
+          {/* Izquierda: menú y, en escritorio, las páginas que más se buscan */}
           <button
             type="button"
             aria-expanded={open}
             aria-controls="menu-movil"
             onClick={() => setOpen(true)}
-            className={`flex h-full items-center gap-3 border-r px-4 text-[0.72rem] font-semibold uppercase tracking-[0.2em] transition-colors sm:px-6 ${line} ${
-              light ? "hover:bg-crema/10" : "hover:bg-papel-2"
-            }`}
+            className="-ml-2 flex h-11 items-center gap-2.5 rounded-full px-2 text-[0.8rem] font-semibold tracking-[0.04em] transition-opacity hover:opacity-70"
           >
             <Icon name="menu" className="h-5 w-5" />
             <span className="hidden sm:inline">Menú</span>
             <span className="sr-only">{labels.abrirMenu}</span>
           </button>
-          <a
-            href={directionsHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`hidden flex-col justify-center border-r px-6 text-[0.78rem] leading-snug transition-colors xl:flex ${line} ${
-              light ? "text-crema/85 hover:text-crema" : "text-carbon-muted hover:text-carbon"
-            }`}
-          >
-            <span>Edificio 502 · Parque Tecnológico, Derio</span>
-            <span className={light ? "text-crema/60" : "text-carbon-muted/80"}>{phoneDisplay}</span>
-          </a>
+          <nav aria-label="Principal" className="hidden items-center gap-7 lg:flex">
+            {primary.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={isActiveItem(item) ? "page" : undefined}
+                className={`relative py-2 text-[0.85rem] font-medium transition-colors after:absolute after:inset-x-0 after:-bottom-0.5 after:h-px after:origin-left after:scale-x-0 after:bg-current after:transition-transform after:duration-300 hover:after:scale-x-100 aria-[current=page]:after:scale-x-100 ${muted} aria-[current=page]:text-current`}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
 
           {/* Logotipo centrado */}
           <Link href={homeHref} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-md">
             <Logo light={light} center />
           </Link>
 
-          {/* Derecha: páginas clave + Reservar */}
-          <nav aria-label="Principal" className="ml-auto flex h-full items-stretch">
-            {primary.map((item) => (
-              <Link key={item.href} href={item.href} aria-current={isActiveItem(item) ? "page" : undefined} className={`${cell} aria-[current=page]:underline aria-[current=page]:underline-offset-8`}>
-                {item.label}
-              </Link>
-            ))}
-            <a href={phoneHref} className={`grid h-full w-14 place-items-center border-l lg:hidden ${line}`}>
+          {/* Derecha: teléfono y Reservar */}
+          <div className="ml-auto flex items-center gap-2 sm:gap-5">
+            <a href={phoneHref} className={`hidden items-center gap-2 text-[0.85rem] font-medium tabular-nums transition-colors xl:flex ${muted}`}>
+              <Icon name="phone" className="h-4 w-4" />
+              {phoneDisplay}
+            </a>
+            <a href={phoneHref} className="grid h-11 w-11 place-items-center rounded-full transition-opacity hover:opacity-70 sm:hidden">
               <Icon name="phone" className="h-5 w-5" />
               <span className="sr-only">
                 {labels.llamar} {phoneDisplay}
@@ -127,13 +123,13 @@ export function Header({ homeHref, pedirHref, reservarHref, items, primary, phon
             </a>
             <Link
               href={reservarHref}
-              className={`hidden h-full items-center px-7 text-[0.72rem] font-semibold uppercase tracking-[0.2em] transition-colors sm:flex ${
+              className={`hidden h-11 items-center rounded-full px-6 text-[0.8rem] font-semibold tracking-[0.04em] transition-colors sm:inline-flex ${
                 light ? "bg-crema text-carbon hover:bg-white" : "bg-carbon text-crema hover:bg-brasa"
               }`}
             >
               {labels.reservar}
             </Link>
-          </nav>
+          </div>
         </div>
       </header>
 

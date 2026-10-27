@@ -1,6 +1,6 @@
 // Lo que se hace en La Ofi, en el orden del día (todo publicado: carta, horario,
 // tardeo mensual, El Despacho y celebraciones).
-const FILA_1 = ["Café", "Tostadas", "Menú del día", "Brasa", "Copas"];
+const FILA_1 = ["Café", "Tostadas", "Menú del día", "Pintxos", "Copas"];
 const FILA_2 = ["Comidas de empresa", "Reuniones", "Tardeos", "Celebraciones"];
 
 /**

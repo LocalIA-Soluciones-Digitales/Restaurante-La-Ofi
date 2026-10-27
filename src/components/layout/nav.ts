@@ -21,13 +21,13 @@ export function mainNav(locale: Locale, t: Dictionary): NavItem[] {
 }
 
 /**
- * Casilla de la cabecera de escritorio: solo lo que de verdad busca quien entra.
+ * Enlaces de la cabecera de escritorio: solo lo que de verdad busca quien entra.
  * Menú del día y carta comparten una sola entrada: /menu-del-dia muestra lo de
  * hoy arriba y la carta completa debajo. El resto de páginas vive en el menú
  * desplegable.
  */
 export function primaryNav(locale: Locale, t: Dictionary): NavItem[] {
-  return [cartaYMenu(locale, t)];
+  return [cartaYMenu(locale, t), { href: href(locale, "/espacios"), label: t.nav.espacios }, { href: href(locale, "/grupos"), label: t.nav.grupos }];
 }
 
 /** Menú del día y carta: una sola entrada en toda la navegación. */
