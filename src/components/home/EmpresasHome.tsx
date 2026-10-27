@@ -15,7 +15,8 @@ interface Puerta {
 /**
  * Dos puertas a pantalla completa, una junto a otra: empresas del Parque y
  * celebraciones. Cada mitad es un enlace entero; el detalle vive en su página.
- * Abajo funden al fondo claro de "Cómo llegar".
+ * En móvil van una sobre otra como un solo bloque (solo un filete entre ellas);
+ * abajo funden al fondo claro de "Cómo llegar".
  */
 export function EmpresasHome({ locale }: { locale: Locale }) {
   const puertas: Puerta[] = [
@@ -39,13 +40,14 @@ export function EmpresasHome({ locale }: { locale: Locale }) {
 
   return (
     <section aria-label="Empresas y celebraciones" className="cv-auto grid bg-noche md:grid-cols-2">
-      {puertas.map((p) => {
+      {puertas.map((p, i) => {
+        const ultima = i === puertas.length - 1;
         const credito = creditoFoto(IMAGES[p.img]);
         return (
           <Link
             key={p.href}
             href={p.href}
-            className="group relative isolate flex min-h-[70svh] flex-col items-center justify-center overflow-hidden px-8 py-24 text-center text-crema md:min-h-[88svh]"
+            className="group relative isolate flex min-h-[62svh] flex-col items-center justify-center overflow-hidden px-8 py-24 text-center text-crema md:min-h-[88svh]"
           >
             <div className="parallax absolute inset-0 -z-10 transition-transform duration-[1.6s] ease-out-expo group-hover:scale-[1.04]">
               <Photo img={p.img} sizes="(min-width: 768px) 50vw, 100vw" decorative />
@@ -59,8 +61,13 @@ export function EmpresasHome({ locale }: { locale: Locale }) {
               <span aria-hidden="true">→</span>
             </span>
             {credito ? <span className="absolute right-4 top-3 text-[0.64rem] text-crema/60">{credito}</span> : null}
-            {/* Fundido al color de "Cómo llegar", que entra justo debajo. */}
-            <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-b from-noche/0 to-papel-2 md:h-40" />
+            {/* Fundido al color de "Cómo llegar", que entra justo debajo. En móvil
+                solo la última: entre las dos no hay nada que fundir. */}
+            <span
+              aria-hidden="true"
+              className={`pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-b from-noche/0 to-papel-2 md:block md:h-40 ${ultima ? "" : "hidden"}`}
+            />
+            {ultima ? null : <span aria-hidden="true" className="absolute inset-x-8 bottom-0 h-px bg-crema/25 md:hidden" />}
           </Link>
         );
       })}

@@ -11,13 +11,16 @@ import { SITE } from "@/lib/site";
  */
 export function Footer({ locale, items }: { locale: Locale; items: NavItem[] }) {
   const year = new Date().getFullYear();
-  const titulo = "font-display text-[0.95rem] uppercase tracking-[0.12em] text-carbon";
+  // En móvil cada bloque va separado por un filete, como las fichas de la casa;
+  // en escritorio, cuatro columnas sin filetes.
+  const bloque = "border-t border-tinta-line pt-6 first:border-0 first:pt-0 sm:border-0 sm:pt-0";
+  const titulo = "kicker text-brasa";
   return (
-    <footer className="overflow-hidden border-t border-tinta-line bg-papel pb-28 pt-20 text-carbon-muted lg:pb-8">
-      <div className="container-wide grid gap-12 sm:grid-cols-2 lg:grid-cols-4">
-        <div>
+    <footer className="overflow-hidden border-t border-tinta-line bg-papel pb-28 pt-16 text-carbon-muted sm:pt-20 lg:pb-8">
+      <div className="container-wide grid gap-10 sm:grid-cols-2 sm:gap-12 lg:grid-cols-4">
+        <div className={bloque}>
           <h2 className={titulo}>Reservas</h2>
-          <a href={SITE.phone.href} className="mt-4 block font-display text-2xl text-carbon hover:text-brasa">
+          <a href={SITE.phone.href} className="mt-4 block font-display text-[2rem] leading-none tabular-nums text-carbon hover:text-brasa sm:text-2xl">
             {SITE.phone.display}
           </a>
           <Link href={href(locale, "/reservar")} className="link-arrow mt-3 text-sm">
@@ -26,10 +29,10 @@ export function Footer({ locale, items }: { locale: Locale; items: NavItem[] }) 
           </Link>
         </div>
 
-        <div>
+        <div className={bloque}>
           <h2 className={titulo}>Dirección</h2>
           <address className="mt-4 text-[0.95rem] not-italic leading-relaxed">
-            {SITE.address.street}
+            <span className="text-carbon">{SITE.address.street}</span>
             <br />
             {SITE.address.postalCode} {SITE.address.locality}, {SITE.address.region}
             <br />
@@ -41,26 +44,31 @@ export function Footer({ locale, items }: { locale: Locale; items: NavItem[] }) 
           </a>
         </div>
 
-        <nav aria-label="Pie de página">
+        <nav aria-label="Pie de página" className={bloque}>
           <h2 className={titulo}>La Ofi</h2>
-          <ul className="mt-4 grid grid-cols-2 gap-x-6 gap-y-1 text-[0.95rem] lg:grid-cols-1">
+          {/* Móvil: índice a una columna con filetes y flecha; escritorio: lista corta. */}
+          <ul className="mt-3 lg:mt-4">
             {items.map((item) => (
-              <li key={item.href}>
-                <Link href={item.href} className="inline-flex min-h-8 items-center hover:text-carbon">
+              <li key={item.href} className="border-b border-tinta-line last:border-0 lg:border-0">
+                <Link
+                  href={item.href}
+                  className="group flex min-h-12 items-center justify-between font-display text-[1.3rem] font-light text-carbon hover:text-brasa lg:inline-flex lg:min-h-8 lg:font-sans lg:text-[0.95rem] lg:font-normal lg:text-carbon-muted lg:hover:text-carbon"
+                >
                   {item.label}
+                  <Icon name="arrow" className="h-4 w-4 text-carbon/40 transition-transform duration-300 group-hover:translate-x-1 lg:hidden" />
                 </Link>
               </li>
             ))}
           </ul>
         </nav>
 
-        <div>
+        <div className={bloque}>
           <h2 className={titulo}>Síguenos</h2>
           <a
             href={SITE.instagram.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-4 inline-flex min-h-11 items-center gap-2 text-[0.95rem] hover:text-carbon"
+            className="mt-4 inline-flex min-h-11 items-center gap-2.5 border border-carbon/20 px-4 text-[0.95rem] text-carbon transition-colors duration-300 hover:border-carbon/60"
           >
             <Icon name="instagram" className="h-5 w-5" />
             {SITE.instagram.handle}
@@ -70,7 +78,7 @@ export function Footer({ locale, items }: { locale: Locale; items: NavItem[] }) 
 
       {/* El nombre a todo el ancho, como cierre de página, con manchas de acuarela
           detrás y dibujos a línea que se trazan al llegar (The Fat Duck). */}
-      <div aria-hidden="true" className="relative mt-20 select-none px-2 sm:mt-24">
+      <div aria-hidden="true" className="relative mt-16 select-none px-2 sm:mt-24">
         <Manchas />
         <Dibujos />
         <p className="footer-name relative whitespace-nowrap text-center font-display text-[25.5vw] font-normal leading-[0.78] tracking-[-0.045em] text-carbon">
@@ -79,27 +87,29 @@ export function Footer({ locale, items }: { locale: Locale; items: NavItem[] }) 
         <p className="relative mt-4 text-center font-display text-[clamp(1.2rem,0.8rem+1.8vw,2.4rem)] font-light italic text-madera">restaurante · derio</p>
       </div>
 
-      <div className="container-wide mt-14 flex flex-col items-center gap-4 text-xs sm:flex-row sm:justify-between">
-        <p>
-          © {year} {SITE.name} · {SITE.address.locality}, {SITE.address.region}
-        </p>
-        <ul className="flex flex-wrap justify-center gap-x-5 gap-y-2">
-          <li>
-            <Link href={href(locale, "/aviso-legal")} className="hover:text-carbon">
-              Aviso legal
-            </Link>
-          </li>
-          <li>
-            <Link href={href(locale, "/privacidad")} className="hover:text-carbon">
-              Privacidad
-            </Link>
-          </li>
-          <li>
-            <Link href={href(locale, "/cookies")} className="hover:text-carbon">
-              Cookies
-            </Link>
-          </li>
-        </ul>
+      <div className="container-wide mt-14">
+        <div className="flex flex-col items-center gap-4 border-t border-tinta-line pt-6 text-xs sm:flex-row sm:justify-between">
+          <p>
+            © {year} {SITE.name} · {SITE.address.locality}, {SITE.address.region}
+          </p>
+          <ul className="flex flex-wrap justify-center gap-x-5 gap-y-2">
+            <li>
+              <Link href={href(locale, "/aviso-legal")} className="hover:text-carbon">
+                Aviso legal
+              </Link>
+            </li>
+            <li>
+              <Link href={href(locale, "/privacidad")} className="hover:text-carbon">
+                Privacidad
+              </Link>
+            </li>
+            <li>
+              <Link href={href(locale, "/cookies")} className="hover:text-carbon">
+                Cookies
+              </Link>
+            </li>
+          </ul>
+        </div>
       </div>
     </footer>
   );
@@ -129,14 +139,14 @@ function Dibujos() {
   return (
     <>
       {/* Taza de café con vapor */}
-      <svg viewBox="0 0 120 120" className="footer-draw pointer-events-none absolute left-[3%] top-[-34%] w-[16vw] max-w-[9rem] text-carbon/70 md:top-[-18%] md:w-[11vw]">
+      <svg viewBox="0 0 120 120" className="footer-draw pointer-events-none absolute left-[3%] hidden sm:block top-[-34%] w-[16vw] max-w-[9rem] text-carbon/70 md:top-[-18%] md:w-[11vw]">
         <path {...trazo} d="M24 52h58v22a26 26 0 0 1-26 26h-6a26 26 0 0 1-26-26z" />
         <path {...trazo} d="M82 60h8a11 11 0 0 1 0 22h-9" />
         <path {...trazo} d="M16 106h80" />
         <path {...trazo} d="M42 42c-6-8 6-12 0-22M56 42c-6-8 6-12 0-22M70 42c-6-8 6-12 0-22" />
       </svg>
       {/* Copa de vino */}
-      <svg viewBox="0 0 120 160" className="footer-draw pointer-events-none absolute right-[5%] top-[-46%] w-[11vw] max-w-[7rem] text-carbon/70 md:right-[4%] md:top-[-30%] md:w-[8vw]">
+      <svg viewBox="0 0 120 160" className="footer-draw pointer-events-none absolute right-[5%] hidden sm:block top-[-46%] w-[11vw] max-w-[7rem] text-carbon/70 md:right-[4%] md:top-[-30%] md:w-[8vw]">
         <path {...trazo} d="M36 14h48c4 30 0 58-24 64-24-6-28-34-24-64z" />
         <path {...trazo} d="M40 44c12 6 28 6 40 0" />
         <path {...trazo} d="M60 78v56M38 146h44" />
