@@ -15,8 +15,8 @@ interface Puerta {
 /**
  * Dos puertas a pantalla completa, una junto a otra: empresas del Parque y
  * celebraciones. Cada mitad es un enlace entero; el detalle vive en su página.
- * En móvil van una sobre otra como un solo bloque (solo un filete entre ellas);
- * abajo funden al fondo claro de "Cómo llegar".
+ * En móvil van una sobre otra como un solo bloque (solo un filete entre ellas):
+ * arriba se funden desde el crema de los platos y abajo al de "Cómo llegar".
  */
 export function EmpresasHome({ locale }: { locale: Locale }) {
   const puertas: Puerta[] = [
@@ -41,6 +41,7 @@ export function EmpresasHome({ locale }: { locale: Locale }) {
   return (
     <section aria-label="Empresas y celebraciones" className="cv-auto grid bg-noche md:grid-cols-2">
       {puertas.map((p, i) => {
+        const primera = i === 0;
         const ultima = i === puertas.length - 1;
         const credito = creditoFoto(IMAGES[p.img]);
         return (
@@ -61,6 +62,12 @@ export function EmpresasHome({ locale }: { locale: Locale }) {
               <span aria-hidden="true">→</span>
             </span>
             {credito ? <span className="absolute right-4 top-3 text-[0.64rem] text-crema/60">{credito}</span> : null}
+            {/* Entrada desde el crema de la sección de arriba. En móvil solo la
+                primera: la segunda empieza pegada a ella. */}
+            <span
+              aria-hidden="true"
+              className={`pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-t from-noche/0 to-crema md:block md:h-40 ${primera ? "" : "hidden"}`}
+            />
             {/* Fundido al color de "Cómo llegar", que entra justo debajo. En móvil
                 solo la última: entre las dos no hay nada que fundir. */}
             <span
