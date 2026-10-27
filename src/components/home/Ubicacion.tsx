@@ -1,5 +1,4 @@
 import { MapaOfi } from "@/components/map/MapaOfi";
-import { ComoLlegarModos } from "@/components/home/ComoLlegarModos";
 import { EstadoAhora } from "@/components/ui/EstadoAhora";
 import { Icon } from "@/components/ui/Icon";
 import { SectionRule } from "@/components/ui/SectionRule";
@@ -46,7 +45,7 @@ export function Ubicacion({
       <div className="relative mt-10 lg:h-[36rem]">
         <MapaOfi idFicha="ficha-ubicacion" className="aspect-[4/5] sm:aspect-[16/10] lg:absolute lg:inset-0 lg:aspect-auto" />
 
-        <div className="container-wide pointer-events-none relative z-10 -mt-[38vw] sm:-mt-[22vw] lg:absolute lg:inset-0 lg:mt-0 lg:flex lg:items-center lg:pb-0">
+        <div className="container-wide pointer-events-none relative z-10 -mt-[38vw] pb-16 sm:-mt-[22vw] lg:absolute lg:inset-0 lg:mt-0 lg:flex lg:items-center lg:pb-0">
           {/* Ficha en papel crema sobre el mapa: filete grueso arriba como los
               titulares de sección, datos clave en tres casillas y una sola acción. */}
           <div id="ficha-ubicacion" className="pointer-events-auto relative bg-crema text-carbon shadow-[0_40px_90px_-30px_rgb(0_0_0/0.65)] sm:max-w-[27rem] lg:w-[27rem]">
@@ -114,7 +113,6 @@ export function Ubicacion({
           </div>
         </div>
       </div>
-      <ComoLlegarModos />
     </section>
   );
 }
