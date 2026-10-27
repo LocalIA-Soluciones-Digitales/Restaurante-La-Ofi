@@ -22,9 +22,8 @@ const PANELES: { id: string; nombre: string; linea: string; img: ImageKey }[] = 
 export function EspaciosPaneles({ locale }: { locale: Locale }) {
   const [activo, setActivo] = useState(1);
 
-  // Sin margen abajo: la cinta de letras que sigue hace de respiro.
   return (
-    <section aria-labelledby="espacios-title" className="section bg-crema pb-0 pt-0 sm:pb-0 sm:pt-0">
+    <section aria-labelledby="espacios-title" className="section bg-crema">
       <div className="container-wide">
         <div className="mx-auto max-w-xl text-center">
           <p className="kicker text-brasa">Los espacios</p>
@@ -34,16 +33,7 @@ export function EspaciosPaneles({ locale }: { locale: Locale }) {
         </div>
       </div>
 
-      {/* Como Lingers: el nombre enorme y tenue, y los paneles montados sobre su
-          parte baja (letras y fotos en una sola pieza). En móvil, de borde a borde
-          y con el carrusel tapando el pie, como en escritorio. */}
-      <div aria-hidden="true" className="pointer-events-none mt-4 select-none overflow-clip lg:mt-10">
-        <p className="title-in whitespace-nowrap text-center font-display text-[25vw] font-light uppercase leading-[0.82] tracking-[0.02em] text-carbon/[0.14] lg:text-[19vw]">
-          La Ofi
-        </p>
-      </div>
-
-      <div className="relative -mt-[7.5vw] px-4 sm:px-6 lg:-mt-[3.5vw] lg:px-0">
+      <div className="relative mt-10 px-4 sm:px-6 lg:mt-14 lg:px-0">
         {/* Escritorio: paneles que se abren */}
         <ul className="relative hidden h-[78svh] min-h-[34rem] gap-2 lg:flex">
           {PANELES.map((p, i) => {

@@ -14,7 +14,7 @@ export function LetrasScroll() {
   const clase =
     "flex w-max items-center gap-[0.4em] whitespace-nowrap font-display text-[clamp(3.4rem,1.6rem+7vw,9.5rem)] font-light leading-[1.1] text-transparent [-webkit-text-stroke:1.2px_rgb(210_174_120/0.8)]";
   return (
-    <section aria-hidden="true" className="relative overflow-hidden bg-noche pb-28 pt-12 sm:pb-48 sm:pt-20">
+    <section aria-hidden="true" className="relative overflow-hidden bg-noche py-16 sm:py-24">
       <p className={`drift-l ${clase}`}>
         {fila(FILA_1).map((p, i) => (
           <span key={i} className="flex items-center gap-[0.4em]">
@@ -31,8 +31,8 @@ export function LetrasScroll() {
           </span>
         ))}
       </p>
-      {/* Niebla de la noche al crema de la sección siguiente (White Desert). */}
-      <span className="absolute inset-x-0 bottom-0 h-24 sm:h-40 bg-gradient-to-b from-noche/0 via-crema/60 to-crema backdrop-blur-[2px]" />
+      {/* Funde la noche con el tono de la banda del menú del día, que va debajo. */}
+      <span className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-b from-noche/0 to-carbon sm:h-24" />
     </section>
   );
 }
