@@ -22,10 +22,9 @@ const PANELES: { id: string; nombre: string; linea: string; img: ImageKey }[] = 
 export function EspaciosPaneles({ locale }: { locale: Locale }) {
   const [activo, setActivo] = useState(1);
 
-  // Sin margen abajo: los paneles se apoyan en la banda del menú del día con el
-  // mismo filete que los separa entre sí, como un solo mosaico.
+  // Sin margen abajo: la cinta de letras que sigue hace de respiro.
   return (
-    <section aria-labelledby="espacios-title" className="section bg-crema pb-2 pt-0 sm:pb-2 sm:pt-0 lg:pb-2">
+    <section aria-labelledby="espacios-title" className="section bg-crema pb-0 pt-0 sm:pb-0 sm:pt-0">
       <div className="container-wide">
         <div className="mx-auto max-w-xl text-center">
           <p className="kicker text-brasa">Los espacios</p>
