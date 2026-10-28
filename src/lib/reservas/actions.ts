@@ -1,5 +1,7 @@
 "use server";
 
+import { createHash } from "node:crypto";
+import { headers } from "next/headers";
 import type { ResultadoAccion } from "@/lib/pedidos/types";
 import { rpcPublica } from "@/lib/supabase/rpc";
 
@@ -26,13 +28,14 @@ export async function solicitarReserva(r: ReservaWeb): Promise<ResultadoAccion<{
   if (notas && r.consiente_salud !== true) {
     return { ok: false, error: "Para enviar notas (alergias, etc.), marca la casilla de consentimiento.", codigo: "ERROR" };
   }
-  // Mismos topes que el formulario: la base de datos no limita el nombre.
+  // Mismos topes que los CHECK de laofi.reservas (nombre 1-60, teléfono 9-16).
   const p = {
     ...r,
-    nombre: String(r.nombre ?? "").trim().slice(0, 80),
-    telefono: String(r.telefono ?? "").slice(0, 20),
+    nombre: String(r.nombre ?? "").trim().slice(0, 60),
+    telefono: String(r.telefono ?? "").slice(0, 16),
     email: String(r.email ?? "").trim().slice(0, 120),
     notas,
+    ip_hash: await hashIp(),
   };
   const res = await rpcPublica<{ id: string }>("laofi_crear_reserva", { p });
   if (!res) return { ok: false, error: "Las reservas online aún no están activas: llámanos.", codigo: "NO_ACTIVO" };
@@ -42,4 +45,15 @@ export async function solicitarReserva(r: ReservaWeb): Promise<ResultadoAccion<{
       : { ok: false, error: "Las reservas online aún no están activas: llámanos.", codigo: "NO_ACTIVO" };
   }
   return { ok: true, data: res.data! };
+}
+
+/**
+ * SHA-256 de la IP con sal, para que la base de datos limite las solicitudes por
+ * conexión sin guardar la IP. En Vercel, x-forwarded-for lo pone la plataforma.
+ */
+async function hashIp(): Promise<string | undefined> {
+  const h = await headers();
+  const ip = (h.get("x-forwarded-for") ?? h.get("x-real-ip") ?? "").split(",")[0]!.trim();
+  if (!ip) return undefined;
+  return createHash("sha256").update(`${process.env.LAOFI_SITE_KEY ?? "laofi"}:${ip}`).digest("hex");
 }
