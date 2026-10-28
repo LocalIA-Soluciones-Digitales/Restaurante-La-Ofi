@@ -8,7 +8,7 @@ const es = {
     inicio: "Inicio",
     carta: "Carta",
     menuDelDia: "Menú del día",
-    cartaYMenu: "Carta y menú",
+    cartaYMenu: "Menú y carta",
     espacios: "Espacios",
     grupos: "Grupos y eventos",
     laOfi: "La Ofi",
