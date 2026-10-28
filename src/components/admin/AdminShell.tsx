@@ -55,6 +55,8 @@ export function AdminShell({ nombre, rol, local, children }: { nombre: string; r
   const secciones = SECCIONES.filter((s) => s.roles.includes(rol));
   const activa = (href: string) => (href === "/admin" ? pathname === "/admin" : pathname.startsWith(href));
   const actual = [...secciones].reverse().find((s) => activa(s.href));
+  // "Mi cuenta" no está en el menú (se entra desde el pie, junto a Salir).
+  const titulo = actual?.label ?? (pathname.startsWith("/admin/cuenta") ? "Mi cuenta" : "Panel");
 
   const nav = (
     <nav aria-label="Panel" className="min-h-0 flex-1 overflow-y-auto px-3 py-2">
@@ -119,6 +121,17 @@ export function AdminShell({ nombre, rol, local, children }: { nombre: string; r
               <p className="truncate text-sm font-semibold">{nombre}</p>
               <p className="truncate text-xs text-crema/60">{ROLES[rol]}</p>
             </div>
+            {rol === "admin" || rol === "encargado" ? (
+              <Link
+                href="/admin/cuenta"
+                onClick={() => setAbierto(false)}
+                title="Mi cuenta (cambiar contraseña)"
+                className="grid h-10 w-10 place-items-center rounded-xl text-crema/75 hover:bg-crema/10 hover:text-crema"
+              >
+                <Icon name="lock" className="h-5 w-5" />
+                <span className="sr-only">Mi cuenta</span>
+              </Link>
+            ) : null}
             <form action={salir}>
               <button type="submit" title="Salir" className="grid h-10 w-10 place-items-center rounded-xl text-crema/75 hover:bg-crema/10 hover:text-crema">
                 <Icon name="logout" className="h-5 w-5" />
@@ -142,7 +155,7 @@ export function AdminShell({ nombre, rol, local, children }: { nombre: string; r
           </button>
           <div className="flex min-w-0 flex-1 items-center gap-2.5">
             {actual ? <Icon name={actual.icon} className="hidden h-5 w-5 shrink-0 text-carbon-muted dark:text-crema/50 sm:block" /> : null}
-            <p className="truncate font-display text-xl">{actual?.label ?? "Panel"}</p>
+            <p className="truncate font-display text-xl">{titulo}</p>
           </div>
           {/* En directo: los datos de servicio se actualizan solos (Realtime + sondeo). */}
           <span className="hidden items-center gap-2 rounded-full border border-carbon/10 px-3 py-1.5 font-mono text-sm tabular-nums text-carbon-muted dark:border-crema/10 dark:text-crema/60 sm:inline-flex">
@@ -152,7 +165,7 @@ export function AdminShell({ nombre, rol, local, children }: { nombre: string; r
             </span>
             {hora}
           </span>
-          <AyudaSeccion pathname={pathname} titulo={actual?.label ?? "Panel"} />
+          <AyudaSeccion pathname={pathname} titulo={titulo} />
           <button type="button" onClick={cambiarTema} className="grid h-11 w-11 place-items-center rounded-xl border border-carbon/15 dark:border-crema/15" aria-pressed={oscuro}>
             <Icon name={oscuro ? "sun" : "moon"} className="h-5 w-5" />
             <span className="sr-only">Modo oscuro</span>

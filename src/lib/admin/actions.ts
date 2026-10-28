@@ -50,6 +50,34 @@ export async function entrar(_: unknown, form: FormData): Promise<{ error: strin
   redirect(siguiente.startsWith("/admin") && !siguiente.startsWith("/admin/login") ? siguiente : inicioDe(sesion.rol));
 }
 
+/**
+ * Cambio de contraseña desde "Mi cuenta". Solo admin/encargado: la cuenta compartida
+ * de la TPV (rol Sala) la usa también el print-bridge y no debe cambiarse desde el
+ * panel. Pide la contraseña actual para que nadie la cambie con una sesión abierta.
+ */
+export async function cambiarContrasena(_: unknown, form: FormData): Promise<{ ok: boolean; mensaje: string } | undefined> {
+  const actual = String(form.get("actual") ?? "");
+  const nueva = String(form.get("nueva") ?? "");
+  const repetida = String(form.get("repetida") ?? "");
+  const sesion = await obtenerSesionAdmin();
+  if (!sesion) return { ok: false, mensaje: "Tu sesión ha caducado. Vuelve a entrar." };
+  if (sesion.rol !== "admin" && sesion.rol !== "encargado") return { ok: false, mensaje: "Esta cuenta no puede cambiar su contraseña desde el panel." };
+  if (nueva.length < 8) return { ok: false, mensaje: "La nueva contraseña debe tener al menos 8 caracteres." };
+  if (nueva !== repetida) return { ok: false, mensaje: "Las dos contraseñas nuevas no coinciden." };
+  if (nueva === actual) return { ok: false, mensaje: "La nueva contraseña es igual que la actual." };
+  const supabase = await supabaseStaff();
+  if (!supabase) return { ok: false, mensaje: "Supabase no está configurado." };
+  const { error: errorActual } = await supabase.auth.signInWithPassword({ email: sesion.email, password: actual });
+  if (errorActual) return { ok: false, mensaje: "La contraseña actual no es correcta." };
+  const { error } = await supabase.auth.updateUser({ password: nueva });
+  if (error) {
+    console.error("[admin] cambiarContrasena", error.code, error.message);
+    if (error.code === "weak_password") return { ok: false, mensaje: "Supabase considera débil esa contraseña. Prueba con una más larga." };
+    return { ok: false, mensaje: "No se ha podido cambiar la contraseña. Inténtalo de nuevo." };
+  }
+  return { ok: true, mensaje: "Contraseña cambiada. La próxima vez entra con la nueva." };
+}
+
 export async function salir() {
   const supabase = await supabaseStaff();
   await supabase?.auth.signOut();
