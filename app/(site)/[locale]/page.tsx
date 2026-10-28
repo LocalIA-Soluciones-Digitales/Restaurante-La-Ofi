@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { CintaScroll } from "@/components/home/CintaScroll";
 import { Declaracion } from "@/components/home/Declaracion";
 import { EmpresasHome } from "@/components/home/EmpresasHome";
 import { EspaciosPaneles } from "@/components/home/EspaciosPaneles";
@@ -44,8 +45,9 @@ export default async function HomePage({ params }: Params) {
     <>
       <IntroOfi />
       <Declaracion />
-      <EspaciosPaneles locale={locale} />
       <LetrasScroll />
+      <EspaciosPaneles locale={locale} />
+      <CintaScroll palabras={["Hoy en La Ofi", "menú del día", "de lunes a viernes", "cocina casera"]} />
       <HoyEnLaOfi locale={locale} menu={menu} horario={resuelto} />
       <PlatosQueApetecen locale={locale} carta={carta} />
       <EmpresasHome locale={locale} />
