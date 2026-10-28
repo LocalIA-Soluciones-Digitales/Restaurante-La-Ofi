@@ -1,127 +1,110 @@
 import Link from "next/link";
 import type { NavItem } from "@/components/layout/nav";
-import { EstadoAhora } from "@/components/ui/EstadoAhora";
 import { Icon } from "@/components/ui/Icon";
-import { agruparHorario, estadoAhora, type Semana } from "@/lib/horario";
 import { href, type Locale } from "@/lib/i18n";
 import { SITE } from "@/lib/site";
 
 /**
- * Pie «noche editorial»: en el azul de la barra, como la cinta de letras de la
- * home. Arriba la llamada a reservar con el estado del momento, debajo los datos
- * en columnas finas y, como cierre, «La Ofi» enorme en crema cortado por abajo.
- * El nombre sube al entrar en pantalla (CSS .footer-name).
+ * Pie al estilo de The Fat Duck: sobre papel claro, columnas cortas de contacto,
+ * dirección y páginas, y el nombre «La Ofi» a todo el ancho como cierre, con la
+ * firma debajo. El nombre sube al entrar en pantalla (CSS .footer-name).
  */
-export function Footer({ locale, items, semana }: { locale: Locale; items: NavItem[]; semana: Semana }) {
+export function Footer({ locale, items }: { locale: Locale; items: NavItem[] }) {
   const year = new Date().getFullYear();
-  const titulo = "kicker text-ratan";
-  const enlace = "transition-colors duration-300 hover:text-crema";
+  // En móvil cada bloque va separado por un filete, como las fichas de la casa;
+  // en escritorio, cuatro columnas sin filetes.
+  const bloque = "border-t border-tinta-line pt-6 first:border-0 first:pt-0 sm:border-0 sm:pt-0";
+  const titulo = "kicker text-brasa";
   return (
-    <footer className="overflow-hidden bg-noche text-crema/65">
-      <div className="container-wide pt-16 sm:pt-24">
-        {/* Llamada a reservar */}
-        <div className="flex flex-col gap-8 border-b border-crema/15 pb-12 sm:pb-16 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <EstadoAhora semana={semana} inicial={estadoAhora(semana)} tone="light" className="text-[0.8rem] text-crema/70" />
-            <p className="mt-5 font-display text-[clamp(2.4rem,1.6rem+3.4vw,4.75rem)] font-light leading-[0.95] tracking-[-0.02em] text-crema">
-              ¿Mesa para hoy?
-            </p>
-            <a href={SITE.phone.href} className="mt-4 inline-block font-display text-[clamp(1.5rem,1.2rem+1.2vw,2.25rem)] tabular-nums text-ratan transition-colors duration-300 hover:text-crema">
-              {SITE.phone.display}
-            </a>
-          </div>
-          <Link
-            href={href(locale, "/reservar")}
-            className="group inline-flex min-h-14 items-center justify-between gap-8 bg-crema px-6 text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-carbon transition-colors duration-300 hover:bg-ratan sm:self-start lg:self-auto"
-          >
+    <footer className="overflow-hidden border-t border-tinta-line bg-papel pb-28 pt-16 text-carbon-muted sm:pt-20 lg:pb-8">
+      <div className="container-wide grid gap-10 sm:grid-cols-2 sm:gap-12 lg:grid-cols-4">
+        <div className={bloque}>
+          <h2 className={titulo}>Reservas</h2>
+          <a href={SITE.phone.href} className="mt-4 block font-display text-[2rem] leading-none tabular-nums text-carbon hover:text-brasa sm:text-2xl">
+            {SITE.phone.display}
+          </a>
+          <Link href={href(locale, "/reservar")} className="link-arrow mt-3 text-sm">
             Reservar mesa
-            <Icon name="arrow" className="h-4 w-4 transition-transform duration-300 ease-out-expo group-hover:translate-x-1" />
+            <Icon name="arrow" className="h-4 w-4" />
           </Link>
         </div>
 
-        {/* Datos en columnas finas */}
-        <div className="grid grid-cols-2 gap-x-6 gap-y-10 py-12 text-[0.92rem] leading-relaxed sm:py-16 lg:grid-cols-4">
-          <div className="col-span-2 sm:col-span-1">
-            <h2 className={titulo}>Dirección</h2>
-            <address className="mt-4 not-italic">
-              <span className="text-crema">{SITE.address.street}</span>
-              <br />
-              {SITE.address.postalCode} {SITE.address.locality}, {SITE.address.region}
-              <br />
-              <span className="text-[0.82rem] text-crema/50">{SITE.address.context}</span>
-            </address>
-            <a
-              href={SITE.maps.place}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`mt-3 inline-flex min-h-11 items-center gap-2 text-crema underline decoration-crema/30 underline-offset-[6px] ${enlace} hover:decoration-ratan`}
-            >
-              <Icon name="pin" className="h-4 w-4" />
-              Ver en Google Maps
-            </a>
-          </div>
+        <div className={bloque}>
+          <h2 className={titulo}>Dirección</h2>
+          <address className="mt-4 text-[0.95rem] not-italic leading-relaxed">
+            <span className="text-carbon">{SITE.address.street}</span>
+            <br />
+            {SITE.address.postalCode} {SITE.address.locality}, {SITE.address.region}
+            <br />
+            <span className="text-sm">{SITE.address.context}</span>
+          </address>
+          <a href={SITE.maps.place} target="_blank" rel="noopener noreferrer" className="link-arrow mt-3 text-sm">
+            <Icon name="pin" className="h-4 w-4" />
+            Ver en Google Maps
+          </a>
+        </div>
 
-          <div className="col-span-2 sm:col-span-1">
-            <h2 className={titulo}>Horario</h2>
-            <dl className="mt-4 grid gap-1.5">
-              {agruparHorario(semana).map((g) => (
-                <div key={g.dias} className="flex justify-between gap-4 border-b border-crema/10 pb-1.5 lg:block lg:border-0 lg:pb-0">
-                  <dt>{g.dias}</dt>
-                  <dd className="tabular-nums text-crema">{g.horas}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
+        <nav aria-label="Pie de página" className={bloque}>
+          <h2 className={titulo}>La Ofi</h2>
+          {/* Móvil: índice a una columna con filetes y flecha; escritorio: lista corta. */}
+          <ul className="mt-3 lg:mt-4">
+            {items.map((item) => (
+              <li key={item.href} className="border-b border-tinta-line last:border-0 lg:border-0">
+                <Link
+                  href={item.href}
+                  className="group flex min-h-12 items-center justify-between font-display text-[1.3rem] font-light text-carbon hover:text-brasa lg:inline-flex lg:min-h-8 lg:font-sans lg:text-[0.95rem] lg:font-normal lg:text-carbon-muted lg:hover:text-carbon"
+                >
+                  {item.label}
+                  <Icon name="arrow" className="h-4 w-4 text-carbon/40 transition-transform duration-300 group-hover:translate-x-1 lg:hidden" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
 
-          <nav aria-label="Pie de página">
-            <h2 className={titulo}>La Ofi</h2>
-            <ul className="mt-4 grid gap-0.5">
-              {items.map((item) => (
-                <li key={item.href}>
-                  <Link href={item.href} className={`inline-flex min-h-9 items-center ${enlace}`}>
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
-
-          <div>
-            <h2 className={titulo}>Síguenos</h2>
-            <a href={SITE.instagram.url} target="_blank" rel="noopener noreferrer" className={`mt-4 inline-flex min-h-9 items-center gap-2 ${enlace}`}>
-              <Icon name="instagram" className="h-5 w-5" />
-              {SITE.instagram.handle}
-            </a>
-          </div>
+        <div className={bloque}>
+          <h2 className={titulo}>Síguenos</h2>
+          <a
+            href={SITE.instagram.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 inline-flex min-h-11 items-center gap-2.5 border border-carbon/20 px-4 text-[0.95rem] text-carbon transition-colors duration-300 hover:border-carbon/60"
+          >
+            <Icon name="instagram" className="h-5 w-5" />
+            {SITE.instagram.handle}
+          </a>
         </div>
       </div>
 
-      {/* Cierre: el nombre en crema a todo el ancho, cortado por abajo. flow-root:
-          overflow:clip (globals.css) no impide que el margen negativo se salga. */}
-      <div aria-hidden="true" className="flow-root select-none overflow-hidden border-t border-crema/15">
-        <p className="footer-name -mb-[0.04em] whitespace-nowrap text-center font-display text-[31vw] font-normal leading-[0.82] tracking-[-0.045em] text-crema">
+      {/* El nombre a todo el ancho, como cierre de página, con manchas de acuarela
+          detrás y dibujos a línea que se trazan al llegar (The Fat Duck). */}
+      <div aria-hidden="true" className="relative mt-16 select-none px-2 sm:mt-24">
+        <Manchas />
+        <Dibujos />
+        <p className="footer-name relative whitespace-nowrap text-center font-display text-[25.5vw] font-normal leading-[0.78] tracking-[-0.045em] text-carbon">
           La Ofi
         </p>
+        <p className="relative mt-4 text-center font-display text-[clamp(1.2rem,0.8rem+1.8vw,2.4rem)] font-light italic text-madera">restaurante · derio</p>
       </div>
 
-      <div className="border-t border-crema/15 bg-noche pb-28 lg:pb-0">
-        <div className="container-wide flex flex-col items-center gap-3 py-6 text-xs sm:flex-row sm:justify-between">
+      <div className="container-wide mt-14">
+        <div className="flex flex-col items-center gap-4 border-t border-tinta-line pt-6 text-xs sm:flex-row sm:justify-between">
           <p>
             © {year} {SITE.name} · {SITE.address.locality}, {SITE.address.region}
           </p>
           <ul className="flex flex-wrap justify-center gap-x-5 gap-y-2">
             <li>
-              <Link href={href(locale, "/aviso-legal")} className={enlace}>
+              <Link href={href(locale, "/aviso-legal")} className="hover:text-carbon">
                 Aviso legal
               </Link>
             </li>
             <li>
-              <Link href={href(locale, "/privacidad")} className={enlace}>
+              <Link href={href(locale, "/privacidad")} className="hover:text-carbon">
                 Privacidad
               </Link>
             </li>
             <li>
-              <Link href={href(locale, "/cookies")} className={enlace}>
+              <Link href={href(locale, "/cookies")} className="hover:text-carbon">
                 Cookies
               </Link>
             </li>
@@ -129,5 +112,61 @@ export function Footer({ locale, items, semana }: { locale: Locale; items: NavIt
         </div>
       </div>
     </footer>
+  );
+}
+
+/** Manchas difuminadas (acuarela) solo en tonos cálidos del local: ratán, madera, arena y un toque de brasa. */
+function Manchas() {
+  const manchas = [
+    "left-[6%] top-[10%] h-[16vw] w-[16vw] bg-ratan/30",
+    "left-[34%] top-[40%] h-[12vw] w-[12vw] bg-madera/15",
+    "left-[54%] top-[4%] h-[14vw] w-[14vw] bg-arena-2/70",
+    "right-[8%] top-[28%] h-[18vw] w-[18vw] bg-ratan/25",
+    "right-[30%] bottom-[0%] h-[10vw] w-[10vw] bg-brasa/10",
+  ];
+  return (
+    <>
+      {manchas.map((m) => (
+        <span key={m} className={`footer-blob pointer-events-none absolute rounded-[46%_54%_58%_42%/52%_44%_56%_48%] mix-blend-multiply blur-[3vw] md:blur-2xl ${m}`} />
+      ))}
+    </>
+  );
+}
+
+/**
+ * Dibujos a línea (taza, copa, ramita y llama de la brasa) que se trazan al
+ * entrar en pantalla. Misma composición en móvil que en escritorio, a escala;
+ * en móvil el trazo es más grueso para no quedarse en medio píxel.
+ */
+function Dibujos() {
+  const trazo = { fill: "none", stroke: "currentColor", strokeLinecap: "round" as const, strokeLinejoin: "round" as const, pathLength: 1 };
+  return (
+    <>
+      {/* Taza de café con vapor */}
+      <svg viewBox="0 0 120 120" className="footer-draw pointer-events-none absolute [stroke-width:2.6] md:[stroke-width:1.4] left-[3%] top-[-18%] w-[12vw] max-w-[9rem] text-carbon/70 md:w-[11vw]">
+        <path {...trazo} d="M24 52h58v22a26 26 0 0 1-26 26h-6a26 26 0 0 1-26-26z" />
+        <path {...trazo} d="M82 60h8a11 11 0 0 1 0 22h-9" />
+        <path {...trazo} d="M16 106h80" />
+        <path {...trazo} d="M42 42c-6-8 6-12 0-22M56 42c-6-8 6-12 0-22M70 42c-6-8 6-12 0-22" />
+      </svg>
+      {/* Copa de vino */}
+      <svg viewBox="0 0 120 160" className="footer-draw pointer-events-none absolute [stroke-width:2.6] md:[stroke-width:1.4] right-[4%] top-[-30%] w-[8.5vw] max-w-[7rem] text-carbon/70 md:w-[8vw]">
+        <path {...trazo} d="M36 14h48c4 30 0 58-24 64-24-6-28-34-24-64z" />
+        <path {...trazo} d="M40 44c12 6 28 6 40 0" />
+        <path {...trazo} d="M60 78v56M38 146h44" />
+      </svg>
+      {/* Ramita de olivo */}
+      <svg viewBox="0 0 160 80" className="footer-draw pointer-events-none absolute [stroke-width:2.6] md:[stroke-width:1.4] bottom-[-6%] left-[18%] w-[10vw] max-w-[9rem] text-oliva/80">
+        <path {...trazo} d="M8 60C50 50 100 30 150 12" />
+        <ellipse {...trazo} cx="44" cy="44" rx="13" ry="6" transform="rotate(-30 44 44)" />
+        <ellipse {...trazo} cx="78" cy="42" rx="13" ry="6" transform="rotate(30 78 42)" />
+        <ellipse {...trazo} cx="104" cy="24" rx="13" ry="6" transform="rotate(-30 104 24)" />
+      </svg>
+      {/* Llama de la brasa */}
+      <svg viewBox="0 0 100 130" className="footer-draw pointer-events-none absolute [stroke-width:2.6] md:[stroke-width:1.4] bottom-[4%] right-[20%] w-[6vw] max-w-[5rem] text-brasa/80">
+        <path {...trazo} d="M50 8c8 24 34 34 34 66a34 34 0 0 1-68 0c0-18 10-26 16-36 2 12 8 18 14 20-4-18-2-34 4-50z" />
+        <path {...trazo} d="M50 70c4 10 14 14 14 28a14 14 0 0 1-28 0c0-10 8-16 14-28z" />
+      </svg>
+    </>
   );
 }
