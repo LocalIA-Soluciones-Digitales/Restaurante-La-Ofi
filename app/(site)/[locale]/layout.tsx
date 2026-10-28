@@ -9,7 +9,7 @@ import { mainNav, primaryNav } from "@/components/layout/nav";
 import { JsonLd } from "@/components/ui/JsonLd";
 import { getDictionary } from "@/i18n/dictionaries";
 import { IS_DEMO, SITE_URL } from "@/lib/env";
-import { resolverHorario } from "@/lib/horario";
+import { HORARIO_INTERNET, resolverHorario } from "@/lib/horario";
 import { ENABLED_LOCALES, HTML_LANG, href, isEnabledLocale } from "@/lib/i18n";
 import { restaurantJsonLd } from "@/lib/restaurant/jsonld";
 import { getHorario } from "@/lib/restaurant/queries";
@@ -100,7 +100,7 @@ export default async function LocaleLayout({
         <main id="contenido" className="flex-1">
           {children}
         </main>
-        <Footer locale={locale} items={items} />
+        <Footer locale={locale} items={items} semana={semana ?? HORARIO_INTERNET} />
         <BottomBar
           cartaHref={href(locale, "/menu-del-dia")}
           cartaMatch={[href(locale, "/menu-del-dia"), href(locale, "/carta")]}
