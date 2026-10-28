@@ -22,7 +22,7 @@ const PANELES: { id: string; nombre: string; linea: string; img: ImageKey }[] = 
 export function EspaciosPaneles({ locale }: { locale: Locale }) {
   const [activo, setActivo] = useState(1);
 
-  // Sin margen abajo: la cinta de letras que sigue hace de respiro.
+  // Sin margen abajo: la banda del menú del día sale de este crema con un fundido.
   return (
     <section aria-labelledby="espacios-title" className="section bg-crema pb-0 pt-0 sm:pb-0 sm:pt-0">
       <div className="container-wide">

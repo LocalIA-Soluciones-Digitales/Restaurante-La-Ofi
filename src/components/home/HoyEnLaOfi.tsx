@@ -12,13 +12,25 @@ import type { ContentState, MenuDiaView } from "@/lib/restaurant/types";
  * hoja del menú centrada encima. Entre dos secciones claras hace de banda oscura
  * que corta el ritmo. Dirección y horario completo viven en "Cómo llegar".
  */
-export function HoyEnLaOfi({ locale, menu, horario }: { locale: Locale; menu: ContentState<MenuDiaView>; horario: HorarioResuelto }) {
+export function HoyEnLaOfi({
+  locale,
+  menu,
+  horario,
+  fundido = false,
+}: {
+  locale: Locale;
+  menu: ContentState<MenuDiaView>;
+  horario: HorarioResuelto;
+  /** La foto sale del crema de la sección de arriba con un degradado largo. */
+  fundido?: boolean;
+}) {
   const hoy = horarioDeHoy(horario.semana);
 
   return (
-    <section id="hoy" aria-labelledby="hoy-title" className="relative isolate scroll-mt-16 overflow-hidden bg-carbon py-20 text-crema sm:py-28">
+    <section id="hoy" aria-labelledby="hoy-title" className={`relative isolate scroll-mt-16 overflow-hidden bg-carbon pb-20 text-crema sm:pb-28 ${fundido ? "pt-52 sm:pt-72" : "pt-20 sm:pt-28"}`}>
       <Photo img="comedorRatan" sizes="100vw" mobileBelow={0} decorative imgClassName="motion-safe:animate-kenburns" />
       <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-carbon/75 via-carbon/40 to-carbon/85" />
+      {fundido ? <div aria-hidden="true" className="absolute inset-x-0 top-0 h-56 bg-gradient-to-b from-crema via-crema/60 to-crema/0 sm:h-72" /> : null}
 
       <div className="container-wide relative flex flex-col items-center text-center">
         <p className="kicker text-crema/75">Hoy en La Ofi · Lunes a viernes</p>
