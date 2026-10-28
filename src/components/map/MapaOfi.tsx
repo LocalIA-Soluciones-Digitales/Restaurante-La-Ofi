@@ -2,6 +2,7 @@
 
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useRef, useState } from "react";
+import { preconnect } from "react-dom";
 import type { Map as MapLibreMap, StyleSpecification } from "maplibre-gl";
 import { SITE } from "@/lib/site";
 
@@ -70,6 +71,8 @@ function crearMarcador(): HTMLElement {
 export function MapaOfi({ className = "", idFicha }: { className?: string; /** Ficha que flota sobre el mapa en escritorio: el punto se centra en el hueco que deja libre. */ idFicha?: string }) {
   const caja = useRef<HTMLDivElement>(null);
   const [listo, setListo] = useState(false);
+  // La conexión con el servidor de teselas se abre ya, con la página.
+  preconnect("https://tiles.openfreemap.org", { crossOrigin: "anonymous" });
 
   useEffect(() => {
     const nodo = caja.current;
@@ -121,7 +124,7 @@ export function MapaOfi({ className = "", idFicha }: { className?: string; /** F
           setListo(true);
         });
       },
-      { rootMargin: "400px" },
+      { rootMargin: "1200px" },
     );
     io.observe(nodo);
 

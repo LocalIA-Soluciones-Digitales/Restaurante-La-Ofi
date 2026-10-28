@@ -27,9 +27,13 @@ const nextConfig: NextConfig = {
   },
   images: {
     // Sin la optimización de Vercel: el plan agotó su cuota de transformaciones
-    // (402 OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED) y las fotos nuevas o en tamaños
-    // nuevos salían rotas. Las fotos ya están en WebP y a tamaño razonable.
-    unoptimized: true,
+    // (402 OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED). En su lugar, el build crea
+    // copias de cada foto a estos anchos (scripts/variantes-imagenes.mjs) y el
+    // cargador propio las pide según la pantalla. Anchos sincronizados con el script.
+    loader: "custom",
+    loaderFile: "./src/lib/image-loader.ts",
+    deviceSizes: [640, 828, 1080, 1440, 1920, 2560],
+    imageSizes: [96, 256, 384],
     formats: ["image/avif", "image/webp"],
     // Calidades permitidas (obligatorio desde Next 16): 60 fondos, 75 general, 80 fotos de plato grandes.
     qualities: [60, 75, 80],
