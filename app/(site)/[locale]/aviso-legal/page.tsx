@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { LegalPage, Pendiente } from "@/components/legal/LegalPage";
+import { Dato, LegalPage } from "@/components/legal/LegalPage";
 import type { Locale } from "@/lib/i18n";
 import { pageMetadata } from "@/lib/seo";
-import { SITE } from "@/lib/site";
+import { SITE, TITULAR } from "@/lib/site";
 
 type Params = { params: Promise<{ locale: Locale }> };
 
@@ -13,7 +13,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 
 export default function AvisoLegalPage() {
   return (
-    <LegalPage id="aviso-legal-title" title="Aviso legal" updated="1 de octubre de 2026">
+    <LegalPage id="aviso-legal-title" title="Aviso legal" updated="28 de octubre de 2026">
       <section>
         <h2>Datos identificativos</h2>
         <p>
@@ -22,16 +22,16 @@ export default function AvisoLegalPage() {
         </p>
         <ul>
           <li>
-            Titular: <Pendiente>razón social</Pendiente>
+            Titular: <Dato valor={TITULAR.razonSocial} falta="razón social" />
           </li>
           <li>
-            NIF/CIF: <Pendiente>NIF/CIF</Pendiente>
+            NIF/CIF: <Dato valor={TITULAR.nif} falta="NIF/CIF" />
           </li>
           <li>
-            Domicilio social: <Pendiente>domicilio social</Pendiente>
+            Domicilio social: <Dato valor={TITULAR.domicilio} falta="domicilio social" />
           </li>
           <li>
-            Datos registrales: <Pendiente>inscripción en el Registro Mercantil, si procede</Pendiente>
+            Datos registrales: <Dato valor={TITULAR.registro} falta="inscripción en el Registro Mercantil, si procede" />
           </li>
           <li>
             Establecimiento: {SITE.name}, {SITE.address.street}, {SITE.address.postalCode} {SITE.address.locality} (
@@ -39,35 +39,55 @@ export default function AvisoLegalPage() {
           </li>
           <li>Teléfono: {SITE.phone.display}</li>
           <li>
-            Correo electrónico: <Pendiente>email de contacto</Pendiente>
+            Correo electrónico: <Dato valor={TITULAR.email} falta="email de contacto" />
           </li>
         </ul>
       </section>
       <section>
         <h2>Objeto</h2>
         <p>
-          Este sitio web informa sobre el restaurante, su carta, el menú del día y los eventos que organiza. La
-          información de precios, platos y alérgenos es orientativa; ante cualquier duda, prevalece la que facilite el
-          personal en el local.
+          Este sitio web informa sobre el restaurante, su carta, el menú del día y los eventos que organiza, y permite
+          solicitar reservas y hacer pedidos para recoger o desde la mesa. Los precios publicados son precios finales con
+          IVA incluido. La disponibilidad de platos, menús y eventos puede variar.
+        </p>
+      </section>
+      <section>
+        <h2>Alérgenos</h2>
+        <p>
+          La carta indica los alérgenos de cada plato según el Reglamento (UE) 1169/2011. Cuando un plato aparece con los
+          alérgenos «sin confirmar», no lo pidas sin consultarlo antes. Si tienes cualquier alergia o intolerancia, avisa
+          siempre al personal antes de pedir: en cocina se manipulan los 14 alérgenos y no podemos descartar trazas.
         </p>
       </section>
       <section>
         <h2>Propiedad intelectual</h2>
         <p>
           Los textos, fotografías, logotipos y diseño de este sitio pertenecen a su titular o a terceros que han
-          autorizado su uso. No se permite su reproducción sin autorización expresa.
+          autorizado su uso. No se permite su reproducción sin autorización expresa. Las marcas de terceros que puedan
+          aparecer en las fotografías pertenecen a sus respectivos titulares.
         </p>
       </section>
       <section>
         <h2>Responsabilidad</h2>
         <p>
           El titular no se hace responsable del contenido de sitios web de terceros a los que se pueda acceder mediante
-          enlaces (Google Maps, Instagram…). La disponibilidad de platos, menús y eventos puede variar sin previo aviso.
+          enlaces (Google Maps, Instagram, WhatsApp…).
+        </p>
+      </section>
+      <section>
+        <h2>Reclamaciones</h2>
+        <p>
+          Tienes a tu disposición hojas de reclamaciones en el local. También puedes escribirnos a{" "}
+          <Dato valor={TITULAR.email} falta="email de contacto" /> o acudir a Kontsumobide, el Instituto Vasco de Consumo
+          (kontsumobide.euskadi.eus).
         </p>
       </section>
       <section>
         <h2>Legislación aplicable</h2>
-        <p>Este aviso legal se rige por la legislación española.</p>
+        <p>
+          Este aviso legal se rige por la legislación española. Si eres consumidor, serán competentes los juzgados de tu
+          domicilio.
+        </p>
       </section>
     </LegalPage>
   );

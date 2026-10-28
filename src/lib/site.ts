@@ -38,8 +38,29 @@ export const SITE = {
   whatsapp: whatsapp ? { href: `https://wa.me/${whatsapp}` } : null,
   instagram: { handle: "@laofiparke", url: "https://www.instagram.com/laofiparke/" },
   maps: {
-    // Enlace de la ficha de Google Business facilitado por LocalIA.
-    place: "https://share.google/xLJ2KFgDF9i40yuDY",
+    // URL canónica de Google Maps (no el acortador share.google, que oculta el destino).
+    place: `https://www.google.com/maps/search/?api=1&query=${LAT},${LNG}`,
     directions: `https://www.google.com/maps/dir/?api=1&destination=${LAT},${LNG}`,
   },
 } as const;
+
+/**
+ * Titular del negocio para el aviso legal (LSSI art. 10), la privacidad (RGPD
+ * art. 13) y las condiciones de pedido. Pendiente del propietario: mientras un
+ * campo sea null, las páginas legales lo muestran como «[Pendiente: …]».
+ * También lo importa un componente de cliente (CartDrawer): solo datos públicos.
+ */
+export const TITULAR: {
+  razonSocial: string | null;
+  nif: string | null;
+  domicilio: string | null;
+  /** Registro Mercantil de Bizkaia (tomo, folio, hoja); null si es autónomo. */
+  registro: string | null;
+  email: string | null;
+} = {
+  razonSocial: null,
+  nif: null,
+  domicilio: null,
+  registro: null,
+  email: null,
+};

@@ -180,12 +180,15 @@ export const DEMO_CARTA: CartaSeccion[] = [
 // menu-world.com a partir de reseñas; sin fecha exacta) y coherente con Deia
 // (09/2025: plato del día a elegir entre varias opciones de lunes a viernes).
 // Los platos son ejemplos que han servido otros días, no el menú de hoy.
+// Sin precio ni incluidos hasta que los confirme el restaurante: un precio
+// publicado obliga (TRLGDCU art. 61) y el de las opiniones (8,90 € con bebida,
+// pan y postre) no está confirmado.
 export const DEMO_MENU_DIA: MenuDiaView = {
   fecha: null,
-  precioCentimos: 890,
-  incluye: ["Bebida", "Pan", "Postre"],
+  precioCentimos: null,
+  incluye: [],
   actualizadoEn: null,
-  notas: "Precio e incluidos según opiniones de clientes en internet: confírmalos en el local. Los platos son ejemplos de días anteriores; cada día el encargado publicará aquí el plato del día.",
+  notas: "Platos de ejemplo de otros días. El plato del día, con su precio, se publicará aquí cada mañana; mientras tanto, pregúntalo en el local.",
   platos: [
     { id: "d1", tipo: "plato", nombre: "Secreto con patatas", descripcion: null, alergenos: [], orden: 1 },
     { id: "d2", tipo: "plato", nombre: "Arroz caldoso de presa ibérica", descripcion: null, alergenos: [], orden: 2 },

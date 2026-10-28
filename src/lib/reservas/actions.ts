@@ -13,6 +13,8 @@ export interface ReservaWeb {
   espacio: "mesa" | "despacho" | "evento";
   evento_slug?: string;
   notas?: string;
+  /** Consentimiento explícito para las alergias u otros datos de salud de las notas (RGPD art. 9.2.a). */
+  consiente_salud?: boolean;
   /** Campo trampa: los humanos no lo ven; si llega relleno, es un bot. */
   web?: string;
 }
@@ -20,7 +22,19 @@ export interface ReservaWeb {
 /** Solicitud de reserva desde la web (queda PENDIENTE hasta que el local la confirme). */
 export async function solicitarReserva(r: ReservaWeb): Promise<ResultadoAccion<{ id: string }>> {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(r.fecha) || !/^\d{2}:\d{2}$/.test(r.hora)) return { ok: false, error: "Elige día y hora.", codigo: "ERROR" };
-  const res = await rpcPublica<{ id: string }>("laofi_crear_reserva", { p: r });
+  const notas = String(r.notas ?? "").trim().slice(0, 500);
+  if (notas && r.consiente_salud !== true) {
+    return { ok: false, error: "Para enviar notas (alergias, etc.), marca la casilla de consentimiento.", codigo: "ERROR" };
+  }
+  // Mismos topes que el formulario: la base de datos no limita el nombre.
+  const p = {
+    ...r,
+    nombre: String(r.nombre ?? "").trim().slice(0, 80),
+    telefono: String(r.telefono ?? "").slice(0, 20),
+    email: String(r.email ?? "").trim().slice(0, 120),
+    notas,
+  };
+  const res = await rpcPublica<{ id: string }>("laofi_crear_reserva", { p });
   if (!res) return { ok: false, error: "Las reservas online aún no están activas: llámanos.", codigo: "NO_ACTIVO" };
   if (res.error) {
     return res.error.code === "P0001"

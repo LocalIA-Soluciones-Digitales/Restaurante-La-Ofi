@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useCart, type CambioCarta, type CartLinea } from "@/components/pedir/cart-context";
@@ -9,11 +10,13 @@ import { Icon, type IconName } from "@/components/ui/Icon";
 import { useDialogA11y } from "@/hooks/useDialogA11y";
 import { formatCentimos } from "@/lib/format";
 import { vibrar } from "@/lib/haptics";
+import { href } from "@/lib/i18n";
 import { cartaActual, crearPedido, mesaPorNumero } from "@/lib/pedidos/actions";
 import { guardarReciente } from "@/lib/pedidos/recientes";
 import { repartirLinea } from "@/lib/pedidos/reparto";
 import type { ConfigPedidos, GrupoPublico, PedidoInput } from "@/lib/pedidos/types";
 import type { CartaSeccion } from "@/lib/restaurant/types";
+import { SITE, TITULAR } from "@/lib/site";
 
 export type PedirContexto = { tipo: "mesa" } | { tipo: "recogida" } | { tipo: "grupo"; grupo: GrupoPublico };
 
@@ -454,10 +457,26 @@ export function CartDrawer({
 
         <footer className="border-t border-carbon/10 px-6 py-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
           <div className="mb-3 flex items-baseline justify-between">
-            <span className="text-carbon-muted">Total</span>
+            <span className="text-carbon-muted">
+              Total <span className="text-xs">(IVA incluido)</span>
+            </span>
             <span className="font-display text-3xl tabular-nums text-carbon">{formatCentimos(cart.totalCentimos)}</span>
           </div>
           {revisando ? (
+            <>
+            {/* Información previa a la compra (TRLGDCU arts. 60 y 97, LSSI art. 27). */}
+            <p className="mb-3 text-xs leading-relaxed text-carbon-muted">
+              Vende {TITULAR.razonSocial ?? SITE.name}
+              {TITULAR.nif ? ` (NIF ${TITULAR.nif})` : ""}, {SITE.address.street}, {SITE.address.locality}. Al ser comida preparada para consumir en el
+              momento, no hay derecho de desistimiento (art. 103.d TRLGDCU). Para cualquier problema con tu pedido, llámanos al {SITE.phone.display}.{" "}
+              <Link href={href("es", "/aviso-legal")} className="underline">
+                Aviso legal
+              </Link>{" "}
+              ·{" "}
+              <Link href={href("es", "/privacidad")} className="underline">
+                Privacidad
+              </Link>
+            </p>
             <div className="grid grid-cols-[auto_1fr] gap-2">
               <button type="button" onClick={() => setRevisando(false)} disabled={enviando} className="btn-secondary">
                 Modificar
@@ -466,6 +485,7 @@ export function CartDrawer({
                 {enviando ? "Enviando…" : pago === "ONLINE" && !separado ? "Pagar y enviar pedido" : "Confirmar y enviar"}
               </button>
             </div>
+            </>
           ) : (
             <>
               {!error && recogida && !sinRecogida && cart.lineas.length > 0 && !nombre.trim() ? (

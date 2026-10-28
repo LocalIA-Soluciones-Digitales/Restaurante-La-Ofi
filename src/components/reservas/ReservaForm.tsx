@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { formatearFechaLarga, hoyEnMadrid } from "@/lib/format";
 import { solicitarReserva, type ReservaWeb } from "@/lib/reservas/actions";
+import Link from "next/link";
+import { href } from "@/lib/i18n";
 import { SITE } from "@/lib/site";
 
 const campo = "h-12 w-full rounded-2xl border border-carbon/15 bg-white px-4 text-base text-carbon focus:border-marino focus:outline-none";
@@ -34,6 +36,7 @@ export function ReservaForm({
     espacio: espacioInicial,
     evento_slug: eventos[0]?.slug,
     notas: "",
+    consiente_salud: false,
     web: "",
   });
   const [estado, setEstado] = useState<"idle" | "enviando" | "ok">("idle");
@@ -124,6 +127,12 @@ export function ReservaForm({
         </span>
         <textarea value={f.notas} onChange={(e) => set({ notas: e.target.value.slice(0, 500) })} rows={2} className={`${campo} h-auto py-3`} />
       </label>
+      {f.notas?.trim() ? (
+        <label className="flex items-start gap-3 text-sm sm:col-span-2">
+          <input type="checkbox" required checked={!!f.consiente_salud} onChange={(e) => set({ consiente_salud: e.target.checked })} className="mt-1 h-4 w-4 shrink-0 accent-[theme(colors.marino.DEFAULT)]" />
+          <span>Consiento que se usen las alergias o datos de salud que indico en las notas solo para atender mi reserva. Se borran después del servicio.</span>
+        </label>
+      ) : null}
       {/* Campo trampa anti-bots: oculto a personas y lectores de pantalla. */}
       <div aria-hidden="true" className="absolute -left-[9999px]">
         <label>
@@ -136,8 +145,15 @@ export function ReservaForm({
           {error}
         </p>
       ) : null}
-      <p className="text-xs text-carbon-muted sm:col-span-2">
-        Para grupos de más de {maxPersonas}, llámanos. Usamos tu nombre y teléfono solo para gestionar la reserva (ver privacidad).
+      <p className="text-xs text-carbon-muted sm:col-span-2">Para grupos de más de {maxPersonas}, llámanos.</p>
+      <p className="text-xs leading-relaxed text-carbon-muted sm:col-span-2">
+        <strong className="font-semibold">Protección de datos.</strong> El responsable es el titular de {SITE.name}. Usamos tu nombre, tu teléfono y los
+        datos de la reserva solo para gestionarla y avisarte de cambios (art. 6.1.b RGPD); no los cedemos ni los usamos para publicidad. Puedes acceder,
+        rectificar o suprimir tus datos y reclamar ante la AEPD.{" "}
+        <Link href={href("es", "/privacidad")} className="underline">
+          Más información en la política de privacidad
+        </Link>
+        .
       </p>
       <button type="submit" disabled={estado === "enviando"} className="btn-primary sm:col-span-2">
         <Icon name="calendar" className="h-4 w-4" />

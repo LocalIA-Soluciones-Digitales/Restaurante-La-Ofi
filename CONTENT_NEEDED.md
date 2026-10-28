@@ -62,8 +62,12 @@ Checklist para la visita al restaurante. Lo marcado con ⚠️ bloquea el paso a
 - [ ] Fotos de cada evento
 
 ## Legal
+Los datos del titular van en `TITULAR` (`src/lib/site.ts`): aviso legal, privacidad y condiciones del pedido
+los toman de ahí. Mientras falten, esas páginas muestran «[Pendiente: …]».
 - [ ] ⚠️ Razón social, NIF/CIF y domicilio social (aviso legal y privacidad)
 - [ ] Inscripción en el Registro Mercantil, si es sociedad
+- [ ] ⚠️ Email de contacto y de protección de datos (también para `public/.well-known/security.txt`)
+- [ ] Confirmar plazos: reservas 12 meses; notas de alergias borradas tras el servicio
 
 ## Dominio
 - [ ] ⚠️ Dominio (¿lo tienen?, ¿quién lo gestiona?) → `NEXT_PUBLIC_SITE_URL`

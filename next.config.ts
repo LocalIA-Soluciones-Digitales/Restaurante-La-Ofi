@@ -1,11 +1,34 @@
 import type { NextConfig } from "next";
 
 const securityHeaders = [
+  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "X-Frame-Options", value: "SAMEORIGIN" },
-  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+  { key: "Cross-Origin-Opener-Policy", value: "same-origin-allow-popups" },
+  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), usb=(), payment=(self)" },
 ];
+
+// CSP de la web pública, de momento solo en Report-Only: el navegador avisa en
+// consola de lo que bloquearía, sin romper nada. Tras revisar la consola un par
+// de semanas, cambiar la clave a "Content-Security-Policy". 'unsafe-inline' en
+// scripts porque Next inyecta scripts inline y con nonces las páginas dejarían de
+// ser estáticas. /admin queda fuera (OCR en WASM, Supabase Realtime): necesita la suya.
+const cspPublica = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https://*.supabase.co https://tiles.openfreemap.org",
+  "font-src 'self'",
+  "connect-src 'self' https://tiles.openfreemap.org",
+  "worker-src 'self' blob:",
+  "media-src 'self'",
+  "frame-ancestors 'self'",
+  "form-action 'self'",
+  "base-uri 'self'",
+  "object-src 'none'",
+  "upgrade-insecure-requests",
+].join("; ");
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
@@ -58,6 +81,7 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },
+      { source: "/:path((?!admin).*)", headers: [{ key: "Content-Security-Policy-Report-Only", value: cspPublica }] },
       {
         source: "/images/:path*",
         headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],

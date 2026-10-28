@@ -16,6 +16,11 @@ export function LegalPage({ id, title, updated, children }: { id: string; title:
   );
 }
 
+/** Dato del titular (TITULAR en site.ts): el valor si ya está, o el aviso de pendiente. */
+export function Dato({ valor, falta }: { valor: string | null; falta: string }) {
+  return valor ? <>{valor}</> : <Pendiente>{falta}</Pendiente>;
+}
+
 /** Dato del titular aún no facilitado: visible y fácil de localizar antes de producción. */
 export function Pendiente({ children }: { children: ReactNode }) {
   return (
