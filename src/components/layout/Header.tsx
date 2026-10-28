@@ -16,7 +16,6 @@ const MENU_FOTOS: ImageKey[] = ["comedorPanoramica", "comedorRatan", "barraMesas
 
 interface Props {
   homeHref: string;
-  pedirHref: string;
   reservarHref: string;
   /** Todas las páginas (menú desplegable). */
   items: NavItem[];
@@ -24,8 +23,7 @@ interface Props {
   primary: NavItem[];
   phoneHref: string;
   phoneDisplay: string;
-  labels: { reservar: string; pedir: string; llamar: string; abrirMenu: string; cerrarMenu: string; comoLlegar: string };
-  directionsHref: string;
+  labels: { reservar: string; llamar: string; abrirMenu: string; cerrarMenu: string };
 }
 
 /**
@@ -34,7 +32,7 @@ interface Props {
  * foto oscura va transparente con texto claro; al bajar, crema translúcida con
  * un filete fino debajo.
  */
-export function Header({ homeHref, pedirHref, reservarHref, items, primary, phoneHref, phoneDisplay, labels, directionsHref }: Props) {
+export function Header({ homeHref, reservarHref, items, primary, phoneHref, phoneDisplay, labels }: Props) {
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
   const pathname = usePathname();
@@ -134,42 +132,22 @@ export function Header({ homeHref, pedirHref, reservarHref, items, primary, phon
       </header>
 
       {open ? (
-        <MenuPanel
-          items={items}
-          isActive={isActiveItem}
-          onClose={() => setOpen(false)}
-          phoneHref={phoneHref}
-          phoneDisplay={phoneDisplay}
-          directionsHref={directionsHref}
-          pedirHref={pedirHref}
-          reservarHref={reservarHref}
-          labels={labels}
-        />
+        <MenuPanel items={items} isActive={isActiveItem} onClose={() => setOpen(false)} labels={labels} />
       ) : null}
     </>
   );
 }
 
-/** Menú a pantalla completa (móvil y escritorio): páginas en grande, acciones y, en escritorio, una foto del local. */
+/** Menú a pantalla completa (móvil y escritorio): páginas en grande y, en escritorio, una foto del local. */
 function MenuPanel({
   items,
   isActive,
   onClose,
-  phoneHref,
-  phoneDisplay,
-  directionsHref,
-  pedirHref,
-  reservarHref,
   labels,
 }: {
   items: NavItem[];
   isActive: (item: NavItem) => boolean;
   onClose: () => void;
-  phoneHref: string;
-  phoneDisplay: string;
-  directionsHref: string;
-  pedirHref: string;
-  reservarHref: string;
   labels: Props["labels"];
 }) {
   const ref = useDialogA11y<HTMLDivElement>(onClose);
@@ -224,32 +202,16 @@ function MenuPanel({
                 </li>
               ))}
             </ul>
-            <div className="mt-8 grid grid-cols-2 gap-3 sm:max-w-lg">
-              <Link href={reservarHref} onClick={onClose} className="btn-dark">
-                {labels.reservar}
-              </Link>
-              <Link href={pedirHref} onClick={onClose} className="btn-secondary">
-                <Icon name="bag" className="h-4 w-4" />
-                {labels.pedir}
-              </Link>
-              <a href={phoneHref} className="btn-secondary">
-                <Icon name="phone" className="h-4 w-4" />
-                {phoneDisplay}
-              </a>
-              <a href={directionsHref} target="_blank" rel="noopener noreferrer" className="btn-secondary">
-                <Icon name="pin" className="h-4 w-4" />
-                {labels.comoLlegar}
-              </a>
-              <Link
-                href="/admin/login"
-                prefetch={false}
-                onClick={onClose}
-                className="col-span-2 mt-2 inline-flex min-h-11 items-center justify-center gap-2 text-sm font-semibold text-carbon-muted sm:justify-start"
-              >
-                <Icon name="lock" className="h-4 w-4" />
-                Panel de gestión
-              </Link>
-            </div>
+            {/* Reservar, llamar y llegar ya están en la cabecera y en Contacto: aquí solo las páginas. */}
+            <Link
+              href="/admin/login"
+              prefetch={false}
+              onClick={onClose}
+              className="mt-8 inline-flex min-h-11 items-center gap-2 text-xs font-medium text-carbon-muted hover:text-carbon"
+            >
+              <Icon name="lock" className="h-3.5 w-3.5" />
+              Panel de gestión
+            </Link>
           </div>
         </nav>
         <div aria-hidden="true" className="relative hidden w-[42%] border-l border-tinta-line lg:block">

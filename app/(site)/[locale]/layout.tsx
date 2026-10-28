@@ -81,20 +81,16 @@ export default async function LocaleLayout({
         {IS_DEMO ? null : <JsonLd data={restaurantJsonLd(semana)} />}
         <Header
           homeHref={href(locale)}
-          pedirHref={href(locale, "/pedir")}
           reservarHref={href(locale, "/reservar")}
           items={items}
           primary={primaryNav(locale, t)}
           phoneHref={SITE.phone.href}
           phoneDisplay={SITE.phone.display}
-          directionsHref={SITE.maps.directions}
           labels={{
             reservar: t.cta.reservar,
-            pedir: t.cta.pedir,
             llamar: t.cta.llamar,
             abrirMenu: t.cta.abrirMenu,
             cerrarMenu: t.cta.cerrarMenu,
-            comoLlegar: t.cta.comoLlegar,
           }}
         />
         <main id="contenido" className="flex-1">
