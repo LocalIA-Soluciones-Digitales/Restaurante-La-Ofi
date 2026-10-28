@@ -127,39 +127,43 @@ function Manchas() {
   return (
     <>
       {manchas.map((m) => (
-        <span key={m} className={`footer-blob pointer-events-none absolute rounded-[46%_54%_58%_42%/52%_44%_56%_48%] mix-blend-multiply blur-2xl ${m}`} />
+        <span key={m} className={`footer-blob pointer-events-none absolute rounded-[46%_54%_58%_42%/52%_44%_56%_48%] mix-blend-multiply blur-[3vw] md:blur-2xl ${m}`} />
       ))}
     </>
   );
 }
 
-/** Dibujos a línea (taza, copa, ramita y llama de la brasa) que se trazan al entrar en pantalla. */
+/**
+ * Dibujos a línea (taza, copa, ramita y llama de la brasa) que se trazan al
+ * entrar en pantalla. Misma composición en móvil que en escritorio, a escala;
+ * en móvil el trazo es más grueso para no quedarse en medio píxel.
+ */
 function Dibujos() {
-  const trazo = { fill: "none", stroke: "currentColor", strokeWidth: 1.4, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, pathLength: 1 };
+  const trazo = { fill: "none", stroke: "currentColor", strokeLinecap: "round" as const, strokeLinejoin: "round" as const, pathLength: 1 };
   return (
     <>
       {/* Taza de café con vapor */}
-      <svg viewBox="0 0 120 120" className="footer-draw pointer-events-none absolute left-[3%] hidden sm:block top-[-34%] w-[16vw] max-w-[9rem] text-carbon/70 md:top-[-18%] md:w-[11vw]">
+      <svg viewBox="0 0 120 120" className="footer-draw pointer-events-none absolute [stroke-width:2.6] md:[stroke-width:1.4] left-[3%] top-[-18%] w-[12vw] max-w-[9rem] text-carbon/70 md:w-[11vw]">
         <path {...trazo} d="M24 52h58v22a26 26 0 0 1-26 26h-6a26 26 0 0 1-26-26z" />
         <path {...trazo} d="M82 60h8a11 11 0 0 1 0 22h-9" />
         <path {...trazo} d="M16 106h80" />
         <path {...trazo} d="M42 42c-6-8 6-12 0-22M56 42c-6-8 6-12 0-22M70 42c-6-8 6-12 0-22" />
       </svg>
       {/* Copa de vino */}
-      <svg viewBox="0 0 120 160" className="footer-draw pointer-events-none absolute right-[5%] hidden sm:block top-[-46%] w-[11vw] max-w-[7rem] text-carbon/70 md:right-[4%] md:top-[-30%] md:w-[8vw]">
+      <svg viewBox="0 0 120 160" className="footer-draw pointer-events-none absolute [stroke-width:2.6] md:[stroke-width:1.4] right-[4%] top-[-30%] w-[8.5vw] max-w-[7rem] text-carbon/70 md:w-[8vw]">
         <path {...trazo} d="M36 14h48c4 30 0 58-24 64-24-6-28-34-24-64z" />
         <path {...trazo} d="M40 44c12 6 28 6 40 0" />
         <path {...trazo} d="M60 78v56M38 146h44" />
       </svg>
       {/* Ramita de olivo */}
-      <svg viewBox="0 0 160 80" className="footer-draw pointer-events-none absolute bottom-[-6%] left-[18%] hidden w-[10vw] max-w-[9rem] text-oliva/80 lg:block">
+      <svg viewBox="0 0 160 80" className="footer-draw pointer-events-none absolute [stroke-width:2.6] md:[stroke-width:1.4] bottom-[-6%] left-[18%] w-[10vw] max-w-[9rem] text-oliva/80">
         <path {...trazo} d="M8 60C50 50 100 30 150 12" />
         <ellipse {...trazo} cx="44" cy="44" rx="13" ry="6" transform="rotate(-30 44 44)" />
         <ellipse {...trazo} cx="78" cy="42" rx="13" ry="6" transform="rotate(30 78 42)" />
         <ellipse {...trazo} cx="104" cy="24" rx="13" ry="6" transform="rotate(-30 104 24)" />
       </svg>
       {/* Llama de la brasa */}
-      <svg viewBox="0 0 100 130" className="footer-draw pointer-events-none absolute bottom-[4%] right-[20%] hidden w-[6vw] max-w-[5rem] text-brasa/80 lg:block">
+      <svg viewBox="0 0 100 130" className="footer-draw pointer-events-none absolute [stroke-width:2.6] md:[stroke-width:1.4] bottom-[4%] right-[20%] w-[6vw] max-w-[5rem] text-brasa/80">
         <path {...trazo} d="M50 8c8 24 34 34 34 66a34 34 0 0 1-68 0c0-18 10-26 16-36 2 12 8 18 14 20-4-18-2-34 4-50z" />
         <path {...trazo} d="M50 70c4 10 14 14 14 28a14 14 0 0 1-28 0c0-10 8-16 14-28z" />
       </svg>
