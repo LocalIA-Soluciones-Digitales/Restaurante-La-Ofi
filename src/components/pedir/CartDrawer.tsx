@@ -15,6 +15,7 @@ import { cartaActual, crearPedido, mesaPorNumero } from "@/lib/pedidos/actions";
 import { guardarReciente } from "@/lib/pedidos/recientes";
 import { repartirLinea } from "@/lib/pedidos/reparto";
 import type { ConfigPedidos, GrupoPublico, PedidoInput } from "@/lib/pedidos/types";
+import { PREFIJO_MENU_DIA } from "@/lib/restaurant/menu-pedido";
 import type { CartaSeccion } from "@/lib/restaurant/types";
 import { SITE, TITULAR } from "@/lib/site";
 
@@ -133,7 +134,7 @@ export function CartDrawer({
         total_esperado_centimos: cart.totalCentimos,
         notas: notasPedido || undefined,
         items: cart.lineas.map((l) => ({
-          producto_id: l.productoId,
+          ...(l.productoId.startsWith(PREFIJO_MENU_DIA) ? { menu_plato_id: l.productoId.slice(PREFIJO_MENU_DIA.length) } : { producto_id: l.productoId }),
           cantidad: l.cantidad,
           opciones: l.seleccion.flatMap((s) => s.opcionIds),
           notas: l.notas,
@@ -472,7 +473,16 @@ export function CartDrawer({
                   <div className="grid gap-2 sm:grid-cols-2">
                     {puedeOnline ? (
                       <PagoOpcion activo={pago === "ONLINE"} onClick={() => setPago("ONLINE")} icon="card" titulo="Pagar ahora" texto="Con tarjeta, de forma segura con Stripe." />
-                    ) : null}
+                    ) : (
+                      // Sin Stripe todavía: se anuncia, pero no se puede elegir.
+                      <div aria-disabled="true" className="flex items-start gap-3 rounded-2xl border border-dashed border-carbon/15 p-4 text-left opacity-60">
+                        <Icon name="card" className="mt-0.5 h-5 w-5 text-carbon-muted" />
+                        <span>
+                          <span className="block font-semibold text-carbon">Pagar con tarjeta</span>
+                          <span className="block text-sm text-carbon-muted">Próximamente</span>
+                        </span>
+                      </div>
+                    )}
                     {puedeLocal ? (
                       <PagoOpcion
                         activo={pago === "LOCAL"}

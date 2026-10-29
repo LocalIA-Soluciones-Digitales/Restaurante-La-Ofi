@@ -107,7 +107,10 @@ export interface PedidoPublico {
 }
 
 export interface LineaPedidoInput {
-  producto_id: string;
+  /** Producto de la carta… */
+  producto_id?: string;
+  /** …o una opción del menú del día de hoy (se cobra al precio del menú). */
+  menu_plato_id?: string;
   cantidad: number;
   opciones?: string[];
   notas?: string;

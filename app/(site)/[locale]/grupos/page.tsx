@@ -205,6 +205,7 @@ export default async function GruposPage({ params }: Params) {
                 ? "Reuniones, comidas de empresa o una celebración familiar: dinos fecha, cuántos sois y qué buscáis, y te llamamos con un menú concertado a tu medida."
                 : "Reuniones, comidas de empresa o una celebración familiar: llámanos y preparamos un menú concertado a tu medida."}
             </p>
+            <p className="mt-3 max-w-xl text-sm text-crema/60">Sin señal: si cambian los planes, avísanos por teléfono.</p>
           </div>
           {presupuestoOnline ? (
             <div className="lg:col-span-7">

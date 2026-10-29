@@ -64,9 +64,23 @@ export default async function AvisoLegalPage() {
       <section>
         <h2>Alérgenos</h2>
         <p>
-          La carta indica los alérgenos de cada plato según el Reglamento (UE) 1169/2011. Cuando un plato aparece con los
-          alérgenos «sin confirmar», no lo pidas sin consultarlo antes. Si tienes cualquier alergia o intolerancia, avisa
-          siempre al personal antes de pedir: en cocina se manipulan los 14 alérgenos y no podemos descartar trazas.
+          La carta indica los alérgenos de cada plato según el Reglamento (UE) 1169/2011. Mientras cocina no los confirme,
+          se muestran los de la receta habitual con un aviso: no pidas ese plato sin consultarlo antes. Si tienes cualquier
+          alergia o intolerancia, avisa siempre al personal antes de pedir: en cocina se manipulan los 14 alérgenos y no
+          podemos descartar trazas.
+        </p>
+      </section>
+      <section>
+        <h2>Pedidos, reservas, grupos y eventos</h2>
+        <p>
+          Los pedidos para recoger se pagan al recogerlos, en barra; el pago con tarjeta en la web estará disponible
+          próximamente. Al ser comida preparada para consumir en el momento, no hay derecho de desistimiento (art. 103.d
+          TRLGDCU).
+        </p>
+        <p>
+          Las reservas, las comidas de grupo y las celebraciones no llevan señal ni gastos de cancelación: si no podéis
+          venir o cambia el número de personas, avisadnos por teléfono cuanto antes. Los eventos con entrada indican su
+          precio en la ficha de cada evento.
         </p>
       </section>
       <section>

@@ -1,6 +1,6 @@
 "use server";
 
-import { getCartaContent } from "@/lib/restaurant/content";
+import { getCartaParaPedir } from "@/lib/restaurant/content";
 import { getTitularResuelto } from "@/lib/restaurant/titular";
 import type { CartaSeccion } from "@/lib/restaurant/types";
 import { rpcPublica } from "@/lib/supabase/rpc";
@@ -104,7 +104,7 @@ export async function obtenerGrupo(token: string): Promise<ResultadoAccion<Grupo
 
 export async function crearPedido(pedido: PedidoInput): Promise<ResultadoAccion<{ id: string; numero_dia: number; total_centimos: number }>> {
   if (!Array.isArray(pedido.items) || pedido.items.length === 0) return { ok: false, error: "Tu pedido está vacío.", codigo: "ERROR" };
-  if (pedido.items.some((i) => !UUID.test(i.producto_id))) return { ok: false, error: "Hay platos de ejemplo que no se pueden pedir.", codigo: "ERROR" };
+  if (pedido.items.some((i) => !UUID.test(i.producto_id ?? i.menu_plato_id ?? ""))) return { ok: false, error: "Hay platos de ejemplo que no se pueden pedir.", codigo: "ERROR" };
   return llamar("laofi_crear_pedido", { p_pedido: pedido });
 }
 
@@ -115,6 +115,6 @@ export async function obtenerPedido(id: string): Promise<ResultadoAccion<PedidoP
 
 /** Carta recién leída (sin caché) para comprobar precios y disponibilidad antes de confirmar. */
 export async function cartaActual(): Promise<CartaSeccion[] | null> {
-  const c = await getCartaContent();
+  const c = await getCartaParaPedir();
   return c.status === "real" ? c.data : null;
 }

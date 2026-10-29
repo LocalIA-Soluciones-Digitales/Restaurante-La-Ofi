@@ -319,14 +319,9 @@ function Detalle({
             <h3 id="ale-t" className="sr-only">
               Alérgenos
             </h3>
-            {!item.alergenosConfirmados ? (
-              <p className="flex gap-2 rounded-xl bg-terracota-soft/60 px-3 py-2.5 text-[0.8rem] leading-snug text-terracota">
-                <Icon name="info" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                Alérgenos sin confirmar: si tienes alguna alergia o intolerancia, pregunta al personal.
-              </p>
-            ) : alergenos.length === 0 ? (
+            {item.alergenosConfirmados && alergenos.length === 0 ? (
               <p className="text-sm text-carbon-muted">Sin ninguno de los 14 alérgenos de declaración obligatoria.</p>
-            ) : (
+            ) : alergenos.length > 0 ? (
               <ul className="flex flex-wrap gap-1.5" aria-label="Alérgenos">
                 {alergenos.map((k) => (
                   <li key={k} className="inline-flex items-center gap-1.5 rounded-full bg-terracota-soft px-2.5 py-1 text-xs font-semibold text-terracota">
@@ -335,7 +330,16 @@ function Detalle({
                   </li>
                 ))}
               </ul>
-            )}
+            ) : null}
+            {/* Sin confirmar: los de la receta habitual (o ninguno), siempre con el aviso. */}
+            {!item.alergenosConfirmados ? (
+              <p className={`flex gap-2 rounded-xl bg-terracota-soft/60 px-3 py-2.5 text-[0.8rem] leading-snug text-terracota ${alergenos.length > 0 ? "mt-2" : ""}`}>
+                <Icon name="info" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                {alergenos.length > 0
+                  ? "Alérgenos según la receta habitual. Si tienes alguna alergia o intolerancia, avísanos antes de pedir: en cocina se manipulan los 14 alérgenos."
+                  : "Alérgenos sin confirmar: si tienes alguna alergia o intolerancia, pregunta al personal."}
+              </p>
+            ) : null}
           </section>
 
           {item.maridaje ? (

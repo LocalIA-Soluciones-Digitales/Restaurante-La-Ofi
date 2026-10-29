@@ -5,7 +5,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Icon } from "@/components/ui/Icon";
 import { href, type Locale } from "@/lib/i18n";
 import { obtenerConfigPedidos, obtenerGrupo, validarMesa } from "@/lib/pedidos/actions";
-import { getCartaContent } from "@/lib/restaurant/content";
+import { getCartaParaPedir } from "@/lib/restaurant/content";
 import { pageMetadata } from "@/lib/seo";
 import { SITE } from "@/lib/site";
 
@@ -34,7 +34,7 @@ export default async function PedirPage({ params, searchParams }: Props) {
   const { mesa, grupo, modo } = await searchParams;
 
   const [carta, config, mesaR, grupoR] = await Promise.all([
-    getCartaContent(),
+    getCartaParaPedir(),
     obtenerConfigPedidos(),
     mesa ? validarMesa(mesa) : null,
     grupo ? obtenerGrupo(grupo) : null,

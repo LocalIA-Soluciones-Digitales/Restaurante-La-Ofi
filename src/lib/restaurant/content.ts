@@ -5,6 +5,7 @@ import { conFotosDePlato } from "@/lib/carta-fotos";
 import { IS_DEMO, SHOW_DEMO_CONTENT } from "@/lib/env";
 import { hoyEnMadrid } from "@/lib/format";
 import { DEMO_CARTA, DEMO_EVENTOS, DEMO_MENU_DIA } from "@/lib/restaurant/demo-content";
+import { MENU_DIA_PEDIBLE, seccionMenuDia } from "@/lib/restaurant/menu-pedido";
 import { getCarta, getEvento, getEventos, getMenuDia } from "@/lib/restaurant/queries";
 import type {
   CartaSeccion,
@@ -65,6 +66,14 @@ export async function getMenuDiaContent(fecha = hoyEnMadrid()): Promise<ContentS
   const menu = await getMenuDia(fecha);
   if (menu && menu.disponible && menu.platos.length > 0) return { status: "real", data: menuDiaView(menu) };
   return fallback(DEMO_MENU_DIA);
+}
+
+/** Carta para pedir: el plato del día de hoy, si está publicado y tiene precio, va delante. */
+export async function getCartaParaPedir(): Promise<ContentState<CartaSeccion[]>> {
+  const [carta, menu] = await Promise.all([getCartaContent(), getMenuDiaContent()]);
+  const seccion = MENU_DIA_PEDIBLE && menu.status === "real" ? seccionMenuDia(menu.data) : null;
+  if (!seccion || carta.status === "empty") return carta;
+  return { ...carta, data: [seccion, ...carta.data] };
 }
 
 export function eventoView(e: Evento): EventoView {
