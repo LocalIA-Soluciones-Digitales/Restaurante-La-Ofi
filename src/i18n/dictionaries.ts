@@ -14,6 +14,8 @@ const es = {
     laOfi: "La Ofi",
     galeria: "Galería",
     contacto: "Contacto",
+    pedir: "Pedir",
+    pedirRecoger: "Pedir para recoger",
     hoy: "Hoy",
     masDeLaOfi: "Más de La Ofi",
   },

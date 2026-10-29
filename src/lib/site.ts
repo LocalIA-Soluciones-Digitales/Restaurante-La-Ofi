@@ -37,6 +37,9 @@ export const SITE = {
   },
   whatsapp: whatsapp ? { href: `https://wa.me/${whatsapp}` } : null,
   instagram: { handle: "@laofiparke", url: "https://www.instagram.com/laofiparke/" },
+  // Ficha de Google del local (Knowledge Graph /g/11rtmgj80h, a la que llevaba el
+  // enlace share.google): desde ahí se escriben las reseñas.
+  google: { ficha: "https://www.google.com/search?kgmid=/g/11rtmgj80h" },
   maps: {
     // URL canónica de Google Maps (no el acortador share.google, que oculta el destino).
     place: `https://www.google.com/maps/search/?api=1&query=${LAT},${LNG}`,
@@ -46,18 +49,22 @@ export const SITE = {
 
 /**
  * Titular del negocio para el aviso legal (LSSI art. 10), la privacidad (RGPD
- * art. 13) y las condiciones de pedido. Pendiente del propietario: mientras un
- * campo sea null, las páginas legales lo muestran como «[Pendiente: …]».
+ * art. 13) y las condiciones de pedido. Lo normal es rellenarlo desde
+ * /admin/configuracion (ajuste «fiscal», ver getTitularResuelto); estos valores
+ * solo cubren lo que el panel no tenga. Mientras un campo siga en null, las
+ * páginas legales lo muestran como «[Pendiente: …]».
  * También lo importa un componente de cliente (CartDrawer): solo datos públicos.
  */
-export const TITULAR: {
+export interface Titular {
   razonSocial: string | null;
   nif: string | null;
   domicilio: string | null;
   /** Registro Mercantil de Bizkaia (tomo, folio, hoja); null si es autónomo. */
   registro: string | null;
   email: string | null;
-} = {
+}
+
+export const TITULAR: Titular = {
   razonSocial: null,
   nif: null,
   domicilio: null,

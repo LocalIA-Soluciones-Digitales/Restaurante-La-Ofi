@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { formatCentimos } from "@/lib/format";
+import { SITE } from "@/lib/site";
 import { vibrar } from "@/lib/haptics";
 import { obtenerPedido } from "@/lib/pedidos/actions";
 import type { PedidoPublico } from "@/lib/pedidos/types";
@@ -142,6 +143,12 @@ export function PedidoStatus({ inicial, pago }: { inicial: PedidoPublico; pago: 
         <span className="font-display text-3xl tabular-nums text-carbon">{formatCentimos(p.total_centimos)}</span>
       </footer>
       <div className="flex flex-wrap gap-3 border-t border-carbon/10 px-6 py-5 sm:px-8">
+        {p.estado === "READY" || p.estado === "DELIVERED" ? (
+          <a href={SITE.google.ficha} target="_blank" rel="noopener noreferrer" className="btn-secondary min-h-11 text-sm">
+            <Icon name="star" className="h-4 w-4" />
+            ¿Qué tal? Valóranos en Google
+          </a>
+        ) : null}
         {p.tipo === "MESA" ? (
           <button type="button" onClick={() => window.history.back()} className="btn-secondary min-h-11 text-sm">
             <Icon name="chevronLeft" className="h-4 w-4" />

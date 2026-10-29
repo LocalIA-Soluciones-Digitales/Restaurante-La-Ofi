@@ -3,8 +3,10 @@ import { Wordmark } from "@/components/ui/Wordmark";
 /**
  * Pantalla de entrada (como Restaurant GEM): el rótulo "la ofi" se enciende trazo
  * a trazo sobre fondo noche y la cortina sube destapando el hero. Solo CSS (no
- * espera a JavaScript) y sin capturar clics. Una vez por sesión: el script en
- * línea la quita antes de pintar si ya se vio. Con "reducir movimiento", no sale.
+ * espera a JavaScript) y sin capturar clics. Una vez por sesión: si ya se vio, el
+ * script en línea marca <html> con .intro-vista y el CSS la oculta. No se borra el
+ * nodo: React lo va a hidratar y quitarlo antes provocaba el error #418. Ni en
+ * móvil ni con "reducir movimiento" sale (globals.css).
  */
 export function IntroOfi() {
   return (
@@ -25,7 +27,7 @@ export function IntroOfi() {
       <script
         dangerouslySetInnerHTML={{
           __html:
-            "try{var e=document.getElementById('intro-ofi');if(sessionStorage.getItem('ofi-intro')){e&&e.remove()}else{sessionStorage.setItem('ofi-intro','1')}}catch(_){}",
+            "try{if(sessionStorage.getItem('ofi-intro')){document.documentElement.classList.add('intro-vista')}else{sessionStorage.setItem('ofi-intro','1')}}catch(_){}",
         }}
       />
     </>

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { EventCard } from "@/components/eventos/EventCard";
 import { Photo } from "@/components/media/Photo";
 import { VentanaFija } from "@/components/media/VentanaFija";
+import { PresupuestoForm } from "@/components/reservas/PresupuestoForm";
 import { Icon } from "@/components/ui/Icon";
 import { JsonLd } from "@/components/ui/JsonLd";
 import { PageHero } from "@/components/ui/PageHero";
@@ -12,6 +13,7 @@ import { EMPRESAS } from "@/lib/home-content";
 import { href, type Locale } from "@/lib/i18n";
 import { IMAGES } from "@/lib/images";
 import { getEventosContent } from "@/lib/restaurant/content";
+import { rpcPublica } from "@/lib/supabase/rpc";
 import { eventJsonLd } from "@/lib/restaurant/jsonld";
 import { pageMetadata } from "@/lib/seo";
 import { SITE } from "@/lib/site";
@@ -48,7 +50,11 @@ const CELEBRACIONES = ["Comidas de empresa", "Bautizos", "Comuniones", "Postboda
  */
 export default async function GruposPage({ params }: Params) {
   const { locale } = await params;
-  const eventos = await getEventosContent();
+  const [eventos, cfgReservas] = await Promise.all([
+    getEventosContent(),
+    rpcPublica<{ online?: boolean }>("laofi_get_config_reservas"),
+  ]);
+  const presupuestoOnline = Boolean(cfgReservas?.data?.online);
   const hayAgenda = eventos.status !== "empty" && eventos.data.length > 0;
   const jsonLd =
     eventos.status === "real" && !IS_DEMO ? eventos.data.map(eventJsonLd).filter((e): e is NonNullable<typeof e> => e !== null) : [];
@@ -191,14 +197,21 @@ export default async function GruposPage({ params }: Params) {
       </VentanaFija>
 
       <section id="contacto" aria-labelledby="contacto-grupos-title" className="section scroll-mt-20 bg-marino-900 text-crema">
-        <div className="container-wide grid gap-10 lg:grid-cols-12 lg:items-end">
-          <div className="lg:col-span-7">
+        <div className={`container-wide grid gap-10 lg:grid-cols-12 ${presupuestoOnline ? "lg:items-start" : "lg:items-end"}`}>
+          <div className={presupuestoOnline ? "lg:col-span-5" : "lg:col-span-7"}>
             <SectionRule dark id="contacto-grupos-title" title="Cuéntanos qué necesitas" aside={<span>Presupuesto</span>} />
             <p className="mt-4 max-w-xl text-crema/75">
-              Reuniones, comidas de empresa o una celebración familiar: llámanos y preparamos un menú concertado a tu medida.
+              {presupuestoOnline
+                ? "Reuniones, comidas de empresa o una celebración familiar: dinos fecha, cuántos sois y qué buscáis, y te llamamos con un menú concertado a tu medida."
+                : "Reuniones, comidas de empresa o una celebración familiar: llámanos y preparamos un menú concertado a tu medida."}
             </p>
           </div>
-          <div className="flex flex-wrap gap-3 lg:col-span-5 lg:justify-end">
+          {presupuestoOnline ? (
+            <div className="lg:col-span-7">
+              <PresupuestoForm privacidadHref={href(locale, "/privacidad")} />
+            </div>
+          ) : null}
+          <div className={`flex flex-wrap gap-3 ${presupuestoOnline ? "lg:col-span-12" : "lg:col-span-5 lg:justify-end"}`}>
             <a href={SITE.phone.href} className="btn-light">
               <Icon name="phone" className="h-4 w-4" />
               Llamar al {SITE.phone.display}

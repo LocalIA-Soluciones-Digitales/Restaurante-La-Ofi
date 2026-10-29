@@ -337,11 +337,16 @@
   }
 }
 
-/* Con "reducir movimiento" no hay entrada que tape la página. */
-@media (prefers-reduced-motion: reduce) {
+/* Con "reducir movimiento" no hay entrada que tape la página. Tampoco en móvil:
+   la cortina tapaba el hero 2,3 s y retrasaba el LCP (4,9 s en Lighthouse). Ni
+   en la segunda visita de la sesión (IntroOfi marca <html> con .intro-vista). */
+@media (prefers-reduced-motion: reduce), (max-width: 767px) {
   .intro-ofi {
     display: none;
   }
+}
+.intro-vista .intro-ofi {
+  display: none;
 }
 
 @supports (animation-timeline: view()) {

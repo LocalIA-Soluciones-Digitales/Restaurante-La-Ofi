@@ -11,6 +11,7 @@ const RUTAS: { path: string; priority: number; changeFrequency: "daily" | "weekl
   { path: "/carta", priority: 0.9, changeFrequency: "weekly" },
   { path: "/espacios", priority: 0.7, changeFrequency: "monthly" },
   { path: "/grupos", priority: 0.7, changeFrequency: "weekly" },
+  { path: "/reservar", priority: 0.8, changeFrequency: "monthly" },
   { path: "/galeria", priority: 0.5, changeFrequency: "monthly" },
   { path: "/contacto", priority: 0.7, changeFrequency: "yearly" },
   { path: "/aviso-legal", priority: 0.1, changeFrequency: "yearly" },

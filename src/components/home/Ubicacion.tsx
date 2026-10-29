@@ -53,7 +53,7 @@ export function Ubicacion({
             <div className="p-6 sm:p-8">
               <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
                 <p className="kicker whitespace-nowrap text-brasa">Cómo llegar</p>
-                <EstadoAhora semana={horario.semana} inicial={estadoAhora(horario.semana)} className="text-[0.8rem] text-carbon-muted" />
+                <EstadoAhora semana={horario.semana} cierres={horario.cierres} inicial={estadoAhora(horario.semana, undefined, horario.cierres)} className="text-[0.8rem] text-carbon-muted" />
               </div>
 
               <address className="mt-5 not-italic">

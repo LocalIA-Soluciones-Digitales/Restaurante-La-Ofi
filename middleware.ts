@@ -21,6 +21,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url, 307);
   }
 
+  // Un código de idioma que no tenemos (/en, /fr…) no es una página: /en → /es,
+  // /en/carta → /es/carta (antes acababa en /es/en, un 404).
+  if (/^[a-z]{2}$/.test(first)) {
+    const url = request.nextUrl.clone();
+    url.pathname = `/${DEFAULT_LOCALE}${rest.length ? `/${rest.join("/")}` : ""}`;
+    return NextResponse.redirect(url, 307);
+  }
+
   const url = request.nextUrl.clone();
   url.pathname = `/${DEFAULT_LOCALE}${pathname === "/" ? "" : pathname}`;
   url.search = search;

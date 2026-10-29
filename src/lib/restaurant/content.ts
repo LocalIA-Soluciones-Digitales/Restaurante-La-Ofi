@@ -2,7 +2,7 @@ import "server-only";
 import { itemDesdeRpc } from "@/lib/carta";
 import { conFichas } from "@/lib/carta-fichas";
 import { conFotosDePlato } from "@/lib/carta-fotos";
-import { SHOW_DEMO_CONTENT } from "@/lib/env";
+import { IS_DEMO, SHOW_DEMO_CONTENT } from "@/lib/env";
 import { hoyEnMadrid } from "@/lib/format";
 import { DEMO_CARTA, DEMO_EVENTOS, DEMO_MENU_DIA } from "@/lib/restaurant/demo-content";
 import { getCarta, getEvento, getEventos, getMenuDia } from "@/lib/restaurant/queries";
@@ -15,11 +15,14 @@ import type {
   MenuDiaView,
 } from "@/lib/restaurant/types";
 
-// Decide qué se pinta: datos reales del tenant → contenido de ejemplo (solo con
-// NEXT_PUBLIC_SHOW_DEMO_CONTENT=true) → estado vacío diseñado.
+// Decide qué se pinta: datos reales del tenant → contenido de ejemplo (solo en la
+// demo, con NEXT_PUBLIC_SHOW_DEMO_CONTENT=true) → estado vacío diseñado. En la web
+// publicada (IS_DEMO=false) nunca sale contenido de ejemplo, aunque la variable
+// siga encendida: la auditoría encontró eventos y un menú del día de muestra en
+// producción.
 
 function fallback<T>(demo: T): ContentState<T> {
-  return SHOW_DEMO_CONTENT ? { status: "demo", data: demo } : { status: "empty" };
+  return SHOW_DEMO_CONTENT && IS_DEMO ? { status: "demo", data: demo } : { status: "empty" };
 }
 
 export async function getCartaContent(): Promise<ContentState<CartaSeccion[]>> {

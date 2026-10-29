@@ -2,16 +2,25 @@ import type { Metadata } from "next";
 import { Dato, LegalPage } from "@/components/legal/LegalPage";
 import type { Locale } from "@/lib/i18n";
 import { pageMetadata } from "@/lib/seo";
-import { TITULAR } from "@/lib/site";
+import { getTitularResuelto } from "@/lib/restaurant/titular";
 
 type Params = { params: Promise<{ locale: Locale }> };
 
+// Los datos del titular se editan en /admin/configuracion.
+export const revalidate = 3600;
+
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { locale } = await params;
-  return pageMetadata({ locale, path: "/privacidad", title: "Política de privacidad" });
+  return pageMetadata({
+    locale,
+    path: "/privacidad",
+    title: "Política de privacidad",
+    description: "Cómo trata Restaurante La Ofi los datos de reservas y pedidos: responsable, finalidad, conservación y cómo ejercer tus derechos.",
+  });
 }
 
-export default function PrivacidadPage() {
+export default async function PrivacidadPage() {
+  const TITULAR = await getTitularResuelto();
   const email = <Dato valor={TITULAR.email} falta="email" />;
   return (
     <LegalPage id="privacidad-title" title="Política de privacidad" updated="28 de octubre de 2026">
@@ -30,6 +39,15 @@ export default function PrivacidadPage() {
             <strong>Reservas.</strong> Nombre, teléfono, día, hora, número de personas y notas, para gestionar tu
             solicitud y avisarte de cualquier cambio. Base legal: las medidas precontractuales que solicitas (art. 6.1.b
             RGPD). Los conservamos 12 meses desde la fecha de la reserva.
+          </li>
+          <li>
+            <strong>Presupuestos para grupos y empresas.</strong> Persona de contacto, teléfono, email si lo das, empresa,
+            fecha, número de personas y lo que nos pides, para preparar y enviarte el presupuesto. Base legal: las medidas
+            precontractuales que solicitas (art. 6.1.b RGPD). Los conservamos 12 meses desde la fecha indicada.
+          </li>
+          <li>
+            <strong>Prevención de abusos.</strong> Para frenar abusos guardamos durante 30 días un resumen cifrado (hash)
+            de la dirección IP desde la que se envía la reserva, nunca la IP. Base legal: interés legítimo (art. 6.1.f RGPD).
           </li>
           <li>
             <strong>Alergias y otros datos de salud.</strong> Si los indicas en las notas de la reserva, los tratamos con

@@ -12,13 +12,32 @@ export interface ReservaWeb {
   personas: number;
   fecha: string;
   hora: string;
-  espacio: "mesa" | "despacho" | "evento";
+  /** «presupuesto»: solicitud de grupo desde /grupos (sin el límite de personas de la reserva online). */
+  espacio: "mesa" | "despacho" | "evento" | "presupuesto";
   evento_slug?: string;
   notas?: string;
   /** Consentimiento explícito para las alergias u otros datos de salud de las notas (RGPD art. 9.2.a). */
   consiente_salud?: boolean;
+  /** Solo con espacio «presupuesto»: lo que pide la empresa (no son datos de salud). */
+  presupuesto?: { empresa?: string; tipo?: string; porPersona?: string; factura?: boolean };
   /** Campo trampa: los humanos no lo ven; si llega relleno, es un bot. */
   web?: string;
+}
+
+/** Notas del presupuesto para el panel: «Presupuesto · Comida de empresa · Acme SL · 25 €/persona · Factura · …». */
+function notasPresupuesto(p: NonNullable<ReservaWeb["presupuesto"]>, libre: string): string {
+  const corto = (v: string | undefined, n: number) => String(v ?? "").trim().slice(0, n);
+  return [
+    "Presupuesto",
+    corto(p.tipo, 40),
+    corto(p.empresa, 80),
+    corto(p.porPersona, 20) ? `${corto(p.porPersona, 20)} por persona` : "",
+    p.factura ? "Necesita factura" : "",
+    libre,
+  ]
+    .filter(Boolean)
+    .join(" · ")
+    .slice(0, 500);
 }
 
 /** Solicitud de reserva desde la web (queda PENDIENTE hasta que el local la confirme). */
@@ -34,15 +53,20 @@ export async function solicitarReserva(r: ReservaWeb): Promise<ResultadoAccion<{
     nombre: String(r.nombre ?? "").trim().slice(0, 60),
     telefono: String(r.telefono ?? "").slice(0, 16),
     email: String(r.email ?? "").trim().slice(0, 120),
-    notas,
+    notas: r.espacio === "presupuesto" ? notasPresupuesto(r.presupuesto ?? {}, notas) : notas,
+    presupuesto: undefined,
     ip_hash: await hashIp(),
   };
   const res = await rpcPublica<{ id: string }>("laofi_crear_reserva", { p });
   if (!res) return { ok: false, error: "Las reservas online aún no están activas: llámanos.", codigo: "NO_ACTIVO" };
   if (res.error) {
-    return res.error.code === "P0001"
-      ? { ok: false, error: res.error.message, codigo: "ERROR" }
-      : { ok: false, error: "Las reservas online aún no están activas: llámanos.", codigo: "NO_ACTIVO" };
+    if (res.error.code === "P0001") return { ok: false, error: res.error.message, codigo: "ERROR" };
+    // La RPC aún no existe en la base de datos (proyecto sin migrar).
+    if (res.error.code === "PGRST202" || res.error.code === "42883") {
+      return { ok: false, error: "Las reservas online aún no están activas: llámanos.", codigo: "NO_ACTIVO" };
+    }
+    console.error("[reservas]", res.error.code, res.error.message);
+    return { ok: false, error: "No hemos podido enviar la solicitud. Inténtalo de nuevo o llámanos.", codigo: "ERROR" };
   }
   return { ok: true, data: res.data! };
 }

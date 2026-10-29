@@ -101,8 +101,11 @@ const nextConfig: NextConfig = {
       { source: "/admin/:path*", headers: [{ key: "Content-Security-Policy-Report-Only", value: cspAdmin }] },
       { source: "/admin", headers: [{ key: "Content-Security-Policy-Report-Only", value: cspAdmin }] },
       {
+        // Los nombres de /public/images no llevan hash: con «immutable» de un año, una
+        // foto cambiada con el mismo nombre seguía saliendo la vieja. Una semana y
+        // revalidación en segundo plano (la CDN de Vercel se purga en cada despliegue).
         source: "/images/:path*",
-        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+        headers: [{ key: "Cache-Control", value: "public, max-age=604800, stale-while-revalidate=2592000" }],
       },
     ];
   },

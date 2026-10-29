@@ -4,6 +4,7 @@ import { CartaBloque } from "@/components/carta/CartaBloque";
 import { Photo } from "@/components/media/Photo";
 import { MenuDelDia } from "@/components/menu/MenuDelDia";
 import { EstadoAhora } from "@/components/ui/EstadoAhora";
+import { HorarioHoy } from "@/components/ui/HorarioHoy";
 import { Icon } from "@/components/ui/Icon";
 import { JsonLd } from "@/components/ui/JsonLd";
 import { IS_DEMO } from "@/lib/env";
@@ -12,7 +13,7 @@ import { href, type Locale } from "@/lib/i18n";
 import { obtenerConfigPedidos } from "@/lib/pedidos/actions";
 import { getCartaContent, getMenuDiaContent } from "@/lib/restaurant/content";
 import { menuJsonLd } from "@/lib/restaurant/jsonld";
-import { getHorario } from "@/lib/restaurant/queries";
+import { getCierres, getHorario } from "@/lib/restaurant/queries";
 import { pageMetadata } from "@/lib/seo";
 import { SITE } from "@/lib/site";
 
@@ -38,9 +39,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
  */
 export default async function MenuDelDiaPage({ params }: Params) {
   const { locale } = await params;
-  const [state, horarioBd, carta, configR] = await Promise.all([getMenuDiaContent(), getHorario(), getCartaContent(), obtenerConfigPedidos()]);
-  const horario = resolverHorario(horarioBd);
-  const hoy = horarioDeHoy(horario.semana);
+  const [state, horarioBd, cierres, carta, configR] = await Promise.all([getMenuDiaContent(), getHorario(), getCierres(), getCartaContent(), obtenerConfigPedidos()]);
+  const horario = resolverHorario(horarioBd, cierres);
 
   return (
     <>
@@ -56,9 +56,8 @@ export default async function MenuDelDiaPage({ params }: Params) {
             Menú <em className="text-[#E2B98A]">del día</em>
           </h1>
           <div className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm text-crema/80">
-            <EstadoAhora semana={horario.semana} inicial={estadoAhora(horario.semana)} tone="light" />
-            {hoy ? <span aria-hidden="true">·</span> : null}
-            {hoy ? <span>Hoy {hoy}</span> : null}
+            <EstadoAhora semana={horario.semana} cierres={horario.cierres} inicial={estadoAhora(horario.semana, undefined, horario.cierres)} tone="light" />
+            <HorarioHoy semana={horario.semana} cierres={horario.cierres} inicial={horarioDeHoy(horario.semana, undefined, horario.cierres)} separador />
           </div>
 
           <div className="mt-10 w-full max-w-xl text-left motion-safe:animate-fade-up sm:mt-14">

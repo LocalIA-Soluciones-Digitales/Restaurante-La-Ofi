@@ -99,6 +99,8 @@ const PAGINAS: Record<string, string[]> = {
 function revalidar(tabla: string) {
   for (const ruta of PAGINAS[tabla] ?? []) revalidatePath(ruta);
   if (tabla === "eventos") revalidatePath("/[locale]/eventos/[slug]", "page");
+  // Cierres y datos del titular salen en toda la web (estado, JSON-LD, aviso legal).
+  if (tabla === "ajustes" || tabla === "horario") revalidatePath("/[locale]", "layout");
 }
 
 // --- CRUD genérico (lista blanca en Postgres) ---------------------------------------

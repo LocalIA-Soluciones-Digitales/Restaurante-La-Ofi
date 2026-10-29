@@ -84,7 +84,7 @@ export function Footer({ locale, items }: { locale: Locale; items: NavItem[] }) 
         <p className="footer-name relative whitespace-nowrap text-center font-display text-[25.5vw] font-normal leading-[0.78] tracking-[-0.045em] text-carbon">
           La Ofi
         </p>
-        <p className="relative mt-4 text-center font-display text-[clamp(1.2rem,0.8rem+1.8vw,2.4rem)] font-light italic text-madera">restaurante · derio</p>
+        <p className="relative mt-4 text-center font-display text-[clamp(1.2rem,0.8rem+1.8vw,2.4rem)] font-light italic text-madera-oscura">restaurante · derio</p>
       </div>
 
       <div className="container-wide mt-14">
@@ -94,17 +94,17 @@ export function Footer({ locale, items }: { locale: Locale; items: NavItem[] }) 
           </p>
           <ul className="flex flex-wrap justify-center gap-x-5 gap-y-2">
             <li>
-              <Link href={href(locale, "/aviso-legal")} className="hover:text-carbon">
+              <Link href={href(locale, "/aviso-legal")} className="inline-flex min-h-6 items-center py-2 hover:text-carbon">
                 Aviso legal
               </Link>
             </li>
             <li>
-              <Link href={href(locale, "/privacidad")} className="hover:text-carbon">
+              <Link href={href(locale, "/privacidad")} className="inline-flex min-h-6 items-center py-2 hover:text-carbon">
                 Privacidad
               </Link>
             </li>
             <li>
-              <Link href={href(locale, "/cookies")} className="hover:text-carbon">
+              <Link href={href(locale, "/cookies")} className="inline-flex min-h-6 items-center py-2 hover:text-carbon">
                 Cookies
               </Link>
             </li>

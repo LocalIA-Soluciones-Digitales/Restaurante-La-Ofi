@@ -1,6 +1,7 @@
 "use server";
 
 import { getCartaContent } from "@/lib/restaurant/content";
+import { getTitularResuelto } from "@/lib/restaurant/titular";
 import type { CartaSeccion } from "@/lib/restaurant/types";
 import { rpcPublica } from "@/lib/supabase/rpc";
 import type {
@@ -48,7 +49,8 @@ function traducirError(mensaje: string, codigo?: string): ResultadoAccion<never>
 const invalido = (que: string): ResultadoAccion<never> => ({ ok: false, error: `${que} no válido.`, codigo: "ERROR" });
 
 export async function obtenerConfigPedidos(): Promise<ResultadoAccion<ConfigPedidos | null>> {
-  return llamar<ConfigPedidos | null>("laofi_get_config_pedidos", {});
+  const [r, titular] = await Promise.all([llamar<ConfigPedidos | null>("laofi_get_config_pedidos", {}), getTitularResuelto()]);
+  return r.ok && r.data ? { ok: true, data: { ...r.data, titular: { razonSocial: titular.razonSocial, nif: titular.nif } } } : r;
 }
 
 export async function validarMesa(token: string): Promise<ResultadoAccion<MesaPublica | null>> {

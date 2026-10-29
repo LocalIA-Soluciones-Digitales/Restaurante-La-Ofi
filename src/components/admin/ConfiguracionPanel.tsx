@@ -58,7 +58,24 @@ export function ConfiguracionPanel({ ajustes, horario, ticketbai }: { ajustes: A
   const res = val("reservas");
   const [reservas, setReservas] = useState({ online: Boolean(res.online), max_personas: Number(res.max_personas ?? 12), antelacion_dias: Number(res.antelacion_dias ?? 60) });
   const fis = val("fiscal");
-  const [fiscal, setFiscal] = useState({ razon_social: (fis.razon_social as string) ?? "", nif: (fis.nif as string) ?? "" });
+  const [fiscal, setFiscal] = useState({
+    razon_social: (fis.razon_social as string) ?? "",
+    nif: (fis.nif as string) ?? "",
+    domicilio: (fis.domicilio as string) ?? "",
+    registro: (fis.registro as string) ?? "",
+    email: (fis.email as string) ?? "",
+  });
+  // Cierres puntuales: una línea por día, «2026-12-08 Inmaculada».
+  const [cierres, setCierres] = useState(() =>
+    ((val("cierres").fechas as { fecha: string; motivo?: string | null }[] | undefined) ?? []).map((c) => `${c.fecha}${c.motivo ? ` ${c.motivo}` : ""}`).join("\n"),
+  );
+  const guardarCierres = () => {
+    const lineas = cierres.split("\n").map((l) => l.trim()).filter(Boolean);
+    const malas = lineas.filter((l) => !/^\d{4}-\d{2}-\d{2}(\s|$)/.test(l));
+    if (malas.length > 0) return setAviso({ tono: "error", texto: `Revisa estas líneas (formato 2026-12-08 Motivo): ${malas.join(", ")}` });
+    const fechas = lineas.map((l) => ({ fecha: l.slice(0, 10), motivo: l.slice(10).trim() || null })).sort((a, b) => a.fecha.localeCompare(b.fecha));
+    void guardarAjuste("cierres", { fechas }, "Cierres guardados.");
+  };
   const [dias, setDias] = useState<DiaHorarioBd[]>(() => DIAS.map((_, i) => horario.find((h) => h.dia === i + 1) ?? { dia: i + 1, estado: "consultar", desde: null, hasta: null }));
 
   return (
@@ -95,6 +112,20 @@ export function ConfiguracionPanel({ ajustes, horario, ticketbai }: { ajustes: A
           }}
         >
           Guardar horario
+        </button>
+      </Seccion>
+
+      <Seccion titulo="Festivos y cierres" texto="Días sueltos en que no abrís (festivos, vacaciones). La web dice «Cerrado hoy», no acepta reservas ni pedidos para recoger esos días y se lo indica a Google.">
+        <textarea
+          value={cierres}
+          onChange={(e) => setCierres(e.target.value)}
+          rows={5}
+          placeholder={"2026-12-08 Inmaculada\n2026-12-25 Navidad"}
+          className={`${input} h-auto py-3 font-mono text-sm`}
+        />
+        <p className="text-xs opacity-70">Un día por línea: la fecha (AAAA-MM-DD) y, si quieres, el motivo. Los días pasados se ignoran.</p>
+        <button type="button" className={botonPrimario} onClick={guardarCierres}>
+          Guardar cierres
         </button>
       </Seccion>
 
@@ -186,10 +217,23 @@ export function ConfiguracionPanel({ ajustes, horario, ticketbai }: { ajustes: A
         </button>
       </Seccion>
 
-      <Seccion titulo="Datos fiscales" texto="Salen en la cuenta impresa (factura simplificada). Pendientes del propietario.">
+      <Seccion titulo="Datos fiscales" texto="Salen en la cuenta impresa (factura simplificada), en el aviso legal, en la política de privacidad y en las condiciones del pedido. La ley obliga a publicarlos (LSSI art. 10).">
         <input value={fiscal.razon_social} onChange={(e) => setFiscal({ ...fiscal, razon_social: e.target.value })} placeholder="Razón social" className={input} />
         <input value={fiscal.nif} onChange={(e) => setFiscal({ ...fiscal, nif: e.target.value.toUpperCase() })} placeholder="NIF" className={input} />
-        <button type="button" className={botonPrimario} onClick={() => void guardarAjuste("fiscal", { razon_social: fiscal.razon_social.trim() || null, nif: fiscal.nif.trim() || null }, "Datos fiscales guardados.")}>
+        <input value={fiscal.domicilio} onChange={(e) => setFiscal({ ...fiscal, domicilio: e.target.value })} placeholder="Domicilio social" className={input} />
+        <input value={fiscal.registro} onChange={(e) => setFiscal({ ...fiscal, registro: e.target.value })} placeholder="Registro Mercantil (tomo, folio, hoja); vacío si es autónomo" className={input} />
+        <input type="email" value={fiscal.email} onChange={(e) => setFiscal({ ...fiscal, email: e.target.value })} placeholder="Email de contacto y protección de datos" className={input} />
+        <button
+          type="button"
+          className={botonPrimario}
+          onClick={() =>
+            void guardarAjuste(
+              "fiscal",
+              Object.fromEntries(Object.entries(fiscal).map(([k, v]) => [k, v.trim() || null])),
+              "Datos fiscales guardados.",
+            )
+          }
+        >
           Guardar datos fiscales
         </button>
       </Seccion>

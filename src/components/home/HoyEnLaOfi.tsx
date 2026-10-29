@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Photo } from "@/components/media/Photo";
 import { MenuDelDia } from "@/components/menu/MenuDelDia";
 import { EstadoAhora } from "@/components/ui/EstadoAhora";
+import { HorarioHoy } from "@/components/ui/HorarioHoy";
 import { Icon } from "@/components/ui/Icon";
 import { estadoAhora, horarioDeHoy, type HorarioResuelto } from "@/lib/horario";
 import { href, type Locale } from "@/lib/i18n";
@@ -24,8 +25,7 @@ export function HoyEnLaOfi({
   /** La foto sale del crema de la sección de arriba con un degradado largo. */
   fundido?: boolean;
 }) {
-  const hoy = horarioDeHoy(horario.semana);
-
+  
   return (
     <section id="hoy" aria-labelledby="hoy-title" className={`relative isolate scroll-mt-16 overflow-hidden bg-carbon pb-20 text-crema sm:pb-28 ${fundido ? "pt-52 sm:pt-72" : "pt-20 sm:pt-28"}`}>
       <Photo img="comedorRatan" sizes="100vw" mobileBelow={0} decorative imgClassName="motion-safe:animate-kenburns" />
@@ -38,9 +38,8 @@ export function HoyEnLaOfi({
           Menú <em className="text-[#E2B98A]">del día</em>
         </h2>
         <div className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm text-crema/80">
-          <EstadoAhora semana={horario.semana} inicial={estadoAhora(horario.semana)} tone="light" />
-          {hoy ? <span aria-hidden="true">·</span> : null}
-          {hoy ? <span>Hoy {hoy}</span> : null}
+          <EstadoAhora semana={horario.semana} cierres={horario.cierres} inicial={estadoAhora(horario.semana, undefined, horario.cierres)} tone="light" />
+          <HorarioHoy semana={horario.semana} cierres={horario.cierres} inicial={horarioDeHoy(horario.semana, undefined, horario.cierres)} separador />
         </div>
 
         <div className="reveal mt-10 w-full max-w-xl text-left sm:mt-14">

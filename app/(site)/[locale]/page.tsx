@@ -11,7 +11,7 @@ import { getDictionary } from "@/i18n/dictionaries";
 import { estadoAhora, resolverHorario } from "@/lib/horario";
 import { href, type Locale } from "@/lib/i18n";
 import { getCartaContent, getMenuDiaContent } from "@/lib/restaurant/content";
-import { getHorario } from "@/lib/restaurant/queries";
+import { getCierres, getHorario } from "@/lib/restaurant/queries";
 import { pageMetadata } from "@/lib/seo";
 import { SITE } from "@/lib/site";
 
@@ -36,8 +36,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 export default async function HomePage({ params }: Params) {
   const { locale } = await params;
   const t = getDictionary(locale);
-  const [menu, carta, horario] = await Promise.all([getMenuDiaContent(), getCartaContent(), getHorario()]);
-  const resuelto = resolverHorario(horario);
+  const [menu, carta, horario, cierres] = await Promise.all([getMenuDiaContent(), getCartaContent(), getHorario(), getCierres()]);
+  const resuelto = resolverHorario(horario, cierres);
 
 
   return (

@@ -15,6 +15,8 @@ const config: Config = {
         crema: "#FAF5EC",
         arena: { DEFAULT: "#F1E8D8", 2: "#E6D8BF" },
         madera: "#A9784A",
+        // Madera para texto pequeño sobre crema: 5,2:1 (la de arriba se queda en 3,5:1).
+        "madera-oscura": "#8A5F37",
         ratan: "#D2AE78",
         marino: { DEFAULT: "#1E3557", 700: "#182C49", 900: "#111E33" },
         oliva: { DEFAULT: "#56653A", soft: "#E3E5CF" },

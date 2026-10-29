@@ -2,16 +2,26 @@ import type { Metadata } from "next";
 import { Dato, LegalPage } from "@/components/legal/LegalPage";
 import type { Locale } from "@/lib/i18n";
 import { pageMetadata } from "@/lib/seo";
-import { SITE, TITULAR } from "@/lib/site";
+import { getTitularResuelto } from "@/lib/restaurant/titular";
+import { SITE } from "@/lib/site";
 
 type Params = { params: Promise<{ locale: Locale }> };
 
+// Los datos del titular se editan en /admin/configuracion.
+export const revalidate = 3600;
+
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { locale } = await params;
-  return pageMetadata({ locale, path: "/aviso-legal", title: "Aviso legal" });
+  return pageMetadata({
+    locale,
+    path: "/aviso-legal",
+    title: "Aviso legal",
+    description: "Aviso legal de Restaurante La Ofi (Derio): titular del sitio web, condiciones de uso, propiedad intelectual y legislación aplicable.",
+  });
 }
 
-export default function AvisoLegalPage() {
+export default async function AvisoLegalPage() {
+  const TITULAR = await getTitularResuelto();
   return (
     <LegalPage id="aviso-legal-title" title="Aviso legal" updated="28 de octubre de 2026">
       <section>
