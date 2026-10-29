@@ -217,7 +217,16 @@ function MenuPanel({
               ))}
             </ul>
             {/* Reservar, llamar y llegar ya están en la cabecera y en Contacto: aquí solo las
-                páginas. El panel de gestión se abre en /admin (el personal lo tiene guardado). */}
+                páginas y el acceso discreto del equipo. prefetch off: no carga /admin a los clientes. */}
+            <Link
+              href="/admin/login"
+              prefetch={false}
+              onClick={onClose}
+              className="mt-8 inline-flex min-h-11 items-center gap-2 text-xs font-medium text-carbon-muted hover:text-carbon"
+            >
+              <Icon name="lock" className="h-3.5 w-3.5" />
+              Panel de gestión
+            </Link>
           </div>
         </nav>
         <div aria-hidden="true" className="relative hidden w-[42%] border-l border-tinta-line lg:block">
