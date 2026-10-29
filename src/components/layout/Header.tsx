@@ -107,7 +107,7 @@ export function Header({ homeHref, reservarHref, items, primary, phoneHref, phon
             <Logo light={light} center />
           </Link>
 
-          {/* Derecha: teléfono y Reservar; en móvil, iconos de carta, reservar y llamar */}
+          {/* Derecha: panel, teléfono y Reservar; en móvil, iconos de carta, reservar y llamar */}
           <div className="ml-auto flex items-center gap-1 sm:gap-5">
             {primary[0] ? (
               <Link
@@ -122,6 +122,17 @@ export function Header({ homeHref, reservarHref, items, primary, phoneHref, phon
             <Link href={reservarHref} className="grid h-11 w-10 place-items-center rounded-full transition-opacity hover:opacity-70 sm:hidden">
               <Icon name="calendar" className="h-5 w-5" />
               <span className="sr-only">{labels.reservar}</span>
+            </Link>
+            {/* Acceso del equipo al panel (como en Palomita y La Osa). prefetch off: no carga /admin para los clientes. */}
+            <Link
+              href="/admin/login"
+              prefetch={false}
+              title="Panel de gestión"
+              className={`hidden min-h-11 min-w-11 items-center justify-center gap-1.5 text-[0.85rem] font-medium transition-colors sm:inline-flex ${muted}`}
+            >
+              <Icon name="lock" className="h-4 w-4" />
+              <span className="sr-only xl:not-sr-only">Panel</span>
+              <span className="sr-only"> de gestión</span>
             </Link>
             <a href={phoneHref} className={`hidden items-center gap-2 text-[0.85rem] font-medium tabular-nums transition-colors xl:flex ${muted}`}>
               <Icon name="phone" className="h-4 w-4" />
