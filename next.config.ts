@@ -16,7 +16,8 @@ const securityHeaders = [
 // y con OpenFreeMap (mapa); Supabase en el navegador es solo del panel.
 const cspPublica = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
+  // 'unsafe-eval' solo en `next dev` (React lo usa para depurar); nunca en producción.
+  `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://*.supabase.co https://tiles.openfreemap.org",
   "font-src 'self'",

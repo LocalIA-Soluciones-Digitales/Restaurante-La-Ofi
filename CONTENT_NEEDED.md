@@ -66,7 +66,7 @@ Los datos del titular van en `TITULAR` (`src/lib/site.ts`): aviso legal, privaci
 los toman de ahí. Mientras falten, esas páginas muestran «[Pendiente: …]».
 - [x] Orotela, S.L., NIF B16982597, Edificio 502 del Parque Tecnológico (Derio): escritura del 6/10/2021 y Carlos (29/10/2026)
 - [x] Registro Mercantil de Bizkaia, tomo 6042, folio 1, hoja BI-77552, inscripción 1.ª
-- [ ] ⚠️ Email de contacto y de protección de datos (también para `public/.well-known/security.txt`)
+- [x] Email de contacto y de protección de datos: laofiparke@gmail.com (Carlos, 29/10/2026)
 - [ ] Confirmar plazos: reservas 12 meses; notas de alergias borradas tras el servicio
 
 ## Dominio

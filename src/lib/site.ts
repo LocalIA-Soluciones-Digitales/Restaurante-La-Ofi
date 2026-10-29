@@ -69,5 +69,5 @@ export const TITULAR: Titular = {
   nif: "B16982597",
   domicilio: "Parque Tecnológico de Bizkaia, Edificio 502, bajo, 48160 Derio (Bizkaia)",
   registro: "Registro Mercantil de Bizkaia, tomo 6042, folio 1, hoja BI-77552, inscripción 1.ª",
-  email: null,
+  email: "laofiparke@gmail.com",
 };
