@@ -107,10 +107,11 @@ export const AYUDA: Record<string, AyudaSeccion> = {
     ],
   },
   "/admin/eventos": {
-    resumen: "Tardeos, partidos y celebraciones que se publican en la web.",
+    resumen: "Tardeos, partidos y celebraciones de todo el año. Los publicados salen en la agenda (/eventos); uno de ellos, el que elijas, sale además como aviso al entrar en la web.",
     pasos: [
-      "Crea el evento como borrador, con fecha, aforo, precio e imagen.",
-      "Publícalo cuando esté listo.",
+      "Mete los eventos del año con fecha, cartel o fotos, precio y aforo. Si quieres que no se vea aún, desmarca «Publicado».",
+      "Si el día tiene varias partes (actuación a mediodía, DJ por la tarde), añádelas en «Programa del día», cada una con su hora y su cartel.",
+      "Pulsa «Anunciar» en el evento que quieras promocionar: sale como aviso al entrar en la web y se quita del que estuviera anunciado.",
     ],
   },
   "/admin/contabilidad": {

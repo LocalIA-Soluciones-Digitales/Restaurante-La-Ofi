@@ -85,7 +85,24 @@ export function eventoView(e: Evento): EventoView {
     aforo: e.aforo,
     estado: e.estado,
     enlaceReserva: e.enlace_reserva,
+    programa: e.programa ?? [],
+    destacado: e.aviso_web === true,
     fuente: "supabase",
+  };
+}
+
+/**
+ * Agenda completa de /eventos: lo que viene (por fecha) y lo ya celebrado este año
+ * (lo más reciente primero). Sin eventos reales, la agenda va vacía: nada inventado.
+ */
+export async function getAgendaEventos(): Promise<{ proximos: EventoView[]; pasados: EventoView[] }> {
+  const eventos = (await getEventos(true)) ?? [];
+  const hoy = hoyEnMadrid();
+  const anio = hoy.slice(0, 4);
+  const vistas = eventos.map(eventoView);
+  return {
+    proximos: vistas.filter((e) => (e.fecha ?? "") >= hoy && e.estado !== "finalizado"),
+    pasados: vistas.filter((e) => ((e.fecha ?? "") < hoy || e.estado === "finalizado") && (e.fecha ?? "").startsWith(anio)).reverse(),
   };
 }
 

@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CartelEvento } from "@/components/eventos/CartelEvento";
+import { EventoPortada } from "@/components/eventos/EventoPortada";
+import { horario } from "@/components/eventos/ProgramaEvento";
 import { Icon } from "@/components/ui/Icon";
 import { JsonLd } from "@/components/ui/JsonLd";
+import { SectionRule } from "@/components/ui/SectionRule";
 import { IS_DEMO } from "@/lib/env";
-import { formatCentimos, formatearFechaLarga } from "@/lib/format";
 import { href, type Locale } from "@/lib/i18n";
 import { getEventoContent } from "@/lib/restaurant/content";
 import { eventJsonLd } from "@/lib/restaurant/jsonld";
 import { pageMetadata } from "@/lib/seo";
-import { SITE } from "@/lib/site";
 
 export const revalidate = 86400;
 
@@ -36,66 +37,82 @@ export default async function EventoPage({ params }: Params) {
   const evento = await getEventoContent(slug);
   if (!evento) notFound();
   const jsonLd = IS_DEMO ? null : eventJsonLd(evento);
+  // Partes del programa con su propio cartel: cada una, su tarjeta.
+  const conCartel = (evento.programa ?? []).filter((p) => p.imagen);
+  const media = evento.media ?? [];
 
   return (
-    <article className="pb-16 pt-28 sm:pt-32">
+    <article>
       {jsonLd ? <JsonLd data={jsonLd} /> : null}
-      <div className="container-page max-w-3xl">
-        <Link href={href(locale, "/grupos#agenda")} className="inline-flex items-center gap-1 text-sm font-semibold text-terracota hover:underline">
-          <Icon name="chevronLeft" className="h-4 w-4" />
-          Todos los eventos
-        </Link>
-        <p className="eyebrow mt-6 text-terracota">{evento.tipo}</p>
-        <h1 className="mt-3 text-5xl leading-tight text-carbon">{evento.titulo}</h1>
-        <ul className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-carbon-muted">
-          {evento.fecha ? (
-            <li className="inline-flex items-center gap-2 first-letter:uppercase">
-              <Icon name="calendar" className="h-5 w-5" />
-              {formatearFechaLarga(evento.fecha)}
-            </li>
-          ) : null}
-          {evento.hora ? (
-            <li className="inline-flex items-center gap-2">
-              <Icon name="clock" className="h-5 w-5" />
-              {evento.hora.slice(0, 5)}
-            </li>
-          ) : null}
-          {evento.precioCentimos !== null ? (
-            <li className="font-semibold text-marino">
-              {evento.precioCentimos === 0 ? "Entrada libre" : formatCentimos(evento.precioCentimos)}
-            </li>
-          ) : null}
-          {evento.aforo ? <li>Aforo: {evento.aforo} personas</li> : null}
-        </ul>
-        {evento.imagen ? (
-          <div className="relative mt-8 aspect-[16/9] overflow-hidden rounded-[2rem] bg-arena">
-            <Image src={evento.imagen.src} alt={evento.imagen.alt} fill priority sizes="(min-width: 768px) 768px, 100vw" className="object-cover" />
-          </div>
-        ) : null}
-        <p className="mt-8 whitespace-pre-line text-lg leading-relaxed text-carbon">{evento.descripcion}</p>
-        {evento.media && evento.media.length > 0 ? (
-          <ul className="mt-8 grid gap-4 sm:grid-cols-2">
-            {evento.media.map((m) => (
-              <li key={m.url} className="relative aspect-[4/3] overflow-hidden rounded-[1.5rem] bg-arena">
-                {m.tipo === "video" ? (
-                  <video src={m.url} controls playsInline preload="metadata" className="h-full w-full bg-carbon object-cover" />
-                ) : (
-                  <Image src={m.url} alt={evento.titulo} fill sizes="(min-width: 768px) 384px, 100vw" className="object-cover" />
-                )}
-              </li>
-            ))}
-          </ul>
-        ) : null}
-        {evento.estado === "proximo" ? (
-          <a
-            href={evento.enlaceReserva ?? SITE.phone.href}
-            {...(evento.enlaceReserva ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-            className="btn-primary mt-10"
-          >
-            {evento.enlaceReserva ? "Reservar plaza" : `Llamar al ${SITE.phone.display}`}
-          </a>
-        ) : null}
+
+      {/* Franja clara bajo la cabecera de la web (su texto es oscuro). */}
+      <div className="bg-crema pb-4 pt-24 lg:pt-28">
+        <div className="container-wide">
+          <Link href={href(locale, "/eventos")} className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-carbon-muted hover:text-carbon">
+            <Icon name="chevronLeft" className="h-4 w-4" />
+            Toda la agenda
+          </Link>
+        </div>
       </div>
+      <header className="relative overflow-hidden bg-noche py-14 text-crema sm:py-24">
+        <div aria-hidden="true" className="pointer-events-none absolute -left-40 top-0 h-[32rem] w-[32rem] rounded-full bg-neon-deep/20 blur-3xl" />
+        <div aria-hidden="true" className="pointer-events-none absolute -bottom-40 right-0 h-[28rem] w-[28rem] rounded-full bg-brasa/25 blur-3xl" />
+        <div className="relative">
+          <EventoPortada evento={evento} locale={locale} ficha />
+        </div>
+      </header>
+
+      {evento.descripcion ? (
+        <section aria-label="Sobre el evento" className="section bg-crema">
+          <div className="container-page max-w-3xl">
+            <p className="whitespace-pre-line font-display text-[1.35rem] font-light leading-relaxed text-carbon sm:text-2xl">{evento.descripcion}</p>
+          </div>
+        </section>
+      ) : null}
+
+      {conCartel.length > 0 ? (
+        <section aria-labelledby="programa-title" className="section bg-papel-2">
+          <div className="container-wide">
+            <SectionRule id="programa-title" title="El programa, parte a parte" aside={<span>Programa</span>} />
+            <ol className={`mt-12 grid gap-x-8 gap-y-14 ${conCartel.length > 1 ? "sm:grid-cols-2" : "max-w-xl"} ${conCartel.length > 2 ? "xl:grid-cols-3" : ""}`}>
+              {conCartel.map((p, i) => (
+                <li key={`${p.titulo}-${i}`}>
+                  <CartelEvento
+                    src={p.imagen!}
+                    alt={`Cartel: ${p.titulo}`}
+                    sizes="(min-width: 1280px) 30vw, (min-width: 640px) 45vw, 100vw"
+                    className="aspect-[4/5] rounded-2xl shadow-card"
+                  />
+                  {p.hora ? <p className="mt-5 text-sm font-semibold tabular-nums text-brasa">{horario(p)}</p> : null}
+                  <h2 className="t-h3 mt-1 text-carbon">{p.titulo}</h2>
+                  {p.descripcion ? <p className="mt-2 leading-relaxed text-carbon-muted">{p.descripcion}</p> : null}
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+      ) : null}
+
+      {media.length > 0 ? (
+        <section aria-labelledby="galeria-title" className="section bg-crema">
+          <div className="container-wide">
+            <SectionRule id="galeria-title" title="Fotos y vídeos" aside={<span>Galería</span>} />
+            {/* Columnas tipo mosaico: cada foto con su proporción, las verticales enteras. */}
+            <ul className="mt-12 columns-1 gap-5 sm:columns-2 lg:columns-3 [&>li]:mb-5">
+              {media.map((m) => (
+                <li key={m.url} className="break-inside-avoid overflow-hidden rounded-2xl bg-papel-3">
+                  {m.tipo === "video" ? (
+                    <video src={m.url} controls playsInline preload="metadata" className="block w-full bg-noche" />
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element -- proporción libre (mosaico); fotos subidas desde el panel
+                    <img src={m.url} alt={evento.titulo} loading="lazy" className="block h-auto w-full" />
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      ) : null}
     </article>
   );
 }

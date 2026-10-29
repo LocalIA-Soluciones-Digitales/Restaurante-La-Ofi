@@ -11,7 +11,7 @@ export default async function EventosAdmin() {
   if (!r.ok) return <Aviso>{r.error}</Aviso>;
   return (
     <>
-      <Cabecera titulo="Eventos" texto="Tardeos, partidos y celebraciones. Los borradores no se ven en la web hasta publicarlos." />
+      <Cabecera titulo="Eventos" texto="Mete los eventos de todo el año: los publicados salen en la agenda. Con «Anunciar» eliges cuál sale como aviso al entrar en la web." />
       <EventosGestion inicial={r.data} />
     </>
   );

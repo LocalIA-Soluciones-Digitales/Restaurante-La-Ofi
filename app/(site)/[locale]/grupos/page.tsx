@@ -1,24 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { EventCard } from "@/components/eventos/EventCard";
 import { Photo } from "@/components/media/Photo";
 import { VentanaFija } from "@/components/media/VentanaFija";
 import { PresupuestoForm } from "@/components/reservas/PresupuestoForm";
 import { Icon } from "@/components/ui/Icon";
-import { JsonLd } from "@/components/ui/JsonLd";
 import { PageHero } from "@/components/ui/PageHero";
 import { SectionRule } from "@/components/ui/SectionRule";
-import { IS_DEMO } from "@/lib/env";
 import { EMPRESAS } from "@/lib/home-content";
 import { href, type Locale } from "@/lib/i18n";
 import { IMAGES } from "@/lib/images";
-import { getEventosContent } from "@/lib/restaurant/content";
 import { rpcPublica } from "@/lib/supabase/rpc";
-import { eventJsonLd } from "@/lib/restaurant/jsonld";
 import { pageMetadata } from "@/lib/seo";
 import { SITE } from "@/lib/site";
 
-// La agenda de eventos cambia desde /admin: se regenera como mucho cada 5 minutos.
 export const revalidate = 86400;
 
 type Params = { params: Promise<{ locale: Locale }> };
@@ -28,9 +22,9 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   return pageMetadata({
     locale,
     path: "/grupos",
-    title: "Grupos y eventos",
+    title: "Grupos y empresas",
     description:
-      "Comidas de empresa en El Despacho, pedidos de grupo con factura, celebraciones con menú concertado y la agenda de La Ofi, en el edificio 502 del Parque Tecnológico de Bizkaia.",
+      "Comidas de empresa en El Despacho, pedidos de grupo con factura y celebraciones con menú concertado en La Ofi, en el edificio 502 del Parque Tecnológico de Bizkaia.",
   });
 }
 
@@ -43,31 +37,19 @@ const PASOS = [
 const CELEBRACIONES = ["Comidas de empresa", "Bautizos", "Comuniones", "Postbodas"];
 
 /**
- * Todo lo que no es venir a comer por tu cuenta, en una sola página (antes
- * repartido entre /empresas, /eventos y el pie de /espacios): empresas,
- * pedido de grupo, celebraciones, la agenda (solo si hay eventos publicados)
- * y un único bloque de contacto. /empresas y /eventos redirigen aquí.
+ * Venir en grupo: empresas, pedido de grupo, celebraciones y un único bloque de
+ * contacto. /empresas redirige aquí. La agenda de eventos vive en /eventos.
  */
 export default async function GruposPage({ params }: Params) {
   const { locale } = await params;
-  const [eventos, cfgReservas] = await Promise.all([
-    getEventosContent(),
-    rpcPublica<{ online?: boolean }>("laofi_get_config_reservas"),
-  ]);
+  const cfgReservas = await rpcPublica<{ online?: boolean }>("laofi_get_config_reservas");
   const presupuestoOnline = Boolean(cfgReservas?.data?.online);
-  const hayAgenda = eventos.status !== "empty" && eventos.data.length > 0;
-  const jsonLd =
-    eventos.status === "real" && !IS_DEMO ? eventos.data.map(eventJsonLd).filter((e): e is NonNullable<typeof e> => e !== null) : [];
 
   return (
     <>
-      {jsonLd.map((data, i) => (
-        <JsonLd key={i} data={data} />
-      ))}
-
       <PageHero
         id="grupos-title"
-        eyebrow="Grupos y eventos"
+        eyebrow="Grupos y empresas"
         title="Comidas de empresa y celebraciones"
         lead="El Despacho para reuniones, pedidos de grupo con factura y menús concertados para celebrar. En el edificio 502, a un paseo de la oficina."
         image={IMAGES.despacho}
@@ -88,11 +70,9 @@ export default async function GruposPage({ params }: Params) {
           <a href="#celebraciones" className="link-arrow">
             Celebraciones
           </a>
-          {hayAgenda ? (
-            <a href="#agenda" className="link-arrow">
-              Agenda
-            </a>
-          ) : null}
+          <Link href={href(locale, "/eventos")} className="link-arrow">
+            Agenda de eventos
+          </Link>
         </nav>
       </PageHero>
 
@@ -163,21 +143,6 @@ export default async function GruposPage({ params }: Params) {
           </div>
         </div>
       </section>
-
-      {hayAgenda ? (
-        <section id="agenda" aria-labelledby="agenda-title" className="section scroll-mt-20 bg-crema">
-          <div className="container-wide">
-            <SectionRule id="agenda-title" title="Próximos eventos" aside={<span>Agenda</span>} />
-            <ul className="mt-12 space-y-14">
-              {eventos.data.map((evento) => (
-                <li key={evento.id}>
-                  <EventCard evento={evento} locale={locale} />
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-      ) : null}
 
       <VentanaFija
         id="sobremesa-title"

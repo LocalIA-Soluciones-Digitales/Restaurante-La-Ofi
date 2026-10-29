@@ -116,6 +116,8 @@ propio, `laofi`**, sin tablas compartidas con otros proyectos. Detalle y barrera
 - `supabase/migrations/` — schema `laofi` (tablas, RLS, índices) y RPC `laofi_*`, **todas aplicadas**
   (la última, `20261029100000_laofi_reservas_espacios`, el 2026-10-29; ese día se aplicó también
   `20261022120000_laofi_eventos_media`, que faltaba y hacía fallar las fotos de eventos).
+  **Pendiente:** `20261031100000_laofi_eventos_programa` (programa de cada evento). Sin ella la web
+  funciona igual, pero el «Programa del día» del panel no se guarda.
 - `supabase/seed/la_ofi_tenant.sql` — alta en `public.clientes` (aplicado). Devuelve la `site_key`.
 - `supabase/seed/la_ofi_contenido_publicado.sql` — carta y horario publicados en internet (aplicado).
 - `supabase/seed/la_ofi_carta_oficial.sql` — carta oficial del restaurante (desayunos y El Despacho, sept. 2026); sustituye «Para picotear» y «Brasa» (aplicado).

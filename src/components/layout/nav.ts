@@ -16,6 +16,7 @@ export function mainNav(locale: Locale, t: Dictionary): NavItem[] {
     { href: href(locale, "/reservar?espacio=recogida"), label: t.nav.pedirRecoger },
     { href: href(locale, "/espacios"), label: t.nav.espacios },
     { href: href(locale, "/grupos"), label: t.nav.grupos },
+    { href: href(locale, "/eventos"), label: t.nav.eventos },
     { href: href(locale, "/galeria"), label: t.nav.galeria },
     { href: href(locale, "/contacto"), label: t.nav.contacto },
   ];
@@ -28,7 +29,12 @@ export function mainNav(locale: Locale, t: Dictionary): NavItem[] {
  * desplegable.
  */
 export function primaryNav(locale: Locale, t: Dictionary): NavItem[] {
-  return [cartaYMenu(locale, t), { href: href(locale, "/espacios"), label: t.nav.espacios }, { href: href(locale, "/grupos"), label: t.nav.grupos }];
+  return [
+    cartaYMenu(locale, t),
+    { href: href(locale, "/espacios"), label: t.nav.espacios },
+    { href: href(locale, "/grupos"), label: t.nav.grupos },
+    { href: href(locale, "/eventos"), label: t.nav.eventos },
+  ];
 }
 
 /** Menú del día y carta: una sola entrada en toda la navegación. */

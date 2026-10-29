@@ -109,6 +109,16 @@ export interface MediaEvento {
   url: string;
 }
 
+/** Una parte del programa de un evento (actuación a mediodía, DJ por la tarde…), con su cartel. */
+export interface SubEvento {
+  hora: string | null;
+  hora_fin: string | null;
+  titulo: string;
+  descripcion: string | null;
+  /** Cartel o foto propia (bucket laofi-eventos o /images/…). */
+  imagen: string | null;
+}
+
 export interface Evento {
   id: string;
   titulo: string;
@@ -125,6 +135,8 @@ export interface Evento {
   media?: MediaEvento[];
   /** Sale como aviso emergente al entrar en la web (migración 20261029100000). */
   aviso_web?: boolean;
+  /** Partes del evento (migración 20261031100000). */
+  programa?: SubEvento[];
 }
 
 // --- Procedencia del contenido ---------------------------------------------
@@ -218,6 +230,9 @@ export interface EventoView {
   estado: EstadoEvento;
   enlaceReserva: string | null;
   media?: MediaEvento[];
+  programa?: SubEvento[];
+  /** Carlos lo ha elegido para el aviso emergente. */
+  destacado?: boolean;
   fuente: Fuente;
 }
 

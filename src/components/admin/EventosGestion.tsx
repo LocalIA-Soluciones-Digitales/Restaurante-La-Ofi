@@ -8,7 +8,7 @@ import { Icon } from "@/components/ui/Icon";
 import { borrar, guardar } from "@/lib/admin/actions";
 import { firmarSubidaEvento } from "@/lib/admin/eventos-actions";
 import { formatCentimos, formatearFechaLarga } from "@/lib/format";
-import type { EstadoEvento, MediaEvento } from "@/lib/restaurant/types";
+import type { EstadoEvento, MediaEvento, SubEvento } from "@/lib/restaurant/types";
 import { supabaseNavegador } from "@/lib/supabase/browser";
 
 export interface EventoBd {
@@ -25,9 +25,11 @@ export interface EventoBd {
   estado: EstadoEvento;
   enlace_reserva: string | null;
   publicado: boolean;
-  /** Sale como aviso emergente al entrar en la web (por defecto, sí). */
+  /** Sale como aviso emergente al entrar en la web. Solo uno a la vez. */
   aviso_web?: boolean;
   media?: MediaEvento[];
+  /** Partes del día (actuación, DJ…), cada una con su hora y su cartel. */
+  programa?: SubEvento[];
 }
 
 const slugify = (s: string) =>
@@ -78,11 +80,54 @@ async function prepararArchivo(archivo: File): Promise<File> {
 
 const TIPOS = ["Tardeo", "Partido", "Música en directo", "Celebración", "Empresa", "Otro"];
 
-/** Eventos (tardeos, partidos, celebraciones): borradores, aforo, precio e imagen. */
+const hoy = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Madrid" }).format(new Date());
+
+/**
+ * Eventos de todo el año (tardeos, partidos, celebraciones). Todos los publicados
+ * salen en la agenda de /eventos; además, Carlos elige UNO para anunciarlo con el
+ * aviso emergente al entrar en la web.
+ */
 export function EventosGestion({ inicial }: { inicial: EventoBd[] }) {
   const [eventos, setEventos] = useState(inicial);
   const [editando, setEditando] = useState<EventoBd | "nuevo" | null>(null);
   const [aviso, setAviso] = useState<{ tono: "ok" | "error"; texto: string } | null>(null);
+  const [cambiando, setCambiando] = useState<string | null>(null);
+
+  /** Deja anunciado solo `id` (o ninguno, con null): quita el aviso a los demás. */
+  const anunciarSolo = async (id: string | null) => {
+    for (const x of eventos.filter((x) => x.aviso_web && x.id !== id)) {
+      const r = await guardar<EventoBd>("eventos", { id: x.id, aviso_web: false });
+      if (!r.ok) return r;
+    }
+    if (id && !eventos.find((x) => x.id === id)?.aviso_web) {
+      const r = await guardar<EventoBd>("eventos", { id, aviso_web: true });
+      if (!r.ok) return r;
+    }
+    setEventos((l) => l.map((x) => ({ ...x, aviso_web: x.id === id })));
+    return { ok: true as const };
+  };
+
+  const alternarAnuncio = async (e: EventoBd) => {
+    setCambiando(e.id);
+    const r = await anunciarSolo(e.aviso_web ? null : e.id);
+    setCambiando(null);
+    if (!r.ok) return setAviso({ tono: "error", texto: r.error });
+    setAviso({
+      tono: "ok",
+      texto: e.aviso_web
+        ? `«${e.titulo}» ya no sale al entrar en la web.`
+        : `«${e.titulo}» saldrá en el aviso al entrar en la web${e.publicado ? "" : " cuando lo publiques"}.`,
+    });
+  };
+
+  // Primero lo que viene (por fecha) y al final lo ya celebrado (lo más reciente antes).
+  const hoyISO = hoy();
+  const ordenados = [...eventos].sort((a, b) => {
+    const pa = a.fecha < hoyISO;
+    const pb = b.fecha < hoyISO;
+    if (pa !== pb) return pa ? 1 : -1;
+    return pa ? b.fecha.localeCompare(a.fecha) : a.fecha.localeCompare(b.fecha);
+  });
 
   return (
     <div className="grid gap-4">
@@ -94,33 +139,78 @@ export function EventosGestion({ inicial }: { inicial: EventoBd[] }) {
       </div>
       <AvisoFlotante aviso={aviso} onCerrar={() => setAviso(null)} />
       <ul className="grid gap-3 md:grid-cols-2">
-        {eventos.length === 0 ? <li className="opacity-60">Todavía no hay eventos.</li> : null}
-        {eventos.map((e) => (
-          <li key={e.id}>
-            <button type="button" onClick={() => setEditando(e)} className={`${card} flex w-full flex-col gap-1 p-4 text-left hover:border-marino dark:hover:border-neon`}>
-              <span className="flex items-center gap-2">
-                <span className="font-display text-xl">{e.titulo}</span>
-                {!e.publicado ? <span className="rounded-full bg-ratan px-2 py-0.5 text-xs font-semibold text-carbon">Borrador</span> : null}
-                {e.estado !== "proximo" ? <span className="rounded-full bg-arena px-2 py-0.5 text-xs dark:bg-noche-3">{e.estado}</span> : null}
-              </span>
-              <span className="text-sm opacity-70 first-letter:uppercase">
-                {formatearFechaLarga(e.fecha)}
-                {e.hora ? ` · ${e.hora.slice(0, 5)}` : ""}
-                {e.precio_centimos !== null ? ` · ${e.precio_centimos === 0 ? "entrada libre" : formatCentimos(e.precio_centimos)}` : ""}
-                {e.aforo ? ` · aforo ${e.aforo}` : ""}
-              </span>
-            </button>
-          </li>
-        ))}
+        {eventos.length === 0 ? <li className="opacity-60">Todavía no hay eventos. Puedes meter ya los de todo el año y luego elegir cuál anunciar.</li> : null}
+        {ordenados.map((e) => {
+          const pasado = e.fecha < hoyISO;
+          const portada = e.imagen_url || e.media?.find((m) => m.tipo === "imagen")?.url || e.programa?.find((p) => p.imagen)?.imagen;
+          return (
+            <li key={e.id} className={`${card} flex gap-3 p-3 ${pasado ? "opacity-60" : ""} ${e.aviso_web && !pasado ? "border-neon-deep ring-2 ring-neon-deep/30" : ""}`}>
+              <button type="button" onClick={() => setEditando(e)} className="flex min-w-0 flex-1 gap-3 text-left">
+                <span className="h-24 w-[4.5rem] shrink-0 overflow-hidden rounded-xl bg-arena dark:bg-noche-3">
+                  {portada ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- miniatura del panel
+                    <img src={portada} alt="" className="h-full w-full object-cover" />
+                  ) : null}
+                </span>
+                <span className="flex min-w-0 flex-col gap-1">
+                  <span className="flex flex-wrap items-center gap-2">
+                    <span className="font-display text-xl">{e.titulo}</span>
+                    {!e.publicado ? <span className="rounded-full bg-ratan px-2 py-0.5 text-xs font-semibold text-carbon">Borrador</span> : null}
+                    {pasado ? (
+                      <span className="rounded-full bg-arena px-2 py-0.5 text-xs dark:bg-noche-3">Celebrado</span>
+                    ) : e.estado !== "proximo" ? (
+                      <span className="rounded-full bg-arena px-2 py-0.5 text-xs dark:bg-noche-3">{e.estado}</span>
+                    ) : null}
+                  </span>
+                  <span className="text-sm opacity-70 first-letter:uppercase">
+                    {formatearFechaLarga(e.fecha)}
+                    {e.hora ? ` · ${e.hora.slice(0, 5)}` : ""}
+                    {e.precio_centimos !== null ? ` · ${e.precio_centimos === 0 ? "entrada libre" : formatCentimos(e.precio_centimos)}` : ""}
+                    {e.aforo ? ` · aforo ${e.aforo}` : ""}
+                  </span>
+                  {e.programa?.length ? (
+                    <span className="truncate text-sm opacity-70">{e.programa.map((p) => `${p.hora ? `${p.hora.slice(0, 5)} ` : ""}${p.titulo}`).join(" · ")}</span>
+                  ) : null}
+                </span>
+              </button>
+              {!pasado ? (
+                <button
+                  type="button"
+                  onClick={() => void alternarAnuncio(e)}
+                  disabled={cambiando !== null}
+                  aria-pressed={Boolean(e.aviso_web)}
+                  title={e.aviso_web ? "Dejar de anunciarlo al entrar en la web" : "Anunciarlo al entrar en la web (quita el anuncio a los demás)"}
+                  className={`flex w-20 shrink-0 flex-col items-center justify-center gap-1 rounded-xl px-2 text-center text-xs font-semibold transition-colors ${
+                    e.aviso_web ? "bg-neon-deep text-white" : "bg-arena hover:bg-arena-2 dark:bg-noche-3 dark:hover:bg-noche-2"
+                  }`}
+                >
+                  <Icon name={e.aviso_web ? "star" : "bell"} className="h-5 w-5" />
+                  {cambiando === e.id ? "…" : e.aviso_web ? "Anunciado" : "Anunciar"}
+                </button>
+              ) : null}
+            </li>
+          );
+        })}
       </ul>
       {editando ? (
         <EventoForm
           evento={editando === "nuevo" ? null : editando}
           onClose={() => setEditando(null)}
-          onGuardado={(ev) => {
+          onGuardado={async (ev) => {
             setEventos((l) => (l.some((x) => x.id === ev.id) ? l.map((x) => (x.id === ev.id ? ev : x)) : [ev, ...l]));
             setEditando(null);
-            setAviso({ tono: "ok", texto: ev.publicado ? `«${ev.titulo}» publicado.` : `«${ev.titulo}» guardado como borrador.` });
+            // Solo uno anunciado a la vez: al marcar este, se desmarcan los demás.
+            if (ev.aviso_web) {
+              const otros = eventos.filter((x) => x.aviso_web && x.id !== ev.id);
+              for (const x of otros) await guardar<EventoBd>("eventos", { id: x.id, aviso_web: false });
+              if (otros.length) setEventos((l) => l.map((x) => (x.id === ev.id ? x : { ...x, aviso_web: false })));
+            }
+            setAviso({
+              tono: "ok",
+              texto: ev.publicado
+                ? `«${ev.titulo}» publicado en la agenda${ev.aviso_web ? " y anunciado al entrar en la web" : ""}.`
+                : `«${ev.titulo}» guardado como borrador.`,
+            });
           }}
           onBorrado={(id) => {
             setEventos((l) => l.filter((x) => x.id !== id));
@@ -133,7 +223,34 @@ export function EventosGestion({ inicial }: { inicial: EventoBd[] }) {
   );
 }
 
-function EventoForm({ evento, onClose, onGuardado, onBorrado }: { evento: EventoBd | null; onClose: () => void; onGuardado: (e: EventoBd) => void; onBorrado: (id: string) => void }) {
+/** Sube una foto o vídeo a Storage (subida firmada en el servidor) y devuelve su URL pública. */
+async function subirArchivo(original: File): Promise<MediaEvento> {
+  const sb = supabaseNavegador();
+  if (!sb) throw new Error("las fotos y vídeos no están disponibles en este entorno.");
+  const archivo = await prepararArchivo(original);
+  const firma = await firmarSubidaEvento(archivo.type, archivo.size);
+  if (!firma.ok) throw new Error(firma.error);
+  const { error } = await sb.storage.from("laofi-eventos").uploadToSignedUrl(firma.data.ruta, firma.data.token, archivo, { contentType: archivo.type });
+  if (error) {
+    console.error("[eventos] subida", error);
+    throw new Error(`no se ha podido subir (${error.message}).`);
+  }
+  return { tipo: archivo.type.startsWith("video/") ? "video" : "imagen", url: firma.data.url };
+}
+
+const SUB_VACIO: SubEvento = { hora: null, hora_fin: null, titulo: "", descripcion: null, imagen: null };
+
+function EventoForm({
+  evento,
+  onClose,
+  onGuardado,
+  onBorrado,
+}: {
+  evento: EventoBd | null;
+  onClose: () => void;
+  onGuardado: (e: EventoBd) => void | Promise<void>;
+  onBorrado: (id: string) => void;
+}) {
   const e = evento;
   const [f, setF] = useState({
     titulo: e?.titulo ?? "",
@@ -146,9 +263,11 @@ function EventoForm({ evento, onClose, onGuardado, onBorrado }: { evento: Evento
     estado: e?.estado ?? ("proximo" as EstadoEvento),
     enlace_reserva: e?.enlace_reserva ?? "",
     imagen_url: e?.imagen_url ?? "",
-    publicado: e?.publicado ?? false,
-    aviso_web: e?.aviso_web ?? true,
+    // Nuevo: sale en la agenda nada más guardarlo; el aviso emergente se elige aparte.
+    publicado: e?.publicado ?? true,
+    aviso_web: e?.aviso_web ?? false,
     media: e?.media ?? ([] as MediaEvento[]),
+    programa: e?.programa ?? ([] as SubEvento[]),
   });
   const [error, setError] = useState<string | null>(null);
   const [subiendo, setSubiendo] = useState<string | null>(null);
@@ -159,9 +278,30 @@ function EventoForm({ evento, onClose, onGuardado, onBorrado }: { evento: Evento
    * Sube cada archivo directo a Storage (subida firmada en el servidor) y lo añade a la galería.
    * Un archivo que falla no para a los demás, y los errores se juntan para verlos todos.
    */
+  const setSub = (i: number, p: Partial<SubEvento>) => setF((x) => ({ ...x, programa: x.programa.map((s, j) => (j === i ? { ...s, ...p } : s)) }));
+  const moverSub = (i: number, d: -1 | 1) =>
+    setF((x) => {
+      const l = [...x.programa];
+      const j = i + d;
+      if (j < 0 || j >= l.length) return x;
+      [l[i], l[j]] = [l[j]!, l[i]!];
+      return { ...x, programa: l };
+    });
+  const subirCartel = async (i: number, archivo: File) => {
+    setError(null);
+    setSubiendo("Subiendo cartel…");
+    try {
+      const m = await subirArchivo(archivo);
+      if (m.tipo !== "imagen") throw new Error("el cartel tiene que ser una foto.");
+      setSub(i, { imagen: m.url });
+    } catch (err) {
+      setError(`${archivo.name}: ${err instanceof Error ? err.message : "no se ha podido subir."}`);
+    } finally {
+      setSubiendo(null);
+    }
+  };
+
   const subir = async (archivos: File[]) => {
-    const sb = supabaseNavegador();
-    if (!sb) return setError("Las fotos y vídeos no están disponibles en este entorno.");
     setError(null);
     const errores: string[] = [];
     const sitio = 20 - f.media.length;
@@ -170,15 +310,7 @@ function EventoForm({ evento, onClose, onGuardado, onBorrado }: { evento: Evento
       for (const [i, original] of archivos.slice(0, Math.max(sitio, 0)).entries()) {
         setSubiendo(archivos.length > 1 ? `Subiendo ${i + 1} de ${Math.min(archivos.length, sitio)}…` : "Subiendo…");
         try {
-          const archivo = await prepararArchivo(original);
-          const firma = await firmarSubidaEvento(archivo.type, archivo.size);
-          if (!firma.ok) throw new Error(firma.error);
-          const { error: errSubida } = await sb.storage.from("laofi-eventos").uploadToSignedUrl(firma.data.ruta, firma.data.token, archivo, { contentType: archivo.type });
-          if (errSubida) {
-            console.error("[eventos] subida", errSubida);
-            throw new Error(`no se ha podido subir (${errSubida.message}).`);
-          }
-          const nuevo: MediaEvento = { tipo: archivo.type.startsWith("video/") ? "video" : "imagen", url: firma.data.url };
+          const nuevo = await subirArchivo(original);
           setF((x) => ({ ...x, media: [...x.media, nuevo] }));
         } catch (err) {
           errores.push(`${original.name}: ${err instanceof Error ? err.message : "no se ha podido subir."}`);
@@ -193,6 +325,14 @@ function EventoForm({ evento, onClose, onGuardado, onBorrado }: { evento: Evento
   const enviar = async () => {
     setError(null);
     if (f.enlace_reserva && !f.enlace_reserva.startsWith("https://")) return setError("El enlace de reserva debe empezar por https://");
+    if (f.programa.some((p) => !p.titulo.trim())) return setError("Cada parte del programa necesita un título (o quítala).");
+    const programa = f.programa.map((p) => ({
+      hora: p.hora || null,
+      hora_fin: p.hora_fin || null,
+      titulo: p.titulo.trim(),
+      descripcion: p.descripcion?.trim() || null,
+      imagen: p.imagen,
+    }));
     const r = await guardar<EventoBd>("eventos", {
       ...(e ? { id: e.id } : { slug: `${slugify(f.titulo)}-${f.fecha}` }),
       titulo: f.titulo.trim(),
@@ -206,11 +346,12 @@ function EventoForm({ evento, onClose, onGuardado, onBorrado }: { evento: Evento
       enlace_reserva: f.enlace_reserva.trim() || null,
       imagen_url: f.imagen_url.trim() || null,
       media: f.media,
+      programa,
       aviso_web: f.aviso_web,
       publicado: f.publicado,
     });
     if (!r.ok) return setError(r.error);
-    onGuardado(r.data);
+    await onGuardado(r.data);
   };
 
   return (
@@ -306,6 +447,89 @@ function EventoForm({ evento, onClose, onGuardado, onBorrado }: { evento: Evento
             {subiendo ?? "Añadir fotos o vídeos"}
           </button>
         </div>
+        <div className="grid gap-2 text-sm sm:col-span-2">
+          <span className="font-semibold">Programa del día (opcional)</span>
+          <span className="-mt-1 opacity-70">
+            Si el evento tiene varias partes, p. ej. actuación a las 13:00 y DJ de 17:00 a 23:30. Cada una puede llevar su cartel (se ve entero, también en vertical).
+          </span>
+          {f.programa.map((p, i) => (
+            <div key={i} className="grid grid-cols-[4.5rem_1fr] gap-3 rounded-2xl border border-carbon/10 p-3 dark:border-crema/10">
+              <div className="grid content-start gap-1">
+                <label className="relative aspect-[4/5] cursor-pointer overflow-hidden rounded-xl bg-arena dark:bg-noche-3" title="Subir cartel">
+                  {p.imagen ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- miniatura del panel
+                    <img src={p.imagen} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="grid h-full place-content-center justify-items-center gap-1 text-center text-[0.65rem] leading-tight opacity-70">
+                      <Icon name="plus" className="h-4 w-4" />
+                      Cartel
+                    </span>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    className="sr-only"
+                    disabled={subiendo !== null}
+                    onChange={(x) => {
+                      const archivo = x.target.files?.[0];
+                      x.target.value = "";
+                      if (archivo) void subirCartel(i, archivo);
+                    }}
+                  />
+                </label>
+                {p.imagen ? (
+                  <button type="button" onClick={() => setSub(i, { imagen: null })} className="text-xs underline opacity-70">
+                    Quitar
+                  </button>
+                ) : null}
+              </div>
+              <div className="grid gap-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="grid gap-1 text-xs">
+                    <span className="font-semibold">Desde</span>
+                    <input type="time" value={p.hora?.slice(0, 5) ?? ""} onChange={(x) => setSub(i, { hora: x.target.value || null })} className={input} />
+                  </label>
+                  <label className="grid gap-1 text-xs">
+                    <span className="font-semibold">Hasta (opcional)</span>
+                    <input type="time" value={p.hora_fin?.slice(0, 5) ?? ""} onChange={(x) => setSub(i, { hora_fin: x.target.value || null })} className={input} />
+                  </label>
+                </div>
+                <input
+                  value={p.titulo}
+                  onChange={(x) => setSub(i, { titulo: x.target.value })}
+                  placeholder="Título (p. ej. La Mara en directo)"
+                  aria-label="Título de la parte"
+                  className={input}
+                />
+                <input
+                  value={p.descripcion ?? ""}
+                  onChange={(x) => setSub(i, { descripcion: x.target.value })}
+                  placeholder="Detalle (opcional, p. ej. DJ de los 80 y 90)"
+                  aria-label="Detalle de la parte"
+                  className={input}
+                />
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => moverSub(i, -1)} disabled={i === 0} aria-label="Subir" className={botonSecundario}>
+                    <Icon name="chevronUp" className="h-4 w-4" />
+                  </button>
+                  <button type="button" onClick={() => moverSub(i, 1)} disabled={i === f.programa.length - 1} aria-label="Bajar" className={botonSecundario}>
+                    <Icon name="chevronDown" className="h-4 w-4" />
+                  </button>
+                  <button type="button" onClick={() => set({ programa: f.programa.filter((_, j) => j !== i) })} className={`${botonSecundario} ml-auto`}>
+                    <Icon name="trash" className="h-4 w-4" />
+                    Quitar
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+          {f.programa.length < 12 ? (
+            <button type="button" onClick={() => set({ programa: [...f.programa, { ...SUB_VACIO }] })} className={`${botonSecundario} justify-self-start`}>
+              <Icon name="plus" className="h-4 w-4" />
+              Añadir parte al programa
+            </button>
+          ) : null}
+        </div>
         <label className="grid gap-1 text-sm sm:col-span-2">
           <span className="font-semibold">Portada (opcional: URL o /images/…; vacía = la primera foto subida)</span>
           <input value={f.imagen_url} onChange={(x) => set({ imagen_url: x.target.value })} className={input} />
@@ -316,13 +540,16 @@ function EventoForm({ evento, onClose, onGuardado, onBorrado }: { evento: Evento
         </label>
         <label className="flex items-center gap-2 text-sm font-semibold sm:col-span-2">
           <input type="checkbox" checked={f.publicado} onChange={(x) => set({ publicado: x.target.checked })} className="h-5 w-5" />
-          Publicado (si no, queda como borrador y no sale en la web)
+          Publicado en la agenda de eventos (si no, queda como borrador y no sale en la web)
         </label>
         <label className="flex items-start gap-2 text-sm sm:col-span-2">
           <input type="checkbox" checked={f.aviso_web} onChange={(x) => set({ aviso_web: x.target.checked })} className="mt-0.5 h-5 w-5 shrink-0" />
           <span>
             <span className="font-semibold">Anunciarlo al entrar en la web</span>
-            <span className="block opacity-70">Sale un aviso con las fotos a quien entra en la web, hasta el día del evento (una vez por visitante).</span>
+            <span className="block opacity-70">
+              Sale un aviso con el cartel y el programa a quien entra en la web, hasta el día del evento (una vez por visitante). Solo se anuncia uno: al marcar este, se
+              quita a los demás.
+            </span>
           </span>
         </label>
         {error ? (

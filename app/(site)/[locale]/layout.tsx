@@ -112,6 +112,7 @@ export default async function LocaleLayout({
             evento={aviso}
             verHref={href(locale, `/eventos/${aviso.slug}`)}
             reservarHref={href(locale, `/reservar?espacio=evento&evento=${aviso.slug}`)}
+            agendaHref={href(locale, "/eventos")}
           />
         ) : null}
       </body>
@@ -119,11 +120,22 @@ export default async function LocaleLayout({
   );
 }
 
-/** El próximo evento publicado que Carlos quiere anunciar al entrar (los eventos ya vienen por fecha). */
+/**
+ * El evento que Carlos ha elegido anunciar al entrar (si marca varios, el más
+ * cercano: los eventos ya vienen por fecha). Las imágenes van en orden: portada,
+ * galería y los carteles de cada parte del programa, sin repetir.
+ */
 function eventoParaAviso(eventos: Evento[] | null): AvisoEventoDatos | null {
-  const e = (eventos ?? []).find((x) => x.aviso_web !== false && (x.estado === "proximo" || x.estado === "agotado"));
+  const e = (eventos ?? []).find((x) => x.aviso_web === true && (x.estado === "proximo" || x.estado === "agotado"));
   if (!e) return null;
-  const media = e.media?.length ? e.media : e.imagen_url ? [{ tipo: "imagen" as const, url: e.imagen_url }] : [];
+  const programa = e.programa ?? [];
+  const media: AvisoEventoDatos["media"] = [];
+  const anadir = (m: AvisoEventoDatos["media"][number]) => {
+    if (!media.some((x) => x.url === m.url)) media.push(m);
+  };
+  if (e.imagen_url) anadir({ tipo: "imagen", url: e.imagen_url });
+  for (const m of e.media ?? []) anadir(m);
+  for (const p of programa) if (p.imagen) anadir({ tipo: "imagen", url: p.imagen });
   return {
     id: e.id,
     slug: e.slug,
@@ -134,6 +146,7 @@ function eventoParaAviso(eventos: Evento[] | null): AvisoEventoDatos | null {
     hora: e.hora,
     precioCentimos: e.precio_centimos,
     reservable: e.estado === "proximo",
-    media: e.imagen_url && e.media?.length && !e.media.some((m) => m.url === e.imagen_url) ? [{ tipo: "imagen", url: e.imagen_url }, ...media] : media,
+    media,
+    programa,
   };
 }

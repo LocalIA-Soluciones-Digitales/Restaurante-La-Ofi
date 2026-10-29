@@ -14,7 +14,7 @@ function partes(objetivo: number, ahora: number) {
 }
 
 /** Cuenta atrás hasta un evento (fecha + hora en horario de Madrid). Solo en cliente. */
-export function Countdown({ fechaISO, hora }: { fechaISO: string; hora: string | null }) {
+export function Countdown({ fechaISO, hora, compacto = false }: { fechaISO: string; hora: string | null; compacto?: boolean }) {
   const [ahora, setAhora] = useState<number | null>(null);
 
   useEffect(() => {
@@ -47,8 +47,8 @@ export function Countdown({ fechaISO, hora }: { fechaISO: string; hora: string |
   return (
     <div role="timer" aria-label={`Faltan ${p.dias} días y ${p.horas} horas`} className="flex gap-2">
       {celdas.map(([n, label]) => (
-        <div key={label} className="min-w-16 rounded-2xl border border-crema/15 bg-crema/5 px-3 py-2 text-center backdrop-blur">
-          <span aria-hidden="true" className="block font-display text-3xl tabular-nums text-crema">
+        <div key={label} className={`rounded-2xl border border-crema/15 bg-crema/5 text-center backdrop-blur ${compacto ? "min-w-14 px-2 py-1.5" : "min-w-16 px-3 py-2"}`}>
+          <span aria-hidden="true" className={`block font-display tabular-nums text-crema ${compacto ? "text-2xl" : "text-3xl"}`}>
             {String(n).padStart(2, "0")}
           </span>
           <span aria-hidden="true" className="text-[0.65rem] font-semibold uppercase tracking-wider text-crema/60">

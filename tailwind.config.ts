@@ -87,6 +87,10 @@ const config: Config = {
           "40%": { transform: "scale(1.18)" },
           "100%": { transform: "scale(1)" },
         },
+        "fade-in": {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
         "sheet-up": {
           "0%": { transform: "translateY(100%)" },
           "100%": { transform: "translateY(0)" },
@@ -101,6 +105,7 @@ const config: Config = {
         "neon-on": "neon-on 1.6s ease-out both",
         "scroll-cue": "scroll-cue 1.8s ease-in-out infinite",
         bump: "bump 0.35s cubic-bezier(0.22,1,0.36,1)",
+        "fade-in": "fade-in 0.3s ease-out both",
         "sheet-up": "sheet-up 0.42s cubic-bezier(0.32,0.72,0,1) both",
       },
       transitionTimingFunction: {
