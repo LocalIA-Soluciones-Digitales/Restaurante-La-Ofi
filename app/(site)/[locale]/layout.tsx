@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Figtree, Fraunces } from "next/font/google";
 import { notFound } from "next/navigation";
-import { BottomBar } from "@/components/layout/BottomBar";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { ReservarFlotante } from "@/components/layout/ReservarFlotante";
@@ -87,6 +86,7 @@ export default async function LocaleLayout({
           phoneHref={SITE.phone.href}
           phoneDisplay={SITE.phone.display}
           labels={{
+            carta: t.nav.carta,
             reservar: t.cta.reservar,
             llamar: t.cta.llamar,
             abrirMenu: t.cta.abrirMenu,
@@ -97,13 +97,6 @@ export default async function LocaleLayout({
           {children}
         </main>
         <Footer locale={locale} items={items} />
-        <BottomBar
-          cartaHref={href(locale, "/menu-del-dia")}
-          cartaMatch={[href(locale, "/menu-del-dia"), href(locale, "/carta")]}
-          reservarHref={href(locale, "/reservar")}
-          directionsHref={SITE.maps.directions}
-          labels={{ carta: t.nav.cartaYMenu, reservar: t.cta.reservar, llegar: t.cta.llegar }}
-        />
         <ReservarFlotante href={href(locale, "/reservar")} label={t.cta.reservarMesa} />
       </body>
     </html>

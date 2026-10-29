@@ -27,7 +27,7 @@ export function Declaracion() {
         </p>
 
         {/* Indicador de scroll: solo al principio, se va en cuanto empieza el recorrido. */}
-        <span aria-hidden="true" className="reel-cue absolute bottom-24 left-1/2 flex -translate-x-1/2 flex-col items-center gap-3 text-[0.66rem] uppercase tracking-[0.22em] text-carbon lg:bottom-8">
+        <span aria-hidden="true" className="reel-cue absolute bottom-8 left-1/2 flex -translate-x-1/2 flex-col items-center gap-3 text-[0.66rem] uppercase tracking-[0.22em] text-carbon">
           Desliza
           <span className="relative block h-10 w-px overflow-hidden bg-carbon/20">
             <span className="scroll-line absolute inset-x-0 top-0 h-1/2 bg-carbon" />
@@ -48,8 +48,8 @@ export function Declaracion() {
             </h2>
           </div>
 
-          {/* Designer credit: sale con el lema, sobre la foto ya oscura. En móvil, por encima de la BottomBar. */}
-          <div className="pointer-events-none absolute bottom-24 right-5 text-right lg:bottom-8 lg:right-8">
+          {/* Designer credit: sale con el lema, sobre la foto ya oscura. */}
+          <div className="pointer-events-none absolute bottom-8 right-5 text-right lg:right-8">
             <span className="block text-[10px] font-light tracking-wide text-white">Designed &amp; Developed by</span>
             <span className="mt-1 block text-[11px] font-medium tracking-wide text-white">
               Local<span className="font-bold text-ratan">IA</span>.

@@ -23,14 +23,14 @@ interface Props {
   primary: NavItem[];
   phoneHref: string;
   phoneDisplay: string;
-  labels: { reservar: string; llamar: string; abrirMenu: string; cerrarMenu: string };
+  labels: { carta: string; reservar: string; llamar: string; abrirMenu: string; cerrarMenu: string };
 }
 
 /**
- * Cabecera limpia, sin casillas: menú y las páginas más buscadas a la izquierda,
- * logotipo centrado y, a la derecha, teléfono y "Reservar" en píldora. Sobre una
- * foto oscura va transparente con texto claro; al bajar, crema translúcida con
- * un filete fino debajo.
+ * Cabecera limpia, sin casillas: menú y las páginas más buscadas a la izquierda
+ * (en móvil, solo la carta), logotipo centrado y, a la derecha, teléfono y
+ * "Reservar" en píldora. Sobre una foto oscura va transparente con texto claro;
+ * al bajar, crema translúcida con un filete fino debajo.
  */
 export function Header({ homeHref, reservarHref, items, primary, phoneHref, phoneDisplay, labels }: Props) {
   const [scrolled, setScrolled] = useState(false);
@@ -76,7 +76,7 @@ export function Header({ homeHref, reservarHref, items, primary, phoneHref, phon
           hidden && !open ? "-translate-y-full" : "translate-y-0"
         } ${scrolled ? "border-tinta-line bg-crema/90 backdrop-blur-md backdrop-saturate-150" : "border-transparent bg-transparent"} ${light ? "text-crema" : "text-carbon"}`}
       >
-        <div className="container-wide relative flex h-16 items-center gap-8 lg:h-[4.5rem]">
+        <div className="container-wide relative flex h-16 items-center gap-1 lg:h-[4.5rem] lg:gap-8">
           {/* Izquierda: menú y, en escritorio, las páginas que más se buscan */}
           <button
             type="button"
@@ -89,6 +89,16 @@ export function Header({ homeHref, reservarHref, items, primary, phoneHref, phon
             <span className="hidden sm:inline">Menú</span>
             <span className="sr-only">{labels.abrirMenu}</span>
           </button>
+          {/* Móvil y tableta: la carta a un toque, junto al menú. */}
+          {primary[0] ? (
+            <Link
+              href={primary[0].href}
+              aria-current={isActiveItem(primary[0]) ? "page" : undefined}
+              className={`flex h-11 items-center px-1 text-[0.8rem] font-semibold tracking-[0.04em] transition-colors lg:hidden ${muted} aria-[current=page]:text-current`}
+            >
+              {labels.carta}
+            </Link>
+          ) : null}
           <nav aria-label="Principal" className="hidden items-center gap-7 lg:flex">
             {primary.map((item) => (
               <Link
@@ -108,12 +118,12 @@ export function Header({ homeHref, reservarHref, items, primary, phoneHref, phon
           </Link>
 
           {/* Derecha: teléfono y Reservar */}
-          <div className="ml-auto flex items-center gap-2 sm:gap-5">
+          <div className="ml-auto flex items-center gap-1 sm:gap-5">
             <a href={phoneHref} className={`hidden items-center gap-2 text-[0.85rem] font-medium tabular-nums transition-colors xl:flex ${muted}`}>
               <Icon name="phone" className="h-4 w-4" />
               {phoneDisplay}
             </a>
-            <a href={phoneHref} className="grid h-11 w-11 place-items-center rounded-full transition-opacity hover:opacity-70 sm:hidden">
+            <a href={phoneHref} className="grid h-11 w-10 place-items-center rounded-full transition-opacity hover:opacity-70 sm:hidden">
               <Icon name="phone" className="h-5 w-5" />
               <span className="sr-only">
                 {labels.llamar} {phoneDisplay}
@@ -121,7 +131,7 @@ export function Header({ homeHref, reservarHref, items, primary, phoneHref, phon
             </a>
             <Link
               href={reservarHref}
-              className={`hidden h-11 items-center rounded-full px-6 text-[0.8rem] font-semibold tracking-[0.04em] transition-colors sm:inline-flex ${
+              className={`inline-flex h-9 items-center rounded-full px-4 text-[0.75rem] font-semibold tracking-[0.04em] transition-colors sm:h-11 sm:px-6 sm:text-[0.8rem] ${
                 light ? "bg-crema text-carbon hover:bg-white" : "bg-carbon text-crema hover:bg-brasa"
               }`}
             >
