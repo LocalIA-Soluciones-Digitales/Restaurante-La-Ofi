@@ -35,7 +35,7 @@ Checklist para la visita al restaurante. Lo marcado con ⚠️ bloquea el paso a
 - [ ] Carta completa con precios y **alérgenos** (los 14 del Reglamento UE 1169/2011) por plato. Hoy se publica lo encontrado en internet: tostadas (con precios de Instagram), "Para picotear" (sin precios, de una foto de 2025) y especialidades de brasa citadas por Deia.
 - [ ] Confirmar precios de las tostadas y de "Para picotear" (seed opcional `supabase/seed/la_ofi_carta_publicada.sql`)
 - [x] Plato del día: lo publica Carlos cada día en /admin → Menú del día (normalmente plato único a elegir)
-- [ ] ⚠️ Pedir el menú del día para recoger: aplicar en Supabase `20261029120000_laofi_pedido_menu_dia` y poner `MENU_DIA_PEDIBLE = true` (`src/lib/restaurant/menu-pedido.ts`)
+- [x] Pedir el menú del día para recoger: migración `20261029120000_laofi_pedido_menu_dia` aplicada y `MENU_DIA_PEDIBLE = true` (29/10/2026)
 - [x] Información nutricional: estimada por ración en `carta-fichas.ts` (Carlos la acepta, 29/10/2026); la web la marca con «≈»
 - [ ] Modificadores y suplementos reales (puntos de la carne, extras con precio)
 - [ ] Tipo de IVA por producto si alguno no es el 10 %

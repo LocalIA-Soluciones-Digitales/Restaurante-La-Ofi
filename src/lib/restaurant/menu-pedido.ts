@@ -7,10 +7,10 @@ import type { CartaSeccion, MenuDiaView } from "@/lib/restaurant/types";
 export const PREFIJO_MENU_DIA = "menu:";
 
 /**
- * Apagado hasta aplicar en Supabase la migración 20261029120000_laofi_pedido_menu_dia:
- * sin ella, laofi_crear_pedido rechaza estas líneas («se ha agotado»).
+ * Encendido desde que la migración 20261029120000_laofi_pedido_menu_dia está en
+ * Supabase (29/10/2026). Apagarlo quita el menú del día de «Pedir» sin tocar la base.
  */
-export const MENU_DIA_PEDIBLE = false;
+export const MENU_DIA_PEDIBLE = true;
 
 /**
  * Sección «Menú del día» para pedir, o null si hoy no se puede pedir: solo el
