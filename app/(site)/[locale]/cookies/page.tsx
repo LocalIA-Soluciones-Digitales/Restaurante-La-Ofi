@@ -7,7 +7,12 @@ type Params = { params: Promise<{ locale: Locale }> };
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { locale } = await params;
-  return pageMetadata({ locale, path: "/cookies", title: "Política de cookies" });
+  return pageMetadata({
+    locale,
+    path: "/cookies",
+    title: "Política de cookies",
+    description: "La web de Restaurante La Ofi no instala cookies en sus páginas públicas ni usa analítica o publicidad: no hay nada que aceptar.",
+  });
 }
 
 export default function CookiesPage() {
@@ -35,7 +40,7 @@ export default function CookiesPage() {
       <section>
         <h2>Mapa de ubicación</h2>
         <p>
-          El mapa de la página de inicio lo sirve OpenFreeMap. Al cargarlo, tu navegador le envía tu dirección IP para
+          El mapa de ubicación (en la portada y en contacto) lo sirve OpenFreeMap. Al cargarlo, tu navegador le envía tu dirección IP para
           poder descargar el mapa, pero no instala cookies.
         </p>
       </section>

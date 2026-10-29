@@ -19,7 +19,7 @@ export interface Reserva {
   fecha: string;
   hora: string;
   duracion_min: number;
-  espacio: "mesa" | "despacho" | "evento";
+  espacio: "mesa" | "despacho" | "evento" | "presupuesto";
   evento_id: string | null;
   evento: string | null;
   estado: EstadoReserva;
@@ -143,6 +143,7 @@ export function ReservasBoard({ mesas, zonas, eventos }: { mesas: MesaSalon[]; z
                 <span className="block font-semibold">
                   {r.nombre} · {r.personas} p
                   {r.espacio === "despacho" ? <span className="ml-2 rounded-full bg-terracota-soft px-2 py-0.5 text-xs text-terracota">El Despacho</span> : null}
+                  {r.espacio === "presupuesto" ? <span className="ml-2 rounded-full bg-oliva-soft px-2 py-0.5 text-xs text-oliva">Presupuesto</span> : null}
                   {r.evento ? <span className="ml-2 rounded-full bg-neon/30 px-2 py-0.5 text-xs">{r.evento}</span> : null}
                 </span>
                 <span className="text-sm opacity-70">
@@ -346,6 +347,7 @@ function ReservaForm({
             <option value="mesa">Mesa</option>
             <option value="despacho">El Despacho</option>
             <option value="evento">Evento</option>
+            <option value="presupuesto">Presupuesto de grupo</option>
           </select>
         </label>
         {f.espacio === "evento" ? (

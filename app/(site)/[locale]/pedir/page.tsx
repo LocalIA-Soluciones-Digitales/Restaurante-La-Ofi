@@ -20,7 +20,13 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
-  return pageMetadata({ locale, path: "/pedir", title: "Pedir", noindex: true });
+  return pageMetadata({
+    locale,
+    path: "/pedir",
+    title: "Pedir para recoger",
+    description: "Pide en La Ofi desde el móvil y recoge en barra a la hora que elijas, o pide desde tu mesa. Edificio 502 del Parque Tecnológico de Bizkaia.",
+    noindex: true,
+  });
 }
 
 export default async function PedirPage({ params, searchParams }: Props) {

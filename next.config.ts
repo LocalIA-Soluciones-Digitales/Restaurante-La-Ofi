@@ -9,11 +9,11 @@ const securityHeaders = [
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), usb=(), payment=(self)" },
 ];
 
-// CSP de la web pública, de momento solo en Report-Only: el navegador avisa en
-// consola de lo que bloquearía, sin romper nada. Tras revisar la consola un par
-// de semanas, cambiar la clave a "Content-Security-Policy". 'unsafe-inline' en
-// scripts porque Next inyecta scripts inline y con nonces las páginas dejarían de
-// ser estáticas. /admin queda fuera (OCR en WASM, Supabase Realtime): necesita la suya.
+// CSP de la web pública, ya aplicada: las 12 páginas, en móvil y escritorio y con
+// scroll completo, no dieron ninguna violación en Report-Only (28/10/2026).
+// 'unsafe-inline' en scripts porque Next inyecta scripts inline y con nonces las
+// páginas dejarían de ser estáticas. El navegador solo habla con el propio dominio
+// y con OpenFreeMap (mapa); Supabase en el navegador es solo del panel.
 const cspPublica = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline'",
@@ -28,6 +28,22 @@ const cspPublica = [
   "base-uri 'self'",
   "object-src 'none'",
   "upgrade-insecure-requests",
+].join("; ");
+
+// /admin, solo en Report-Only hasta revisarlo con sesión iniciada: Realtime de
+// Supabase (wss), fotos de Storage y el OCR de gastos en WASM con workers.
+const cspAdmin = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https://*.supabase.co",
+  "font-src 'self'",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+  "worker-src 'self' blob:",
+  "frame-ancestors 'self'",
+  "form-action 'self'",
+  "base-uri 'self'",
+  "object-src 'none'",
 ].join("; ");
 
 const nextConfig: NextConfig = {
@@ -81,10 +97,15 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },
-      { source: "/:path((?!admin).*)", headers: [{ key: "Content-Security-Policy-Report-Only", value: cspPublica }] },
+      { source: "/:path((?!admin).*)", headers: [{ key: "Content-Security-Policy", value: cspPublica }] },
+      { source: "/admin/:path*", headers: [{ key: "Content-Security-Policy-Report-Only", value: cspAdmin }] },
+      { source: "/admin", headers: [{ key: "Content-Security-Policy-Report-Only", value: cspAdmin }] },
       {
+        // Los nombres de /public/images no llevan hash: con «immutable» de un año, una
+        // foto cambiada con el mismo nombre seguía saliendo la vieja. Una semana y
+        // revalidación en segundo plano (la CDN de Vercel se purga en cada despliegue).
         source: "/images/:path*",
-        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+        headers: [{ key: "Cache-Control", value: "public, max-age=604800, stale-while-revalidate=2592000" }],
       },
     ];
   },

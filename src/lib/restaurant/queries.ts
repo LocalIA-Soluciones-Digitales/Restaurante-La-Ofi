@@ -1,5 +1,5 @@
 import "server-only";
-import type { HorarioDiaBd } from "@/lib/horario";
+import type { Cierre, HorarioDiaBd } from "@/lib/horario";
 import { rpcPublica } from "@/lib/supabase/rpc";
 import type { CartaCategoria, Evento, MenuDia } from "@/lib/restaurant/types";
 
@@ -39,4 +39,22 @@ export function getEventos(incluirPasados = false): Promise<Evento[] | null> {
 
 export function getEvento(slug: string): Promise<Evento | null> {
   return rpc<Evento>("laofi_get_evento", { p_slug: slug });
+}
+
+/** Cierres puntuales (festivos, vacaciones) de hoy en adelante. */
+export function getCierres(): Promise<Cierre[] | null> {
+  return rpc<Cierre[]>("laofi_get_cierres");
+}
+
+/** Titular del negocio (aviso legal, privacidad, condiciones de pedido), desde /admin/configuracion. */
+export interface TitularBd {
+  razon_social: string | null;
+  nif: string | null;
+  domicilio: string | null;
+  registro: string | null;
+  email: string | null;
+}
+
+export function getTitular(): Promise<TitularBd | null> {
+  return rpc<TitularBd>("laofi_get_titular");
 }

@@ -1,12 +1,13 @@
 import { SITE_URL } from "@/lib/env";
-import { horarioSchemaOrg, type Semana } from "@/lib/horario";
+import { cierresSchemaOrg, horarioSchemaOrg, type Cierre, type Semana } from "@/lib/horario";
 import { SITE } from "@/lib/site";
 import type { CartaItem, CartaSeccion, EventoView } from "@/lib/restaurant/types";
 
 // JSON-LD solo con datos verificados. Menu y Event se generan únicamente a
 // partir de datos reales de Supabase (nunca del contenido de ejemplo).
 
-export function restaurantJsonLd(semana: Semana | null) {
+export function restaurantJsonLd(semana: Semana | null, cierres: readonly Cierre[] = [], email: string | null = null) {
+  const web = ["http://schema.org/DesktopWebPlatform", "http://schema.org/MobileWebPlatform"];
   return {
     "@context": "https://schema.org",
     "@type": "Restaurant",
@@ -16,8 +17,11 @@ export function restaurantJsonLd(semana: Semana | null) {
     url: `${SITE_URL}/es`,
     image: `${SITE_URL}/og/la-ofi-og.jpg`,
     telephone: `+34${SITE.phone.digits}`,
+    ...(email ? { email } : {}),
     servesCuisine: ["Cocina tradicional", "Brasa", "Pintxos"],
-    acceptsReservations: true,
+    // Carta de 2,10 € (tostadas) a 24 € (tablas, pescados).
+    priceRange: "€€",
+    acceptsReservations: `${SITE_URL}/es/reservar`,
     hasMap: SITE.maps.place,
     address: {
       "@type": "PostalAddress",
@@ -33,6 +37,19 @@ export function restaurantJsonLd(semana: Semana | null) {
     sameAs: [SITE.instagram.url],
     hasMenu: `${SITE_URL}/es/carta`,
     ...(semana ? { openingHoursSpecification: horarioSchemaOrg(semana) } : {}),
+    ...(cierres.length > 0 ? { specialOpeningHoursSpecification: cierresSchemaOrg(cierres) } : {}),
+    potentialAction: [
+      {
+        "@type": "ReserveAction",
+        target: { "@type": "EntryPoint", urlTemplate: `${SITE_URL}/es/reservar`, actionPlatform: web },
+        result: { "@type": "FoodEstablishmentReservation", name: `Reserva en ${SITE.shortName}` },
+      },
+      {
+        "@type": "OrderAction",
+        target: { "@type": "EntryPoint", urlTemplate: `${SITE_URL}/es/pedir`, actionPlatform: web },
+        deliveryMethod: "http://purl.org/goodrelations/v1#DeliveryModePickUp",
+      },
+    ],
   };
 }
 

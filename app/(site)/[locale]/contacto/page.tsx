@@ -5,7 +5,7 @@ import { IMAGES } from "@/lib/images";
 import { getDictionary } from "@/i18n/dictionaries";
 import { resolverHorario } from "@/lib/horario";
 import type { Locale } from "@/lib/i18n";
-import { getHorario } from "@/lib/restaurant/queries";
+import { getCierres, getHorario } from "@/lib/restaurant/queries";
 import { pageMetadata } from "@/lib/seo";
 
 export const revalidate = 3600;
@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 
 export default async function ContactoPage({ params }: Params) {
   const { locale } = await params;
-  const horario = await getHorario();
+  const [horario, cierres] = await Promise.all([getHorario(), getCierres()]);
   return (
     <>
       <PageHero
@@ -35,7 +35,7 @@ export default async function ContactoPage({ params }: Params) {
         image={IMAGES.terrazaCarpa}
         compact
       />
-      <Ubicacion t={getDictionary(locale)} horario={resolverHorario(horario)} />
+      <Ubicacion t={getDictionary(locale)} horario={resolverHorario(horario, cierres)} />
     </>
   );
 }

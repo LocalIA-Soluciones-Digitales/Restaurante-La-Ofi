@@ -66,6 +66,8 @@ export interface ConfigPedidos {
   pagos: { online: boolean; en_local: boolean };
   recogida_activa: boolean;
   franjas: Franja[];
+  /** Vendedor que figura en las condiciones del pedido (ajuste «fiscal» del panel). */
+  titular?: { razonSocial: string | null; nif: string | null };
 }
 
 export interface GrupoPublico {

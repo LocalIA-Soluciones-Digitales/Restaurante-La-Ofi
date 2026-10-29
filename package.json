@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "predev": "node scripts/copiar-ocr.mjs",
+    "predev": "node scripts/copiar-ocr.mjs && node scripts/variantes-platos.mjs",
     "dev": "next dev",
-    "prebuild": "node scripts/copiar-ocr.mjs",
+    "prebuild": "node scripts/copiar-ocr.mjs && node scripts/variantes-platos.mjs",
     "build": "next build && node scripts/variantes-imagenes.mjs",
     "start": "next start",
     "lint": "eslint .",

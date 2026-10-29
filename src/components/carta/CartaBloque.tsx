@@ -32,7 +32,7 @@ export function CartaBloque({
         {/* Qué es esto, dicho sin rodeos: "La carta", cuántos platos y cuándo. */}
         <div className="grid gap-6 lg:grid-cols-12 lg:items-end lg:gap-14">
           <div className="lg:col-span-7">
-            <p className="kicker text-brasa">Todos los días · Desayuno y mediodía</p>
+            <p className="kicker text-brasa">Lunes a viernes · Desayuno y mediodía</p>
             <Heading id="carta-title" className="mt-3 font-display text-[clamp(3.25rem,9vw,7.5rem)] font-light leading-[0.95] tracking-tight text-carbon">
               La carta
             </Heading>
@@ -43,7 +43,7 @@ export function CartaBloque({
               pescados y postres.
             </p>
             <p className="mt-3 text-sm text-carbon-muted">
-              Toca un plato para ver ingredientes, alérgenos y valores nutricionales{config ? ", o añádelo para recoger" : ""}.
+              Toca un plato para ver ingredientes y valores nutricionales{config ? ", o añádelo para recoger" : ""}. Si tienes alguna alergia, pregúntanos antes de pedir.
             </p>
           </div>
         </div>

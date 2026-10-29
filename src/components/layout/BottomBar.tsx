@@ -8,17 +8,18 @@ interface Props {
   /** Entrada única de menú del día y carta; activa en cualquiera de `cartaMatch`. */
   cartaHref: string;
   cartaMatch: string[];
+  pedirHref: string;
   reservarHref: string;
   directionsHref: string;
-  labels: { carta: string; reservar: string; llegar: string };
+  labels: { carta: string; pedir: string; reservar: string; llegar: string };
 }
 
 /**
  * Barra de acciones persistente en móvil, en el orden en que la usa quien trabaja
- * en el Parque: carta y menú del día, reservar y llegar. Pedir vive en el menú
- * y en la home; en el flujo de pedido la sustituye la barra de la cesta.
+ * en el Parque: carta y menú del día, pedir para recoger, reservar y llegar. En
+ * el flujo de pedido la sustituye la barra de la cesta.
  */
-export function BottomBar({ cartaHref, cartaMatch, reservarHref, directionsHref, labels }: Props) {
+export function BottomBar({ cartaHref, cartaMatch, pedirHref, reservarHref, directionsHref, labels }: Props) {
   const pathname = usePathname();
   if (/\/(pedir|pedido)(\/|$)/.test(pathname)) return null;
 
@@ -37,6 +38,10 @@ export function BottomBar({ cartaHref, cartaMatch, reservarHref, directionsHref,
         <Link href={cartaHref} aria-current={cartaActiva ? "page" : undefined} className={item(cartaActiva)}>
           <Icon name="utensils" className="h-5 w-5" />
           {labels.carta}
+        </Link>
+        <Link href={pedirHref} className={item(false)}>
+          <Icon name="bag" className="h-5 w-5" />
+          {labels.pedir}
         </Link>
         <Link
           href={reservarHref}

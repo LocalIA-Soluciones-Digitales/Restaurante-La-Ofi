@@ -11,8 +11,8 @@ import { useDialogA11y } from "@/hooks/useDialogA11y";
 import type { ImageKey } from "@/lib/images";
 
 // Foto del panel del menú para cada página, en el orden de mainNav (inicio, carta y
-// menú, espacios, grupos y eventos, galería, contacto).
-const MENU_FOTOS: ImageKey[] = ["comedorPanoramica", "comedorRatan", "barraMesasAltas", "despacho", "rotuloAguila", "terrazaCarpa"];
+// menú, pedir, espacios, grupos y eventos, galería, contacto).
+const MENU_FOTOS: ImageKey[] = ["comedorPanoramica", "comedorRatan", "barra", "barraMesasAltas", "despacho", "rotuloAguila", "terrazaCarpa"];
 
 interface Props {
   homeHref: string;
@@ -83,7 +83,7 @@ export function Header({ homeHref, reservarHref, items, primary, phoneHref, phon
             aria-expanded={open}
             aria-controls="menu-movil"
             onClick={() => setOpen(true)}
-            className="-ml-2 flex h-11 items-center gap-2.5 rounded-full px-2 text-[0.8rem] font-semibold tracking-[0.04em] transition-opacity hover:opacity-70"
+            className="-ml-2 flex h-11 min-w-11 items-center justify-center gap-2.5 rounded-full px-2 text-[0.8rem] font-semibold tracking-[0.04em] transition-opacity hover:opacity-70"
           >
             <Icon name="menu" className="h-5 w-5" />
             <span className="hidden sm:inline">Menú</span>
@@ -202,16 +202,8 @@ function MenuPanel({
                 </li>
               ))}
             </ul>
-            {/* Reservar, llamar y llegar ya están en la cabecera y en Contacto: aquí solo las páginas. */}
-            <Link
-              href="/admin/login"
-              prefetch={false}
-              onClick={onClose}
-              className="mt-8 inline-flex min-h-11 items-center gap-2 text-xs font-medium text-carbon-muted hover:text-carbon"
-            >
-              <Icon name="lock" className="h-3.5 w-3.5" />
-              Panel de gestión
-            </Link>
+            {/* Reservar, llamar y llegar ya están en la cabecera y en Contacto: aquí solo las
+                páginas. El panel de gestión se abre en /admin (el personal lo tiene guardado). */}
           </div>
         </nav>
         <div aria-hidden="true" className="relative hidden w-[42%] border-l border-tinta-line lg:block">

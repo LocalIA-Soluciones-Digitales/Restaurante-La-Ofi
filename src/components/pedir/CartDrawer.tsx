@@ -59,6 +59,10 @@ export function CartDrawer({
   const [nombre, setNombre] = useState("");
   const [telefono, setTelefono] = useState("");
   const [notas, setNotas] = useState("");
+  // Factura a nombre de empresa: va en las notas del pedido (barra la ve en la comanda y en caja).
+  const [factura, setFactura] = useState({ activa: false, razon: "", cif: "" });
+  const notaFactura = factura.activa && factura.razon.trim() && factura.cif.trim() ? `FACTURA: ${factura.razon.trim().slice(0, 80)} · CIF ${factura.cif.trim().toUpperCase().slice(0, 12)}` : "";
+  const notasPedido = [notaFactura, notas.trim()].filter(Boolean).join(" · ").slice(0, 300);
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cambios, setCambios] = useState<CambioCarta[] | null>(null);
@@ -79,6 +83,7 @@ export function CartDrawer({
     (sinRecogida && !enMesa) ||
     cart.lineas.length === 0 ||
     (recogida && !nombre.trim()) ||
+    (recogida && factura.activa && !notaFactura) ||
     (contexto.tipo === "recogida" && !enMesa && !franja) ||
     (enMesa && !numeroMesa.trim()) ||
     (separado && !mesa?.participante);
@@ -126,7 +131,7 @@ export function CartDrawer({
         tipo: contexto.tipo === "mesa" || enMesa ? "MESA" : "RECOGIDA",
         payment_method: pago,
         total_esperado_centimos: cart.totalCentimos,
-        notas: notas.trim() || undefined,
+        notas: notasPedido || undefined,
         items: cart.lineas.map((l) => ({
           producto_id: l.productoId,
           cantidad: l.cantidad,
@@ -234,6 +239,7 @@ export function CartDrawer({
                 contexto.tipo === "mesa" ? ["Mesa", `${mesa?.mesa.nombre ?? `Mesa ${mesa?.mesa.numero}`}${separado && mesa?.participante ? ` · ${mesa.participante.nombre}` : ""}`] : null,
                 recogida ? ["Nombre", nombre.trim()] : null,
                 recogida && telefono.trim() ? ["Teléfono", telefono.trim()] : null,
+                notaFactura ? ["Factura", notaFactura.replace(/^FACTURA: /, "")] : null,
                 notas.trim() ? ["Notas", notas.trim()] : null,
                 separado
                   ? ["Pago", "Cada uno su parte, desde «Cuenta de la mesa»"]
@@ -420,11 +426,41 @@ export function CartDrawer({
                 <span className="font-semibold text-carbon">Notas para el pedido</span>
                 <textarea
                   value={notas}
-                  onChange={(e) => setNotas(e.target.value.slice(0, 300))}
+                  onChange={(e) => setNotas(e.target.value.slice(0, 200))}
                   rows={2}
                   className="rounded-2xl border border-carbon/15 bg-white px-4 py-3 text-base focus:border-marino focus:outline-none"
                 />
               </label>
+
+              {recogida ? (
+                <div className="grid gap-2">
+                  <label className="flex min-h-11 items-center gap-3 text-sm font-semibold text-carbon">
+                    <input type="checkbox" checked={factura.activa} onChange={(e) => setFactura({ ...factura, activa: e.target.checked })} className="h-5 w-5 shrink-0 accent-[theme(colors.marino.DEFAULT)]" />
+                    Necesito factura a nombre de mi empresa
+                  </label>
+                  {factura.activa ? (
+                    <div className="grid gap-2 sm:grid-cols-[1fr_10rem]">
+                      <input
+                        aria-label="Razón social"
+                        placeholder="Razón social"
+                        autoComplete="organization"
+                        required
+                        value={factura.razon}
+                        onChange={(e) => setFactura({ ...factura, razon: e.target.value.slice(0, 80) })}
+                        className="h-12 rounded-2xl border border-carbon/15 bg-white px-4 text-base focus:border-marino focus:outline-none"
+                      />
+                      <input
+                        aria-label="CIF"
+                        placeholder="CIF"
+                        required
+                        value={factura.cif}
+                        onChange={(e) => setFactura({ ...factura, cif: e.target.value.replace(/[^0-9a-zA-Z]/g, "").slice(0, 12) })}
+                        className="h-12 rounded-2xl border border-carbon/15 bg-white px-4 text-base uppercase focus:border-marino focus:outline-none"
+                      />
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
 
               {separado ? (
                 <p className="rounded-2xl bg-arena p-4 text-sm text-carbon-muted">
@@ -466,8 +502,8 @@ export function CartDrawer({
             <>
             {/* Información previa a la compra (TRLGDCU arts. 60 y 97, LSSI art. 27). */}
             <p className="mb-3 text-xs leading-relaxed text-carbon-muted">
-              Vende {TITULAR.razonSocial ?? SITE.name}
-              {TITULAR.nif ? ` (NIF ${TITULAR.nif})` : ""}, {SITE.address.street}, {SITE.address.locality}. Al ser comida preparada para consumir en el
+              Vende {(config.titular?.razonSocial ?? TITULAR.razonSocial) || SITE.name}
+              {(config.titular?.nif ?? TITULAR.nif) ? ` (NIF ${config.titular?.nif ?? TITULAR.nif})` : ""}, {SITE.address.street}, {SITE.address.locality}. Al ser comida preparada para consumir en el
               momento, no hay derecho de desistimiento (art. 103.d TRLGDCU). Para cualquier problema con tu pedido, llámanos al {SITE.phone.display}.{" "}
               <Link href={href("es", "/aviso-legal")} className="underline">
                 Aviso legal

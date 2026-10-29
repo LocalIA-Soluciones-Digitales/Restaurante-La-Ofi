@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { HORARIO_INTERNET, agruparHorario, estadoAhora, horarioDeHoy, horarioSchemaOrg, resolverHorario, type HorarioDiaBd } from "@/lib/horario";
+import { HORARIO_INTERNET, agruparHorario, cierresSchemaOrg, estadoAhora, horasReservables, primerDiaReservable, horarioDeHoy, horarioSchemaOrg, resolverHorario, type HorarioDiaBd } from "@/lib/horario";
 
 const filas: HorarioDiaBd[] = [
   ...[1, 2, 3, 4].map((dia) => ({ dia, estado: "abierto" as const, desde: "07:30", hasta: "17:00" })),
@@ -68,5 +68,60 @@ describe("estadoAhora", () => {
     expect(horarioDeHoy(HORARIO_INTERNET, new Date("2026-10-02T10:00:00+02:00"))).toBe("07:30 – 00:00");
     expect(horarioDeHoy(HORARIO_INTERNET, new Date("2026-10-03T10:00:00+02:00"))).toBeNull();
     expect(horarioDeHoy(HORARIO_INTERNET, new Date("2026-10-04T10:00:00+02:00"))).toBe("Cerrado");
+  });
+});
+
+describe("cierres puntuales", () => {
+  const semana = resolverHorario(null).semana;
+  // 2026-12-08 es martes (Inmaculada); en diciembre Madrid = UTC+1.
+  const festivo = [{ fecha: "2026-12-08", motivo: "Festivo" }];
+
+  it("un festivo entre semana sale cerrado y anuncia la siguiente apertura", () => {
+    expect(estadoAhora(semana, new Date("2026-12-08T11:00:00Z"), festivo)).toEqual({ abierto: false, texto: "Cerrado hoy (Festivo) · abre mañana a las 7:30" });
+    expect(horarioDeHoy(semana, new Date("2026-12-08T11:00:00Z"), festivo)).toBe("Cerrado");
+  });
+
+  it("la víspera del festivo salta al día siguiente abierto", () => {
+    expect(estadoAhora(semana, new Date("2026-12-07T17:00:00Z"), festivo).texto).toBe("Cerrado · abre el miércoles a las 7:30");
+  });
+
+  it("sin cierres el martes 8 abriría con normalidad", () => {
+    expect(estadoAhora(semana, new Date("2026-12-08T11:00:00Z")).abierto).toBe(true);
+  });
+
+  it("el JSON-LD escribe la medianoche como 23:59 y los cierres como días cerrados", () => {
+    expect(horarioSchemaOrg(HORARIO_INTERNET).find((d) => d.dayOfWeek === "Friday")?.closes).toBe("23:59");
+    expect(cierresSchemaOrg(festivo)).toEqual([
+      { "@type": "OpeningHoursSpecification", validFrom: "2026-12-08", validThrough: "2026-12-08", opens: "00:00", closes: "00:00" },
+    ]);
+  });
+});
+
+describe("horas reservables", () => {
+  const semana = resolverHorario(null).semana;
+
+  it("van de la apertura a media hora antes del cierre, cada 15 minutos", () => {
+    // 2026-10-29 es jueves (07:30 – 17:00); se consulta el día anterior.
+    const horas = horasReservables(semana, [], "2026-10-29", new Date("2026-10-28T10:00:00Z"));
+    expect(horas[0]).toBe("07:30");
+    expect(horas.at(-1)).toBe("16:30");
+    expect(horas).toContain("14:00");
+  });
+
+  it("hoy, con media hora de antelación", () => {
+    // Jueves 2026-10-29 a las 13:50 en Madrid (UTC+1).
+    expect(horasReservables(semana, [], "2026-10-29", new Date("2026-10-29T12:50:00Z"))[0]).toBe("14:30");
+  });
+
+  it("domingo y cierres puntuales no tienen horas; el sábado usa el horario más amplio", () => {
+    expect(horasReservables(semana, [], "2026-11-01", new Date("2026-10-28T10:00:00Z"))).toEqual([]);
+    expect(horasReservables(semana, [{ fecha: "2026-10-29", motivo: null }], "2026-10-29", new Date("2026-10-28T10:00:00Z"))).toEqual([]);
+    const sabado = horasReservables(semana, [], "2026-10-31", new Date("2026-10-28T10:00:00Z"));
+    expect([sabado[0], sabado.at(-1)]).toEqual(["07:30", "23:15"]);
+  });
+
+  it("«Reservar para hoy» a las 20:55 de un miércoles salta al jueves", () => {
+    expect(primerDiaReservable(semana, [], new Date("2026-10-28T19:55:00Z"))).toBe("2026-10-29");
+    expect(primerDiaReservable(semana, [{ fecha: "2026-10-29", motivo: null }], new Date("2026-10-28T19:55:00Z"))).toBe("2026-10-30");
   });
 });

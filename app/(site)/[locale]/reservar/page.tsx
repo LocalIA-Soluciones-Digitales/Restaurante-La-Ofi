@@ -3,11 +3,12 @@ import Link from "next/link";
 import { Photo } from "@/components/media/Photo";
 import { ReservaForm } from "@/components/reservas/ReservaForm";
 import { EstadoAhora } from "@/components/ui/EstadoAhora";
+import { HorarioHoy } from "@/components/ui/HorarioHoy";
 import { Icon } from "@/components/ui/Icon";
 import { estadoAhora, horarioDeHoy, resolverHorario } from "@/lib/horario";
 import { href, type Locale } from "@/lib/i18n";
 import { creditoFoto, IMAGES } from "@/lib/images";
-import { getEventos, getHorario } from "@/lib/restaurant/queries";
+import { getCierres, getEventos, getHorario } from "@/lib/restaurant/queries";
 import { pageMetadata } from "@/lib/seo";
 import { SITE } from "@/lib/site";
 import { rpcPublica } from "@/lib/supabase/rpc";
@@ -18,22 +19,28 @@ type Props = { params: Promise<{ locale: Locale }>; searchParams: Promise<{ espa
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
-  return pageMetadata({ locale, path: "/reservar", title: "Reservar mesa", noindex: true });
+  return pageMetadata({
+    locale,
+    path: "/reservar",
+    title: "Reservar mesa",
+    description: "Reserva mesa en La Ofi (Derio, Parque Tecnológico de Bizkaia): comedor, terraza cubierta o El Despacho para comidas de trabajo. Te confirmamos por teléfono.",
+  });
 }
 
 /** Reserva online si el local la ha activado (/admin/configuracion); si no, teléfono. */
 export default async function ReservarPage({ params, searchParams }: Props) {
   const { locale } = await params;
   const { espacio, para } = await searchParams;
-  const [cfg, eventos, horarioBd] = await Promise.all([
+  const [cfg, eventos, horarioBd, cierres] = await Promise.all([
     rpcPublica<{ online?: boolean; max_personas?: number }>("laofi_get_config_reservas"),
     getEventos(),
     getHorario(),
+    getCierres(),
   ]);
   const online = Boolean(cfg?.data?.online);
   const reservables = (eventos ?? []).filter((e) => e.estado === "proximo");
-  const horario = resolverHorario(horarioBd);
-  const hoy = horarioDeHoy(horario.semana);
+  const horario = resolverHorario(horarioBd, cierres);
+  const ahora = new Date();
 
   return (
     <div className="bg-crema pb-20 pt-24 sm:pb-28 lg:pt-32">
@@ -45,7 +52,7 @@ export default async function ReservarPage({ params, searchParams }: Props) {
           </h1>
           <p className="lead mt-5">
             {online
-              ? "Comedor, terraza o El Despacho. Te confirmamos enseguida."
+              ? "Comedor, terraza o El Despacho. Te confirmamos por teléfono."
               : "Comedor, terraza o El Despacho. Llámanos y te confirmamos al momento."}
           </p>
 
@@ -56,8 +63,16 @@ export default async function ReservarPage({ params, searchParams }: Props) {
               {SITE.phone.display}
             </a>
             <div className="mt-4">
-              <EstadoAhora semana={horario.semana} inicial={estadoAhora(horario.semana)} className="text-carbon" />
-              <p className="mt-1 text-sm text-carbon-muted">{hoy ? `Hoy: ${hoy}` : "Hoy: consulta el horario por teléfono"}</p>
+              <EstadoAhora semana={horario.semana} cierres={horario.cierres} inicial={estadoAhora(horario.semana, ahora, horario.cierres)} className="text-carbon" />
+              <p className="mt-1 text-sm text-carbon-muted">
+                <HorarioHoy
+                  semana={horario.semana}
+                  cierres={horario.cierres}
+                  inicial={horarioDeHoy(horario.semana, ahora, horario.cierres)}
+                  prefijo="Hoy: "
+                  sinDato="Hoy: consulta el horario por teléfono"
+                />
+              </p>
             </div>
           </div>
 
@@ -91,6 +106,10 @@ export default async function ReservarPage({ params, searchParams }: Props) {
               eventos={reservables.map((e) => ({ slug: e.slug, titulo: e.titulo, fecha: e.fecha }))}
               espacioInicial={espacio === "despacho" ? "despacho" : "mesa"}
               paraHoy={para === "hoy"}
+              semana={horario.semana}
+              cierres={horario.cierres}
+              ahora={ahora.toISOString()}
+              privacidadHref={href(locale, "/privacidad")}
             />
           ) : (
             <figure>

@@ -1,21 +1,34 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { estadoAhora, type EstadoAhora as Estado, type Semana } from "@/lib/horario";
+import { estadoAhora, type Cierre, type EstadoAhora as Estado, type Semana } from "@/lib/horario";
 
 /**
  * "Abierto ahora · cierra a las 17:00". El servidor pinta el estado del momento
  * de generación (ISR) y el navegador lo corrige al cargar y cada minuto.
  */
-export function EstadoAhora({ semana, inicial, className = "", tone = "dark" }: { semana: Semana; inicial: Estado; className?: string; tone?: "dark" | "light" }) {
+export function EstadoAhora({
+  semana,
+  cierres = [],
+  inicial,
+  className = "",
+  tone = "dark",
+}: {
+  semana: Semana;
+  /** Festivos y cierres puntuales (mandan sobre el horario semanal). */
+  cierres?: Cierre[];
+  inicial: Estado;
+  className?: string;
+  tone?: "dark" | "light";
+}) {
   const [estado, setEstado] = useState(inicial);
 
   useEffect(() => {
-    const update = () => setEstado(estadoAhora(semana));
+    const update = () => setEstado(estadoAhora(semana, new Date(), cierres));
     update();
     const id = window.setInterval(update, 60_000);
     return () => window.clearInterval(id);
-  }, [semana]);
+  }, [semana, cierres]);
 
   const punto = estado.abierto === true ? "bg-ok" : estado.abierto === false ? "bg-brasa" : tone === "light" ? "bg-crema/50" : "bg-carbon/40";
   return (

@@ -12,7 +12,8 @@ import { IS_DEMO, SITE_URL } from "@/lib/env";
 import { resolverHorario } from "@/lib/horario";
 import { ENABLED_LOCALES, HTML_LANG, href, isEnabledLocale } from "@/lib/i18n";
 import { restaurantJsonLd } from "@/lib/restaurant/jsonld";
-import { getHorario } from "@/lib/restaurant/queries";
+import { getCierres, getHorario } from "@/lib/restaurant/queries";
+import { getTitularResuelto } from "@/lib/restaurant/titular";
 import { SITE } from "@/lib/site";
 import "../../globals.css";
 
@@ -67,10 +68,12 @@ export default async function LocaleLayout({
 
   const t = getDictionary(locale);
   const items = mainNav(locale, t);
-  const semana = IS_DEMO ? null : resolverHorario(await getHorario()).semana;
+  const [horarioBd, cierres, titular] = IS_DEMO ? [null, null, null] : await Promise.all([getHorario(), getCierres(), getTitularResuelto()]);
+  const horario = IS_DEMO ? null : resolverHorario(horarioBd, cierres);
 
   return (
-    <html lang={HTML_LANG[locale]} className={`${display.variable} ${sans.variable}`}>
+    // suppressHydrationWarning: el script de IntroOfi marca <html> con «intro-vista» antes de hidratar.
+    <html lang={HTML_LANG[locale]} className={`${display.variable} ${sans.variable}`} suppressHydrationWarning>
       <body className="flex min-h-screen flex-col">
         <a
           href="#contenido"
@@ -78,7 +81,7 @@ export default async function LocaleLayout({
         >
           {t.common.saltarContenido}
         </a>
-        {IS_DEMO ? null : <JsonLd data={restaurantJsonLd(semana)} />}
+        {horario ? <JsonLd data={restaurantJsonLd(horario.semana, horario.cierres, titular?.email ?? null)} /> : null}
         <Header
           homeHref={href(locale)}
           reservarHref={href(locale, "/reservar")}
@@ -93,16 +96,18 @@ export default async function LocaleLayout({
             cerrarMenu: t.cta.cerrarMenu,
           }}
         />
-        <main id="contenido" className="flex-1">
+        {/* tabIndex -1: el enlace «Saltar al contenido» mueve el foco aquí también en Safari. */}
+        <main id="contenido" tabIndex={-1} className="flex-1 focus:outline-none">
           {children}
         </main>
         <Footer locale={locale} items={items} />
         <BottomBar
           cartaHref={href(locale, "/menu-del-dia")}
           cartaMatch={[href(locale, "/menu-del-dia"), href(locale, "/carta")]}
+          pedirHref={href(locale, "/pedir")}
           reservarHref={href(locale, "/reservar")}
           directionsHref={SITE.maps.directions}
-          labels={{ carta: t.nav.cartaYMenu, reservar: t.cta.reservar, llegar: t.cta.llegar }}
+          labels={{ carta: t.nav.cartaYMenu, pedir: t.nav.pedir, reservar: t.cta.reservar, llegar: t.cta.llegar }}
         />
         <ReservarFlotante href={href(locale, "/reservar")} label={t.cta.reservarMesa} />
       </body>

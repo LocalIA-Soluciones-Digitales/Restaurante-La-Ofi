@@ -18,6 +18,11 @@ if (typeof document !== "undefined") {
   }, true);
 }
 
+/** Enfocables que se ven: un botón con display:none (p. ej. «Plato anterior», solo en
+ * escritorio) no puede recibir el foco y, si fuera el primero, el foco se quedaba fuera. */
+const visibles = (container: HTMLElement) =>
+  Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter((el) => el.getClientRects().length > 0);
+
 // `focusVisible` (Chrome 122+, Firefox 104+, Safari 18.4+): sin soporte se ignora.
 const enfocar = (el: HTMLElement | null | undefined) => el?.focus({ focusVisible: conTeclado } as FocusOptions);
 
@@ -40,8 +45,7 @@ export function useDialogA11y<T extends HTMLElement = HTMLDivElement>(onClose: (
     if (!container) return;
 
     const previouslyFocused = document.activeElement as HTMLElement | null;
-    const first = container.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
-    enfocar(first ?? container);
+    enfocar(visibles(container)[0] ?? container);
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -51,15 +55,17 @@ export function useDialogA11y<T extends HTMLElement = HTMLDivElement>(onClose: (
       }
       if (event.key !== "Tab") return;
 
-      const focusables = Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
-        (el) => el.offsetParent !== null,
-      );
+      const focusables = visibles(container);
       if (focusables.length === 0) return;
 
       const firstEl = focusables[0]!;
       const lastEl = focusables[focusables.length - 1]!;
 
-      if (event.shiftKey && document.activeElement === firstEl) {
+      // Si el foco se ha quedado fuera del diálogo, Tab lo devuelve dentro.
+      if (!container.contains(document.activeElement)) {
+        event.preventDefault();
+        (event.shiftKey ? lastEl : firstEl).focus();
+      } else if (event.shiftKey && document.activeElement === firstEl) {
         event.preventDefault();
         lastEl.focus();
       } else if (!event.shiftKey && document.activeElement === lastEl) {
