@@ -14,6 +14,13 @@ export function IntroOfi() {
           <Wordmark draw strokeWidth={3.6} className="w-[min(46vw,15rem)] text-[#f4f0ff] [filter:drop-shadow(0_0_6px_rgb(201_187_255/0.7))_drop-shadow(0_0_24px_rgb(142_124_240/0.45))]" />
           <span className="intro-ofi-sub kicker mt-6 text-crema/60">Restaurante · Derio</span>
         </div>
+        {/* Designer credit, abajo y con el mismo fundido que el subtítulo. */}
+        <div className="intro-ofi-sub absolute inset-x-0 bottom-8 text-center">
+          <span className="block text-[10px] font-light tracking-wide text-white">Designed &amp; Developed by</span>
+          <span className="mt-1 block text-[11px] font-medium tracking-wide text-white">
+            Local<span className="font-bold text-ratan">IA</span>.
+          </span>
+        </div>
       </div>
       <script
         dangerouslySetInnerHTML={{

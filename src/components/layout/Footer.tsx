@@ -109,6 +109,9 @@ export function Footer({ locale, items }: { locale: Locale; items: NavItem[] }) 
               </Link>
             </li>
           </ul>
+          <p>
+            Designed &amp; Developed by Local<span className="font-bold text-brasa">IA</span>.
+          </p>
         </div>
       </div>
     </footer>
