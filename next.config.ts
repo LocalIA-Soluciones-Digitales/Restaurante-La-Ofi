@@ -14,15 +14,19 @@ const securityHeaders = [
 // 'unsafe-inline' en scripts porque Next inyecta scripts inline y con nonces las
 // páginas dejarían de ser estáticas. El navegador solo habla con el propio dominio
 // y con OpenFreeMap (mapa); Supabase en el navegador es solo del panel.
+// En desarrollo React necesita eval (pila de llamadas, recarga en caliente): sin él no hidrata.
+const evalDev = process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : "";
+
 const cspPublica = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
+  `script-src 'self' 'unsafe-inline'${evalDev}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://*.supabase.co https://tiles.openfreemap.org",
   "font-src 'self'",
   "connect-src 'self' https://tiles.openfreemap.org",
   "worker-src 'self' blob:",
-  "media-src 'self'",
+  // Vídeos de los eventos (bucket laofi-eventos de Supabase), en la ficha y en el aviso.
+  "media-src 'self' https://*.supabase.co",
   "frame-ancestors 'self'",
   "form-action 'self'",
   "base-uri 'self'",

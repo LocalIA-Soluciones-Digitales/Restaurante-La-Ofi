@@ -19,7 +19,9 @@ export interface Reserva {
   fecha: string;
   hora: string;
   duracion_min: number;
-  espacio: "mesa" | "despacho" | "evento" | "presupuesto";
+  espacio: "mesa" | "despacho" | "evento" | "presupuesto" | "recogida";
+  /** Lo que han dicho que van a comer desde la web (nombres copiados al reservar). */
+  comida: { modo: "menu" | "carta"; lineas: { nombre: string; cantidad: number }[] } | null;
   evento_id: string | null;
   evento: string | null;
   estado: EstadoReserva;
@@ -41,6 +43,16 @@ const ESTADO: Record<EstadoReserva, { label: string; clase: string }> = {
   CANCELADA: { label: "Cancelada", clase: "bg-carbon-muted text-crema" },
   NO_SHOW: { label: "No vino", clase: "bg-terracota text-crema" },
 };
+
+/** Aforo de El Despacho por turno (el mismo valor por defecto que laofi_crear_reserva). */
+const AFORO_DESPACHO = 30;
+
+/** «Menú del día: 2× Lentejas, 1× Merluza» · «Carta» · null si solo reservan mesa. */
+export function resumenComida(c: Reserva["comida"]): string | null {
+  if (!c) return null;
+  const tipo = c.modo === "menu" ? "Menú del día" : "Carta";
+  return c.lineas.length ? `${tipo}: ${c.lineas.map((l) => `${l.cantidad}× ${l.nombre}`).join(", ")}` : `${tipo} (eligen en la mesa)`;
+}
 
 const aMin = (h: string) => Number(h.slice(0, 2)) * 60 + Number(h.slice(3, 5));
 const desplazar = (f: string, n: number) => {
@@ -95,7 +107,9 @@ export function ReservasBoard({ mesas, zonas, eventos }: { mesas: MesaSalon[]; z
   };
 
   const activas = reservas.filter((r) => r.estado !== "CANCELADA" && r.estado !== "NO_SHOW");
-  const comensales = activas.reduce((a, r) => a + r.personas, 0);
+  const comensales = activas.filter((r) => r.espacio !== "recogida").reduce((a, r) => a + r.personas, 0);
+  const despacho = (noche: boolean) => activas.filter((r) => r.espacio === "despacho" && (r.hora >= "17:00") === noche).reduce((a, r) => a + r.personas, 0);
+  const recogidas = activas.filter((r) => r.espacio === "recogida");
 
   return (
     <div className="grid gap-4">
@@ -128,7 +142,9 @@ export function ReservasBoard({ mesas, zonas, eventos }: { mesas: MesaSalon[]; z
         </button>
       </div>
       <p className="text-sm opacity-70 first-letter:uppercase">
-        {formatearFechaLarga(fecha)} · {activas.length} reservas · {comensales} comensales
+        {formatearFechaLarga(fecha)} · {activas.length - recogidas.length} reservas · {comensales} comensales
+        {recogidas.length ? ` · ${recogidas.length} para recoger (${recogidas.reduce((a, r) => a + r.personas, 0)} menús)` : ""}
+        {despacho(false) || despacho(true) ? ` · El Despacho: ${despacho(false)}/${AFORO_DESPACHO} mediodía, ${despacho(true)}/${AFORO_DESPACHO} noche` : ""}
         {reservas.some((r) => r.estado === "PENDIENTE") ? ` · ${reservas.filter((r) => r.estado === "PENDIENTE").length} pendientes de confirmar` : ""}
       </p>
       {error ? <Aviso>{error}</Aviso> : null}
@@ -141,15 +157,18 @@ export function ReservasBoard({ mesas, zonas, eventos }: { mesas: MesaSalon[]; z
               <span className="font-display text-3xl tabular-nums">{r.hora}</span>
               <button type="button" onClick={() => setEditando(r)} className="min-w-0 flex-1 text-left">
                 <span className="block font-semibold">
-                  {r.nombre} · {r.personas} p
+                  {r.nombre} · {r.personas} {r.espacio === "recogida" ? (r.personas === 1 ? "menú" : "menús") : "p"}
                   {r.espacio === "despacho" ? <span className="ml-2 rounded-full bg-terracota-soft px-2 py-0.5 text-xs text-terracota">El Despacho</span> : null}
                   {r.espacio === "presupuesto" ? <span className="ml-2 rounded-full bg-oliva-soft px-2 py-0.5 text-xs text-oliva">Presupuesto</span> : null}
+                  {r.espacio === "recogida" ? <span className="ml-2 rounded-full bg-ratan px-2 py-0.5 text-xs text-carbon">Para recoger</span> : null}
                   {r.evento ? <span className="ml-2 rounded-full bg-neon/30 px-2 py-0.5 text-xs">{r.evento}</span> : null}
                 </span>
                 <span className="text-sm opacity-70">
-                  {r.mesas.length ? `Mesa ${r.mesas.map((m) => m.numero).join(" + ")}` : "Sin mesa asignada"} · {r.origen === "web" ? "web" : r.origen === "telefono" ? "teléfono" : "panel"}
+                  {r.espacio === "recogida" ? "Recogida" : r.mesas.length ? `Mesa ${r.mesas.map((m) => m.numero).join(" + ")}` : "Sin mesa asignada"} ·{" "}
+                  {r.origen === "web" ? "web" : r.origen === "telefono" ? "teléfono" : "panel"}
                   {r.notas ? ` · ${r.notas}` : ""}
                 </span>
+                {resumenComida(r.comida) ? <span className="mt-0.5 block text-sm font-medium text-oliva dark:text-neon">{resumenComida(r.comida)}</span> : null}
               </button>
               <span className={`rounded-full px-3 py-1 text-xs font-semibold ${ESTADO[r.estado].clase}`}>{ESTADO[r.estado].label}</span>
               <div className="flex flex-wrap gap-1.5 max-sm:w-full max-sm:[&>*]:grow">
@@ -161,7 +180,7 @@ export function ReservasBoard({ mesas, zonas, eventos }: { mesas: MesaSalon[]; z
                 {r.estado === "PENDIENTE" || r.estado === "CONFIRMADA" ? (
                   <>
                     <button type="button" onClick={() => void estado(r, "SENTADA")} className={botonPrimario}>
-                      Sentar
+                      {r.espacio === "recogida" ? "Recogido" : "Sentar"}
                     </button>
                     <button type="button" onClick={() => void estado(r, "NO_SHOW")} className={botonSecundario}>
                       No vino
@@ -205,7 +224,7 @@ function LineaTiempo({ reservas, mesas, zonas, onAbrir }: { reservas: Reserva[];
   const desde = 7 * 60;
   const hasta = 24 * 60;
   const pct = (m: number) => `${((m - desde) / (hasta - desde)) * 100}%`;
-  const sinMesa = reservas.filter((r) => r.mesas.length === 0);
+  const sinMesa = reservas.filter((r) => r.mesas.length === 0 && r.espacio !== "recogida");
   const filas = useMemo(
     () =>
       [...mesas].sort((a, b) => {
@@ -344,8 +363,9 @@ function ReservaForm({
         <label className="grid gap-1 text-sm">
           <span className="font-semibold">Espacio</span>
           <select value={f.espacio} onChange={(e) => set({ espacio: e.target.value as Reserva["espacio"] })} className={input}>
-            <option value="mesa">Mesa</option>
+            <option value="mesa">Comedor</option>
             <option value="despacho">El Despacho</option>
+            <option value="recogida">Recogida de menú</option>
             <option value="evento">Evento</option>
             <option value="presupuesto">Presupuesto de grupo</option>
           </select>

@@ -16,7 +16,8 @@ import { pageMetadata } from "@/lib/seo";
 import { SITE } from "@/lib/site";
 
 // El menú del día cambia a diario: se regenera como mucho cada 5 minutos.
-export const revalidate = 3600;
+// 5 min: el menú del día aparece a las 8:00 y desaparece a las 16:00 sin que nadie toque nada.
+export const revalidate = 300;
 
 type Params = { params: Promise<{ locale: Locale }> };
 

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Figtree, Fraunces } from "next/font/google";
 import { notFound } from "next/navigation";
+import { AvisoEvento, type AvisoEventoDatos } from "@/components/eventos/AvisoEvento";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { ReservarFlotante } from "@/components/layout/ReservarFlotante";
@@ -11,7 +12,8 @@ import { IS_DEMO, SITE_URL } from "@/lib/env";
 import { resolverHorario } from "@/lib/horario";
 import { ENABLED_LOCALES, HTML_LANG, href, isEnabledLocale } from "@/lib/i18n";
 import { restaurantJsonLd } from "@/lib/restaurant/jsonld";
-import { getCierres, getHorario } from "@/lib/restaurant/queries";
+import { getCierres, getEventos, getHorario } from "@/lib/restaurant/queries";
+import type { Evento } from "@/lib/restaurant/types";
 import { getTitularResuelto } from "@/lib/restaurant/titular";
 import { SITE } from "@/lib/site";
 import "../../globals.css";
@@ -67,8 +69,12 @@ export default async function LocaleLayout({
 
   const t = getDictionary(locale);
   const items = mainNav(locale, t);
-  const [horarioBd, cierres, titular] = IS_DEMO ? [null, null, null] : await Promise.all([getHorario(), getCierres(), getTitularResuelto()]);
+  // Los eventos van también en la demo: el aviso es contenido real que publica Carlos.
+  const [horarioBd, cierres, titular, eventos] = await Promise.all(
+    IS_DEMO ? [null, null, null, getEventos()] : [getHorario(), getCierres(), getTitularResuelto(), getEventos()],
+  );
   const horario = IS_DEMO ? null : resolverHorario(horarioBd, cierres);
+  const aviso = eventoParaAviso(eventos);
 
   return (
     // suppressHydrationWarning: el script de IntroOfi marca <html> con «intro-vista» antes de hidratar.
@@ -101,7 +107,33 @@ export default async function LocaleLayout({
         </main>
         <Footer locale={locale} items={items} />
         <ReservarFlotante href={href(locale, "/reservar")} label={t.cta.reservarMesa} />
+        {aviso ? (
+          <AvisoEvento
+            evento={aviso}
+            verHref={href(locale, `/eventos/${aviso.slug}`)}
+            reservarHref={href(locale, `/reservar?espacio=evento&evento=${aviso.slug}`)}
+          />
+        ) : null}
       </body>
     </html>
   );
+}
+
+/** El próximo evento publicado que Carlos quiere anunciar al entrar (los eventos ya vienen por fecha). */
+function eventoParaAviso(eventos: Evento[] | null): AvisoEventoDatos | null {
+  const e = (eventos ?? []).find((x) => x.aviso_web !== false && (x.estado === "proximo" || x.estado === "agotado"));
+  if (!e) return null;
+  const media = e.media?.length ? e.media : e.imagen_url ? [{ tipo: "imagen" as const, url: e.imagen_url }] : [];
+  return {
+    id: e.id,
+    slug: e.slug,
+    titulo: e.titulo,
+    tipo: e.tipo,
+    descripcion: e.descripcion,
+    fecha: e.fecha,
+    hora: e.hora,
+    precioCentimos: e.precio_centimos,
+    reservable: e.estado === "proximo",
+    media: e.imagen_url && e.media?.length && !e.media.some((m) => m.url === e.imagen_url) ? [{ tipo: "imagen", url: e.imagen_url }, ...media] : media,
+  };
 }

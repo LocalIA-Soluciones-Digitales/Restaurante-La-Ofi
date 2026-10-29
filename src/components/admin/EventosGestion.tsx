@@ -25,6 +25,8 @@ export interface EventoBd {
   estado: EstadoEvento;
   enlace_reserva: string | null;
   publicado: boolean;
+  /** Sale como aviso emergente al entrar en la web (por defecto, sí). */
+  aviso_web?: boolean;
   media?: MediaEvento[];
 }
 
@@ -35,6 +37,44 @@ const slugify = (s: string) =>
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
+
+/** Lado largo máximo de las fotos: de sobra para el aviso y la ficha, y una foto de móvil baja de ~8 MB a ~500 KB. */
+const LADO_MAX = 2000;
+
+/**
+ * Reduce y pasa a JPEG las fotos antes de subirlas (las del móvil pesan 5-12 MB y
+ * algunas llegan en HEIC, que Storage no admite). Los GIF y los vídeos van tal cual.
+ * Si el navegador no sabe abrir la foto (HEIC fuera de Safari), lanza un error claro.
+ */
+async function prepararArchivo(archivo: File): Promise<File> {
+  if (archivo.type.startsWith("video/") || archivo.type === "image/gif") return archivo;
+  const heic = /heic|heif/i.test(archivo.type) || /\.(heic|heif)$/i.test(archivo.name);
+  let bitmap: ImageBitmap;
+  try {
+    bitmap = await createImageBitmap(archivo);
+  } catch {
+    if (heic) throw new Error("es una foto HEIC del iPhone y este navegador no la abre. Súbela desde el iPhone o expórtala como JPG.");
+    if (["image/jpeg", "image/png", "image/webp"].includes(archivo.type)) return archivo;
+    throw new Error("no es una foto ni un vídeo que se pueda subir (JPG, PNG, WebP, GIF, MP4, WebM o MOV).");
+  }
+  const escala = Math.min(1, LADO_MAX / Math.max(bitmap.width, bitmap.height));
+  // Una foto pequeña que ya es JPEG/WebP no se toca.
+  if (escala === 1 && ["image/jpeg", "image/webp"].includes(archivo.type) && archivo.size < 1_500_000) {
+    bitmap.close();
+    return archivo;
+  }
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * escala);
+  canvas.height = Math.round(bitmap.height * escala);
+  const ctx = canvas.getContext("2d")!;
+  ctx.fillStyle = "#fff"; // los PNG transparentes, sobre blanco
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  const blob = await new Promise<Blob | null>((ok) => canvas.toBlob(ok, "image/jpeg", 0.85));
+  if (!blob) return archivo;
+  return new File([blob], archivo.name.replace(/\.[^.]+$/, "") + ".jpg", { type: "image/jpeg" });
+}
 
 const TIPOS = ["Tardeo", "Partido", "Música en directo", "Celebración", "Empresa", "Otro"];
 
@@ -107,6 +147,7 @@ function EventoForm({ evento, onClose, onGuardado, onBorrado }: { evento: Evento
     enlace_reserva: e?.enlace_reserva ?? "",
     imagen_url: e?.imagen_url ?? "",
     publicado: e?.publicado ?? false,
+    aviso_web: e?.aviso_web ?? true,
     media: e?.media ?? ([] as MediaEvento[]),
   });
   const [error, setError] = useState<string | null>(null);
@@ -114,27 +155,39 @@ function EventoForm({ evento, onClose, onGuardado, onBorrado }: { evento: Evento
   const archivoRef = useRef<HTMLInputElement>(null);
   const set = (p: Partial<typeof f>) => setF((x) => ({ ...x, ...p }));
 
-  /** Sube cada archivo directo a Storage (subida firmada en el servidor) y lo añade a la galería. */
+  /**
+   * Sube cada archivo directo a Storage (subida firmada en el servidor) y lo añade a la galería.
+   * Un archivo que falla no para a los demás, y los errores se juntan para verlos todos.
+   */
   const subir = async (archivos: File[]) => {
     const sb = supabaseNavegador();
     if (!sb) return setError("Las fotos y vídeos no están disponibles en este entorno.");
     setError(null);
-    for (const [i, archivo] of archivos.entries()) {
-      setSubiendo(archivos.length > 1 ? `Subiendo ${i + 1} de ${archivos.length}…` : "Subiendo…");
-      const firma = await firmarSubidaEvento(archivo.type, archivo.size);
-      if (!firma.ok) {
-        setError(`${archivo.name}: ${firma.error}`);
-        continue;
+    const errores: string[] = [];
+    const sitio = 20 - f.media.length;
+    if (archivos.length > sitio) errores.push(`Caben ${Math.max(sitio, 0)} archivos más (máximo 20 por evento).`);
+    try {
+      for (const [i, original] of archivos.slice(0, Math.max(sitio, 0)).entries()) {
+        setSubiendo(archivos.length > 1 ? `Subiendo ${i + 1} de ${Math.min(archivos.length, sitio)}…` : "Subiendo…");
+        try {
+          const archivo = await prepararArchivo(original);
+          const firma = await firmarSubidaEvento(archivo.type, archivo.size);
+          if (!firma.ok) throw new Error(firma.error);
+          const { error: errSubida } = await sb.storage.from("laofi-eventos").uploadToSignedUrl(firma.data.ruta, firma.data.token, archivo, { contentType: archivo.type });
+          if (errSubida) {
+            console.error("[eventos] subida", errSubida);
+            throw new Error(`no se ha podido subir (${errSubida.message}).`);
+          }
+          const nuevo: MediaEvento = { tipo: archivo.type.startsWith("video/") ? "video" : "imagen", url: firma.data.url };
+          setF((x) => ({ ...x, media: [...x.media, nuevo] }));
+        } catch (err) {
+          errores.push(`${original.name}: ${err instanceof Error ? err.message : "no se ha podido subir."}`);
+        }
       }
-      const { error: errSubida } = await sb.storage.from("laofi-eventos").uploadToSignedUrl(firma.data.ruta, firma.data.token, archivo, { contentType: archivo.type });
-      if (errSubida) {
-        setError(`${archivo.name}: no se ha podido subir. Inténtalo de nuevo.`);
-        continue;
-      }
-      const nuevo: MediaEvento = { tipo: archivo.type.startsWith("video/") ? "video" : "imagen", url: firma.data.url };
-      setF((x) => ({ ...x, media: [...x.media, nuevo] }));
+    } finally {
+      setSubiendo(null);
+      if (errores.length) setError(errores.join(" · "));
     }
-    setSubiendo(null);
   };
 
   const enviar = async () => {
@@ -153,6 +206,7 @@ function EventoForm({ evento, onClose, onGuardado, onBorrado }: { evento: Evento
       enlace_reserva: f.enlace_reserva.trim() || null,
       imagen_url: f.imagen_url.trim() || null,
       media: f.media,
+      aviso_web: f.aviso_web,
       publicado: f.publicado,
     });
     if (!r.ok) return setError(r.error);
@@ -263,6 +317,13 @@ function EventoForm({ evento, onClose, onGuardado, onBorrado }: { evento: Evento
         <label className="flex items-center gap-2 text-sm font-semibold sm:col-span-2">
           <input type="checkbox" checked={f.publicado} onChange={(x) => set({ publicado: x.target.checked })} className="h-5 w-5" />
           Publicado (si no, queda como borrador y no sale en la web)
+        </label>
+        <label className="flex items-start gap-2 text-sm sm:col-span-2">
+          <input type="checkbox" checked={f.aviso_web} onChange={(x) => set({ aviso_web: x.target.checked })} className="mt-0.5 h-5 w-5 shrink-0" />
+          <span>
+            <span className="font-semibold">Anunciarlo al entrar en la web</span>
+            <span className="block opacity-70">Sale un aviso con las fotos a quien entra en la web, hasta el día del evento (una vez por visitante).</span>
+          </span>
         </label>
         {error ? (
           <div className="sm:col-span-2">

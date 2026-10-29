@@ -90,8 +90,8 @@ const PAGINAS: Record<string, string[]> = {
   productos: ["/es/carta", "/es/pedir", "/es"],
   modificadores: ["/es/carta", "/es/pedir"],
   modificador_opciones: ["/es/carta", "/es/pedir"],
-  menus_dia: ["/es/menu-del-dia", "/es"],
-  menu_dia_platos: ["/es/menu-del-dia", "/es"],
+  menus_dia: ["/es/menu-del-dia", "/es", "/es/carta"],
+  menu_dia_platos: ["/es/menu-del-dia", "/es", "/es/carta"],
   eventos: ["/es/eventos", "/es"],
   horario: ["/es", "/es/contacto"],
 };
@@ -99,8 +99,9 @@ const PAGINAS: Record<string, string[]> = {
 function revalidar(tabla: string) {
   for (const ruta of PAGINAS[tabla] ?? []) revalidatePath(ruta);
   if (tabla === "eventos") revalidatePath("/[locale]/eventos/[slug]", "page");
-  // Cierres y datos del titular salen en toda la web (estado, JSON-LD, aviso legal).
-  if (tabla === "ajustes" || tabla === "horario") revalidatePath("/[locale]", "layout");
+  // Cierres y datos del titular salen en toda la web (estado, JSON-LD, aviso legal),
+  // y el aviso emergente del próximo evento, en todas las páginas.
+  if (tabla === "ajustes" || tabla === "horario" || tabla === "eventos") revalidatePath("/[locale]", "layout");
 }
 
 // --- CRUD genérico (lista blanca en Postgres) ---------------------------------------

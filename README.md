@@ -113,12 +113,15 @@ La Ofi usa el proyecto Supabase compartido de LocalIA, pero **todos sus datos es
 propio, `laofi`**, sin tablas compartidas con otros proyectos. Detalle y barreras de aislamiento en
 `ARCHITECTURE.md` §1–2.
 
-- `supabase/migrations/` — schema `laofi` (tablas, RLS, índices) y RPC `laofi_*`, **todas aplicadas**
-  (las dos primeras el 2026-10-01; carta extendida, salón y pedidos, admin/TPV, gestión y servicio
-  de sala el 2026-10-02).
+- `supabase/migrations/` — schema `laofi` (tablas, RLS, índices) y RPC `laofi_*`. Aplicadas hasta
+  `20261028200000`, **salvo dos pendientes en producción** (comprobado el 2026-10-29):
+  `20261022120000_laofi_eventos_media` (sin ella no existe el bucket `laofi-eventos` y falla toda
+  subida de fotos de eventos) y `20261029100000_laofi_reservas_espacios` (comedor/Despacho/recogida,
+  franja del menú y aviso de eventos). Aplicarlas en ese orden.
 - `supabase/seed/la_ofi_tenant.sql` — alta en `public.clientes` (aplicado). Devuelve la `site_key`.
 - `supabase/seed/la_ofi_contenido_publicado.sql` — carta y horario publicados en internet (aplicado).
 - `supabase/seed/la_ofi_carta_oficial.sql` — carta oficial del restaurante (desayunos y El Despacho, sept. 2026); sustituye «Para picotear» y «Brasa» (aplicado).
+- `supabase/seed/la_ofi_carta_vinos.sql` — vinos blancos, rosados y cavas de la carta de Carlos (oct. 2026; faltan los tintos) (no aplicado).
 - `supabase/seed/la_ofi_carta_enriquecida.sql` — opcional, requiere la carta extendida (no aplicado).
 - `supabase/seed/la_ofi_salon_provisional.sql` — zonas y mesas provisionales según las fotos públicas (aplicado).
 - `supabase/seed/dev_local.sql` — solo para el backend local (incluye un servicio en marcha de prueba); **no** ejecutar en Supabase.

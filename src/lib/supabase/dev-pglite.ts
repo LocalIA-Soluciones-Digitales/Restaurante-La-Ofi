@@ -40,6 +40,7 @@ async function crear(): Promise<Estado> {
   await db.exec(leer("seed", "la_ofi_contenido_publicado.sql"));
   await db.exec(leer("seed", "la_ofi_carta_enriquecida.sql"));
   await db.exec(leer("seed", "la_ofi_salon_provisional.sql"));
+  await db.exec(leer("seed", "la_ofi_carta_vinos.sql"));
   try {
     await db.exec(leer("seed", "dev_local.sql"));
   } catch (e) {

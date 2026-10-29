@@ -12,8 +12,13 @@ export interface ReservaWeb {
   personas: number;
   fecha: string;
   hora: string;
-  /** «presupuesto»: solicitud de grupo desde /grupos (sin el límite de personas de la reserva online). */
-  espacio: "mesa" | "despacho" | "evento" | "presupuesto";
+  /**
+   * «mesa»: el comedor (menú del día, carta o solo la mesa). «despacho»: por personas hasta su aforo, solo carta.
+   * «recogida»: menús del día para llevar (personas = número de menús). «presupuesto»: solicitud de grupo desde /grupos.
+   */
+  espacio: "mesa" | "despacho" | "evento" | "presupuesto" | "recogida";
+  /** Qué se va a comer (opcional salvo en la recogida). El servidor copia nombres y precios. */
+  comida?: ComidaReserva;
   evento_slug?: string;
   notas?: string;
   /** Consentimiento explícito para las alergias u otros datos de salud de las notas (RGPD art. 9.2.a). */
@@ -22,6 +27,13 @@ export interface ReservaWeb {
   presupuesto?: { empresa?: string; tipo?: string; porPersona?: string; factura?: boolean };
   /** Campo trampa: los humanos no lo ven; si llega relleno, es un bot. */
   web?: string;
+}
+
+export type ModoComida = "nada" | "menu" | "carta";
+
+export interface ComidaReserva {
+  modo: ModoComida;
+  lineas: { id: string; cantidad: number }[];
 }
 
 /** Notas del presupuesto para el panel: «Presupuesto · Comida de empresa · Acme SL · 25 €/persona · Factura · …». */
@@ -55,6 +67,7 @@ export async function solicitarReserva(r: ReservaWeb): Promise<ResultadoAccion<{
     email: String(r.email ?? "").trim().slice(0, 120),
     notas: r.espacio === "presupuesto" ? notasPresupuesto(r.presupuesto ?? {}, notas) : notas,
     presupuesto: undefined,
+    comida: r.comida && r.comida.modo !== "nada" ? { modo: r.comida.modo, lineas: r.comida.lineas.filter((l) => l.cantidad > 0).slice(0, 40) } : undefined,
     ip_hash: await hashIp(),
   };
   const res = await rpcPublica<{ id: string }>("laofi_crear_reserva", { p });
@@ -69,6 +82,13 @@ export async function solicitarReserva(r: ReservaWeb): Promise<ResultadoAccion<{
     return { ok: false, error: "No hemos podido enviar la solicitud. Inténtalo de nuevo o llámanos.", codigo: "ERROR" };
   }
   return { ok: true, data: res.data! };
+}
+
+/** Plazas libres de El Despacho ese día, por turno (comida antes de las 17:00, noche después). */
+export async function plazasDespacho(fecha: string): Promise<{ aforo: number; comida: number; noche: number } | null> {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return null;
+  const res = await rpcPublica<{ aforo: number; comida: number; noche: number }>("laofi_plazas_despacho", { p_fecha: fecha });
+  return res && !res.error ? res.data : null;
 }
 
 /**

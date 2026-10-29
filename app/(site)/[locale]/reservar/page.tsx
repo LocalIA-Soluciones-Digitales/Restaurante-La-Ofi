@@ -5,17 +5,18 @@ import { ReservaForm } from "@/components/reservas/ReservaForm";
 import { EstadoAhora } from "@/components/ui/EstadoAhora";
 import { HorarioHoy } from "@/components/ui/HorarioHoy";
 import { Icon } from "@/components/ui/Icon";
+import { hoyEnMadrid } from "@/lib/format";
 import { estadoAhora, horarioDeHoy, resolverHorario } from "@/lib/horario";
 import { href, type Locale } from "@/lib/i18n";
 import { creditoFoto, IMAGES } from "@/lib/images";
-import { getCierres, getEventos, getHorario } from "@/lib/restaurant/queries";
+import { getCarta, getCierres, getEventos, getHorario, getMenuDia } from "@/lib/restaurant/queries";
 import { pageMetadata } from "@/lib/seo";
 import { SITE } from "@/lib/site";
 import { rpcPublica } from "@/lib/supabase/rpc";
 
 export const dynamic = "force-dynamic";
 
-type Props = { params: Promise<{ locale: Locale }>; searchParams: Promise<{ espacio?: string; para?: string }> };
+type Props = { params: Promise<{ locale: Locale }>; searchParams: Promise<{ espacio?: string; para?: string; evento?: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
@@ -30,12 +31,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 /** Reserva online si el local la ha activado (/admin/configuracion); si no, teléfono. */
 export default async function ReservarPage({ params, searchParams }: Props) {
   const { locale } = await params;
-  const { espacio, para } = await searchParams;
-  const [cfg, eventos, horarioBd, cierres] = await Promise.all([
-    rpcPublica<{ online?: boolean; max_personas?: number }>("laofi_get_config_reservas"),
+  const { espacio, para, evento } = await searchParams;
+  const [cfg, eventos, horarioBd, cierres, menu, carta] = await Promise.all([
+    rpcPublica<{ online?: boolean; max_personas?: number; aforo_despacho?: number; menu_desde?: string; menu_hasta?: string }>("laofi_get_config_reservas"),
     getEventos(),
     getHorario(),
     getCierres(),
+    // Solo devuelve el de hoy y dentro de su franja (8:00–16:00).
+    getMenuDia(hoyEnMadrid()),
+    getCarta(),
   ]);
   const online = Boolean(cfg?.data?.online);
   const reservables = (eventos ?? []).filter((e) => e.estado === "proximo");
@@ -52,7 +56,7 @@ export default async function ReservarPage({ params, searchParams }: Props) {
           </h1>
           <p className="lead mt-5">
             {online
-              ? "Comedor, terraza o El Despacho. Te confirmamos por teléfono."
+              ? "Comedor (menú del día o carta), El Despacho o recoger el menú del día. Te confirmamos por teléfono."
               : "Comedor, terraza o El Despacho. Llámanos y te confirmamos al momento."}
           </p>
 
@@ -83,7 +87,7 @@ export default async function ReservarPage({ params, searchParams }: Props) {
             </li>
             <li className="flex gap-3">
               <Icon name="briefcase" className="mt-0.5 h-5 w-5 shrink-0 text-brasa" />
-              El Despacho, comedor privado para reuniones, con reserva previa.
+              El Despacho, comedor privado de hasta 30 personas: se reserva por personas y se come de carta.
             </li>
             <li className="flex gap-3">
               <Icon name="car" className="mt-0.5 h-5 w-5 shrink-0 text-brasa" />
@@ -103,8 +107,21 @@ export default async function ReservarPage({ params, searchParams }: Props) {
           {online ? (
             <ReservaForm
               maxPersonas={cfg?.data?.max_personas ?? 12}
+              aforoDespacho={cfg?.data?.aforo_despacho ?? 30}
+              menuFranja={{ desde: cfg?.data?.menu_desde ?? "08:00", hasta: cfg?.data?.menu_hasta ?? "16:00" }}
+              menuHoy={menu && menu.disponible && menu.platos.length ? { precio_centimos: menu.precio_centimos, platos: menu.platos } : null}
+              carta={(carta ?? [])
+                .map((c) => ({
+                  id: c.id,
+                  nombre: c.nombre,
+                  productos: c.productos
+                    .filter((p) => p.precio_centimos !== null)
+                    .map((p) => ({ id: p.id, nombre: p.nombre, descripcion: p.descripcion, precio_centimos: p.precio_centimos! })),
+                }))
+                .filter((c) => c.productos.length > 0)}
               eventos={reservables.map((e) => ({ slug: e.slug, titulo: e.titulo, fecha: e.fecha }))}
-              espacioInicial={espacio === "despacho" ? "despacho" : "mesa"}
+              espacioInicial={espacio === "despacho" || espacio === "recogida" || (espacio === "evento" && reservables.length) ? (espacio as "despacho" | "recogida" | "evento") : "mesa"}
+              eventoInicial={evento}
               paraHoy={para === "hoy"}
               semana={horario.semana}
               cierres={horario.cierres}

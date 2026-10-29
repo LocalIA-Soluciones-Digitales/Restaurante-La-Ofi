@@ -39,7 +39,11 @@ export async function firmarSubidaEvento(tipoMime: string, bytes: number): Promi
   const { data, error } = await supabase.storage.from(BUCKET).createSignedUploadUrl(ruta);
   if (error || !data) {
     console.error("[eventos] firmar subida", error?.message);
-    return { ok: false, error: "No se ha podido preparar la subida.", codigo: "ERROR" };
+    // Pasó en producción: la migración 20261022120000_laofi_eventos_media no estaba aplicada y no existía el bucket.
+    if (/bucket not found/i.test(error?.message ?? "")) {
+      return { ok: false, error: "Falta crear el almacén de fotos de eventos en Supabase (migración laofi_eventos_media).", codigo: "NO_ACTIVO" };
+    }
+    return { ok: false, error: `No se ha podido preparar la subida${error?.message ? ` (${error.message})` : ""}.`, codigo: "ERROR" };
   }
   return { ok: true, data: { ruta, token: data.token, url: supabase.storage.from(BUCKET).getPublicUrl(ruta).data.publicUrl } };
 }

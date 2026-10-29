@@ -135,6 +135,9 @@ export function MenuDiaEditor() {
           <label className="grid flex-1 gap-1 text-sm">
             <span className="font-semibold">Día</span>
             <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className={input} />
+            <span className="text-xs opacity-70">
+              Puedes dejarlo listo la víspera: en la web sale ese día de 8:00 a 16:00, y solo entonces se puede reservar con menú o pedirlo para recoger.
+            </span>
           </label>
           <label className="grid w-32 gap-1 text-sm">
             <span className="font-semibold">Precio €</span>

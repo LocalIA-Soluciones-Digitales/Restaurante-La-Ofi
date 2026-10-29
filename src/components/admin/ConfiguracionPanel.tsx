@@ -56,7 +56,12 @@ export function ConfiguracionPanel({ ajustes, horario, ticketbai }: { ajustes: A
   const pag = val("pagos");
   const [pagos, setPagos] = useState({ online: Boolean(pag.online), en_local: pag.en_local !== false });
   const res = val("reservas");
-  const [reservas, setReservas] = useState({ online: Boolean(res.online), max_personas: Number(res.max_personas ?? 12), antelacion_dias: Number(res.antelacion_dias ?? 60) });
+  const [reservas, setReservas] = useState({
+    online: Boolean(res.online),
+    max_personas: Number(res.max_personas ?? 12),
+    antelacion_dias: Number(res.antelacion_dias ?? 60),
+    aforo_despacho: Number(res.aforo_despacho ?? 30),
+  });
   const fis = val("fiscal");
   const [fiscal, setFiscal] = useState({
     razon_social: (fis.razon_social as string) ?? "",
@@ -197,19 +202,23 @@ export function ConfiguracionPanel({ ajustes, horario, ticketbai }: { ajustes: A
         </button>
       </Seccion>
 
-      <Seccion titulo="Reservas online" texto="Las reservas de la web entran como pendientes hasta que alguien las confirma.">
+      <Seccion titulo="Reservas online" texto="Las reservas de la web entran como pendientes hasta que alguien las confirma. El Despacho se reserva por personas hasta su aforo en cada turno (mediodía y noche).">
         <label className="flex items-center gap-2 text-sm font-semibold">
           <input type="checkbox" checked={reservas.online} onChange={(e) => setReservas({ ...reservas, online: e.target.checked })} className="h-5 w-5" />
           Aceptar reservas desde la web
         </label>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           <label className="grid gap-1 text-xs">
-            Máximo de personas
+            Máximo por mesa (comedor)
             <input value={reservas.max_personas} onChange={(e) => setReservas({ ...reservas, max_personas: Number(e.target.value.replace(/\D/g, "")) })} inputMode="numeric" className={input} />
           </label>
           <label className="grid gap-1 text-xs">
             Días de antelación
             <input value={reservas.antelacion_dias} onChange={(e) => setReservas({ ...reservas, antelacion_dias: Number(e.target.value.replace(/\D/g, "")) })} inputMode="numeric" className={input} />
+          </label>
+          <label className="grid gap-1 text-xs">
+            Aforo de El Despacho
+            <input value={reservas.aforo_despacho} onChange={(e) => setReservas({ ...reservas, aforo_despacho: Number(e.target.value.replace(/\D/g, "")) })} inputMode="numeric" className={input} />
           </label>
         </div>
         <button type="button" className={botonPrimario} onClick={() => void guardarAjuste("reservas", reservas, "Reservas guardadas.")}>

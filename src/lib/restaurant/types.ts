@@ -123,6 +123,8 @@ export interface Evento {
   estado: EstadoEvento;
   enlace_reserva: string | null;
   media?: MediaEvento[];
+  /** Sale como aviso emergente al entrar en la web (migración 20261029100000). */
+  aviso_web?: boolean;
 }
 
 // --- Procedencia del contenido ---------------------------------------------

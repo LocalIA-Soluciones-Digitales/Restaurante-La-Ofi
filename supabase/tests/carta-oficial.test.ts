@@ -56,3 +56,16 @@ describe("seed de la carta oficial", () => {
     expect(n).toBe(4);
   });
 });
+
+describe("seed de la carta de vinos", () => {
+  it("añade blancos, rosados y cavas antes de los dulces, con precio de botella, de forma idempotente", async () => {
+    for (let i = 0; i < 2; i++) await t.db.exec(read("seed/la_ofi_carta_vinos.sql"));
+    const c = await carta();
+    expect(c.map((s) => s.slug).slice(-4)).toEqual(["vinos-blancos", "vinos-rosados", "cavas-champagnes", "vinos-dulces"]);
+    expect(c.slice(-4).map((s) => s.productos.length)).toEqual([27, 4, 7, 4]);
+    const precio = Object.fromEntries(c.flatMap((s) => s.productos.map((p) => [`${s.slug}/${p.nombre}`, p.precio_centimos])));
+    expect(precio["vinos-blancos/200 Monges Reserva"]).toBe(5000);
+    expect(precio["vinos-rosados/Flamingo"]).toBe(2900);
+    expect(precio["cavas-champagnes/Ayala Blanc de Blancs"]).toBe(9600);
+  });
+});

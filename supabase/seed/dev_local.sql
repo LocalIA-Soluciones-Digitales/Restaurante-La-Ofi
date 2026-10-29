@@ -31,3 +31,22 @@ select p.id, 'Croquetas variadas (prueba)', 2, 900, 'READY' from p;
 insert into laofi.avisos (mesa_id, tipo) select id, 'CAMARERO' from laofi.mesas where numero = 'T3';
 update laofi.mesas set ocupada = true, comensales = 2, entrada_at = now() - interval '20 minutes' where numero = 'T3';
 update laofi.mesas set por_limpiar = true where numero = '2';
+
+-- Menú del día de hoy visible a cualquier hora (en producción, de 8:00 a 16:00) para probar
+-- la reserva con menú y la recogida, y un tardeo anunciado con aviso al entrar.
+update laofi.ajustes set valor = '{"desde": "00:00", "hasta": "24:00"}' where clave = 'menu_dia';
+with m as (
+  insert into laofi.menus_dia (fecha, precio_centimos, bebida_incluida, pan_incluido, postre_o_cafe)
+  values ((now() at time zone 'Europe/Madrid')::date, 1350, true, true, true)
+  on conflict (fecha) do update set disponible = true
+  returning id
+)
+insert into laofi.menu_dia_platos (menu_id, tipo, nombre, orden)
+select m.id, x.tipo, x.nombre, x.orden from m,
+  (values ('primero', 'Lentejas estofadas (prueba)', 1), ('primero', 'Ensalada mixta (prueba)', 2),
+          ('segundo', 'Merluza a la plancha (prueba)', 3), ('segundo', 'Carrilleras al PX (prueba)', 4),
+          ('postre', 'Arroz con leche (prueba)', 5)) as x(tipo, nombre, orden);
+insert into laofi.eventos (slug, titulo, tipo, descripcion, fecha, hora, precio_centimos, publicado, aviso_web, imagen_url)
+values ('tardeo-prueba', 'Tardeo con DJ (prueba)', 'Tardeo', 'Música, pintxos y buen ambiente en la terraza. Evento de prueba del backend local.',
+        (now() at time zone 'Europe/Madrid')::date + 2, '18:00', 0, true, true, '/images/local/pro/terraza.webp')
+on conflict (slug) do nothing;

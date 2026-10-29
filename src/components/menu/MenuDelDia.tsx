@@ -65,7 +65,7 @@ export function MenuDelDia({
         <Heading className="mt-3 font-display text-2xl text-carbon sm:text-3xl">Hoy todavía no está publicado</Heading>
         <Filete />
         <p className="mx-auto max-w-sm text-carbon-muted">
-          Lo publicamos aquí cada día. Mientras tanto, llámanos y te contamos qué hay:
+          Sale aquí cada día de 8:00 a 16:00, y entonces puedes reservar con menú o pedirlo para recoger. Mientras tanto, llámanos:
         </p>
         <a href={SITE.phone.href} className="btn-secondary mt-6">
           {SITE.phone.display}

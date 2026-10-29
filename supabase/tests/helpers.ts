@@ -48,6 +48,8 @@ export async function crearBd(): Promise<TestDb> {
   for (const file of MIGRACIONES) await db.exec(read(`migrations/${file}`));
   await db.exec(read("seed/la_ofi_tenant.sql"));
   await db.exec(read("seed/la_ofi_contenido_publicado.sql"));
+  // El menú del día solo se ve de 8:00 a 16:00: en los tests, todo el día (salvo el test de la franja).
+  await db.exec(`update laofi.ajustes set valor = '{"desde": "00:00", "hasta": "24:00"}' where clave = 'menu_dia'`);
 
   async function one<T>(sql: string, params: unknown[] = []): Promise<T> {
     const { rows } = await db.query<T>(sql, params);

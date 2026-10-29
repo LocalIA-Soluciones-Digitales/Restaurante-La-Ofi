@@ -40,6 +40,7 @@ beforeAll(async () => {
   for (const file of migrations) await db.exec(read(`migrations/${file}`));
   await db.exec(read("seed/la_ofi_tenant.sql"));
   await db.exec(read("seed/la_ofi_contenido_publicado.sql"));
+  await db.exec(`update laofi.ajustes set valor = '{"desde": "00:00", "hasta": "24:00"}' where clave = 'menu_dia'`);
   laOfi = await one("select id, site_key from public.clientes where slug = 'restaurante-la-ofi'");
   otro = await one("insert into public.clientes (nombre_negocio, slug) values ('Otro bar', 'otro-bar') returning id, site_key");
   await db.query("insert into public.usuarios_negocio (user_id, cliente_id) values ($1, $2), ($3, $4)", [STAFF_LAOFI, laOfi.id, STAFF_OTRO, otro.id]);

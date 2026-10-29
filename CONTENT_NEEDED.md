@@ -39,7 +39,9 @@ Checklist para la visita al restaurante. Lo marcado con ⚠️ bloquea el paso a
       fuente (nutricionista, ficha técnica…). Sin ella la web no muestra nutrición
 - [ ] Modificadores y suplementos reales (puntos de la carne, extras con precio)
 - [ ] Tipo de IVA por producto si alguno no es el 10 %
-- [ ] Vinos: referencias, bodegas y precios (la sección de vinos espera esos datos)
+- [x] Vinos blancos, rosados, cavas/champagnes y dulces (foto de la carta, 29/10/2026 → `seed/la_ofi_carta_vinos.sql`)
+- [ ] Vinos **tintos** (la otra cara de la carta; Carlos habla de más de 150 referencias)
+- [ ] Vinos dulces: ¿precio por copa? (3–4 €, hoy sin indicar)
 
 ## Pedidos, pagos y salón
 - [ ] Mesas y zonas reales (comedor, terraza, barra, El Despacho) con número y capacidad → QR
@@ -47,7 +49,12 @@ Checklist para la visita al restaurante. Lo marcado con ⚠️ bloquea el paso a
 - [ ] ⚠️ Cuenta de Stripe del restaurante (para pago online); si no, solo pago en el local
 - [ ] Staff: personas, correo y rol (administración, encargado/a, sala, cocina)
 - [ ] Impresora de cocina/barra (modelo, IP) para `print-bridge`
-- [ ] Reservas online: ¿sí o no?, máximo de personas, antelación, turnos
+- [x] Reservas (visita del 29/10/2026): El Despacho por personas hasta 30 y solo carta; comedor con
+      menú del día, carta o solo mesa; recogida de menús del día; el menú se ve el mismo día de 8:00 a 16:00
+- [ ] Confirmar el corte de turnos del Despacho (hoy: mediodía antes de las 17:00, noche desde las 17:00)
+      y cuánto dura una reserva (hoy, un turno entero)
+- [ ] ¿Recogida de menús: pago en el local al recoger? ¿Precio del menú para llevar igual que en mesa?
+- [ ] Activar «Aceptar reservas desde la web» en /admin/configuracion cuando Carlos dé el visto bueno
 
 ## Fiscal
 - [ ] ⚠️ TicketBAI: certificado de dispositivo, NIF, licencia del software garante y alta en Batuz

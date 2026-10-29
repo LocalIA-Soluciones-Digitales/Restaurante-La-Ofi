@@ -11,7 +11,8 @@ import { getCartaContent, getMenuDiaContent } from "@/lib/restaurant/content";
 import { menuJsonLd } from "@/lib/restaurant/jsonld";
 import { pageMetadata } from "@/lib/seo";
 
-export const revalidate = 86400;
+// 5 min: el menú del día aparece a las 8:00 y desaparece a las 16:00 sin que nadie toque nada.
+export const revalidate = 300;
 
 type Params = { params: Promise<{ locale: Locale }> };
 
