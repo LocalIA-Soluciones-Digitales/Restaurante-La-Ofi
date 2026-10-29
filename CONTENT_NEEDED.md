@@ -23,9 +23,9 @@ Checklist para la visita al restaurante. Lo marcado con ⚠️ bloquea el paso a
 - [ ] ⚠️ Sustituir las 6 fotos de terceros listadas en `IMAGES_SOURCES.md`
 
 ## Datos del negocio
-- [ ] ⚠️ Teléfono de reservas: confirmar **946 36 64 79** (el de Google) y configurarlo en `NEXT_PUBLIC_CONTACT_PHONE`. Hoy la demo usa **628 40 97 81**, número de pruebas de LocalIA.
+- [x] Teléfono de reservas: **946 36 64 79**, confirmado por Carlos el 29/10/2026 (en `site.ts`).
 - [ ] WhatsApp (si lo usan para reservas)
-- [ ] Horario: se publica el de Google (L–J 7:30–17:00, V 7:30–00:00, D cerrado). ⚠️ Falta el **sábado** (dato erróneo en internet) y confirmar el resto.
+- [x] Horario confirmado por Carlos (29/10/2026): L–J 7:30–16:30, V 7:30–00:00, S 11:00–00:00. Domingo sin confirmar (se publica cerrado).
 - [ ] Email de contacto
 - [ ] Aforos para publicarlos: comedor (¿70?), terraza cubierta (¿220?), El Despacho, parking (¿220 plazas?)
 - [ ] Datos para la página de empresas: menús concertados, facturación a empresa, capacidad para grupos
@@ -64,8 +64,8 @@ Checklist para la visita al restaurante. Lo marcado con ⚠️ bloquea el paso a
 ## Legal
 Los datos del titular van en `TITULAR` (`src/lib/site.ts`): aviso legal, privacidad y condiciones del pedido
 los toman de ahí. Mientras falten, esas páginas muestran «[Pendiente: …]».
-- [ ] ⚠️ Razón social, NIF/CIF y domicilio social (aviso legal y privacidad)
-- [ ] Inscripción en el Registro Mercantil, si es sociedad
+- [x] Orotela, S.L., NIF B16982597, Edificio 502 del Parque Tecnológico (Derio): escritura del 6/10/2021 y Carlos (29/10/2026)
+- [x] Registro Mercantil de Bizkaia, tomo 6042, folio 1, hoja BI-77552, inscripción 1.ª
 - [ ] ⚠️ Email de contacto y de protección de datos (también para `public/.well-known/security.txt`)
 - [ ] Confirmar plazos: reservas 12 meses; notas de alergias borradas tras el servicio
 
