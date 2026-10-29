@@ -50,3 +50,7 @@ insert into laofi.eventos (slug, titulo, tipo, descripcion, fecha, hora, precio_
 values ('tardeo-prueba', 'Tardeo con DJ (prueba)', 'Tardeo', 'Música, pintxos y buen ambiente en la terraza. Evento de prueba del backend local.',
         (now() at time zone 'Europe/Madrid')::date + 2, '18:00', 0, true, true, '/images/local/pro/terraza.webp')
 on conflict (slug) do nothing;
+
+-- Dos vinos de la casa de ejemplo (en producción los marca Carlos con la estrella en /admin/carta).
+update laofi.productos set destacado = true
+where nombre in ('Empecinado', 'Magalarte') and categoria_id in (select id from laofi.categorias where slug = 'vinos-blancos');

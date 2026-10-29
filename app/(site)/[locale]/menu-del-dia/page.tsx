@@ -10,7 +10,6 @@ import { JsonLd } from "@/components/ui/JsonLd";
 import { IS_DEMO } from "@/lib/env";
 import { estadoAhora, horarioDeHoy, resolverHorario } from "@/lib/horario";
 import { href, type Locale } from "@/lib/i18n";
-import { obtenerConfigPedidos } from "@/lib/pedidos/actions";
 import { getCartaContent, getMenuDiaContent } from "@/lib/restaurant/content";
 import { menuJsonLd } from "@/lib/restaurant/jsonld";
 import { getCierres, getHorario } from "@/lib/restaurant/queries";
@@ -40,7 +39,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
  */
 export default async function MenuDelDiaPage({ params }: Params) {
   const { locale } = await params;
-  const [state, horarioBd, cierres, carta, configR] = await Promise.all([getMenuDiaContent(), getHorario(), getCierres(), getCartaContent(), obtenerConfigPedidos()]);
+  const [state, horarioBd, cierres, carta] = await Promise.all([getMenuDiaContent(), getHorario(), getCierres(), getCartaContent()]);
   const horario = resolverHorario(horarioBd, cierres);
 
   return (
@@ -90,7 +89,7 @@ export default async function MenuDelDiaPage({ params }: Params) {
         </div>
       </section>
 
-      <CartaBloque state={carta} config={configR.ok ? configR.data : null} />
+      <CartaBloque state={carta} config={null} />
     </>
   );
 }

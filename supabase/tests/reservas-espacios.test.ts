@@ -129,8 +129,15 @@ describe("recogida de menús del día", () => {
     expect(await fila(id)).toMatchObject({ espacio: "recogida", personas: 2 });
   });
 
-  it("no admite carta", async () => {
-    await expect(reservar({ espacio: "recogida", comida: { modo: "carta", lineas: [] } })).rejects.toThrow(/menú del día/);
+  it("exige decir qué se recoge", async () => {
+    await expect(reservar({ espacio: "recogida", comida: { modo: "nada" } })).rejects.toThrow(/menú del día o carta/);
+  });
+
+  it("admite platos de la carta cualquier día abierto, como un pedido", async () => {
+    const { id: prod } = await t.one<{ id: string }>("select id from laofi.productos where disponible and precio_centimos is not null limit 1");
+    await expect(reservar({ espacio: "recogida", comida: { modo: "carta", lineas: [] } })).rejects.toThrow(/Elige los platos/);
+    const { id } = await reservar({ espacio: "recogida", personas: 7, hora: "14:00", comida: { modo: "carta", lineas: [{ id: prod, cantidad: 3 }] } });
+    expect(await fila(id)).toMatchObject({ espacio: "recogida", personas: 1, comida: { modo: "carta", lineas: [{ cantidad: 3 }] } });
   });
 });
 

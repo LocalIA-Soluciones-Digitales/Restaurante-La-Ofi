@@ -143,7 +143,7 @@ export function ReservasBoard({ mesas, zonas, eventos }: { mesas: MesaSalon[]; z
       </div>
       <p className="text-sm opacity-70 first-letter:uppercase">
         {formatearFechaLarga(fecha)} · {activas.length - recogidas.length} reservas · {comensales} comensales
-        {recogidas.length ? ` · ${recogidas.length} para recoger (${recogidas.reduce((a, r) => a + r.personas, 0)} menús)` : ""}
+        {recogidas.length ? ` · ${recogidas.length} para recoger` : ""}
         {despacho(false) || despacho(true) ? ` · El Despacho: ${despacho(false)}/${AFORO_DESPACHO} mediodía, ${despacho(true)}/${AFORO_DESPACHO} noche` : ""}
         {reservas.some((r) => r.estado === "PENDIENTE") ? ` · ${reservas.filter((r) => r.estado === "PENDIENTE").length} pendientes de confirmar` : ""}
       </p>
@@ -157,7 +157,8 @@ export function ReservasBoard({ mesas, zonas, eventos }: { mesas: MesaSalon[]; z
               <span className="font-display text-3xl tabular-nums">{r.hora}</span>
               <button type="button" onClick={() => setEditando(r)} className="min-w-0 flex-1 text-left">
                 <span className="block font-semibold">
-                  {r.nombre} · {r.personas} {r.espacio === "recogida" ? (r.personas === 1 ? "menú" : "menús") : "p"}
+                  {r.nombre} ·{" "}
+                  {r.espacio !== "recogida" ? `${r.personas} p` : r.comida?.modo === "carta" ? "pedido de carta" : `${r.personas} ${r.personas === 1 ? "menú" : "menús"}`}
                   {r.espacio === "despacho" ? <span className="ml-2 rounded-full bg-terracota-soft px-2 py-0.5 text-xs text-terracota">El Despacho</span> : null}
                   {r.espacio === "presupuesto" ? <span className="ml-2 rounded-full bg-oliva-soft px-2 py-0.5 text-xs text-oliva">Presupuesto</span> : null}
                   {r.espacio === "recogida" ? <span className="ml-2 rounded-full bg-ratan px-2 py-0.5 text-xs text-carbon">Para recoger</span> : null}

@@ -47,7 +47,8 @@ const GRUPOS_MENU: { tipo: MenuDiaPlato["tipo"]; label: string }[] = [
  *  - Comedor: menú del día (solo hoy, de 8:00 a 16:00), carta o solo la mesa; si
  *    quieren, dicen ya qué van a comer.
  *  - El Despacho: por personas hasta su aforo (30) en cada turno; solo carta.
- *  - Recoger menú del día: los platos de hoy para llevar.
+ *  - Para recoger: el menú del día (solo hoy, en su franja) o platos de la carta
+ *    (cualquier día abierto). Sustituye al antiguo «Pedir para recoger» (/pedir).
  * La reserva queda PENDIENTE: el local la confirma. Las horas salen del horario y
  * los cierres (mismas reglas que valida laofi_crear_reserva).
  */
@@ -96,8 +97,9 @@ export function ReservaForm({
   const normalizar = (x: Estado): Estado => {
     const n = { ...x };
     if (n.espacio === "recogida") {
-      n.fecha = hoy;
-      n.modo = "menu";
+      if (n.modo === "nada") n.modo = hayMenu && (!n.fecha || n.fecha === hoy) ? "menu" : "carta";
+      if (n.modo === "menu") n.fecha = hoy;
+      if (!n.fecha) n.fecha = primerDiaReservable(semana, cierres, momento) ?? "";
     }
     if (n.espacio === "evento") n.modo = "nada";
     if (n.espacio === "despacho" && n.modo === "menu") n.modo = "carta";
@@ -109,8 +111,8 @@ export function ReservaForm({
   };
 
   const [f, setF] = useState<Estado>(() => {
-    const espacio = espacioInicial === "recogida" && !hayMenu ? "mesa" : espacioInicial;
-    const fecha = paraHoy || espacio === "recogida" ? (primerDiaReservable(semana, cierres, momento) ?? "") : "";
+    const espacio = espacioInicial;
+    const fecha = paraHoy ? (primerDiaReservable(semana, cierres, momento) ?? "") : "";
     return normalizar({
       nombre: "",
       telefono: "",
@@ -137,6 +139,7 @@ export function ReservaForm({
   const avisoHoy = paraHoy && f.fecha && f.fecha !== hoy;
   const despacho = f.espacio === "despacho";
   const recogida = f.espacio === "recogida";
+  const recogidaCarta = recogida && f.modo === "carta";
 
   // Plazas libres de El Despacho para el día elegido.
   useEffect(() => {
@@ -149,6 +152,7 @@ export function ReservaForm({
   }, [despacho, f.fecha]);
   const libres = despacho && plazas?.fecha === f.fecha ? (f.hora >= "17:00" ? plazas.noche : plazas.comida) : null;
   const tope = despacho ? Math.min(aforoDespacho, libres ?? aforoDespacho) : recogida ? 30 : maxPersonas;
+  const fechaTexto = () => (f.fecha === hoy ? "hoy" : `el ${formatearFechaLarga(f.fecha)}`);
   const despachoLleno = libres !== null && libres <= 0;
 
   const elegidos = Object.values(f.cantidades).reduce((a, n) => a + n, 0);
@@ -161,9 +165,13 @@ export function ReservaForm({
         <Icon name="check" className="h-8 w-8" />
         <p className="mt-3 font-display text-3xl">{recogida ? "¡Pedido enviado!" : "¡Solicitud enviada!"}</p>
         <p className="mt-2 text-carbon">
-          {recogida ? (
+          {recogidaCarta ? (
             <>
-              {f.personas} {f.personas === 1 ? "menú" : "menús"} para recoger hoy a las {f.hora}.
+              Pedido de {elegidos} {elegidos === 1 ? "plato" : "platos"} de la carta para recoger {fechaTexto()} a las {f.hora}.
+            </>
+          ) : recogida ? (
+            <>
+              {f.personas} {f.personas === 1 ? "menú" : "menús"} del día para recoger hoy a las {f.hora}.
             </>
           ) : (
             <>
@@ -183,7 +191,7 @@ export function ReservaForm({
   const espacios: [Espacio, string, boolean][] = [
     ["mesa", "Comedor", true],
     ["despacho", "El Despacho", true],
-    ["recogida", "Recoger menú del día", hayMenu],
+    ["recogida", "Para recoger", true],
     ...(eventos.length ? ([["evento", "Un evento", true]] as [Espacio, string, boolean][]) : []),
   ];
 
@@ -210,6 +218,7 @@ export function ReservaForm({
           const { modo, cantidades, ...resto } = f;
           const r = await solicitarReserva({
             ...resto,
+            personas: recogidaCarta ? 1 : resto.personas,
             evento_slug: f.espacio === "evento" ? f.evento_slug : undefined,
             comida: { modo, lineas: Object.entries(cantidades).map(([id, cantidad]) => ({ id, cantidad })) },
           });
@@ -237,7 +246,7 @@ export function ReservaForm({
               : despacho
                 ? `Comedor privado para ${aforoDespacho} personas. Se reserva por personas y se come de carta.`
                 : recogida
-                  ? `Pide los platos del menú de hoy y pásate a recogerlos (de ${menuFranja.desde} a ${menuFranja.hasta}).`
+                  ? `Pide el menú del día (hoy, de ${menuFranja.desde} a ${menuFranja.hasta}) o platos de la carta, y pásate a recogerlos. Pagas al recoger.`
                   : "Reserva tu sitio para el evento."}
           </p>
         </fieldset>
@@ -255,7 +264,7 @@ export function ReservaForm({
         ) : null}
         <label className="grid gap-1 text-sm">
           <span className="font-semibold">Día</span>
-          {recogida ? (
+          {recogida && f.modo === "menu" ? (
             <span className={`${campo} flex items-center`}>Hoy</span>
           ) : (
             <input
@@ -270,7 +279,7 @@ export function ReservaForm({
             />
           )}
         </label>
-        <div className="grid grid-cols-2 gap-3">
+        <div className={`grid gap-3 ${recogidaCarta ? "grid-cols-1" : "grid-cols-2"}`}>
           <label className="grid gap-1 text-sm">
             <span className="font-semibold">{recogida ? "Recogida" : "Hora"}</span>
             <select required value={f.hora} onChange={(e) => set({ hora: e.target.value })} disabled={horas.length === 0} className={campo}>
@@ -282,7 +291,7 @@ export function ReservaForm({
               ))}
             </select>
           </label>
-          <label className="grid gap-1 text-sm">
+          <label className={`grid gap-1 text-sm ${recogidaCarta ? "hidden" : ""}`}>
             <span className="font-semibold">{recogida ? "Menús" : "Personas"}</span>
             <input
               type="number"
@@ -313,22 +322,22 @@ export function ReservaForm({
         {f.espacio !== "evento" ? (
           <fieldset className="grid gap-3 sm:col-span-2">
             <legend className="mb-2 text-sm font-semibold">{recogida ? "¿Qué vas a recoger?" : "¿Qué vais a comer?"}</legend>
-            {!recogida ? (
-              <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2">
+              {!recogida ? (
                 <button type="button" aria-pressed={f.modo === "nada"} onClick={() => set({ modo: "nada" })} className={pastilla}>
                   Solo reservar mesa
                 </button>
-                {!despacho ? (
-                  <button type="button" aria-pressed={f.modo === "menu"} disabled={!hayMenu || f.fecha !== hoy} onClick={() => set({ modo: "menu" })} className={pastilla}>
-                    Menú del día{menuHoy?.precio_centimos ? ` · ${formatCentimos(menuHoy.precio_centimos)}` : ""}
-                  </button>
-                ) : null}
-                <button type="button" aria-pressed={f.modo === "carta"} disabled={carta.length === 0} onClick={() => set({ modo: "carta" })} className={pastilla}>
-                  Carta
+              ) : null}
+              {!despacho ? (
+                <button type="button" aria-pressed={f.modo === "menu"} disabled={!hayMenu || (f.fecha !== hoy && !recogida)} onClick={() => set({ modo: "menu" })} className={pastilla}>
+                  Menú del día{menuHoy?.precio_centimos ? ` · ${formatCentimos(menuHoy.precio_centimos)}` : ""}
                 </button>
-              </div>
-            ) : null}
-            {!despacho && !recogida && (!hayMenu || f.fecha !== hoy) ? (
+              ) : null}
+              <button type="button" aria-pressed={f.modo === "carta"} disabled={carta.length === 0} onClick={() => set({ modo: "carta" })} className={pastilla}>
+                Carta
+              </button>
+            </div>
+            {!despacho && (!hayMenu || (f.fecha !== hoy && !recogida)) ? (
               <p className="text-xs text-carbon-muted">
                 El menú del día se publica el mismo día a las {menuFranja.desde} y se sirve hasta las {menuFranja.hasta}
                 {hayMenu ? ": elige hoy para pedirlo." : "."}
@@ -381,7 +390,9 @@ export function ReservaForm({
                     </details>
                   );
                 })}
-                <p className="px-2 pb-2 text-xs text-carbon-muted">Opcional: si no eliges nada, lo pedís en la mesa.</p>
+                <p className="px-2 pb-2 text-xs text-carbon-muted">
+                  {recogida ? "Elige los platos y cuántos de cada uno." : "Opcional: si no eliges nada, lo pedís en la mesa."}
+                </p>
               </div>
             ) : null}
             {elegidos > 0 ? <p className="text-sm text-carbon">{elegidos} {elegidos === 1 ? "plato elegido" : "platos elegidos"}.</p> : null}
@@ -432,8 +443,10 @@ export function ReservaForm({
         <p className="text-xs text-carbon-muted sm:col-span-2">
           {despacho
             ? `El Despacho admite hasta ${aforoDespacho} personas por turno.`
-            : recogida
-              ? "Para más de 30 menús, llámanos."
+            : recogidaCarta
+              ? "Pagas al recoger. Para pedidos grandes, llámanos."
+              : recogida
+                ? "Para más de 30 menús, llámanos."
               : `Para grupos de más de ${maxPersonas}, llámanos o pide presupuesto.`}
         </p>
         <p className="text-xs leading-relaxed text-carbon-muted sm:col-span-2">

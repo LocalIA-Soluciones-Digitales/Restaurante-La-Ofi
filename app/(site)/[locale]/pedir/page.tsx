@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { PedirExperience, type PedirModo } from "@/components/pedir/PedirExperience";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Icon } from "@/components/ui/Icon";
@@ -32,6 +33,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function PedirPage({ params, searchParams }: Props) {
   const { locale } = await params;
   const { mesa, grupo, modo } = await searchParams;
+  // La recogida (menú del día o carta) se pide ahora desde Reservar: un solo sistema.
+  // Aquí quedan los QR de mesa y los pedidos de grupo.
+  if (!mesa && !grupo && modo !== "grupo") redirect(href(locale, "/reservar?espacio=recogida"));
 
   const [carta, config, mesaR, grupoR] = await Promise.all([
     getCartaContent(),

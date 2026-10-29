@@ -6,7 +6,6 @@ import { JsonLd } from "@/components/ui/JsonLd";
 import { IS_DEMO } from "@/lib/env";
 import { formatCentimos } from "@/lib/format";
 import { href, type Locale } from "@/lib/i18n";
-import { obtenerConfigPedidos } from "@/lib/pedidos/actions";
 import { getCartaContent, getMenuDiaContent } from "@/lib/restaurant/content";
 import { menuJsonLd } from "@/lib/restaurant/jsonld";
 import { pageMetadata } from "@/lib/seo";
@@ -32,7 +31,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
  */
 export default async function CartaPage({ params }: Params) {
   const { locale } = await params;
-  const [state, configR, menu] = await Promise.all([getCartaContent(), obtenerConfigPedidos(), getMenuDiaContent()]);
+  const [state, menu] = await Promise.all([getCartaContent(), getMenuDiaContent()]);
   const platosHoy = menu.status === "empty" ? [] : [...menu.data.platos, ...menu.data.primeros, ...menu.data.segundos].map((p) => p.nombre);
 
   return (
@@ -55,7 +54,7 @@ export default async function CartaPage({ params }: Params) {
           </Link>
         ) : null}
       </div>
-      <CartaBloque state={state} config={configR.ok ? configR.data : null} heading="h1" />
+      <CartaBloque state={state} config={null} heading="h1" />
     </>
   );
 }
