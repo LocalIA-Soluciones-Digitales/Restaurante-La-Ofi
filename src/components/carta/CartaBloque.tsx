@@ -1,16 +1,14 @@
 import { AllergenLegend } from "@/components/menu/AllergenLegend";
-import { CartaIndice } from "@/components/carta/CartaIndice";
 import { CartaConPedido } from "@/components/carta/CartaConPedido";
 import { CartaInteractiva } from "@/components/carta/CartaInteractiva";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { formatCentimos } from "@/lib/format";
 import type { ConfigPedidos } from "@/lib/pedidos/types";
 import type { CartaSeccion, ContentState } from "@/lib/restaurant/types";
 import { SITE } from "@/lib/site";
 
 /**
- * La carta completa: titular claro ("La carta"), el índice de secciones como el
- * de una carta impresa y, debajo, los platos. Va tras el menú del día en /menu-del-dia
+ * La carta completa: titular claro ("La carta") y, debajo, los platos por
+ * secciones (el índice vive en la barra de la carta, sin repetirse aquí). Va tras el menú del día en /menu-del-dia
  * (h2) y sola en /carta (h1).
  */
 export function CartaBloque({
@@ -48,24 +46,8 @@ export function CartaBloque({
           </div>
         </div>
 
-        {secciones.length > 0 ? (
-          <div className="mt-10 lg:mt-14">
-            <CartaIndice
-              entradas={secciones.map((s) => {
-                const precios = s.items.map((it) => it.precioCentimos).filter((p): p is number => p !== null);
-                return {
-                  slug: s.slug,
-                  nombre: s.nombre,
-                  platos: s.items.length,
-                  desde: precios.length > 0 ? formatCentimos(Math.min(...precios)) : null,
-                  foto: s.items.find((it) => it.imagen)?.imagen ?? null,
-                };
-              })}
-            />
-          </div>
-        ) : null}
       </div>
-      <div className="container-wide pb-16 pt-12 sm:pb-24">
+      <div className="container-wide pb-16 pt-8 sm:pb-24 sm:pt-10">
         {state.status === "empty" ? (
           <EmptyState title="Carta en preparación" icon="utensils">
             Muy pronto podrás consultar aquí la carta completa con precios y alérgenos. Mientras tanto, llámanos al{" "}

@@ -7,7 +7,7 @@ import { Icon } from "@/components/ui/Icon";
 
 /**
  * Píldora fija de "Reservar mesa" abajo a la derecha (solo escritorio: en móvil
- * ya está la barra inferior). Aparece al dejar atrás la primera pantalla y se
+ * va en la cabecera). Aparece al dejar atrás la primera pantalla y se
  * oculta al llegar al pie y en las páginas de reservar y pedir. Entra y sale por el mismo camino.
  */
 export function ReservarFlotante({ href, label }: { href: string; label: string }) {

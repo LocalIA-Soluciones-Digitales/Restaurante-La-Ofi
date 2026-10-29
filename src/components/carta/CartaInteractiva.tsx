@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CartaSeccionEditorial } from "@/components/carta/CartaSeccionEditorial";
+import { CartaIndiceEscena } from "@/components/carta/CartaIndiceEscena";
+import { CartaSeccionEscena } from "@/components/carta/CartaSeccionEscena";
 import { FiltroAlergenos } from "@/components/carta/FiltroAlergenos";
 import { ProductoCard } from "@/components/carta/ProductoCard";
 import { ProductoDetalle, type OrigenRect } from "@/components/carta/ProductoDetalle";
@@ -16,8 +17,9 @@ import type { CartaSeccion, MomentoCarta } from "@/lib/restaurant/types";
 /**
  * Carta interactiva: categorías pegajosas con scroll-spy, buscador, filtros por
  * momento del día, etiquetas y los 14 alérgenos, y ficha de producto.
- * - Editorial (/carta): tarjetas grandes con foto; la UI se esconde tras
- *   "Buscar y filtrar" para que mande la comida. Con cesta, "+ Añadir" en cada una.
+ * - Editorial (/carta): cada sección "en escena" (foto panorámica y filas de
+ *   platos). Una sola barra dice en qué sección estás y abre el índice a pantalla
+ *   completa; búsqueda y filtros, tras "Buscar". Con cesta, "+" en cada plato.
  * - Pedido (/pedir): tarjetas compactas con "+ añadir" y contador.
  */
 export function CartaInteractiva({
@@ -38,7 +40,9 @@ export function CartaInteractiva({
   const [detalle, setDetalle] = useState<{ seccion: string; index: number; origen: OrigenRect | null } | null>(null);
   const [alergenosAbierto, setAlergenosAbierto] = useState(false);
   const [panel, setPanel] = useState(false);
+  const [indice, setIndice] = useState(false);
   const navRef = useRef<HTMLUListElement>(null);
+  const progresoRef = useRef<HTMLSpanElement>(null);
   const editorial = layout ? layout === "editorial" : !cart;
 
   const { secciones: visibles, ocultosSinConfirmar } = useMemo(() => filtrarCarta(secciones, filtros), [secciones, filtros]);
@@ -68,6 +72,15 @@ export function CartaInteractiva({
       const alFondo = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
       if (alFondo && conItems.length > 0) actual = conItems[conItems.length - 1]!.slug;
       setActiva((prev) => (prev === actual ? prev : actual));
+      // Progreso de lectura de la carta (línea fina bajo la barra editorial).
+      const primera = conItems[0] && document.getElementById(conItems[0].slug);
+      const ultima = conItems.length > 0 ? document.getElementById(conItems[conItems.length - 1]!.slug) : null;
+      if (progresoRef.current && primera && ultima) {
+        const inicio = primera.getBoundingClientRect().top + window.scrollY;
+        const fin = ultima.getBoundingClientRect().bottom + window.scrollY - window.innerHeight;
+        const k = fin > inicio ? (window.scrollY - inicio) / (fin - inicio) : 1;
+        progresoRef.current.style.transform = `scaleX(${Math.min(1, Math.max(0, k))})`;
+      }
     };
     const onScroll = () => {
       if (!raf) raf = requestAnimationFrame(calcular);
@@ -175,30 +188,33 @@ export function CartaInteractiva({
   return (
     <div>
       {editorial ? (
-        <div data-header-fixed className={`sticky ${stickyTop} z-20 -mx-4 border-b border-tinta-line bg-crema/95 px-4 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-10 lg:px-10`}>
-          <div className="flex items-center gap-4">
-            <nav aria-label="Categorías de la carta" className="min-w-0 flex-1">
-              <ul ref={navRef} className="no-scrollbar fade-x flex gap-6 overflow-x-auto">
-                {conItems.map((s) => (
-                  <li key={s.id} className="shrink-0">
-                    <a
-                      href={`#${s.slug}`}
-                      data-slug={s.slug}
-                      aria-current={activa === s.slug ? "true" : undefined}
-                      className="relative inline-flex min-h-[3.25rem] items-center text-[0.95rem] font-medium text-carbon-muted transition-colors hover:text-carbon aria-[current=true]:text-carbon after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:scale-x-0 after:bg-brasa after:transition-transform aria-[current=true]:after:scale-x-100"
-                    >
-                      {s.nombre}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </nav>
+        <div data-header-fixed className={`sticky ${stickyTop} z-20 -mx-4 border-b border-tinta-line bg-crema/90 px-4 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-10 lg:px-10`}>
+          <div className="flex min-h-[3.75rem] items-center gap-4">
+            {/* Una sola navegación: la sección en la que estás; al tocarla, el índice completo. */}
+            <button
+              type="button"
+              onClick={() => setIndice(true)}
+              aria-haspopup="dialog"
+              className="group flex min-w-0 flex-1 items-center gap-3 text-left"
+            >
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-carbon/20 text-carbon transition-colors group-hover:border-carbon group-hover:bg-carbon group-hover:text-crema">
+                <Icon name="grid" className="h-4 w-4" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-[0.62rem] font-semibold uppercase tracking-[0.2em] text-carbon-muted">
+                  Sección {String(Math.max(1, conItems.findIndex((s) => s.slug === activa) + 1)).padStart(2, "0")} de {String(conItems.length).padStart(2, "0")} · Ver todas
+                </span>
+                <span key={activa} className="block truncate font-display text-[1.2rem] leading-tight text-carbon motion-safe:animate-fade-up sm:text-[1.4rem]">
+                  {conItems.find((s) => s.slug === activa)?.nombre ?? conItems[0]?.nombre}
+                </span>
+              </span>
+            </button>
             <button
               type="button"
               aria-expanded={panel}
               aria-controls="carta-filtros"
               onClick={() => setPanel((p) => !p)}
-              className="inline-flex min-h-11 shrink-0 items-center gap-2 text-sm font-semibold text-carbon"
+              className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border border-carbon/20 px-4 text-sm font-semibold text-carbon transition-colors hover:border-carbon/50"
             >
               <Icon name={panel ? "close" : "search"} className="h-4 w-4" />
               <span className="hidden sm:inline">Buscar y filtrar</span>
@@ -206,6 +222,7 @@ export function CartaInteractiva({
               {nFiltros > 0 ? <span className="grid h-5 min-w-5 place-items-center rounded-full bg-brasa px-1 text-[0.7rem] text-crema">{nFiltros}</span> : null}
             </button>
           </div>
+          <span ref={progresoRef} aria-hidden="true" className="absolute inset-x-0 bottom-[-1px] h-0.5 origin-left scale-x-0 bg-brasa" />
           {panel ? (
             <div id="carta-filtros" className="grid gap-3 border-t border-tinta-line py-4 motion-safe:animate-fade-up">
               <div className="flex flex-wrap items-center gap-2">
@@ -274,12 +291,13 @@ export function CartaInteractiva({
       ) : null}
 
       {editorial ? (
-        <div className="mt-4 space-y-16 sm:space-y-20">
+        <div>
           {conItems.map((s, i) => (
-            <CartaSeccionEditorial
+            <CartaSeccionEscena
               key={s.id}
               seccion={s}
               indice={i}
+              total={conItems.length}
               cart={cart}
               onOpen={(index, origen) => setDetalle({ seccion: s.slug, index, origen })}
             />
@@ -322,6 +340,8 @@ export function CartaInteractiva({
           onNavigate={(index) => setDetalle((d) => (d ? { ...d, index, origen: null } : d))}
         />
       ) : null}
+
+      {indice ? <CartaIndiceEscena secciones={conItems} activa={activa} onClose={() => setIndice(false)} /> : null}
 
       {alergenosAbierto ? (
         <FiltroAlergenos

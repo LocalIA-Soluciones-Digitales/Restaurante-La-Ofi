@@ -16,7 +16,7 @@ export function Footer({ locale, items }: { locale: Locale; items: NavItem[] }) 
   const bloque = "border-t border-tinta-line pt-6 first:border-0 first:pt-0 sm:border-0 sm:pt-0";
   const titulo = "kicker text-brasa";
   return (
-    <footer className="overflow-hidden border-t border-tinta-line bg-papel pb-28 pt-16 text-carbon-muted sm:pt-20 lg:pb-8">
+    <footer className="overflow-hidden border-t border-tinta-line bg-papel pb-8 pt-16 text-carbon-muted sm:pt-20">
       <div className="container-wide grid gap-10 sm:grid-cols-2 sm:gap-12 lg:grid-cols-4">
         <div className={bloque}>
           <h2 className={titulo}>Reservas</h2>

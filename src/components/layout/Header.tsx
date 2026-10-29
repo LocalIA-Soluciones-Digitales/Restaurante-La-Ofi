@@ -28,9 +28,9 @@ interface Props {
 
 /**
  * Cabecera limpia, sin casillas: menú y las páginas más buscadas a la izquierda,
- * logotipo centrado y, a la derecha, teléfono y "Reservar" en píldora. Sobre una
- * foto oscura va transparente con texto claro; al bajar, crema translúcida con
- * un filete fino debajo.
+ * logotipo centrado y, a la derecha, teléfono y "Reservar" en píldora (en móvil,
+ * iconos de carta, reservar y llamar). Sobre una foto oscura va transparente con
+ * texto claro; al bajar, crema translúcida con un filete fino debajo.
  */
 export function Header({ homeHref, reservarHref, items, primary, phoneHref, phoneDisplay, labels }: Props) {
   const [scrolled, setScrolled] = useState(false);
@@ -107,13 +107,27 @@ export function Header({ homeHref, reservarHref, items, primary, phoneHref, phon
             <Logo light={light} center />
           </Link>
 
-          {/* Derecha: teléfono y Reservar */}
-          <div className="ml-auto flex items-center gap-2 sm:gap-5">
+          {/* Derecha: teléfono y Reservar; en móvil, iconos de carta, reservar y llamar */}
+          <div className="ml-auto flex items-center gap-1 sm:gap-5">
+            {primary[0] ? (
+              <Link
+                href={primary[0].href}
+                aria-current={isActiveItem(primary[0]) ? "page" : undefined}
+                className="grid h-11 w-10 place-items-center rounded-full transition-opacity hover:opacity-70 aria-[current=page]:text-brasa sm:hidden"
+              >
+                <Icon name="utensils" className="h-5 w-5" />
+                <span className="sr-only">{primary[0].label}</span>
+              </Link>
+            ) : null}
+            <Link href={reservarHref} className="grid h-11 w-10 place-items-center rounded-full transition-opacity hover:opacity-70 sm:hidden">
+              <Icon name="calendar" className="h-5 w-5" />
+              <span className="sr-only">{labels.reservar}</span>
+            </Link>
             <a href={phoneHref} className={`hidden items-center gap-2 text-[0.85rem] font-medium tabular-nums transition-colors xl:flex ${muted}`}>
               <Icon name="phone" className="h-4 w-4" />
               {phoneDisplay}
             </a>
-            <a href={phoneHref} className="grid h-11 w-11 place-items-center rounded-full transition-opacity hover:opacity-70 sm:hidden">
+            <a href={phoneHref} className="grid h-11 w-10 place-items-center rounded-full transition-opacity hover:opacity-70 sm:hidden">
               <Icon name="phone" className="h-5 w-5" />
               <span className="sr-only">
                 {labels.llamar} {phoneDisplay}
