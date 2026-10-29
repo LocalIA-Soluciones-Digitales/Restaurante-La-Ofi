@@ -47,6 +47,14 @@ export function Declaracion() {
               La mejor reunión del día <em className="block text-ratan">es en La Ofi.</em>
             </h2>
           </div>
+
+          {/* Designer credit: sale con el lema, sobre la foto ya oscura. En móvil, por encima de la BottomBar. */}
+          <div className="pointer-events-none absolute bottom-24 right-5 text-right lg:bottom-8 lg:right-8">
+            <span className="block text-[10px] font-light tracking-wide text-white">Designed &amp; Developed by</span>
+            <span className="mt-1 block text-[11px] font-medium tracking-wide text-white">
+              Local<span className="font-bold text-ratan">IA</span>.
+            </span>
+          </div>
         </div>
       </div>
     </section>
