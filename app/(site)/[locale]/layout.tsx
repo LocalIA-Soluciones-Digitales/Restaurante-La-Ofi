@@ -86,7 +86,6 @@ export default async function LocaleLayout({
           phoneHref={SITE.phone.href}
           phoneDisplay={SITE.phone.display}
           labels={{
-            carta: t.nav.carta,
             reservar: t.cta.reservar,
             llamar: t.cta.llamar,
             abrirMenu: t.cta.abrirMenu,
