@@ -116,6 +116,7 @@ propio, `laofi`**, sin tablas compartidas con otros proyectos. Detalle y barrera
 - `supabase/migrations/` — schema `laofi` (tablas, RLS, índices) y RPC `laofi_*`, **todas aplicadas**
   (la última, `20261029100000_laofi_reservas_espacios`, el 2026-10-29; ese día se aplicó también
   `20261022120000_laofi_eventos_media`, que faltaba y hacía fallar las fotos de eventos).
+  **Pendiente de aplicar:** `20261030100000_laofi_pedido_menu_dia` (menú del día en «Pedir para recoger»).
   **Pendiente:** `20261031100000_laofi_eventos_programa` (programa de cada evento). Sin ella la web
   funciona igual, pero el «Programa del día» del panel no se guarda.
 - `supabase/seed/la_ofi_tenant.sql` — alta en `public.clientes` (aplicado). Devuelve la `site_key`.
