@@ -279,8 +279,8 @@ function Dialogo({
             <div className="grid grid-cols-2 gap-2.5">
               {evento.reservable ? (
                 <Link href={reservarHref} onClick={onClose} className="btn-primary w-full px-3">
-                  <Icon name="calendar" className="h-4 w-4" />
-                  Reservar mesa
+                  <Icon name="users" className="h-4 w-4" />
+                  Apuntarme
                 </Link>
               ) : null}
               <Link href={verHref} onClick={onClose} className={`btn-secondary w-full px-3 ${evento.reservable ? "" : "col-span-2"}`}>

@@ -87,7 +87,10 @@ const hoy = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Madrid" }
  * salen en la agenda de /eventos; además, Carlos elige UNO para anunciarlo con el
  * aviso emergente al entrar en la web.
  */
-export function EventosGestion({ inicial }: { inicial: EventoBd[] }) {
+/** Por evento: personas apuntadas y en cuántas solicitudes (sin las canceladas). */
+export type Asistentes = Record<string, { personas: number; grupos: number }>;
+
+export function EventosGestion({ inicial, asistentes = {} }: { inicial: EventoBd[]; asistentes?: Asistentes }) {
   const [eventos, setEventos] = useState(inicial);
   const [editando, setEditando] = useState<EventoBd | "nuevo" | null>(null);
   const [aviso, setAviso] = useState<{ tono: "ok" | "error"; texto: string } | null>(null);
@@ -168,6 +171,14 @@ export function EventosGestion({ inicial }: { inicial: EventoBd[] }) {
                     {e.precio_centimos !== null ? ` · ${e.precio_centimos === 0 ? "entrada libre" : formatCentimos(e.precio_centimos)}` : ""}
                     {e.aforo ? ` · aforo ${e.aforo}` : ""}
                   </span>
+                  {!pasado && e.estado === "proximo" ? (
+                    <span className="mt-0.5 inline-flex items-center gap-1.5 text-sm font-semibold">
+                      <Icon name="users" className="h-4 w-4 shrink-0" />
+                      {asistentes[e.id]
+                        ? `${asistentes[e.id]!.personas}${e.aforo ? ` de ${e.aforo}` : ""} apuntados · ${asistentes[e.id]!.grupos} ${asistentes[e.id]!.grupos === 1 ? "solicitud" : "solicitudes"}`
+                        : "Nadie apuntado todavía"}
+                    </span>
+                  ) : null}
                   {e.programa?.length ? (
                     <span className="truncate text-sm opacity-70">{e.programa.map((p) => `${p.hora ? `${p.hora.slice(0, 5)} ` : ""}${p.titulo}`).join(" · ")}</span>
                   ) : null}

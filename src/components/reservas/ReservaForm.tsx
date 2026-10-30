@@ -20,6 +20,12 @@ const ficha =
 
 /** La hora de comer si ese día se puede; si no, la primera libre. */
 const horaPorDefecto = (horas: string[]) => (horas.includes("14:00") ? "14:00" : (horas[0] ?? ""));
+/** La hora del evento o, si cae fuera de las reservables, la última antes (o la primera). */
+const horaDeEvento = (horas: string[], hora?: string | null) => {
+  const h = hora?.slice(0, 5);
+  if (!h) return horaPorDefecto(horas);
+  return horas.includes(h) ? h : (horas.filter((x) => x <= h).at(-1) ?? horas[0] ?? "");
+};
 
 /** Días que se ven de un vistazo; el resto, con «Otra fecha». */
 const DIAS_VISIBLES = 21;
@@ -64,6 +70,8 @@ const GRUPOS_MENU: { tipo: MenuDiaPlato["tipo"]; label: string }[] = [
  *  - Comedor: menú del día (solo hoy, de 8:00 a 16:00), carta o solo la mesa; si
  *    quieren, dicen ya qué van a comer.
  *  - El Despacho: por personas hasta su aforo (30) en cada turno; solo carta.
+ *  - Un evento: no es mesa, es apuntarse. Día y hora son los del evento y solo se
+ *    pregunta cuántos van: así Carlos sabe cuánta gente esperar.
  * Para llevar no es aquí: es «Pedir para recoger» (/pedir).
  * La reserva queda PENDIENTE: el local la confirma. Las horas salen del horario y
  * los cierres (mismas reglas que valida laofi_crear_reserva).
@@ -89,7 +97,7 @@ export function ReservaForm({
   /** El menú de hoy si ya está publicado y dentro de su franja (si no, null). */
   menuHoy: MenuReserva | null;
   carta: CartaReserva[];
-  eventos: { slug: string; titulo: string; fecha: string; imagen?: string | null }[];
+  eventos: { slug: string; titulo: string; fecha: string; hora?: string | null; imagen?: string | null }[];
   espacioInicial: Espacio;
   eventoInicial?: string;
   paraHoy: boolean;
@@ -112,12 +120,15 @@ export function ReservaForm({
   /** Mantiene el estado coherente: el menú es solo hoy, El Despacho no tiene menú, la hora existe. */
   const normalizar = (x: Estado): Estado => {
     const n = { ...x };
+    const ev = n.espacio === "evento" ? eventos.find((e) => e.slug === n.evento_slug) : undefined;
     if (n.espacio === "evento") n.modo = "nada";
+    if (ev) n.fecha = ev.fecha;
     if (n.espacio === "despacho" && n.modo === "menu") n.modo = "carta";
     if (n.modo === "menu" && (n.fecha !== hoy || !hayMenu)) n.modo = "nada";
     if (n.modo !== x.modo) n.cantidades = {};
     const horas = horasDe(n);
-    if (!horas.includes(n.hora)) n.hora = horaPorDefecto(horas);
+    if (ev) n.hora = horaDeEvento(horas, ev.hora);
+    else if (!horas.includes(n.hora)) n.hora = horaPorDefecto(horas);
     return n;
   };
 
@@ -155,6 +166,7 @@ export function ReservaForm({
   const diaCerrado = Boolean(f.fecha) && horasReservables(semana, cierres, f.fecha, momento).length === 0;
   const avisoHoy = paraHoy && f.fecha && f.fecha !== hoy;
   const despacho = f.espacio === "despacho";
+  const evento = f.espacio === "evento" ? eventos.find((e) => e.slug === f.evento_slug) : undefined;
   const dias = useMemo(
     () =>
       Array.from({ length: DIAS_VISIBLES }, (_, i) => {
@@ -187,15 +199,16 @@ export function ReservaForm({
     { k: "mesa", titulo: "Comedor", detalle: "Menú del día o carta", foto: "comedorRatan" },
     { k: "despacho", titulo: "El Despacho", detalle: `Privado · hasta ${aforoDespacho} personas`, foto: "despacho" },
     ...(eventos.length
-      ? [{ k: "evento" as const, titulo: "Un evento", detalle: eventos.length === 1 ? eventos[0]!.titulo : `${eventos.length} próximos`, foto: eventos.find((e) => e.imagen)?.imagen ?? "terrazaNoche" }]
+      ? [{ k: "evento" as const, titulo: "Ir a un evento", detalle: eventos.length === 1 ? eventos[0]!.titulo : `${eventos.length} próximos`, foto: eventos.find((e) => e.imagen)?.imagen ?? "terrazaNoche" }]
       : []),
   ];
-  const lugar = espacios.find((e) => e.k === f.espacio)?.titulo ?? "";
+  const lugar = evento?.titulo ?? espacios.find((e) => e.k === f.espacio)?.titulo ?? "";
+  const gente = evento ? (f.personas === 1 ? "asistente" : "asistentes") : f.personas === 1 ? "persona" : "personas";
   const resumen = [
     lugar,
     f.fecha ? FECHA_CORTA.format(comoFecha(f.fecha)) : null,
     f.hora && horas.length ? f.hora : null,
-    `${f.personas} ${f.personas === 1 ? "persona" : "personas"}`,
+    `${f.personas} ${gente}`,
     elegidos ? `${elegidos} ${elegidos === 1 ? "plato" : "platos"}` : null,
   ].filter(Boolean);
 
@@ -206,16 +219,20 @@ export function ReservaForm({
           <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-ok text-crema">
             <Icon name="check" className="h-8 w-8" />
           </span>
-          <p className="mt-5 font-display text-4xl text-carbon">¡Solicitud enviada!</p>
-          <p className="mx-auto mt-2 max-w-md text-carbon-muted">Te llamamos para confirmarla. Si tienes prisa, llámanos tú.</p>
+          <p className="mt-5 font-display text-4xl text-carbon">{evento ? "¡Te esperamos!" : "¡Solicitud enviada!"}</p>
+          <p className="mx-auto mt-2 max-w-md text-carbon-muted">
+            {evento
+              ? "Gracias por avisar: así sabemos cuántos vamos a ser. Si al final no podéis venir, llámanos."
+              : "Te llamamos para confirmarla. Si tienes prisa, llámanos tú."}
+          </p>
         </div>
         <dl className="grid gap-px bg-tinta-line sm:grid-cols-2">
           {(
             [
-              ["Dónde", lugar],
+              [evento ? "Evento" : "Dónde", lugar],
               ["Día", formatearFechaLarga(f.fecha)],
-              ["Hora", f.hora],
-              ["Personas", String(f.personas)],
+              ["Hora", evento?.hora ? evento.hora.slice(0, 5) : f.hora],
+              [evento ? "Asistentes" : "Personas", String(f.personas)],
               ...(elegidos ? [["Comida", `${elegidos} ${elegidos === 1 ? "plato elegido" : "platos elegidos"}`]] : []),
               ["A nombre de", f.nombre],
             ] as [string, string][]
@@ -304,13 +321,13 @@ export function ReservaForm({
               );
             })}
           </div>
-          {f.espacio === "evento" ? (
+          {f.espacio === "evento" && eventos.length > 1 ? (
             <label className="mt-4 grid gap-1 text-sm">
               <span className="font-semibold">Evento</span>
               <select value={f.evento_slug} onChange={(e) => set({ evento_slug: e.target.value })} className={campo}>
                 {eventos.map((ev) => (
                   <option key={ev.slug} value={ev.slug}>
-                    {ev.titulo} · {ev.fecha}
+                    {ev.titulo} · {FECHA_CORTA.format(comoFecha(ev.fecha))}
                   </option>
                 ))}
               </select>
@@ -319,115 +336,125 @@ export function ReservaForm({
         </Paso>
 
         {/* 2 · Cuándo y cuántos */}
-        <Paso n={2} titulo="¿Cuándo y cuántos?">
-          <p className="text-sm font-semibold text-carbon">Día</p>
-          <div className="-mx-1 mt-2 flex snap-x gap-2 overflow-x-auto px-1 pb-2 [scrollbar-width:thin]">
-            {dias.map((d, i) => (
-              <button
-                key={d.iso}
-                type="button"
-                aria-pressed={f.fecha === d.iso}
-                aria-label={`${formatearFechaLarga(d.iso)}${d.abierto ? "" : ", cerrado"}`}
-                disabled={!d.abierto}
-                onClick={() => set({ fecha: d.iso })}
-                className={`${ficha} flex w-[4.25rem] shrink-0 snap-start flex-col items-center py-2.5`}
-              >
-                <span className="text-[0.7rem] font-semibold uppercase tracking-wide opacity-70">{i === 0 ? "Hoy" : DIA_SEMANA.format(comoFecha(d.iso)).replace(".", "")}</span>
-                <span className="font-display text-2xl leading-tight tabular-nums">{Number(d.iso.slice(8))}</span>
-                <span className="text-[0.7rem] opacity-70">{d.abierto ? MES.format(comoFecha(d.iso)).replace(".", "") : "cerrado"}</span>
-              </button>
-            ))}
-          </div>
-          <label className="mt-2 flex flex-wrap items-center gap-3 text-sm text-carbon-muted">
-            Otra fecha
-            <input
-              type="date"
-              min={hoy}
-              value={fueraDeLaTira ? f.fecha : ""}
-              onChange={(e) => e.target.value && set({ fecha: e.target.value })}
-              aria-describedby={diaCerrado || avisoHoy ? "reserva-dia-aviso" : undefined}
-              aria-invalid={diaCerrado || undefined}
-              className={`h-10 rounded-xl border px-3 text-carbon ${fueraDeLaTira ? "border-marino bg-marino/5" : "border-carbon/15 bg-white"}`}
-            />
-          </label>
-          {diaCerrado || avisoHoy ? (
-            <p id="reserva-dia-aviso" className={`mt-3 text-sm ${diaCerrado ? "font-semibold text-terracota" : "text-carbon-muted"}`}>
-              {diaCerrado
-                ? "Ese día estamos cerrados. Elige otro día o llámanos."
-                : `Hoy ya no quedan horas para reservar online: te proponemos el ${formatearFechaLarga(f.fecha)}. Para hoy, llámanos.`}
-            </p>
-          ) : null}
-
-          <div className="mt-6 grid gap-6 sm:grid-cols-[1fr_auto]">
-            <div>
-              <p className="text-sm font-semibold text-carbon">Hora</p>
-              {horas.length === 0 ? (
-                <p className="mt-2 rounded-2xl border border-dashed border-carbon/20 px-4 py-3 text-sm text-carbon-muted">
-                  {f.fecha ? "Ese día no quedan horas online." : "Elige primero el día."}
-                </p>
-              ) : (
-                (
-                  [
-                    ["Mediodía", horas.filter((h) => h < "17:00")],
-                    ["Noche", horas.filter((h) => h >= "17:00")],
-                  ] as const
-                ).map(([turno, lista]) =>
-                  lista.length ? (
-                    <div key={turno} className="mt-2">
-                      <p className="mb-1.5 flex items-center gap-1.5 text-xs text-carbon-muted">
-                        <Icon name={turno === "Noche" ? "moon" : "sun"} className="h-3.5 w-3.5" />
-                        {turno}
-                      </p>
-                      <div className="grid grid-cols-5 gap-1.5 sm:flex sm:flex-wrap sm:gap-2">
-                        {lista.map((h) => (
-                          <button key={h} type="button" aria-pressed={f.hora === h} onClick={() => set({ hora: h })} className={`${ficha} min-h-10 text-sm font-semibold tabular-nums sm:px-3`}>
-                            {h}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null,
-                )
-              )}
-            </div>
-            <div>
-              <p id="reserva-personas" className="text-sm font-semibold text-carbon">
-                Personas
-              </p>
-              <div className="mt-2 inline-flex items-center gap-1 rounded-2xl border border-carbon/12 bg-white p-1">
-                <BotonCantidad etiqueta="Una persona menos" icono="minus" disabled={f.personas <= 1} onClick={() => set({ personas: f.personas - 1 })} />
-                <input
-                  type="number"
-                  required
-                  min={1}
-                  max={tope}
-                  value={f.personas}
-                  aria-labelledby="reserva-personas"
-                  onChange={(e) => set({ personas: Number(e.target.value) })}
-                  className="w-14 appearance-none bg-transparent text-center font-display text-3xl tabular-nums text-carbon focus:outline-none [&::-webkit-inner-spin-button]:appearance-none"
-                />
-                <BotonCantidad etiqueta="Una persona más" icono="plus" disabled={f.personas >= tope} onClick={() => set({ personas: f.personas + 1 })} />
-              </div>
-              <p className="mt-1.5 text-xs text-carbon-muted">
-                {despacho ? `Hasta ${aforoDespacho} por turno` : `Más de ${maxPersonas}, llámanos`}
-              </p>
-            </div>
-          </div>
-
-          {despacho && f.fecha && libres !== null ? (
-            <div role="status" className={`mt-5 rounded-2xl px-4 py-3 ${despachoLleno || f.personas > libres ? "bg-terracota-soft text-terracota" : "bg-oliva-soft/70 text-carbon"}`}>
-              <div className="flex items-center justify-between gap-3 text-sm">
-                <span className="font-semibold">
-                  {despachoLleno ? `El Despacho está completo ${noche ? "esa noche" : "a mediodía"}` : `Quedan ${libres} de ${aforoDespacho} plazas ${noche ? "esa noche" : "a mediodía"}`}
+        <Paso n={2} titulo={evento ? "¿Cuántos vais a venir?" : "¿Cuándo y cuántos?"}>
+          {evento ? (
+            <div className="grid gap-5 sm:grid-cols-[1fr_auto] sm:items-end">
+              <div className="flex items-center gap-4 rounded-2xl bg-white p-3 ring-1 ring-carbon/10">
+                <span className="relative h-20 w-16 shrink-0 overflow-hidden rounded-xl bg-noche">
+                  {evento.imagen ? <Image src={evento.imagen} alt="" fill sizes="64px" className="object-cover" /> : null}
                 </span>
-                <Icon name="briefcase" className="h-4 w-4 shrink-0" />
+                <span className="min-w-0">
+                  <span className="block font-display text-xl leading-tight text-carbon">{evento.titulo}</span>
+                  <span className="mt-1 block text-sm text-carbon-muted first-letter:uppercase">
+                    {formatearFechaLarga(evento.fecha)}
+                    {evento.hora ? ` · ${evento.hora.slice(0, 5)}` : ""}
+                  </span>
+                </span>
               </div>
-              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/70">
-                <div className="h-full rounded-full bg-current" style={{ width: `${Math.max(0, Math.min(100, (libres / aforoDespacho) * 100))}%` }} />
-              </div>
-              {despachoLleno ? <p className="mt-2 text-sm">Prueba el comedor, otro turno u otro día.</p> : null}
+              <Contador valor={f.personas} tope={tope} onCambio={(n) => set({ personas: n })} etiqueta="Asistentes" nota={`Más de ${maxPersonas}, llámanos`} />
+              <p className="text-sm text-carbon-muted sm:col-span-2">
+                {horas.length === 0
+                  ? "Para este evento, llámanos y te apuntamos."
+                  : "No se paga nada: es para saber cuántos vamos a ser y prepararlo bien."}
+              </p>
             </div>
-          ) : null}
+          ) : (
+            <>
+            <p className="text-sm font-semibold text-carbon">Día</p>
+            <div className="-mx-1 mt-2 flex snap-x gap-2 overflow-x-auto px-1 pb-2 [scrollbar-width:thin]">
+              {dias.map((d, i) => (
+                <button
+                  key={d.iso}
+                  type="button"
+                  aria-pressed={f.fecha === d.iso}
+                  aria-label={`${formatearFechaLarga(d.iso)}${d.abierto ? "" : ", cerrado"}`}
+                  disabled={!d.abierto}
+                  onClick={() => set({ fecha: d.iso })}
+                  className={`${ficha} flex w-[4.25rem] shrink-0 snap-start flex-col items-center py-2.5`}
+                >
+                  <span className="text-[0.7rem] font-semibold uppercase tracking-wide opacity-70">{i === 0 ? "Hoy" : DIA_SEMANA.format(comoFecha(d.iso)).replace(".", "")}</span>
+                  <span className="font-display text-2xl leading-tight tabular-nums">{Number(d.iso.slice(8))}</span>
+                  <span className="text-[0.7rem] opacity-70">{d.abierto ? MES.format(comoFecha(d.iso)).replace(".", "") : "cerrado"}</span>
+                </button>
+              ))}
+            </div>
+            <label className="mt-2 flex flex-wrap items-center gap-3 text-sm text-carbon-muted">
+              Otra fecha
+              <input
+                type="date"
+                min={hoy}
+                value={fueraDeLaTira ? f.fecha : ""}
+                onChange={(e) => e.target.value && set({ fecha: e.target.value })}
+                aria-describedby={diaCerrado || avisoHoy ? "reserva-dia-aviso" : undefined}
+                aria-invalid={diaCerrado || undefined}
+                className={`h-10 rounded-xl border px-3 text-carbon ${fueraDeLaTira ? "border-marino bg-marino/5" : "border-carbon/15 bg-white"}`}
+              />
+            </label>
+            {diaCerrado || avisoHoy ? (
+              <p id="reserva-dia-aviso" className={`mt-3 text-sm ${diaCerrado ? "font-semibold text-terracota" : "text-carbon-muted"}`}>
+                {diaCerrado
+                  ? "Ese día estamos cerrados. Elige otro día o llámanos."
+                  : `Hoy ya no quedan horas para reservar online: te proponemos el ${formatearFechaLarga(f.fecha)}. Para hoy, llámanos.`}
+              </p>
+            ) : null}
+
+            <div className="mt-6 grid gap-6 sm:grid-cols-[1fr_auto]">
+              <div>
+                <p className="text-sm font-semibold text-carbon">Hora</p>
+                {horas.length === 0 ? (
+                  <p className="mt-2 rounded-2xl border border-dashed border-carbon/20 px-4 py-3 text-sm text-carbon-muted">
+                    {f.fecha ? "Ese día no quedan horas online." : "Elige primero el día."}
+                  </p>
+                ) : (
+                  (
+                    [
+                      ["Mediodía", horas.filter((h) => h < "17:00")],
+                      ["Noche", horas.filter((h) => h >= "17:00")],
+                    ] as const
+                  ).map(([turno, lista]) =>
+                    lista.length ? (
+                      <div key={turno} className="mt-2">
+                        <p className="mb-1.5 flex items-center gap-1.5 text-xs text-carbon-muted">
+                          <Icon name={turno === "Noche" ? "moon" : "sun"} className="h-3.5 w-3.5" />
+                          {turno}
+                        </p>
+                        <div className="grid grid-cols-5 gap-1.5 sm:flex sm:flex-wrap sm:gap-2">
+                          {lista.map((h) => (
+                            <button key={h} type="button" aria-pressed={f.hora === h} onClick={() => set({ hora: h })} className={`${ficha} min-h-10 text-sm font-semibold tabular-nums sm:px-3`}>
+                              {h}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null,
+                  )
+                )}
+              </div>
+              <Contador
+                valor={f.personas}
+                tope={tope}
+                onCambio={(n) => set({ personas: n })}
+                etiqueta="Personas"
+                nota={despacho ? `Hasta ${aforoDespacho} por turno` : `Más de ${maxPersonas}, llámanos`}
+              />
+            </div>
+
+            {despacho && f.fecha && libres !== null ? (
+              <div role="status" className={`mt-5 rounded-2xl px-4 py-3 ${despachoLleno || f.personas > libres ? "bg-terracota-soft text-terracota" : "bg-oliva-soft/70 text-carbon"}`}>
+                <div className="flex items-center justify-between gap-3 text-sm">
+                  <span className="font-semibold">
+                    {despachoLleno ? `El Despacho está completo ${noche ? "esa noche" : "a mediodía"}` : `Quedan ${libres} de ${aforoDespacho} plazas ${noche ? "esa noche" : "a mediodía"}`}
+                  </span>
+                  <Icon name="briefcase" className="h-4 w-4 shrink-0" />
+                </div>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/70">
+                  <div className="h-full rounded-full bg-current" style={{ width: `${Math.max(0, Math.min(100, (libres / aforoDespacho) * 100))}%` }} />
+                </div>
+                {despachoLleno ? <p className="mt-2 text-sm">Prueba el comedor, otro turno u otro día.</p> : null}
+              </div>
+            ) : null}
+            </>
+          )}
         </Paso>
 
         {/* 3 · Comida */}
@@ -583,8 +610,8 @@ export function ReservaForm({
               disabled={estado === "enviando" || diaCerrado || horas.length === 0 || despachoLleno}
               className="btn-primary w-full shrink-0 sm:w-auto"
             >
-              <Icon name="calendar" className="h-4 w-4" />
-              {estado === "enviando" ? "Enviando…" : "Solicitar reserva"}
+              <Icon name={evento ? "users" : "calendar"} className="h-4 w-4" />
+              {estado === "enviando" ? "Enviando…" : evento ? "Apuntarme" : "Solicitar reserva"}
             </button>
           </div>
         </div>
@@ -624,6 +651,31 @@ function Opcion({ marcada, disabled, onClick, icono, titulo, detalle }: { marcad
         <span className={`block text-xs ${marcada ? "text-crema/75" : "text-carbon-muted"}`}>{detalle}</span>
       </span>
     </button>
+  );
+}
+
+function Contador({ valor, tope, onCambio, etiqueta, nota }: { valor: number; tope: number; onCambio: (n: number) => void; etiqueta: string; nota: string }) {
+  return (
+    <div>
+      <p id="reserva-personas" className="text-sm font-semibold text-carbon">
+        {etiqueta}
+      </p>
+      <div className="mt-2 inline-flex items-center gap-1 rounded-2xl border border-carbon/12 bg-white p-1">
+        <BotonCantidad etiqueta="Una persona menos" icono="minus" disabled={valor <= 1} onClick={() => onCambio(valor - 1)} />
+        <input
+          type="number"
+          required
+          min={1}
+          max={tope}
+          value={valor}
+          aria-labelledby="reserva-personas"
+          onChange={(e) => onCambio(Number(e.target.value))}
+          className="w-14 appearance-none bg-transparent text-center font-display text-3xl tabular-nums text-carbon focus:outline-none [&::-webkit-inner-spin-button]:appearance-none"
+        />
+        <BotonCantidad etiqueta="Una persona más" icono="plus" disabled={valor >= tope} onClick={() => onCambio(valor + 1)} />
+      </div>
+      <p className="mt-1.5 text-xs text-carbon-muted">{nota}</p>
+    </div>
   );
 }
 

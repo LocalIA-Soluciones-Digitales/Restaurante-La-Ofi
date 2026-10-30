@@ -22,7 +22,9 @@ export function EventoPortada({ evento, locale, ficha = false }: { evento: Event
   const carteles = cartelesDe(evento);
   const proximo = evento.estado === "proximo";
   const detalle = !ficha && evento.slug && evento.fuente === "supabase" ? href(locale, `/eventos/${evento.slug}`) : null;
-  const reservar = evento.slug && evento.fuente === "supabase" ? href(locale, `/reservar?espacio=evento&evento=${evento.slug}`) : href(locale, "/reservar");
+  // Un evento del panel se apunta desde la web (y Carlos ve cuántos van); si no, mesa.
+  const apuntarse = Boolean(evento.slug && evento.fuente === "supabase");
+  const reservar = apuntarse ? href(locale, `/reservar?espacio=evento&evento=${evento.slug}`) : href(locale, "/reservar");
   const kicker = ficha ? evento.tipo : evento.destacado ? "Próximo evento · Destacado" : "Próximo evento";
 
   return (
@@ -94,8 +96,8 @@ export function EventoPortada({ evento, locale, ficha = false }: { evento: Event
               </a>
             ) : (
               <Link href={reservar} className="btn bg-neon px-6 text-noche hover:bg-neon-soft">
-                <Icon name="calendar" className="h-4 w-4" />
-                Reservar mesa
+                <Icon name={apuntarse ? "users" : "calendar"} className="h-4 w-4" />
+                {apuntarse ? "Apuntarme" : "Reservar mesa"}
               </Link>
             )
           ) : null}

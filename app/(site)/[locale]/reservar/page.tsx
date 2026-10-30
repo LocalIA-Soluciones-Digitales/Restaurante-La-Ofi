@@ -46,6 +46,8 @@ export default async function ReservarPage({ params, searchParams }: Props) {
   const reservables = (eventos ?? []).filter((e) => e.estado === "proximo");
   const horario = resolverHorario(horarioBd, cierres);
   const ahora = new Date();
+  // Llegando desde un evento (aviso, agenda): no es reservar mesa, es apuntarse.
+  const aEvento = espacio === "evento" && reservables.length > 0;
   // Cada plato con su foto si la tiene; el del menú del día, la del mismo plato de la carta.
   const cartaReserva = (carta ?? [])
     .map((c) => ({
@@ -68,12 +70,14 @@ export default async function ReservarPage({ params, searchParams }: Props) {
     <div className="bg-crema pb-20 pt-24 sm:pb-28 lg:pt-32">
       <div className="container-wide grid gap-12 lg:grid-cols-12 lg:gap-16">
         <div className="lg:sticky lg:top-28 lg:col-span-4 lg:self-start">
-          <p className="kicker text-brasa">Reservas</p>
+          <p className="kicker text-brasa">{aEvento ? "Eventos" : "Reservas"}</p>
           <h1 id="reservar-title" className="t-display mt-4 text-carbon">
-            Reserva tu mesa
+            {aEvento ? "Apúntate al evento" : "Reserva tu mesa"}
           </h1>
           <p className="lead mt-5">
-            {online
+            {aEvento && online
+              ? "Dinos cuántos vais a venir y lo preparamos para que estéis a gusto."
+              : online
               ? "Comedor (menú del día o carta) o El Despacho. Te confirmamos por teléfono."
               : "Comedor, terraza o El Despacho. Llámanos y te confirmamos al momento."}
           </p>
@@ -133,7 +137,7 @@ export default async function ReservarPage({ params, searchParams }: Props) {
                   : null
               }
               carta={cartaReserva}
-              eventos={reservables.map((e) => ({ slug: e.slug, titulo: e.titulo, fecha: e.fecha, imagen: e.imagen_url }))}
+              eventos={reservables.map((e) => ({ slug: e.slug, titulo: e.titulo, fecha: e.fecha, hora: e.hora, imagen: e.imagen_url }))}
               espacioInicial={espacio === "despacho" || (espacio === "evento" && reservables.length) ? (espacio as "despacho" | "evento") : "mesa"}
               eventoInicial={evento}
               paraHoy={para === "hoy"}
