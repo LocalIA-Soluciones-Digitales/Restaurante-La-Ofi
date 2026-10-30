@@ -36,3 +36,37 @@ export function conFotosDePlato(secciones: CartaSeccion[]): CartaSeccion[] {
 
 /** Orden de las fotos de plato en la home: abre la brasa (el pulpo) y siguen las tostadas. */
 export const PRIORIDAD_FOTO: ImageKey[] = ["pulpoBrasa", "tostadaBurrata", "tostadaBonita", "tostadaRevuelta", "tostadaSalmon"];
+
+/** Foto real de un plato de la carta (la suya de /admin o la del sitio), o null. */
+export function fotoDePlato(seccion: string, nombre: string, propias: (string | null | undefined)[] = []): string | null {
+  const suya = propias.find(Boolean);
+  if (suya) return suya;
+  const f = FOTOS_DE_PLATO.find((x) => x.seccion === seccion && x.nombre === normalizarNombre(nombre));
+  return f ? IMAGES[f.img].src.src : null;
+}
+
+export type ClasePlato = "pescado" | "carne" | "cuchara" | "verdura" | "huevo" | "pan" | "postre" | "vino" | "cafe" | "otro";
+
+// Por orden: lo primero que encaja manda («arroz con leche» es postre, no cuchara).
+const PISTAS: [ClasePlato, RegExp][] = [
+  ["postre", /\b(postre|crema catalana|tarta|pastel|flan|natilla|helado|sorbete|cuajada|arroz con leche|brownie|coulant|torrija|tiramisu|goxua|mousse|bizcocho|fruta|cheesecake|chocolate|intxaursaltsa|panchineta)/],
+  ["vino", /\b(vino|vinos|cava|cavas|champagne|txakoli|rosado|tinto|crianza|reserva|albarino|verdejo|rioja|ribera)\b/],
+  ["cafe", /\b(cafe|cortado|capuchino|infusion|te)\b/],
+  ["huevo", /\b(huevo|huevos|tortilla|revuelto|revuelta)\b/],
+  ["pescado", /\b(merluza|bacalao|atun|bonito|bonita|rape|lubina|dorada|besugo|salmon|pulpo|calamar|calamares|chipiron|chipirones|gamba|gambas|langostino|langostinos|txitxarro|pescado|pescados|anchoa|anchoas|sardina|kokotxa|kokotxas|mejillon|mejillones|almeja|almejas|rodaballo|marisco|txipiron)/],
+  ["carne", /\b(ternera|carrillera|carrilleras|chuleta|chuleton|txuleta|solomillo|entrecot|cordero|cerdo|pollo|hamburguesa|secreto|presa|costilla|costillas|carne|carnes|lomo|albondiga|albondigas|rabo|pato|cachopo|filete|escalope|chorizo|jamon|morcilla|cecina|pluma|vaca|buey|ibérico|iberico)/],
+  ["cuchara", /\b(alubia|alubias|lenteja|lentejas|garbanzo|garbanzos|potaje|sopa|crema|caldo|porrusalda|purrusalda|marmitako|guiso|pure|arroz|risotto|pasta|espagueti|macarrones|fideua|cocido)/],
+  ["verdura", /\b(ensalada|ensaladas|verdura|verduras|menestra|vegetal|alcachofa|alcachofas|esparrago|esparragos|tomate|pimientos|burrata|guacamole|hummus|piquillo)/],
+  ["pan", /\b(tostada|tostadas|pan|croissant|bocadillo|bocata|sandwich|montadito|pintxo|pintxos|desayuno|desayunos)/],
+];
+
+/** Qué tipo de plato es, por su nombre y su sección (o el grupo del menú). */
+export function clasePlato(nombre: string, seccion = ""): ClasePlato {
+  const s = normalizarNombre(seccion);
+  if (/postre/.test(s)) return "postre";
+  if (/vino|cava|champagne|bodega/.test(s)) return "vino";
+  const n = normalizarNombre(nombre);
+  for (const [clase, re] of PISTAS) if (re.test(n)) return clase;
+  for (const [clase, re] of PISTAS) if (re.test(s)) return clase;
+  return "otro";
+}

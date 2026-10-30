@@ -8,6 +8,7 @@ import { Icon } from "@/components/ui/Icon";
 import { hoyEnMadrid } from "@/lib/format";
 import { estadoAhora, horarioDeHoy, resolverHorario } from "@/lib/horario";
 import { href, type Locale } from "@/lib/i18n";
+import { fotoDePlato, normalizarNombre } from "@/lib/carta-fotos";
 import { creditoFoto, IMAGES } from "@/lib/images";
 import { getCarta, getCierres, getEventos, getHorario, getMenuDia } from "@/lib/restaurant/queries";
 import { pageMetadata } from "@/lib/seo";
@@ -45,11 +46,28 @@ export default async function ReservarPage({ params, searchParams }: Props) {
   const reservables = (eventos ?? []).filter((e) => e.estado === "proximo");
   const horario = resolverHorario(horarioBd, cierres);
   const ahora = new Date();
+  // Cada plato con su foto si la tiene; el del menú del día, la del mismo plato de la carta.
+  const cartaReserva = (carta ?? [])
+    .map((c) => ({
+      id: c.id,
+      nombre: c.nombre,
+      productos: c.productos
+        .filter((p) => p.precio_centimos !== null)
+        .map((p) => ({
+          id: p.id,
+          nombre: p.nombre,
+          descripcion: p.descripcion,
+          precio_centimos: p.precio_centimos!,
+          foto: fotoDePlato(c.slug, p.nombre, [p.imagen_url, ...(p.imagenes ?? [])]),
+        })),
+    }))
+    .filter((c) => c.productos.length > 0);
+  const fotoPorNombre = new Map(cartaReserva.flatMap((c) => c.productos.filter((p) => p.foto).map((p) => [normalizarNombre(p.nombre), p.foto] as const)));
 
   return (
     <div className="bg-crema pb-20 pt-24 sm:pb-28 lg:pt-32">
       <div className="container-wide grid gap-12 lg:grid-cols-12 lg:gap-16">
-        <div className="lg:col-span-5">
+        <div className="lg:sticky lg:top-28 lg:col-span-4 lg:self-start">
           <p className="kicker text-brasa">Reservas</p>
           <h1 id="reservar-title" className="t-display mt-4 text-carbon">
             Reserva tu mesa
@@ -103,23 +121,19 @@ export default async function ReservarPage({ params, searchParams }: Props) {
           ) : null}
         </div>
 
-        <div className="lg:col-span-7">
+        <div className="min-w-0 lg:col-span-8">
           {online ? (
             <ReservaForm
               maxPersonas={cfg?.data?.max_personas ?? 12}
               aforoDespacho={cfg?.data?.aforo_despacho ?? 30}
               menuFranja={{ desde: cfg?.data?.menu_desde ?? "08:00", hasta: cfg?.data?.menu_hasta ?? "16:00" }}
-              menuHoy={menu && menu.disponible && menu.platos.length ? { precio_centimos: menu.precio_centimos, platos: menu.platos } : null}
-              carta={(carta ?? [])
-                .map((c) => ({
-                  id: c.id,
-                  nombre: c.nombre,
-                  productos: c.productos
-                    .filter((p) => p.precio_centimos !== null)
-                    .map((p) => ({ id: p.id, nombre: p.nombre, descripcion: p.descripcion, precio_centimos: p.precio_centimos! })),
-                }))
-                .filter((c) => c.productos.length > 0)}
-              eventos={reservables.map((e) => ({ slug: e.slug, titulo: e.titulo, fecha: e.fecha }))}
+              menuHoy={
+                menu && menu.disponible && menu.platos.length
+                  ? { precio_centimos: menu.precio_centimos, platos: menu.platos.map((p) => ({ ...p, foto: fotoPorNombre.get(normalizarNombre(p.nombre)) ?? null })) }
+                  : null
+              }
+              carta={cartaReserva}
+              eventos={reservables.map((e) => ({ slug: e.slug, titulo: e.titulo, fecha: e.fecha, imagen: e.imagen_url }))}
               espacioInicial={espacio === "despacho" || (espacio === "evento" && reservables.length) ? (espacio as "despacho" | "evento") : "mesa"}
               eventoInicial={evento}
               paraHoy={para === "hoy"}

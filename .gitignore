@@ -51,3 +51,6 @@ __pycache__/
 
 # Copias por ancho de las fotos de platos (scripts/variantes-platos.mjs, en prebuild)
 public/images/platos/*.w*.webp
+
+# Vídeos de /brag (no se versionan)
+brag-output*/

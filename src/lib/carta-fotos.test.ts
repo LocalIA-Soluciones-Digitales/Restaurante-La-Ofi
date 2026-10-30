@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { cartaItem } from "@/lib/carta";
-import { conFotosDePlato } from "@/lib/carta-fotos";
+import { clasePlato, conFotosDePlato } from "@/lib/carta-fotos";
 import type { CartaSeccion } from "@/lib/restaurant/types";
 
 const seccion = (slug: string, nombres: string[]): CartaSeccion => ({
@@ -30,5 +30,20 @@ describe("fotos de plato", () => {
     const propia = { src: "https://x.supabase.co/storage/v1/object/public/burrata.jpg", alt: "Burrata" };
     s.items[0] = { ...s.items[0]!, imagen: propia, imagenes: [propia] };
     expect(conFotosDePlato([s])[0]!.items[0]!.imagen).toEqual(propia);
+  });
+});
+
+describe("clase de plato", () => {
+  it("deduce el tipo por el nombre y, si no, por la sección", () => {
+    expect(clasePlato("Merluza en salsa verde")).toBe("pescado");
+    expect(clasePlato("Carrilleras de ternera al PX")).toBe("carne");
+    expect(clasePlato("Alubias rojas de Gernika")).toBe("cuchara");
+    expect(clasePlato("Arroz con leche")).toBe("postre");
+    expect(clasePlato("Ensalada de la casa")).toBe("verdura");
+    expect(clasePlato("Pastel vasco", "")).toBe("postre");
+    expect(clasePlato("Mar de Frades", "Vinos blancos")).toBe("vino");
+    expect(clasePlato("Tostada clásica")).toBe("pan");
+    expect(clasePlato("Algo raro", "Nuestros pescados")).toBe("pescado");
+    expect(clasePlato("Algo raro")).toBe("otro");
   });
 });
