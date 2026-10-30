@@ -118,9 +118,19 @@ propio, `laofi`**, sin tablas compartidas con otros proyectos. Detalle y barrera
   `20261022120000_laofi_eventos_media`, que faltaba y hacía fallar las fotos de eventos).
   `20261030100000_laofi_pedido_menu_dia` y `20261031100000_laofi_eventos_programa` también están
   aplicadas (comprobado el 2026-10-30).
-  **Pendiente:** `20261101100000_laofi_avisos_push` (avisos al móvil del panel). Además, para que se
-  envíen, La Ofi necesita en `public.settings` sus filas `push_notify_url` y `push_notify_secret`
-  (las mismas que Arrantza: la Edge Function `push-notify` es de la plataforma y sirve a los dos).
+  `20261101100000_laofi_avisos_push` y `20261102100000_laofi_pedido_kds_telefono` también están
+  aplicadas (comprobado el 2026-10-30).
+  **Pendiente:** para que los avisos al móvil se envíen, La Ofi necesita en `public.settings` sus filas
+  `push_notify_url` y `push_notify_secret`. Son las mismas que Arrantza: la Edge Function
+  `push-notify` es de la plataforma, valida un único secreto y envía a los dispositivos del
+  `cliente_id`. Se copian sin ver el secreto, en el SQL Editor de Supabase:
+  ```sql
+  insert into public.settings (cliente_id, key, value)
+  select laofi.cliente_id(), s.key, s.value from public.settings s
+  where s.key in ('push_notify_url', 'push_notify_secret')
+    and s.cliente_id = 'a5a7a212-970e-41eb-80d1-36444d1ead7e'
+  on conflict (cliente_id, key) do update set value = excluded.value, updated_at = now();
+  ```
 - `supabase/seed/la_ofi_tenant.sql` — alta en `public.clientes` (aplicado). Devuelve la `site_key`.
 - `supabase/seed/la_ofi_contenido_publicado.sql` — carta y horario publicados en internet (aplicado).
 - `supabase/seed/la_ofi_carta_oficial.sql` — carta oficial del restaurante (desayunos y El Despacho, sept. 2026); sustituye «Para picotear» y «Brasa» (aplicado).
