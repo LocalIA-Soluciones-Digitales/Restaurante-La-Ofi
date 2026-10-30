@@ -13,8 +13,11 @@ function partes(objetivo: number, ahora: number) {
   };
 }
 
-/** Cuenta atrás hasta un evento (fecha + hora en horario de Madrid). Solo en cliente. */
-export function Countdown({ fechaISO, hora, compacto = false }: { fechaISO: string; hora: string | null; compacto?: boolean }) {
+/**
+ * Cuenta atrás hasta un evento (fecha + hora en horario de Madrid). Solo en cliente.
+ * `claro`: sobre papel, en una fila con filetes (el aviso emergente).
+ */
+export function Countdown({ fechaISO, hora, compacto = false, claro = false }: { fechaISO: string; hora: string | null; compacto?: boolean; claro?: boolean }) {
   const [ahora, setAhora] = useState<number | null>(null);
 
   useEffect(() => {
@@ -36,7 +39,7 @@ export function Countdown({ fechaISO, hora, compacto = false }: { fechaISO: stri
 
   if (ahora === null) return null;
   const p = partes(objetivo, ahora);
-  if (p.terminado) return <p className="text-sm font-semibold text-neon">¡Es hoy!</p>;
+  if (p.terminado) return <p className={`text-sm font-semibold ${claro ? "text-brasa" : "text-neon"}`}>¡Es hoy!</p>;
 
   const celdas: [number, string][] = [
     [p.dias, "días"],
@@ -44,6 +47,22 @@ export function Countdown({ fechaISO, hora, compacto = false }: { fechaISO: stri
     [p.minutos, "min"],
     [p.segundos, "seg"],
   ];
+  if (claro) {
+    return (
+      <div role="timer" aria-label={`Faltan ${p.dias} días y ${p.horas} horas`} className="grid grid-cols-4 divide-x divide-tinta-line border-y border-tinta-line">
+        {celdas.map(([n, label]) => (
+          <div key={label} className="py-3 text-center">
+            <span aria-hidden="true" className="block font-display text-[1.7rem] leading-none tabular-nums text-carbon">
+              {String(n).padStart(2, "0")}
+            </span>
+            <span aria-hidden="true" className="mt-1.5 block text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-carbon-muted">
+              {label}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  }
   return (
     <div role="timer" aria-label={`Faltan ${p.dias} días y ${p.horas} horas`} className="flex gap-2">
       {celdas.map(([n, label]) => (
