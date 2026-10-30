@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Aviso, aCentimos, aEuros, botonPrimario, botonSecundario, card, input } from "@/components/admin/ui";
 import { AllergenIcon } from "@/components/menu/AllergenIcon";
 import { Icon } from "@/components/ui/Icon";
@@ -29,12 +29,23 @@ interface MenuBd {
   platos: { tipo: TipoPlato; nombre: string; descripcion: string | null; alergenos: AlergenoKey[] }[];
 }
 
-const TIPOS: { key: TipoPlato; label: string }[] = [
-  { key: "plato", label: "A elegir" },
-  { key: "primero", label: "Primero" },
-  { key: "segundo", label: "Segundo" },
-  { key: "postre", label: "Postre" },
-];
+/**
+ * «Plato único»: un plato a elegir entre varias opciones (lo habitual en La Ofi;
+ * la web lo muestra como «Plato del día · A elegir»). «Primero y segundo»: menú
+ * clásico, con los platos agrupados por tipo.
+ */
+type Modo = "unico" | "completo";
+
+const GRUPOS: Record<Modo, { tipo: TipoPlato; label: string; ejemplo: string; anadir?: string }[]> = {
+  unico: [{ tipo: "plato", label: "Opciones a elegir", ejemplo: "Secreto con patatas…", anadir: "Añadir otra opción" }],
+  completo: [
+    { tipo: "primero", label: "Primeros", ejemplo: "Lentejas estofadas…", anadir: "Añadir primero" },
+    { tipo: "segundo", label: "Segundos", ejemplo: "Merluza a la plancha…", anadir: "Añadir segundo" },
+    { tipo: "postre", label: "Postres", ejemplo: "Arroz con leche…", anadir: "Añadir postre" },
+  ],
+};
+
+const modoDe = (platos: { tipo: TipoPlato }[]): Modo => (platos.some((p) => p.tipo !== "plato") ? "completo" : "unico");
 
 const nuevo = (tipo: TipoPlato = "plato"): PlatoForm => ({ key: crypto.randomUUID(), tipo, nombre: "", descripcion: "", alergenos: [] });
 
@@ -55,6 +66,7 @@ export function MenuDiaEditor() {
   const [incluye, setIncluye] = useState({ pan: true, bebida: true, postre: true });
   const [notas, setNotas] = useState("");
   const [disponible, setDisponible] = useState(true);
+  const [modo, setModo] = useState<Modo>("unico");
   const [platos, setPlatos] = useState<PlatoForm[]>([nuevo()]);
   const [existe, setExiste] = useState<string | null>(null);
   const [abierto, setAbierto] = useState<string | null>(null);
@@ -63,7 +75,8 @@ export function MenuDiaEditor() {
   // Mientras se carga el menú del día elegido, el formulario está bloqueado: si
   // no, la carga podría pisar lo que ya se ha escrito.
   const [cargando, setCargando] = useState(true);
-  const ultimoInput = useRef<HTMLInputElement>(null);
+  // Plato recién añadido con Intro o «Añadir»: recibe el foco al pintarse.
+  const [enfocar, setEnfocar] = useState<string | null>(null);
 
   const aplicar = (m: MenuBd | null, copia = false) => {
     if (!m) return false;
@@ -72,6 +85,7 @@ export function MenuDiaEditor() {
     setNotas(m.notas ?? "");
     setDisponible(copia ? true : m.disponible);
     setPlatos(m.platos.length ? m.platos.map((p) => ({ key: crypto.randomUUID(), tipo: p.tipo, nombre: p.nombre, descripcion: p.descripcion ?? "", alergenos: p.alergenos })) : [nuevo()]);
+    setModo(modoDe(m.platos));
     return true;
   };
 
@@ -87,6 +101,7 @@ export function MenuDiaEditor() {
         setExiste(r.data.updated_at);
       } else {
         setExiste(null);
+        setModo("unico");
         setPlatos([nuevo()]);
         setNotas("");
       }
@@ -127,6 +142,32 @@ export function MenuDiaEditor() {
   };
 
   const cambiar = (key: string, p: Partial<PlatoForm>) => setPlatos((l) => l.map((x) => (x.key === key ? { ...x, ...p } : x)));
+
+  const anadir = (tipo: TipoPlato) => {
+    const p = nuevo(tipo);
+    setPlatos((l) => [...l, p]);
+    setEnfocar(p.key);
+  };
+
+  const quitar = (key: string) =>
+    setPlatos((l) => {
+      const resto = l.filter((x) => x.key !== key);
+      return resto.length ? resto : [nuevo(modo === "unico" ? "plato" : "primero")];
+    });
+
+  // Al cambiar de tipo de menú se conservan los platos escritos: los «a elegir»
+  // pasan a primeros y, al volver, todo pasa a ser una opción más.
+  const cambiarModo = (m: Modo) => {
+    if (m === modo) return;
+    setModo(m);
+    setPlatos((l) => l.map((p) => ({ ...p, tipo: m === "unico" ? "plato" : p.tipo === "plato" ? "primero" : p.tipo })));
+  };
+
+  // Menús antiguos con «a elegir» mezclado con primeros y segundos: se muestran aparte para no perderlos.
+  const grupos =
+    modo === "completo" && platos.some((p) => p.tipo === "plato")
+      ? [{ tipo: "plato" as TipoPlato, label: "A elegir", ejemplo: "" }, ...GRUPOS.completo]
+      : GRUPOS[modo];
 
   return (
     <div className="mx-auto grid max-w-2xl gap-4">
@@ -176,67 +217,100 @@ export function MenuDiaEditor() {
 
       <fieldset disabled={cargando} aria-busy={cargando} className={`${card} grid gap-3 p-5 disabled:opacity-60`}>
         <h2 className="font-display text-2xl">Platos{cargando ? <span className="ml-2 text-sm font-normal opacity-60">cargando…</span> : null}</h2>
-        <ul className="grid gap-3">
-          {platos.map((p, i) => (
-            <li key={p.key} className="rounded-2xl bg-arena p-3 dark:bg-noche-3">
-              {/* En móvil el nombre del plato va en su propia línea: al lado del tipo quedaba en «Lentejas es…». */}
-              <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:grid-cols-[8rem_minmax(0,1fr)_auto]">
-                <select value={p.tipo} onChange={(e) => cambiar(p.key, { tipo: e.target.value as TipoPlato })} className={input} aria-label="Tipo">
-                  {TIPOS.map((t) => (
-                    <option key={t.key} value={t.key}>
-                      {t.label}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  ref={i === platos.length - 1 ? ultimoInput : undefined}
-                  value={p.nombre}
-                  onChange={(e) => cambiar(p.key, { nombre: e.target.value })}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      setPlatos((l) => [...l, nuevo(p.tipo)]);
-                      window.setTimeout(() => ultimoInput.current?.focus(), 0);
-                    }
-                  }}
-                  placeholder="Lentejas estofadas…"
-                  aria-label={`Plato ${i + 1}`}
-                  className={`${input} max-sm:order-last max-sm:col-span-2`}
-                />
-                <button type="button" onClick={() => setPlatos((l) => (l.length > 1 ? l.filter((x) => x.key !== p.key) : [nuevo()]))} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-carbon/15 dark:border-crema/15">
-                  <Icon name="trash" className="h-4 w-4" />
-                  <span className="sr-only">Quitar plato</span>
-                </button>
-              </div>
-              <button type="button" onClick={() => setAbierto(abierto === p.key ? null : p.key)} className="mt-2 text-xs font-semibold opacity-70 underline-offset-4 hover:underline" aria-expanded={abierto === p.key}>
-                {p.alergenos.length ? `Alérgenos: ${p.alergenos.length}` : "Añadir alérgenos y descripción"}
-              </button>
-              {abierto === p.key ? (
-                <div className="mt-2 grid gap-2">
-                  <input value={p.descripcion} onChange={(e) => cambiar(p.key, { descripcion: e.target.value })} placeholder="Descripción (opcional)" className={input} />
-                  <div className="flex flex-wrap gap-1.5">
-                    {ALERGENOS.map((a) => (
-                      <button
-                        key={a.key}
-                        type="button"
-                        aria-pressed={p.alergenos.includes(a.key)}
-                        onClick={() => cambiar(p.key, { alergenos: p.alergenos.includes(a.key) ? p.alergenos.filter((x) => x !== a.key) : [...p.alergenos, a.key] })}
-                        className="inline-flex min-h-9 items-center gap-1 rounded-full border border-carbon/15 px-2.5 text-xs aria-pressed:border-terracota aria-pressed:bg-terracota aria-pressed:text-crema dark:border-crema/15"
-                      >
-                        <AllergenIcon alergeno={a.key} className="h-3.5 w-3.5" />
-                        {a.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-            </li>
+        <div role="radiogroup" aria-label="Tipo de menú" className="grid grid-cols-2 gap-2">
+          {(
+            [
+              ["unico", "Plato único", "Un plato a elegir entre varias opciones"],
+              ["completo", "Primero y segundo", "Menú con primeros, segundos y postre"],
+            ] as const
+          ).map(([k, titulo, texto]) => (
+            <button
+              key={k}
+              type="button"
+              role="radio"
+              aria-checked={modo === k}
+              onClick={() => cambiarModo(k)}
+              className="grid min-h-11 gap-0.5 rounded-xl border border-carbon/15 px-3 py-2 text-left aria-checked:border-oliva aria-checked:bg-oliva aria-checked:text-crema dark:border-crema/15"
+            >
+              <span className="font-semibold">{titulo}</span>
+              <span className="text-xs opacity-80">{texto}</span>
+            </button>
           ))}
-        </ul>
-        <button type="button" onClick={() => setPlatos((l) => [...l, nuevo(l[l.length - 1]?.tipo)])} className={botonSecundario}>
-          <Icon name="plus" className="h-4 w-4" />
-          Añadir plato
-        </button>
+        </div>
+        {grupos.map((g) => {
+          const lista = platos.filter((p) => p.tipo === g.tipo);
+          return (
+            <section key={g.tipo} aria-label={g.label} className="grid gap-2">
+              <h3 className="text-sm font-semibold">{g.label}</h3>
+              {lista.length ? (
+                <ul className="grid gap-3">
+                  {lista.map((p, i) => (
+                    <li key={p.key} className="rounded-2xl bg-arena p-3 dark:bg-noche-3">
+                      <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+                        <input
+                          ref={
+                            p.key === enfocar
+                              ? (el) => {
+                                  if (el) {
+                                    el.focus();
+                                    setEnfocar(null);
+                                  }
+                                }
+                              : undefined
+                          }
+                          value={p.nombre}
+                          onChange={(e) => cambiar(p.key, { nombre: e.target.value })}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              anadir(p.tipo);
+                            }
+                          }}
+                          placeholder={i === 0 ? g.ejemplo : "Otra opción…"}
+                          aria-label={`${g.label}: plato ${i + 1}`}
+                          className={input}
+                        />
+                        <button type="button" onClick={() => quitar(p.key)} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-carbon/15 dark:border-crema/15">
+                          <Icon name="trash" className="h-4 w-4" />
+                          <span className="sr-only">Quitar plato</span>
+                        </button>
+                      </div>
+                      <button type="button" onClick={() => setAbierto(abierto === p.key ? null : p.key)} className="mt-2 text-xs font-semibold opacity-70 underline-offset-4 hover:underline" aria-expanded={abierto === p.key}>
+                        {p.alergenos.length ? `Alérgenos: ${p.alergenos.length}` : "Añadir alérgenos y descripción"}
+                      </button>
+                      {abierto === p.key ? (
+                        <div className="mt-2 grid gap-2">
+                          <input value={p.descripcion} onChange={(e) => cambiar(p.key, { descripcion: e.target.value })} placeholder="Descripción (opcional)" className={input} />
+                          <div className="flex flex-wrap gap-1.5">
+                            {ALERGENOS.map((a) => (
+                              <button
+                                key={a.key}
+                                type="button"
+                                aria-pressed={p.alergenos.includes(a.key)}
+                                onClick={() => cambiar(p.key, { alergenos: p.alergenos.includes(a.key) ? p.alergenos.filter((x) => x !== a.key) : [...p.alergenos, a.key] })}
+                                className="inline-flex min-h-9 items-center gap-1 rounded-full border border-carbon/15 px-2.5 text-xs aria-pressed:border-terracota aria-pressed:bg-terracota aria-pressed:text-crema dark:border-crema/15"
+                              >
+                                <AllergenIcon alergeno={a.key} className="h-3.5 w-3.5" />
+                                {a.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              {g.anadir ? (
+                <button type="button" onClick={() => anadir(g.tipo)} className={botonSecundario}>
+                  <Icon name="plus" className="h-4 w-4" />
+                  {g.anadir}
+                </button>
+              ) : null}
+            </section>
+          );
+        })}
+        {modo === "unico" ? <p className="text-xs opacity-70">En la web sale como «Plato del día · A elegir». Pulsa Intro para añadir otra opción.</p> : null}
         <input value={notas} onChange={(e) => setNotas(e.target.value)} placeholder="Notas (p. ej. «De lunes a viernes, mediodía»)" className={input} />
         <label className="flex items-center gap-2 text-sm font-semibold">
           <input type="checkbox" checked={disponible} onChange={(e) => setDisponible(e.target.checked)} className="h-5 w-5" />

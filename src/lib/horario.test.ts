@@ -25,19 +25,19 @@ describe("horario", () => {
     expect(agruparHorario(r.semana)).toEqual([{ dias: "Lunes a domingo", horas: "Consultar" }]);
   });
 
-  it("sin filas en Supabase usa el publicado en internet y deja el sábado como Consultar", () => {
+  it("sin filas en Supabase usa el horario confirmado por el propietario", () => {
     const r = resolverHorario(null);
     expect(r.fuente).toBe("internet");
     expect(agruparHorario(r.semana)).toEqual([
-      { dias: "Lunes a jueves", horas: "07:30 – 17:00" },
+      { dias: "Lunes a jueves", horas: "07:30 – 16:30" },
       { dias: "Viernes", horas: "07:30 – 00:00" },
-      { dias: "Sábado", horas: "Consultar" },
+      { dias: "Sábado", horas: "11:00 – 00:00" },
       { dias: "Domingo", horas: "Cerrado" },
     ]);
   });
 
   it("el JSON-LD omite los días sin dato y los cerrados", () => {
-    expect(horarioSchemaOrg(HORARIO_INTERNET).map((d) => d.dayOfWeek)).toEqual(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]);
+    expect(horarioSchemaOrg(HORARIO_INTERNET).map((d) => d.dayOfWeek)).toEqual(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]);
   });
 });
 
@@ -45,7 +45,7 @@ describe("estadoAhora", () => {
   const semana = resolverHorario(null).semana;
   // 2026-10-01 es jueves. Madrid en octubre = UTC+2.
   it("abierto entre semana con la hora de cierre", () => {
-    expect(estadoAhora(semana, new Date("2026-10-01T10:00:00Z"))).toEqual({ abierto: true, texto: "Abierto ahora · cierra a las 17:00" });
+    expect(estadoAhora(semana, new Date("2026-10-01T10:00:00Z"))).toEqual({ abierto: true, texto: "Abierto ahora · cierra a las 16:30" });
   });
   it("antes de abrir indica la hora de apertura de hoy", () => {
     expect(estadoAhora(semana, new Date("2026-10-01T04:00:00Z")).texto).toBe("Cerrado · abre hoy a las 7:30");
@@ -56,17 +56,18 @@ describe("estadoAhora", () => {
   it("el viernes cierra a medianoche", () => {
     expect(estadoAhora(semana, new Date("2026-10-02T20:00:00Z")).texto).toBe("Abierto ahora · cierra a medianoche");
   });
-  it("un día sin dato fiable (sábado) no afirma nada", () => {
-    expect(estadoAhora(semana, new Date("2026-10-03T10:00:00Z"))).toEqual({ abierto: null, texto: "Consulta el horario de hoy" });
+  it("un día sin dato fiable no afirma nada", () => {
+    const sinSabado = semana.map((d, i) => (i === 5 ? null : d));
+    expect(estadoAhora(sinSabado, new Date("2026-10-03T10:00:00Z"))).toEqual({ abierto: null, texto: "Consulta el horario de hoy" });
   });
-  it("pasada la medianoche del viernes ya es sábado (dudoso): no afirma nada", () => {
-    expect(estadoAhora(semana, new Date("2026-10-02T22:30:00Z")).abierto).toBeNull();
+  it("pasada la medianoche del viernes ya es sábado: cerrado hasta las 11:00", () => {
+    expect(estadoAhora(semana, new Date("2026-10-02T22:30:00Z"))).toEqual({ abierto: false, texto: "Cerrado · abre hoy a las 11:00" });
   });
 
   it("da el horario de hoy en Madrid y no inventa los días sin dato", () => {
-    // 2026-10-02 es viernes; 2026-10-03, sábado (sin dato publicado); 2026-10-04, domingo.
+    // 2026-10-02 es viernes; 2026-10-03, sábado; 2026-10-04, domingo.
     expect(horarioDeHoy(HORARIO_INTERNET, new Date("2026-10-02T10:00:00+02:00"))).toBe("07:30 – 00:00");
-    expect(horarioDeHoy(HORARIO_INTERNET, new Date("2026-10-03T10:00:00+02:00"))).toBeNull();
+    expect(horarioDeHoy(HORARIO_INTERNET, new Date("2026-10-03T10:00:00+02:00"))).toBe("11:00 – 00:00");
     expect(horarioDeHoy(HORARIO_INTERNET, new Date("2026-10-04T10:00:00+02:00"))).toBe("Cerrado");
   });
 });
@@ -101,10 +102,10 @@ describe("horas reservables", () => {
   const semana = resolverHorario(null).semana;
 
   it("van de la apertura a media hora antes del cierre, cada 15 minutos", () => {
-    // 2026-10-29 es jueves (07:30 – 17:00); se consulta el día anterior.
+    // 2026-10-29 es jueves (07:30 – 16:30); se consulta el día anterior.
     const horas = horasReservables(semana, [], "2026-10-29", new Date("2026-10-28T10:00:00Z"));
     expect(horas[0]).toBe("07:30");
-    expect(horas.at(-1)).toBe("16:30");
+    expect(horas.at(-1)).toBe("16:00");
     expect(horas).toContain("14:00");
   });
 
@@ -113,11 +114,11 @@ describe("horas reservables", () => {
     expect(horasReservables(semana, [], "2026-10-29", new Date("2026-10-29T12:50:00Z"))[0]).toBe("14:30");
   });
 
-  it("domingo y cierres puntuales no tienen horas; el sábado usa el horario más amplio", () => {
+  it("domingo y cierres puntuales no tienen horas; el sábado, de 11:00 a medianoche", () => {
     expect(horasReservables(semana, [], "2026-11-01", new Date("2026-10-28T10:00:00Z"))).toEqual([]);
     expect(horasReservables(semana, [{ fecha: "2026-10-29", motivo: null }], "2026-10-29", new Date("2026-10-28T10:00:00Z"))).toEqual([]);
     const sabado = horasReservables(semana, [], "2026-10-31", new Date("2026-10-28T10:00:00Z"));
-    expect([sabado[0], sabado.at(-1)]).toEqual(["07:30", "23:15"]);
+    expect([sabado[0], sabado.at(-1)]).toEqual(["11:00", "23:15"]);
   });
 
   it("«Reservar para hoy» a las 20:55 de un miércoles salta al jueves", () => {

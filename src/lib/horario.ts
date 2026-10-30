@@ -18,18 +18,17 @@ export interface HorarioDiaBd {
 }
 
 /**
- * Horario publicado en internet a 2026-10-01: Restaurant Guru (sincronizado con la
- * ficha de Google; coincide con Google Business en el día comprobado, jueves
- * cierre 17:00). El sábado figura como "11:22–00:00", dato claramente erróneo:
- * se deja sin publicar hasta confirmarlo. Ver RESEARCH.md §6.
+ * Horario confirmado por el propietario (29/10/2026): lunes a jueves 7:30–16:30,
+ * viernes 7:30–00:00 y sábado 11:00–00:00. El domingo no lo indicó: se mantiene
+ * cerrado, como en Google. Solo se usa si laofi.horario no tiene filas.
  */
 export const HORARIO_INTERNET: Semana = [
-  { abierto: true, desde: "07:30", hasta: "17:00" },
-  { abierto: true, desde: "07:30", hasta: "17:00" },
-  { abierto: true, desde: "07:30", hasta: "17:00" },
-  { abierto: true, desde: "07:30", hasta: "17:00" },
+  { abierto: true, desde: "07:30", hasta: "16:30" },
+  { abierto: true, desde: "07:30", hasta: "16:30" },
+  { abierto: true, desde: "07:30", hasta: "16:30" },
+  { abierto: true, desde: "07:30", hasta: "16:30" },
   { abierto: true, desde: "07:30", hasta: "00:00" },
-  null,
+  { abierto: true, desde: "11:00", hasta: "00:00" },
   { abierto: false, desde: "00:00", hasta: "00:00" },
 ];
 

@@ -1,4 +1,5 @@
-Contact: tel:+34628409781
+Contact: mailto:laofiparke@gmail.com
+Contact: tel:+34946366479
 Expires: 2027-10-31T00:00:00.000Z
 Preferred-Languages: es, en
 Canonical: https://www.laofiparke.com/.well-known/security.txt
