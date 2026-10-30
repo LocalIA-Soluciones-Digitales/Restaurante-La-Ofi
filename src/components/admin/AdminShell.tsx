@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { AyudaSeccion } from "@/components/admin/AyudaSeccion";
 import { Icon } from "@/components/ui/Icon";
 import { salir } from "@/lib/admin/actions";
-import { ROLES, SECCIONES, type Rol } from "@/lib/admin/roles";
+import { ROLES, SECCIONES, inicioDe, puedeVer, type Rol } from "@/lib/admin/roles";
 
 const GRUPOS = [
   { key: "servicio", label: "Servicio" },
@@ -21,6 +21,12 @@ const GRUPOS = [
  */
 export function AdminShell({ nombre, rol, local, children }: { nombre: string; rol: Rol; local: boolean; children: ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  // Una sección que no es de su rol (escrita a mano o desde un enlace) lleva a su inicio.
+  const permitida = puedeVer(rol, pathname);
+  useEffect(() => {
+    if (!permitida) router.replace(inicioDe(rol));
+  }, [permitida, rol, router]);
   const [abierto, setAbierto] = useState(false);
   const [oscuro, setOscuro] = useState(false);
   const [hora, setHora] = useState("");
@@ -97,7 +103,7 @@ export function AdminShell({ nombre, rol, local, children }: { nombre: string; r
         }`}
       >
         <div className="flex h-14 shrink-0 items-center justify-between gap-2 px-5 alto:h-16">
-          <Link href="/admin" className="font-display text-2xl neon-text">
+          <Link href={inicioDe(rol)} className="font-display text-2xl neon-text">
             la ofi
           </Link>
           {local ? (
@@ -176,7 +182,7 @@ export function AdminShell({ nombre, rol, local, children }: { nombre: string; r
           </button>
         </header>
         <main id="contenido" className="min-w-0 flex-1 p-4 sm:p-6 print:p-0">
-          {children}
+          {permitida ? children : null}
         </main>
       </div>
     </div>
