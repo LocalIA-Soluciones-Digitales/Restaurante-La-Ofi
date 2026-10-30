@@ -129,13 +129,13 @@ function Dialogo({
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
         style={{ ["--r" as string]: proporcion }}
-        className="relative flex max-h-[94dvh] w-full flex-col overflow-hidden rounded-t-2xl bg-crema text-carbon shadow-[0_30px_90px_-20px_rgb(34_30_26/0.55)] max-sm:motion-safe:animate-sheet-up sm:max-w-lg sm:rounded-2xl sm:motion-safe:animate-fade-up lg:h-[min(88dvh,48rem)] lg:max-h-none lg:w-auto lg:max-w-[calc(100vw-3rem)] lg:flex-row lg:rounded-2xl lg:motion-safe:animate-fade-up"
+        className="relative flex max-h-[94dvh] w-full flex-col overflow-hidden rounded-t-2xl max-lg:overflow-y-auto max-lg:overscroll-contain bg-crema text-carbon shadow-[0_30px_90px_-20px_rgb(34_30_26/0.55)] max-sm:motion-safe:animate-sheet-up sm:max-w-lg sm:rounded-2xl sm:motion-safe:animate-fade-up lg:h-[min(88dvh,48rem)] lg:max-h-none lg:w-auto lg:max-w-[calc(100vw-3rem)] lg:flex-row lg:rounded-2xl lg:motion-safe:animate-fade-up"
       >
         <button
           type="button"
           onClick={onClose}
           aria-label="Cerrar"
-          className="absolute right-3 top-3 z-20 grid h-10 w-10 place-items-center rounded-full bg-crema/90 text-carbon shadow-card backdrop-blur transition-colors hover:bg-carbon hover:text-crema"
+          className="z-20 grid h-10 w-10 shrink-0 place-items-center rounded-full bg-crema/90 max-lg:sticky max-lg:top-3 max-lg:-mb-[3.25rem] max-lg:mr-3 max-lg:mt-3 max-lg:self-end lg:absolute lg:right-3 lg:top-3 text-carbon shadow-card backdrop-blur transition-colors hover:bg-carbon hover:text-crema"
         >
           <Icon name="close" className="h-5 w-5" />
         </button>
@@ -144,7 +144,7 @@ function Dialogo({
           // Móvil: todo el ancho y el alto que pida el cartel (como mucho, media pantalla).
           // Escritorio: alto fijo y el ancho que pida el cartel, que así llena su hueco entero.
           <div
-            className="group relative isolate h-[min(calc(min(100vw,32rem)/var(--r)),44dvh)] w-full shrink-0 overflow-hidden bg-carbon motion-safe:transition-[width,height] motion-safe:duration-500 motion-safe:ease-out-expo lg:h-full lg:w-[calc(min(88dvh,48rem)*var(--r))]"
+            className="group relative isolate h-[calc(min(100vw,32rem)/var(--r))] w-full shrink-0 overflow-hidden bg-carbon motion-safe:transition-[width,height] motion-safe:duration-500 motion-safe:ease-out-expo lg:h-full lg:w-[calc(min(88dvh,48rem)*var(--r))]"
             onMouseEnter={() => setPausa(true)}
             onMouseLeave={() => setPausa(false)}
             onTouchStart={() => setPausa(true)}
@@ -205,7 +205,7 @@ function Dialogo({
                 >
                   <Icon name="chevronRight" className="h-5 w-5" />
                 </button>
-                <div className="absolute inset-x-0 bottom-0 z-10 flex justify-center gap-1.5 bg-gradient-to-t from-carbon/50 to-transparent pb-3 pt-8">
+                <div className="absolute inset-x-0 top-0 z-10 flex justify-start gap-1.5 bg-gradient-to-b from-carbon/45 to-transparent pb-8 pl-4 pt-[1.6rem] lg:bottom-0 lg:top-auto lg:justify-center lg:bg-gradient-to-t lg:pb-3 lg:pl-0 lg:pt-8">
                   {media.map((m, i) => (
                     <button
                       key={m.url}
@@ -231,8 +231,8 @@ function Dialogo({
         ) : null}
 
         {/* Texto con scroll propio y botones siempre a la vista abajo. */}
-        <div className="flex min-h-0 flex-1 flex-col lg:w-[27rem] lg:flex-none">
-          <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6 pt-7 lg:px-9 lg:pt-11 [&>*]:shrink-0">
+        <div className="flex shrink-0 flex-col lg:min-h-0 lg:w-[27rem] lg:flex-none">
+          <div className="px-6 pb-6 pt-7 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:px-9 lg:pt-11 [&>*]:shrink-0">
             <p className="kicker flex items-center gap-2.5 text-brasa">
               <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-brasa" />
               {evento.tipo ?? "Evento"} · Próximamente en La Ofi
@@ -275,7 +275,7 @@ function Dialogo({
             </div>
           </div>
 
-          <div className="grid shrink-0 gap-2.5 border-t border-tinta-line bg-papel-2/60 px-5 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:px-6 lg:px-9 lg:pb-6 lg:pt-4">
+          <div className="grid shrink-0 gap-2.5 border-t border-tinta-line bg-papel-2/95 backdrop-blur max-lg:sticky max-lg:bottom-0 max-lg:z-10 px-5 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:px-6 lg:px-9 lg:pb-6 lg:pt-4">
             <div className="grid grid-cols-2 gap-2.5">
               {evento.reservable ? (
                 <Link href={reservarHref} onClick={onClose} className="btn-primary w-full px-3">
