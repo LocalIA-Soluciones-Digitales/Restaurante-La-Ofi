@@ -53,7 +53,7 @@ export function HoyEnLaOfi({
           </Link>
           <Link href={href(locale, "/pedir")} className="btn border border-crema/40 text-crema hover:bg-crema hover:text-carbon">
             <Icon name="bag" className="h-4 w-4" />
-            Pedir para recoger
+            Pedir para llevar
           </Link>
         </div>
         <Link href={href(locale, "/menu-del-dia")} className="mt-6 inline-flex items-center gap-2 text-sm text-crema/75 underline decoration-crema/30 underline-offset-4 hover:text-crema">

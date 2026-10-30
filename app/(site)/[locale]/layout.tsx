@@ -5,7 +5,7 @@ import { AvisoEvento, type AvisoEventoDatos } from "@/components/eventos/AvisoEv
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { ReservarFlotante } from "@/components/layout/ReservarFlotante";
-import { mainNav, primaryNav } from "@/components/layout/nav";
+import { footerNav, mainNav, primaryNav } from "@/components/layout/nav";
 import { JsonLd } from "@/components/ui/JsonLd";
 import { getDictionary } from "@/i18n/dictionaries";
 import { IS_DEMO, SITE_URL } from "@/lib/env";
@@ -105,7 +105,7 @@ export default async function LocaleLayout({
         <main id="contenido" tabIndex={-1} className="flex-1 focus:outline-none">
           {children}
         </main>
-        <Footer locale={locale} items={items} />
+        <Footer locale={locale} items={footerNav(locale, t)} />
         <ReservarFlotante href={href(locale, "/reservar")} label={t.cta.reservarMesa} />
         {aviso ? (
           <AvisoEvento

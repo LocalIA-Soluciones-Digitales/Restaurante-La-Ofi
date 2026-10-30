@@ -68,6 +68,10 @@ export default async function MenuDelDiaPage({ params }: Params) {
             <Link href={href(locale, "/reservar?para=hoy")} className="btn-primary">
               Reservar para hoy
             </Link>
+            <Link href={href(locale, "/pedir")} className="btn border border-crema/40 text-crema hover:bg-crema hover:text-carbon">
+              <Icon name="bag" className="h-4 w-4" />
+              Pedir para llevar
+            </Link>
             <a
               href="#la-carta"
               className="btn border border-crema/40 text-crema hover:bg-crema hover:text-carbon"
@@ -89,7 +93,7 @@ export default async function MenuDelDiaPage({ params }: Params) {
         </div>
       </section>
 
-      <CartaBloque state={carta} config={null} />
+      <CartaBloque state={carta} config={null} pedirHref={href(locale, "/pedir")} />
     </>
   );
 }

@@ -86,7 +86,6 @@ export function Header({ homeHref, reservarHref, items, primary, phoneHref, phon
             className="-ml-2 flex h-11 min-w-11 items-center justify-center gap-2.5 rounded-full px-2 text-[0.8rem] font-semibold tracking-[0.04em] transition-opacity hover:opacity-70"
           >
             <Icon name="menu" className="h-5 w-5" />
-            <span className="hidden sm:inline">Menú</span>
             <span className="sr-only">{labels.abrirMenu}</span>
           </button>
           <nav aria-label="Principal" className="hidden items-center gap-7 lg:flex">

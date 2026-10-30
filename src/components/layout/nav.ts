@@ -8,17 +8,32 @@ export interface NavItem {
   match?: string[];
 }
 
-/** Todas las páginas públicas (menú móvil y pie). */
+/**
+ * Menú desplegable: pocas entradas y claras. «Pedir para llevar» no va aquí: se
+ * anuncia donde se decide qué comer (menú del día, carta y portada). Espacios
+ * vive en el pie y en la portada.
+ */
 export function mainNav(locale: Locale, t: Dictionary): NavItem[] {
   return [
     { href: href(locale), label: t.nav.inicio },
     cartaYMenu(locale, t),
-    { href: href(locale, "/pedir"), label: t.nav.pedirRecoger },
-    { href: href(locale, "/espacios"), label: t.nav.espacios },
-    { href: href(locale, "/grupos"), label: t.nav.grupos },
     { href: href(locale, "/eventos"), label: t.nav.eventos },
+    { href: href(locale, "/grupos"), label: t.nav.grupos },
     { href: href(locale, "/galeria"), label: t.nav.galeria },
     { href: href(locale, "/contacto"), label: t.nav.contacto },
+  ];
+}
+
+/** Pie: lo del menú más Espacios y Pedir para llevar. */
+export function footerNav(locale: Locale, t: Dictionary): NavItem[] {
+  const [inicio, carta, ...resto] = mainNav(locale, t);
+  return [
+    inicio!,
+    carta!,
+    { href: href(locale, "/pedir"), label: t.nav.pedirRecoger },
+    ...resto.slice(0, 2),
+    { href: href(locale, "/espacios"), label: t.nav.espacios },
+    ...resto.slice(2),
   ];
 }
 
@@ -29,12 +44,7 @@ export function mainNav(locale: Locale, t: Dictionary): NavItem[] {
  * desplegable.
  */
 export function primaryNav(locale: Locale, t: Dictionary): NavItem[] {
-  return [
-    cartaYMenu(locale, t),
-    { href: href(locale, "/espacios"), label: t.nav.espacios },
-    { href: href(locale, "/grupos"), label: t.nav.grupos },
-    { href: href(locale, "/eventos"), label: t.nav.eventos },
-  ];
+  return [cartaYMenu(locale, t), { href: href(locale, "/eventos"), label: t.nav.eventos }, { href: href(locale, "/grupos"), label: t.nav.grupos }];
 }
 
 /** Menú del día y carta: una sola entrada en toda la navegación. */

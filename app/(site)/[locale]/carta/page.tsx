@@ -54,7 +54,7 @@ export default async function CartaPage({ params }: Params) {
           </Link>
         ) : null}
       </div>
-      <CartaBloque state={state} config={null} heading="h1" />
+      <CartaBloque state={state} config={null} heading="h1" pedirHref={href(locale, "/pedir")} />
     </>
   );
 }

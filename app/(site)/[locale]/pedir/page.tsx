@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return pageMetadata({
     locale,
     path: "/pedir",
-    title: "Pedir para recoger",
+    title: "Pedir para llevar",
     description: "Pide en La Ofi desde el móvil y recoge en barra a la hora que elijas, o pide desde tu mesa. Edificio 502 del Parque Tecnológico de Bizkaia.",
     noindex: true,
   });

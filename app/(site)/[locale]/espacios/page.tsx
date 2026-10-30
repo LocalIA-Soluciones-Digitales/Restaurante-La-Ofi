@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 const EXTRA: Partial<Record<Espacio["id"], ImageKey>> = { barra: "barraMesasAltas", despacho: "despachoRotulo", terraza: "terrazaCarpa" };
 
 function cta(e: Espacio, locale: Locale) {
-  if (e.cta === "pedir") return { href: href(locale, "/pedir"), label: "Pedir para recoger" };
+  if (e.cta === "pedir") return { href: href(locale, "/pedir"), label: "Pedir para llevar" };
   if (e.cta === "presupuesto") return { href: href(locale, "/grupos#contacto"), label: "Pedir presupuesto" };
   return { href: href(locale, "/reservar"), label: "Reservar mesa" };
 }

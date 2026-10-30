@@ -3,6 +3,7 @@ import { CartaBodega, esSeccionDeVino } from "@/components/carta/CartaBodega";
 import { CartaConPedido } from "@/components/carta/CartaConPedido";
 import { CartaInteractiva } from "@/components/carta/CartaInteractiva";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { Icon } from "@/components/ui/Icon";
 import type { ConfigPedidos } from "@/lib/pedidos/types";
 import type { CartaSeccion, ContentState } from "@/lib/restaurant/types";
 import { SITE } from "@/lib/site";
@@ -16,11 +17,14 @@ export function CartaBloque({
   state,
   config,
   heading: Heading = "h2",
+  pedirHref,
 }: {
   state: ContentState<CartaSeccion[]>;
   /** Con los pedidos online configurados, la carta deja añadir a la cesta. */
   config: ConfigPedidos | null;
   heading?: "h1" | "h2";
+  /** «Pedir para llevar»: se anuncia aquí, donde se elige qué comer. */
+  pedirHref?: string;
 }) {
   // Los vinos no son platos: van en «La bodega», con formato de carta de vinos.
   const todas = state.status === "empty" ? [] : state.data.filter((s) => s.items.length > 0);
@@ -58,6 +62,12 @@ export function CartaBloque({
               <p className="mt-3 text-sm text-carbon-muted">
                 Toca un plato para ver ingredientes y valores nutricionales{config ? ", o añádelo para recoger" : ""}. Si tienes alguna alergia, pregúntanos antes de pedir.
               </p>
+              {pedirHref ? (
+                <a href={pedirHref} className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-full bg-carbon px-5 text-sm font-semibold text-crema hover:bg-carbon/85">
+                  <Icon name="bag" className="h-4 w-4" />
+                  ¿Para llevar? Pídelo y recógelo
+                </a>
+              ) : null}
             </div>
           </div>
 
