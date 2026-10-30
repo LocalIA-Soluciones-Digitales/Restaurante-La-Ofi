@@ -74,6 +74,10 @@ const desplazar = (f: string, n: number) => {
   return d.toISOString().slice(0, 10);
 };
 const DIA_SEMANA = new Intl.DateTimeFormat("es-ES", { weekday: "short", timeZone: "UTC" });
+const DIA_MES = new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short", timeZone: "UTC" });
+/** Lunes de la semana de `f` (las semanas van de lunes a domingo). */
+const lunesDe = (f: string) => desplazar(f, -((new Date(`${f}T12:00:00Z`).getUTCDay() + 6) % 7));
+const diaMes = (f: string) => DIA_MES.format(new Date(`${f}T12:00:00Z`)).replace(".", "");
 const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
 const activa = (r: Reserva) => r.estado !== "CANCELADA" && r.estado !== "NO_SHOW";
 const cuantos = (r: Reserva) =>
@@ -96,8 +100,9 @@ export function solapes(r: Pick<Reserva, "id" | "hora" | "duracion_min">, mesas:
 }
 
 /**
- * Reservas pensadas para gestionarlas desde el móvil: tira de días con lo que hay
- * en cada uno, resumen por espacio (comedor, El Despacho con su aforo, para
+ * Reservas pensadas para gestionarlas desde el móvil: la semana de lunes a domingo
+ * (con flechas para cambiar de semana) y cuántas reservas hay cada día,
+ * resumen por espacio (comedor, El Despacho con su aforo, para
  * recoger, eventos) que sirve de filtro, y la lista por turnos con un color por
  * espacio y el siguiente paso en un solo botón (confirmar → sentar). Tocar una
  * reserva la abre para editarla, asignar mesas, marcar «no vino» o cancelarla.
@@ -112,9 +117,10 @@ export function ReservasBoard({ mesas, zonas, eventos }: { mesas: MesaSalon[]; z
   const [editando, setEditando] = useState<Reserva | "nueva" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Dos semanas desde hoy (para la tira de días) y, si se elige otro día, también ese.
-  const desde = fecha < hoy ? fecha : hoy;
-  const hasta = fecha > desplazar(hoy, 13) ? fecha : desplazar(hoy, 13);
+  // La semana (lunes a domingo) del día elegido: se carga entera para ver cuántas hay cada día.
+  const desde = lunesDe(fecha);
+  const hasta = desplazar(desde, 6);
+  const estaSemana = desde === lunesDe(hoy);
   const cargar = useCallback(async () => {
     const r = await rpcAdmin<Reserva[]>("laofi_admin_reservas", { p_desde: desde, p_hasta: hasta });
     if (r.ok) {
@@ -146,35 +152,63 @@ export function ReservasBoard({ mesas, zonas, eventos }: { mesas: MesaSalon[]; z
 
   const suma = (f: (r: Reserva) => boolean) => activasDia.filter(f).reduce((a, r) => a + r.personas, 0);
   const n = (f: (r: Reserva) => boolean) => activasDia.filter(f).length;
-  const dias = Array.from({ length: 14 }, (_, i) => desplazar(hoy, i));
+  const dias = Array.from({ length: 7 }, (_, i) => desplazar(desde, i));
 
   return (
     <div className="grid gap-4">
-      {/* Tira de días: hoy y las dos próximas semanas, con cuántas reservas hay. */}
-      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden">
-        {dias.map((d) => {
-          const total = reservas.filter((r) => r.fecha === d && activa(r)).length;
-          const porConfirmar = reservas.some((r) => r.fecha === d && r.estado === "PENDIENTE");
-          const sel = d === fecha;
-          return (
-            <button
-              key={d}
-              type="button"
-              onClick={() => setFecha(d)}
-              aria-pressed={sel}
-              className={`relative flex w-14 shrink-0 flex-col items-center rounded-2xl border py-2 transition-colors ${
-                sel
-                  ? "border-marino bg-marino text-crema dark:border-neon dark:bg-neon dark:text-noche"
-                  : "border-carbon/10 bg-white dark:border-crema/10 dark:bg-noche-2"
-              }`}
-            >
-              <span className="text-[0.65rem] font-semibold uppercase tracking-wide opacity-70">{d === hoy ? "Hoy" : DIA_SEMANA.format(new Date(`${d}T12:00:00Z`)).replace(".", "")}</span>
-              <span className="font-display text-2xl leading-tight tabular-nums">{Number(d.slice(8))}</span>
-              <span className={`mt-0.5 text-[0.7rem] font-semibold tabular-nums ${total ? "" : "opacity-40"}`}>{total || "–"}</span>
-              {porConfirmar ? <span aria-label="Hay reservas por confirmar" className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-terracota" /> : null}
+      {/* La semana entera de un vistazo (lunes a domingo, sin scroll) y flechas para cambiar de semana. */}
+      <div className={`${card} p-2.5 sm:p-3`}>
+        <div className="mb-2 flex items-center gap-1">
+          <button type="button" onClick={() => setFecha(desplazar(fecha, -7))} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl hover:bg-arena dark:hover:bg-noche-3">
+            <Icon name="chevronLeft" className="h-5 w-5" />
+            <span className="sr-only">Semana anterior</span>
+          </button>
+          <p className="min-w-0 flex-1 text-center text-sm font-semibold">
+            {estaSemana ? "Esta semana" : `${diaMes(desde)} – ${diaMes(hasta)}`}
+            {estaSemana ? <span className="ml-1.5 font-normal opacity-60">{`${diaMes(desde)} – ${diaMes(hasta)}`}</span> : null}
+          </p>
+          {!estaSemana ? (
+            <button type="button" onClick={() => setFecha(hoy)} className="min-h-10 shrink-0 rounded-xl px-2.5 text-sm font-semibold text-marino hover:bg-arena dark:text-neon dark:hover:bg-noche-3">
+              Hoy
             </button>
-          );
-        })}
+          ) : null}
+          <button type="button" onClick={() => setFecha(desplazar(fecha, 7))} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl hover:bg-arena dark:hover:bg-noche-3">
+            <Icon name="chevronRight" className="h-5 w-5" />
+            <span className="sr-only">Semana siguiente</span>
+          </button>
+        </div>
+        <div className="grid grid-cols-7 gap-1 sm:gap-2">
+          {dias.map((d) => {
+            const total = reservas.filter((r) => r.fecha === d && activa(r)).length;
+            const porConfirmar = reservas.some((r) => r.fecha === d && r.estado === "PENDIENTE");
+            const sel = d === fecha;
+            return (
+              <button
+                key={d}
+                type="button"
+                onClick={() => setFecha(d)}
+                aria-pressed={sel}
+                aria-label={`${formatearFechaLarga(d)}: ${total} reservas${porConfirmar ? ", alguna por confirmar" : ""}`}
+                className={`relative flex min-w-0 flex-col items-center rounded-xl py-1.5 transition-colors sm:py-2 ${
+                  sel
+                    ? "bg-marino text-crema dark:bg-neon dark:text-noche"
+                    : d === hoy
+                      ? "bg-marino/[0.08] dark:bg-neon/10"
+                      : d < hoy
+                        ? "opacity-50 hover:bg-arena dark:hover:bg-noche-3"
+                        : "hover:bg-arena dark:hover:bg-noche-3"
+                }`}
+              >
+                <span className="text-[0.6rem] font-semibold uppercase tracking-wide opacity-70 sm:text-[0.65rem]">
+                  {d === hoy ? "Hoy" : DIA_SEMANA.format(new Date(`${d}T12:00:00Z`)).replace(".", "")}
+                </span>
+                <span className="font-display text-xl leading-tight tabular-nums sm:text-2xl">{Number(d.slice(8))}</span>
+                <span className={`text-[0.68rem] font-semibold tabular-nums ${total ? "" : "opacity-35"}`}>{total || "–"}</span>
+                {porConfirmar ? <span aria-hidden="true" className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-terracota sm:h-2 sm:w-2" /> : null}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
