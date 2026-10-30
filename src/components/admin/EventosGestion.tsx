@@ -547,7 +547,7 @@ function EventoForm({
           <span>
             <span className="font-semibold">Anunciarlo al entrar en la web</span>
             <span className="block opacity-70">
-              Sale un aviso con el cartel y el programa a quien entra en la web, hasta el día del evento (una vez por visitante). Solo se anuncia uno: al marcar este, se
+              Sale un aviso con el cartel y el programa a quien entra en la web, hasta el día del evento (en cada visita, nada más entrar). Solo se anuncia uno: al marcar este, se
               quita a los demás.
             </span>
           </span>

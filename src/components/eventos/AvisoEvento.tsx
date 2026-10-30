@@ -31,8 +31,9 @@ const CLAVE = "laofi-aviso-evento";
 
 /**
  * Aviso emergente con el evento que Carlos elige en /admin/eventos («Anunciar al
- * entrar en la web»). Sale una vez por visitante y evento, a los pocos segundos de
- * entrar, y nunca en la propia ficha del evento, en la agenda ni al reservar.
+ * entrar en la web»). Sale nada más entrar en la web, en cada visita (una vez por
+ * sesión del navegador: navegar por la web no lo vuelve a abrir), y nunca en la
+ * propia ficha del evento ni al reservar.
  */
 export function AvisoEvento({
   evento,
@@ -49,13 +50,14 @@ export function AvisoEvento({
   const pathname = usePathname();
 
   useEffect(() => {
-    if (pathname.includes("/eventos") || pathname.includes("/reservar")) return;
+    if (pathname.includes(`/eventos/${evento.slug}`) || pathname.includes("/reservar")) return;
     try {
-      if (localStorage.getItem(CLAVE) === evento.id) return;
+      if (sessionStorage.getItem(CLAVE) === evento.id) return;
     } catch {
       // Sin almacenamiento (navegación privada estricta): se enseña igual.
     }
-    const t = window.setTimeout(() => setAbierto(true), 1500);
+    // Un instante tras pintar la página, para que se vea entrar y no tape la carga.
+    const t = window.setTimeout(() => setAbierto(true), 350);
     return () => window.clearTimeout(t);
     // Solo al entrar: cambiar de página no lo vuelve a abrir.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -65,9 +67,9 @@ export function AvisoEvento({
   const cerrar = () => {
     setAbierto(false);
     try {
-      localStorage.setItem(CLAVE, evento.id);
+      sessionStorage.setItem(CLAVE, evento.id);
     } catch {
-      // Sin almacenamiento: volverá a salir en la próxima visita.
+      // Sin almacenamiento: volverá a salir al recargar.
     }
   };
   return <Dialogo evento={evento} verHref={verHref} reservarHref={reservarHref} agendaHref={agendaHref} onClose={cerrar} />;
