@@ -40,6 +40,7 @@ export const SECCIONES: Seccion[] = [
   { href: "/admin/caja", label: "Cierre de caja", icon: "receipt", roles: ADMIN, grupo: "gestion" },
   { href: "/admin/contabilidad", label: "Contabilidad", icon: "chart", roles: ADMIN, grupo: "gestion" },
   { href: "/admin/fidelizacion", label: "Fidelización", icon: "gift", roles: ADMIN, grupo: "gestion" },
+  { href: "/admin/avisos", label: "Avisos al móvil", icon: "bell", roles: TODOS, grupo: "ajustes" },
   { href: "/admin/mesas", label: "Mesas y QR", icon: "qr", roles: ADMIN, grupo: "ajustes" },
   { href: "/admin/configuracion", label: "Configuración", icon: "settings", roles: ADMIN, grupo: "ajustes" },
 ];

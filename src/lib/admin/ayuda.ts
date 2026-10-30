@@ -106,6 +106,15 @@ export const AYUDA: Record<string, AyudaSeccion> = {
       "La estación (cocina o barra) decide en qué pantalla aparece cada línea de la comanda.",
     ],
   },
+  "/admin/avisos": {
+    resumen: "Avisos en el móvil o la tablet cuando entra algo por la web: reservas (comedor, El Despacho, menús para recoger), pedidos para recoger, gente que se apunta a eventos y presupuestos.",
+    pasos: [
+      "Abre esta página en el móvil que tiene que recibirlos y pulsa «Activar avisos en este dispositivo». Acepta el permiso.",
+      "En iPhone, primero instala el panel: Safari → Compartir → «Añadir a pantalla de inicio», y ábrelo desde ese icono.",
+      "Enciende o apaga cada tipo de aviso con su interruptor. Vale para todos los dispositivos.",
+    ],
+    consejos: ["«Enviar un aviso de prueba» comprueba que todo llega. Si no suena, revisa que el móvil no esté en silencio o en No molestar."],
+  },
   "/admin/eventos": {
     resumen: "Tardeos, partidos y celebraciones de todo el año. Los publicados salen en la agenda (/eventos); uno de ellos, el que elijas, sale además como aviso al entrar en la web.",
     pasos: [

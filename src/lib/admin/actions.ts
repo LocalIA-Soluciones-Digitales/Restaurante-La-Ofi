@@ -192,3 +192,32 @@ export async function cierresCaja<T>() {
 export async function rpcAdmin<T>(fn: `laofi_admin_${string}`, args: Record<string, unknown> = {}) {
   return staff<T>(fn, args);
 }
+
+// --- Avisos al móvil (Web Push) -------------------------------------------------------
+
+export interface EstadoAvisos {
+  tipos: Record<string, boolean>;
+  /** La Edge Function de envío está dada de alta para La Ofi (public.settings). */
+  configurado: boolean;
+  dispositivos: number;
+}
+
+export async function estadoAvisos() {
+  return staff<EstadoAvisos>("laofi_admin_avisos");
+}
+
+export async function guardarAvisos(tipos: Record<string, boolean>) {
+  return staff<Record<string, boolean>>("laofi_admin_avisos_guardar", { p: tipos });
+}
+
+export async function suscribirAvisos(s: { endpoint: string; p256dh: string; auth: string; userAgent: string }) {
+  return staff<null>("laofi_admin_push_suscribir", { p_endpoint: s.endpoint, p_p256dh: s.p256dh, p_auth: s.auth, p_user_agent: s.userAgent });
+}
+
+export async function bajaAvisos(endpoint: string) {
+  return staff<null>("laofi_admin_push_baja", { p_endpoint: endpoint });
+}
+
+export async function avisoDePrueba() {
+  return staff<boolean>("laofi_admin_push_prueba");
+}

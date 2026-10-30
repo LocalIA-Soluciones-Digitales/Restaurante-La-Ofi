@@ -35,7 +35,7 @@ export async function middleware(request: NextRequest) {
   return NextResponse.redirect(url, pathname === "/" ? 307 : 308);
 }
 
-const PUBLICAS_ADMIN = ["/admin/login", "/admin/manifest.webmanifest"];
+const PUBLICAS_ADMIN = ["/admin/login", "/admin/manifest.webmanifest", "/admin/sw.js"];
 
 async function sesionAdmin(request: NextRequest) {
   // Backend local de desarrollo: sin Supabase Auth (entra el encargado de pruebas).

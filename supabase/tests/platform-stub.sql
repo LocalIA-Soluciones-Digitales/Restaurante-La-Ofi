@@ -61,6 +61,37 @@ language sql stable set search_path to 'public' as $$
   select (auth.jwt() ->> 'email') = any (array['edortadossantos@gmail.com', 'admin@developers.local']);
 $$;
 
+-- Avisos push de la plataforma (los usa también Arrantza): ajustes por cliente,
+-- suscripciones Web Push y pg_net. net.http_post aquí solo apunta la petición en
+-- net.peticiones_test para que los tests vean qué se habría enviado.
+create table public.settings (
+  key text not null,
+  value jsonb not null,
+  updated_at timestamptz not null default now(),
+  cliente_id uuid not null references public.clientes(id),
+  primary key (cliente_id, key)
+);
+
+create table public.push_suscripciones (
+  id uuid primary key default gen_random_uuid(),
+  cliente_id uuid not null references public.clientes(id),
+  user_id uuid,
+  endpoint text not null unique,
+  p256dh text not null,
+  auth text not null,
+  user_agent text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+alter table public.push_suscripciones enable row level security;
+
+create schema net;
+create table net.peticiones_test (id bigserial primary key, url text, headers jsonb, body jsonb);
+create function net.http_post(url text, body jsonb default '{}', params jsonb default '{}', headers jsonb default '{}', timeout_milliseconds integer default 5000)
+returns bigint language sql as $$
+  insert into net.peticiones_test (url, headers, body) values (url, headers, body) returning id;
+$$;
+
 -- Igual que en Supabase: toda función nueva de public es ejecutable por anon y
 -- authenticated salvo que se revoque explícitamente (hallazgo de Palomita §16.3).
 -- Así los tests de seguridad detectan cualquier REVOKE olvidado.
