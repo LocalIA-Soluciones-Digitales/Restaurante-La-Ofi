@@ -66,6 +66,8 @@ export interface ConfigPedidos {
   pagos: { online: boolean; en_local: boolean };
   recogida_activa: boolean;
   franjas: Franja[];
+  /** Hasta qué hora se recoge el menú del día (HH:MM, franja del menú). */
+  menu_hasta?: string;
   /** Vendedor que figura en las condiciones del pedido (ajuste «fiscal» del panel). */
   titular?: { razonSocial: string | null; nif: string | null };
 }
@@ -106,6 +108,14 @@ export interface PedidoPublico {
   items: PedidoItemPublico[];
 }
 
+/** Línea de menú del día (pedido para llevar): un plato de cada grupo del menú de hoy. */
+export interface LineaMenuDiaInput {
+  menu_dia: true;
+  platos: string[];
+  cantidad: number;
+  notas?: string;
+}
+
 export interface LineaPedidoInput {
   producto_id: string;
   cantidad: number;
@@ -126,7 +136,7 @@ export interface PedidoInput {
   notas?: string;
   payment_method: PaymentMethod;
   total_esperado_centimos?: number;
-  items: LineaPedidoInput[];
+  items: (LineaPedidoInput | LineaMenuDiaInput)[];
 }
 
 export type ResultadoAccion<T> =

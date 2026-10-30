@@ -123,7 +123,7 @@ export default async function LocaleLayout({
 /**
  * El evento que Carlos ha elegido anunciar al entrar (si marca varios, el más
  * cercano: los eventos ya vienen por fecha). Las imágenes van en orden: portada,
- * galería y los carteles de cada parte del programa, sin repetir.
+ * los carteles de cada parte del programa y la galería, sin repetir.
  */
 function eventoParaAviso(eventos: Evento[] | null): AvisoEventoDatos | null {
   const e = (eventos ?? []).find((x) => x.aviso_web === true && (x.estado === "proximo" || x.estado === "agotado"));
@@ -134,8 +134,8 @@ function eventoParaAviso(eventos: Evento[] | null): AvisoEventoDatos | null {
     if (!media.some((x) => x.url === m.url)) media.push(m);
   };
   if (e.imagen_url) anadir({ tipo: "imagen", url: e.imagen_url });
-  for (const m of e.media ?? []) anadir(m);
   for (const p of programa) if (p.imagen) anadir({ tipo: "imagen", url: p.imagen });
+  for (const m of e.media ?? []) anadir(m);
   return {
     id: e.id,
     slug: e.slug,

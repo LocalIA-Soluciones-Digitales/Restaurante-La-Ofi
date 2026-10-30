@@ -29,3 +29,20 @@ export function CartelEvento({
     </div>
   );
 }
+
+/** Portada, fotos de la galería y carteles del programa, en ese orden y sin repetir. */
+export function cartelesDe(e: {
+  titulo: string;
+  imagen: { src: string; alt: string } | null;
+  media?: { tipo: string; url: string }[];
+  programa?: { titulo: string; imagen: string | null }[];
+}): { src: string; alt: string }[] {
+  const lista: { src: string; alt: string }[] = [];
+  const anadir = (src: string | null | undefined, alt: string) => {
+    if (src && !lista.some((x) => x.src === src)) lista.push({ src, alt });
+  };
+  anadir(e.imagen?.src, e.imagen?.alt ?? e.titulo);
+  for (const p of e.programa ?? []) anadir(p.imagen, `Cartel: ${p.titulo}`);
+  for (const m of e.media ?? []) if (m.tipo === "imagen") anadir(m.url, e.titulo);
+  return lista;
+}

@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { PedirExperience, type PedirModo } from "@/components/pedir/PedirExperience";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Icon } from "@/components/ui/Icon";
 import { href, type Locale } from "@/lib/i18n";
 import { obtenerConfigPedidos, obtenerGrupo, validarMesa } from "@/lib/pedidos/actions";
-import { getCartaContent } from "@/lib/restaurant/content";
+import { getCartaContent, getMenuDiaContent } from "@/lib/restaurant/content";
 import { pageMetadata } from "@/lib/seo";
 import { SITE } from "@/lib/site";
 
@@ -33,15 +32,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function PedirPage({ params, searchParams }: Props) {
   const { locale } = await params;
   const { mesa, grupo, modo } = await searchParams;
-  // La recogida (menú del día o carta) se pide ahora desde Reservar: un solo sistema.
-  // Aquí quedan los QR de mesa y los pedidos de grupo.
-  if (!mesa && !grupo && modo !== "grupo") redirect(href(locale, "/reservar?espacio=recogida"));
 
-  const [carta, config, mesaR, grupoR] = await Promise.all([
+  const [carta, config, mesaR, grupoR, menu] = await Promise.all([
     getCartaContent(),
     obtenerConfigPedidos(),
     mesa ? validarMesa(mesa) : null,
     grupo ? obtenerGrupo(grupo) : null,
+    // Solo el de hoy y dentro de su franja (8:00–16:00).
+    getMenuDiaContent(),
   ]);
 
   // QR o enlace de grupo que no existe (o mesa desactivada): mensaje claro.
@@ -85,7 +83,16 @@ export default async function PedirPage({ params, searchParams }: Props) {
           .
         </EmptyState>
       ) : (
-        <PedirExperience secciones={carta.data} config={config.ok ? config.data : null} modo={modoPedido} />
+        <PedirExperience
+          secciones={carta.data}
+          config={config.ok ? config.data : null}
+          modo={modoPedido}
+          menu={
+            menu.status === "real"
+              ? { precio_centimos: menu.data.precioCentimos, incluye: menu.data.incluye, platos: [...menu.data.platos, ...menu.data.primeros, ...menu.data.segundos, ...menu.data.postres] }
+              : null
+          }
+        />
       )}
     </div>
   );

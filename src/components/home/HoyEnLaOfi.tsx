@@ -51,7 +51,7 @@ export function HoyEnLaOfi({
             Reservar para hoy
             <Icon name="arrow" className="h-4 w-4" />
           </Link>
-          <Link href={href(locale, "/reservar?espacio=recogida")} className="btn border border-crema/40 text-crema hover:bg-crema hover:text-carbon">
+          <Link href={href(locale, "/pedir")} className="btn border border-crema/40 text-crema hover:bg-crema hover:text-carbon">
             <Icon name="bag" className="h-4 w-4" />
             Pedir para recoger
           </Link>

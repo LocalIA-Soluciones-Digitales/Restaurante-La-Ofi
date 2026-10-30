@@ -87,6 +87,11 @@ const config: Config = {
           "40%": { transform: "scale(1.18)" },
           "100%": { transform: "scale(1)" },
         },
+        // Barrita de progreso del carrusel de carteles.
+        llenar: {
+          "0%": { width: "0%" },
+          "100%": { width: "100%" },
+        },
         "fade-in": {
           "0%": { opacity: "0" },
           "100%": { opacity: "1" },

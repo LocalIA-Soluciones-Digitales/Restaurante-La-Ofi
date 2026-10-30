@@ -56,7 +56,7 @@ export default async function ReservarPage({ params, searchParams }: Props) {
           </h1>
           <p className="lead mt-5">
             {online
-              ? "Comedor (menú del día o carta), El Despacho o recoger el menú del día. Te confirmamos por teléfono."
+              ? "Comedor (menú del día o carta) o El Despacho. Te confirmamos por teléfono."
               : "Comedor, terraza o El Despacho. Llámanos y te confirmamos al momento."}
           </p>
 
@@ -120,7 +120,7 @@ export default async function ReservarPage({ params, searchParams }: Props) {
                 }))
                 .filter((c) => c.productos.length > 0)}
               eventos={reservables.map((e) => ({ slug: e.slug, titulo: e.titulo, fecha: e.fecha }))}
-              espacioInicial={espacio === "despacho" || espacio === "recogida" || (espacio === "evento" && reservables.length) ? (espacio as "despacho" | "recogida" | "evento") : "mesa"}
+              espacioInicial={espacio === "despacho" || (espacio === "evento" && reservables.length) ? (espacio as "despacho" | "evento") : "mesa"}
               eventoInicial={evento}
               paraHoy={para === "hoy"}
               semana={horario.semana}

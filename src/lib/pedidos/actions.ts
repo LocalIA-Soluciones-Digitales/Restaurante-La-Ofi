@@ -104,7 +104,8 @@ export async function obtenerGrupo(token: string): Promise<ResultadoAccion<Grupo
 
 export async function crearPedido(pedido: PedidoInput): Promise<ResultadoAccion<{ id: string; numero_dia: number; total_centimos: number }>> {
   if (!Array.isArray(pedido.items) || pedido.items.length === 0) return { ok: false, error: "Tu pedido está vacío.", codigo: "ERROR" };
-  if (pedido.items.some((i) => !UUID.test(i.producto_id))) return { ok: false, error: "Hay platos de ejemplo que no se pueden pedir.", codigo: "ERROR" };
+  const idsValidos = (i: PedidoInput["items"][number]) => ("menu_dia" in i ? i.platos.length > 0 && i.platos.every((p) => UUID.test(p)) : UUID.test(i.producto_id));
+  if (!pedido.items.every(idsValidos)) return { ok: false, error: "Hay platos de ejemplo que no se pueden pedir.", codigo: "ERROR" };
   return llamar("laofi_crear_pedido", { p_pedido: pedido });
 }
 

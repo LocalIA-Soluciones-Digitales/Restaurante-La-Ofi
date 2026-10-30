@@ -20,7 +20,12 @@ export interface CartLinea {
   notas?: string;
   /** Comensales con los que se comparte (modo "cada uno lo suyo"). */
   compartidoCon: string[];
+  /** Solo en el menú del día: los platos elegidos (uno de cada grupo). productoId es MENU_DIA. */
+  menuPlatos?: string[];
 }
+
+/** productoId de las líneas de menú del día (no es un producto de la carta). */
+export const MENU_DIA = "menu-dia";
 
 export interface CambioCarta {
   nombre: string;
@@ -35,6 +40,8 @@ interface CartValue {
   totalCentimos: number;
   totalItems: number;
   anadir: (item: CartaItem, o?: { seleccion?: SeleccionModificador[]; notas?: string; cantidad?: number }) => void;
+  /** Añade un menú del día con sus platos (los mismos platos suman a la misma línea). */
+  anadirMenu: (platos: { id: string; nombre: string }[], precio: number, cantidad?: number) => void;
   cambiarCantidad: (key: string, delta: number) => void;
   quitarUno: (productoId: string) => void;
   eliminar: (key: string) => void;
@@ -118,6 +125,19 @@ export function CartProvider({ contexto, children }: { contexto: string; childre
     });
   }, []);
 
+  const anadirMenu = useCallback<CartValue["anadirMenu"]>((platos, precio, cantidad = 1) => {
+    const ids = platos.map((p) => p.id);
+    const key = `${MENU_DIA}#${[...ids].sort().join(".")}`;
+    setLineas((prev) => {
+      const existe = prev.find((l) => l.key === key);
+      if (existe) return prev.map((l) => (l.key === key ? { ...l, cantidad: Math.min(50, l.cantidad + cantidad) } : l));
+      return [
+        ...prev,
+        { key, productoId: MENU_DIA, nombre: "Menú del día", precioUnitario: precio, cantidad, seleccion: [], resumen: platos.map((p) => p.nombre).join(" · "), compartidoCon: [], menuPlatos: ids },
+      ];
+    });
+  }, []);
+
   const cambiarCantidad = useCallback((key: string, delta: number) => {
     setLineas((prev) =>
       prev.flatMap((l) => {
@@ -143,6 +163,7 @@ export function CartProvider({ contexto, children }: { contexto: string; childre
       totalCentimos: lineas.reduce((a, l) => a + l.precioUnitario * l.cantidad, 0),
       totalItems: lineas.reduce((a, l) => a + l.cantidad, 0),
       anadir,
+      anadirMenu,
       cambiarCantidad,
       quitarUno,
       eliminar: (key) => setLineas((p) => p.filter((l) => l.key !== key)),
@@ -165,6 +186,8 @@ export function CartProvider({ contexto, children }: { contexto: string; childre
         const items = new Map(secciones.flatMap((s) => s.items).map((i) => [i.id, i]));
         const cambios: CambioCarta[] = [];
         const nuevas = lineas.flatMap((l) => {
+          // El menú del día no está en la carta: lo valida el servidor al enviar.
+          if (l.menuPlatos) return [l];
           const item = items.get(l.productoId);
           const ahora = item ? precioConModificadores(item, l.seleccion) : null;
           if (ahora === null) {
@@ -178,7 +201,7 @@ export function CartProvider({ contexto, children }: { contexto: string; childre
         return cambios;
       },
     }),
-    [lineas, hidratado, anadir, cambiarCantidad, quitarUno],
+    [lineas, hidratado, anadir, anadirMenu, cambiarCantidad, quitarUno],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

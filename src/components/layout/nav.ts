@@ -13,7 +13,7 @@ export function mainNav(locale: Locale, t: Dictionary): NavItem[] {
   return [
     { href: href(locale), label: t.nav.inicio },
     cartaYMenu(locale, t),
-    { href: href(locale, "/reservar?espacio=recogida"), label: t.nav.pedirRecoger },
+    { href: href(locale, "/pedir"), label: t.nav.pedirRecoger },
     { href: href(locale, "/espacios"), label: t.nav.espacios },
     { href: href(locale, "/grupos"), label: t.nav.grupos },
     { href: href(locale, "/eventos"), label: t.nav.eventos },

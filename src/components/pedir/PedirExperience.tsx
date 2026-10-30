@@ -9,7 +9,7 @@ import { CartDrawer, type PedirContexto } from "@/components/pedir/CartDrawer";
 import { CartProvider, useCart } from "@/components/pedir/cart-context";
 import { CuentaMesaDrawer } from "@/components/pedir/CuentaMesaDrawer";
 import { CrearGrupo } from "@/components/pedir/CrearGrupo";
-import { MesaPorNumero } from "@/components/pedir/MesaPorNumero";
+import { ParaLlevar, type MenuParaLlevar } from "@/components/pedir/ParaLlevar";
 import { SessionNotifications } from "@/components/pedir/SessionNotifications";
 import { TableEntry } from "@/components/pedir/TableEntry";
 import { TableSessionProvider, useTableSession } from "@/components/pedir/table-session-context";
@@ -32,11 +32,22 @@ export type PedirModo =
  * franja horaria y pedido de grupo por enlace. Si los pedidos online no están
  * activos (config null), la carta se muestra en modo consulta.
  */
-export function PedirExperience({ secciones, config, modo }: { secciones: CartaSeccion[]; config: ConfigPedidos | null; modo: PedirModo }) {
+export function PedirExperience({
+  secciones,
+  config,
+  modo,
+  menu = null,
+}: {
+  secciones: CartaSeccion[];
+  config: ConfigPedidos | null;
+  modo: PedirModo;
+  /** Menú del día de hoy (solo dentro de su franja), para el pedido para llevar. */
+  menu?: MenuParaLlevar | null;
+}) {
   const contexto = modo.tipo === "mesa" ? `mesa:${modo.token}` : modo.tipo === "grupo" ? `grupo:${modo.grupo.token}` : "recogida";
   const contenido = (
     <CartProvider contexto={contexto}>
-      <Interior secciones={secciones} config={config} modo={modo} />
+      <Interior secciones={secciones} config={config} modo={modo} menu={menu} />
     </CartProvider>
   );
   return modo.tipo === "mesa" ? (
@@ -48,7 +59,7 @@ export function PedirExperience({ secciones, config, modo }: { secciones: CartaS
   );
 }
 
-function Interior({ secciones, config, modo }: { secciones: CartaSeccion[]; config: ConfigPedidos | null; modo: PedirModo }) {
+function Interior({ secciones, config, modo, menu }: { secciones: CartaSeccion[]; config: ConfigPedidos | null; modo: PedirModo; menu: MenuParaLlevar | null }) {
   const cart = useCart();
   const mesa = useTableSession();
   const [cesta, setCesta] = useState(false);
@@ -80,6 +91,17 @@ function Interior({ secciones, config, modo }: { secciones: CartaSeccion[]; conf
 
   if (modo.tipo === "crear-grupo") {
     return <CrearGrupo config={config} />;
+  }
+
+  // Para llevar: página propia (menú del día + carta en lista), sin nada de mesas.
+  if (modo.tipo === "recogida") {
+    return (
+      <>
+        <ParaLlevar secciones={secciones} config={config} menu={menu} />
+        {config ? <CartBar onOpen={() => setCesta(true)} /> : null}
+        {cesta && config ? <CartDrawer contexto={{ tipo: "recogida" }} config={config} secciones={secciones} onClose={() => setCesta(false)} /> : null}
+      </>
+    );
   }
 
   const contextoCesta: PedirContexto = modo.tipo === "mesa" ? { tipo: "mesa" } : modo.tipo === "grupo" ? { tipo: "grupo", grupo: modo.grupo } : { tipo: "recogida" };
@@ -137,8 +159,6 @@ function Interior({ secciones, config, modo }: { secciones: CartaSeccion[]; conf
       ) : null}
 
       <div className="mb-4 space-y-3">
-        {/* Sin QR: pedir en mesa con su número (aunque hoy no haya franjas de recogida). */}
-        {modo.tipo === "recogida" && config ? <MesaPorNumero hayRecogida={config.recogida_activa} /> : null}
         <ActiveOrderBanner />
         {motivoNoPedir ? (
           <p className="flex gap-2 rounded-2xl bg-arena p-4 text-sm text-carbon-muted">

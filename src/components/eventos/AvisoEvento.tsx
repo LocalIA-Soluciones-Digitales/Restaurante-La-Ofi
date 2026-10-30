@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { INTERVALO_CARTELES } from "@/components/eventos/CartelesRotativos";
 import { Countdown } from "@/components/eventos/Countdown";
 import { ProgramaEvento } from "@/components/eventos/ProgramaEvento";
 import { Icon } from "@/components/ui/Icon";
@@ -21,7 +22,7 @@ export interface AvisoEventoDatos {
   precioCentimos: number | null;
   /** Se puede reservar desde la web (estado «próximo»). */
   reservable: boolean;
-  /** Portada, galería y carteles del programa, sin repetir. */
+  /** Portada, carteles del programa y galería, sin repetir (se turnan solos). */
   media: MediaEvento[];
   programa: SubEvento[];
 }
@@ -88,6 +89,7 @@ function Dialogo({
   const ref = useDialogA11y<HTMLDivElement>(onClose);
   const carrusel = useRef<HTMLDivElement>(null);
   const [actual, setActual] = useState(0);
+  const [pausa, setPausa] = useState(false);
   const media = evento.media;
 
   const ir = (i: number) => {
@@ -96,6 +98,17 @@ function Dialogo({
     const destino = (i + media.length) % media.length;
     el.scrollTo({ left: destino * el.clientWidth, behavior: "smooth" });
   };
+
+  // Los carteles se turnan solos (como en la agenda); un vídeo se deja ver entero.
+  const auto = media.length > 1 && !pausa && media[actual]?.tipo !== "video";
+  useEffect(() => {
+    if (!auto || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const id = window.setTimeout(() => {
+      if (!document.hidden) ir(actual + 1);
+    }, INTERVALO_CARTELES);
+    return () => window.clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `ir` solo lee la ref del carrusel
+  }, [auto, actual]);
 
   return (
     <div
@@ -125,7 +138,12 @@ function Dialogo({
         <span aria-hidden="true" className="absolute left-1/2 top-2 z-20 h-1 w-10 -translate-x-1/2 rounded-full bg-crema/40 sm:hidden" />
 
         {media.length > 0 ? (
-          <div className="group relative h-[46dvh] shrink-0 bg-black sm:h-auto sm:w-[52%] sm:min-h-[min(34rem,88dvh)]">
+          <div
+            className="group relative h-[46dvh] shrink-0 bg-black sm:h-auto sm:w-[52%] sm:min-h-[min(34rem,88dvh)]"
+            onMouseEnter={() => setPausa(true)}
+            onMouseLeave={() => setPausa(false)}
+            onTouchStart={() => setPausa(true)}
+          >
             <div
               ref={carrusel}
               onScroll={(e) => setActual(Math.round(e.currentTarget.scrollLeft / Math.max(e.currentTarget.clientWidth, 1)))}
@@ -177,8 +195,16 @@ function Dialogo({
                       onClick={() => ir(i)}
                       aria-label={`Imagen ${i + 1} de ${media.length}`}
                       aria-current={i === actual}
-                      className="h-1.5 w-1.5 rounded-full bg-crema/45 aria-[current=true]:w-6 aria-[current=true]:bg-crema motion-safe:transition-all"
-                    />
+                      className="relative h-1.5 w-1.5 overflow-hidden rounded-full bg-crema/45 aria-[current=true]:w-7 motion-safe:transition-all"
+                    >
+                      {i === actual ? (
+                        <span
+                          key={`${actual}-${auto}`}
+                          className={`absolute inset-y-0 left-0 bg-crema ${auto ? "w-0 motion-safe:animate-[llenar_var(--t)_linear_forwards] motion-reduce:w-full" : "w-full"}`}
+                          style={{ ["--t" as string]: `${INTERVALO_CARTELES}ms` }}
+                        />
+                      ) : null}
+                    </button>
                   ))}
                 </div>
               </>

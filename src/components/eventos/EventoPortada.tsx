@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { CartelEvento } from "@/components/eventos/CartelEvento";
+import { cartelesDe } from "@/components/eventos/CartelEvento";
+import { CartelesRotativos } from "@/components/eventos/CartelesRotativos";
 import { Countdown } from "@/components/eventos/Countdown";
 import { ProgramaEvento } from "@/components/eventos/ProgramaEvento";
 import { BrandPlaceholder } from "@/components/ui/BrandPlaceholder";
@@ -17,6 +18,8 @@ import { SITE } from "@/lib/site";
 export function EventoPortada({ evento, locale, ficha = false }: { evento: EventoView; locale: Locale; ficha?: boolean }) {
   const Titulo = ficha ? "h1" : "h2";
   const programa = evento.programa ?? [];
+  // Si hay varios carteles (uno por parte del programa, o varias fotos), se van turnando.
+  const carteles = cartelesDe(evento);
   const proximo = evento.estado === "proximo";
   const detalle = !ficha && evento.slug && evento.fuente === "supabase" ? href(locale, `/eventos/${evento.slug}`) : null;
   const reservar = evento.slug && evento.fuente === "supabase" ? href(locale, `/reservar?espacio=evento&evento=${evento.slug}`) : href(locale, "/reservar");
@@ -26,8 +29,8 @@ export function EventoPortada({ evento, locale, ficha = false }: { evento: Event
     <div className="container-wide grid items-center gap-10 lg:grid-cols-12 lg:gap-16">
       <div className="lg:col-span-5">
         <div className="relative mx-auto max-w-md overflow-hidden rounded-3xl ring-1 ring-crema/10 shadow-[0_40px_100px_-30px_rgb(0_0_0/0.8)] lg:max-w-none">
-          {evento.imagen ? (
-            <CartelEvento src={evento.imagen.src} alt={evento.imagen.alt} sizes="(min-width: 1024px) 38vw, (min-width: 448px) 448px, 100vw" priority={ficha} className="aspect-[4/5]" />
+          {carteles.length > 0 ? (
+            <CartelesRotativos imagenes={carteles} sizes="(min-width: 1024px) 38vw, (min-width: 448px) 448px, 100vw" priority={ficha} className="aspect-[4/5]" />
           ) : (
             <div className="relative aspect-[4/5] bg-noche-3">
               <BrandPlaceholder label={evento.tipo} icon="music" />

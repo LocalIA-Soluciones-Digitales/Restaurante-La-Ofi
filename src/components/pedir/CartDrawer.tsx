@@ -55,7 +55,11 @@ export function CartDrawer({
   const puedeLocal = config.pagos.en_local || separado;
 
   const [pago, setPago] = useState<"ONLINE" | "LOCAL">(puedeLocal ? "LOCAL" : "ONLINE");
-  const [franja, setFranja] = useState(config.franjas.find((f) => f.libres > 0)?.hora ?? "");
+  // Con menú del día en la cesta, solo las horas hasta que termina el menú.
+  const conMenu = cart.lineas.some((l) => l.menuPlatos);
+  const franjas = conMenu && config.menu_hasta ? config.franjas.filter((f) => HORA.format(new Date(f.hora)) <= config.menu_hasta!) : config.franjas;
+  const [franjaElegida, setFranja] = useState("");
+  const franja = franjas.some((f) => f.hora === franjaElegida && f.libres > 0) ? franjaElegida : (franjas.find((f) => f.libres > 0)?.hora ?? "");
   const [nombre, setNombre] = useState("");
   const [telefono, setTelefono] = useState("");
   const [notas, setNotas] = useState("");
@@ -70,8 +74,9 @@ export function CartDrawer({
   const [revisando, setRevisando] = useState(false);
   // Sin QR (carta o /pedir): el cliente puede decir que está sentado y dar el número
   // de su mesa. Solo vale si sala ya la ha abierto (laofi_mesa_por_numero).
-  const [destino, setDestino] = useState<"recogida" | "mesa">(config.recogida_activa ? "recogida" : "mesa");
-  const [numeroMesa, setNumeroMesa] = useState("");
+  // «Pedir para recoger» es para llevar: sin pedir a una mesa (Carlos no usa pedidos en mesa).
+  const destino = "recogida" as "recogida" | "mesa";
+  const [numeroMesa] = useState("");
   const [mesaDestino, setMesaDestino] = useState<{ token: string; etiqueta: string } | null>(null);
   const [comprobando, setComprobando] = useState(false);
 
@@ -132,13 +137,17 @@ export function CartDrawer({
         payment_method: pago,
         total_esperado_centimos: cart.totalCentimos,
         notas: notasPedido || undefined,
-        items: cart.lineas.map((l) => ({
-          producto_id: l.productoId,
-          cantidad: l.cantidad,
-          opciones: l.seleccion.flatMap((s) => s.opcionIds),
-          notas: l.notas,
-          ...(separado && yo ? { reparto: repartirLinea(l.precioUnitario * l.cantidad, [yo, ...l.compartidoCon]) } : {}),
-        })),
+        items: cart.lineas.map((l) =>
+          l.menuPlatos
+            ? { menu_dia: true as const, platos: l.menuPlatos, cantidad: l.cantidad, notas: l.notas }
+            : {
+                producto_id: l.productoId,
+                cantidad: l.cantidad,
+                opciones: l.seleccion.flatMap((s) => s.opcionIds),
+                notas: l.notas,
+                ...(separado && yo ? { reparto: repartirLinea(l.precioUnitario * l.cantidad, [yo, ...l.compartidoCon]) } : {}),
+              },
+        ),
       };
       if (contexto.tipo === "mesa" && mesa) {
         pedido.mesa_token = mesa.token;
@@ -321,57 +330,11 @@ export function CartDrawer({
             </ul>
           )}
 
-          {contexto.tipo === "recogida" && cart.lineas.length > 0 ? (
-            <fieldset className="grid gap-3">
-              <legend className="mb-2 font-sans text-sm font-semibold uppercase tracking-eyebrow text-carbon">¿Dónde lo quieres?</legend>
-              <div className="grid grid-cols-2 gap-2">
-                <PagoOpcion
-                  activo={destino === "mesa"}
-                  onClick={() => {
-                    setDestino("mesa");
-                    setError(null);
-                  }}
-                  icon="utensils"
-                  titulo="En mi mesa"
-                  texto="Ya estoy sentado: te lo llevamos."
-                />
-                <PagoOpcion
-                  activo={destino === "recogida"}
-                  onClick={() => {
-                    setDestino("recogida");
-                    setError(null);
-                  }}
-                  icon="bag"
-                  titulo="Para recoger"
-                  texto="En barra, a la hora que elijas."
-                />
-              </div>
-              {enMesa ? (
-                <label className="grid gap-1 text-sm">
-                  <span className="font-semibold text-carbon">Número de mesa</span>
-                  <input
-                    value={numeroMesa}
-                    onChange={(e) => {
-                      setNumeroMesa(e.target.value.slice(0, 20));
-                      setMesaDestino(null);
-                      setError(null);
-                    }}
-                    placeholder="Ej. 12 o T3"
-                    autoComplete="off"
-                    autoCapitalize="characters"
-                    className="h-12 rounded-2xl border border-carbon/15 bg-white px-4 text-base focus:border-marino focus:outline-none"
-                  />
-                  <span className="text-xs text-carbon-muted">Lo verás en la mesa. ¿No lo encuentras? Pregúntalo al personal.</span>
-                </label>
-              ) : null}
-            </fieldset>
-          ) : null}
-
           {sinRecogida && !enMesa && cart.lineas.length > 0 ? (
             <p className="flex gap-2 rounded-2xl bg-arena p-4 text-sm text-carbon-muted">
               <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-marino" />
-              Ahora mismo no hay horas de recogida disponibles. Si ya estás sentado, elige «En mi mesa». Si no, guardamos tu pedido en
-              este dispositivo unas horas: vuelve en horario de apertura para enviarlo, o pídelo en barra.
+              Ahora mismo no hay horas de recogida disponibles. Guardamos tu pedido en este dispositivo unas horas: vuelve en horario de
+              recogida para enviarlo, o llámanos.
             </p>
           ) : null}
 
@@ -386,7 +349,7 @@ export function CartDrawer({
                     onChange={(e) => setFranja(e.target.value)}
                     className="h-12 rounded-2xl border border-carbon/15 bg-white px-4 text-base focus:border-marino focus:outline-none"
                   >
-                    {config.franjas.map((f) => (
+                    {franjas.map((f) => (
                       <option key={f.hora} value={f.hora} disabled={f.libres === 0}>
                         {HORA.format(new Date(f.hora))}
                         {f.libres === 0 ? " · completa" : ""}
