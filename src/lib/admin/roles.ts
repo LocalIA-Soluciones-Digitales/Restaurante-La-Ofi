@@ -21,7 +21,8 @@ export interface Seccion {
 }
 
 // De momento el encargado (Carlos) solo ve lo que usa: reservas, pedidos para recoger
-// (Cocina y barra), menú del día, carta y eventos. No trabaja con mesas, TPV ni caja.
+// («Pedidos», no la pantalla de cocina), menú del día, carta y eventos. No trabaja con
+// mesas, TPV ni caja.
 const TODOS = ["admin", "encargado", "camarero", "cocina"] as const;
 const SALA = ["admin", "camarero"] as const;
 const SERVICIO = ["admin", "encargado", "camarero"] as const;
@@ -32,8 +33,9 @@ export const SECCIONES: Seccion[] = [
   { href: "/admin", label: "Hoy", icon: "grid", roles: ["admin", "camarero", "cocina"], grupo: "servicio" },
   { href: "/admin/salon", label: "Salón", icon: "users", roles: SALA, grupo: "servicio" },
   { href: "/admin/tpv", label: "TPV", icon: "cash", roles: SALA, grupo: "servicio" },
-  { href: "/admin/cocina", label: "Cocina y barra", icon: "flame", roles: TODOS, grupo: "servicio" },
+  { href: "/admin/cocina", label: "Cocina y barra", icon: "flame", roles: ["admin", "camarero", "cocina"], grupo: "servicio" },
   { href: "/admin/reservas", label: "Reservas", icon: "calendar", roles: SERVICIO, grupo: "servicio" },
+  { href: "/admin/pedidos", label: "Pedidos", icon: "bag", roles: SERVICIO, grupo: "servicio" },
   { href: "/admin/menu-del-dia", label: "Menú del día", icon: "sun", roles: GESTION, grupo: "gestion" },
   { href: "/admin/carta", label: "Carta", icon: "utensils", roles: GESTION, grupo: "gestion" },
   { href: "/admin/eventos", label: "Eventos", icon: "music", roles: GESTION, grupo: "gestion" },

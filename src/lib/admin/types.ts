@@ -122,6 +122,7 @@ export interface PedidoKds {
   total_centimos: number;
   notas: string | null;
   nombre_cliente: string | null;
+  telefono?: string | null;
   recogida_en: string | null;
   created_at: string;
   updated_at: string;

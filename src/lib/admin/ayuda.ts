@@ -87,6 +87,24 @@ export const AYUDA: Record<string, AyudaSeccion> = {
       "Las reservas sin mesa también aparecen arriba del plano del Salón para arrastrarlas a su sitio.",
     ],
   },
+  "/admin/pedidos": {
+    resumen: "Los pedidos para recoger de hoy, ordenados por la hora a la que vienen. Se actualiza solo y suena cuando entra uno nuevo.",
+    pasos: [
+      "«Aceptar pedido» en cuanto lo veas: pasa a Preparando y cocina se pone con él.",
+      "«Está listo» cuando la bolsa está preparada.",
+      "Cuando llega el cliente: si ya pagó online, «Entregado»; si no, cobra con «Efectivo» o «Tarjeta» y se entrega a la vez.",
+    ],
+    consejos: [
+      "Toca «Activar sonido» al empezar: el navegador no deja sonar sin un primer toque.",
+      "El botón del teléfono llama al cliente directamente.",
+      "La hora sale en rojo si ya ha pasado y el pedido aún no está listo.",
+    ],
+    leyenda: [
+      { color: "#96442B", texto: "Nuevo: falta aceptarlo" },
+      { color: "#D2AE78", texto: "Preparando" },
+      { color: "#56653A", texto: "Listo para recoger" },
+    ],
+  },
   "/admin/menu-del-dia": {
     resumen: "El menú del día en un minuto desde el móvil: fecha, precio, qué incluye y los platos. La web se actualiza al momento.",
     pasos: [

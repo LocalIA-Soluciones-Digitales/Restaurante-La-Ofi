@@ -139,7 +139,7 @@ begin
       'Pedido para recoger nº ' || p.numero_dia,
       concat_ws(' · ', p.nombre_cliente, v_total,
                 case when p.recogida_en is not null then 'recoge a las ' || to_char(p.recogida_en at time zone 'Europe/Madrid', 'HH24:MI') end),
-      '/admin/cocina',
+      '/admin/pedidos',
       'pedido-' || p.id);
   elsif p.tipo = 'MESA' then
     select m.numero into v_mesa from laofi.mesas m where m.id = p.mesa_id;
