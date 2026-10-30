@@ -120,10 +120,10 @@ propio, `laofi`**, sin tablas compartidas con otros proyectos. Detalle y barrera
   aplicadas (comprobado el 2026-10-30).
   `20261101100000_laofi_avisos_push` y `20261102100000_laofi_pedido_kds_telefono` también están
   aplicadas (comprobado el 2026-10-30).
-  **Pendiente:** para que los avisos al móvil se envíen, La Ofi necesita en `public.settings` sus filas
-  `push_notify_url` y `push_notify_secret`. Son las mismas que Arrantza: la Edge Function
+  Avisos al móvil: La Ofi tiene en `public.settings` sus filas `push_notify_url` y
+  `push_notify_secret` (dadas de alta el 2026-10-30). Son las mismas que Arrantza: la Edge Function
   `push-notify` es de la plataforma, valida un único secreto y envía a los dispositivos del
-  `cliente_id`. Se copian sin ver el secreto, en el SQL Editor de Supabase:
+  `cliente_id`. Si hubiera que rehacerlas (sin ver el secreto), en el SQL Editor de Supabase:
   ```sql
   insert into public.settings (cliente_id, key, value)
   select laofi.cliente_id(), s.key, s.value from public.settings s
