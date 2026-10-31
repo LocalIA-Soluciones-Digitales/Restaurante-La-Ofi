@@ -158,7 +158,7 @@ function Dialogo({
           // Hueco de tamaño fijo (móvil: algo menos de media pantalla; escritorio: columna 2:3 a todo el
           // alto): el cartel se ve entero sobre un fondo difuminado de sí mismo.
           <div
-            className="group relative h-[min(46svh,26rem)] w-full shrink-0 bg-carbon lg:aspect-[2/3] lg:h-full lg:w-auto"
+            className="group relative h-[min(46svh,25rem)] w-full shrink-0 bg-carbon lg:aspect-[2/3] lg:h-full lg:w-auto"
             onMouseEnter={() => setEncima(true)}
             onMouseLeave={() => setEncima(false)}
           >
@@ -170,20 +170,28 @@ function Dialogo({
               className="flex h-full snap-x snap-mandatory overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
               {media.map((m, i) => (
-                <div key={m.url} className="relative isolate h-full w-full shrink-0 snap-center overflow-hidden" aria-hidden={i !== actual}>
+                // Como una portada de disco: el cartel entero, con sombra y esquinas, sobre su
+                // propio ambiente (él mismo, muy difuminado y con viñeteado). Así el hueco que
+                // deja un cartel más estrecho que la tarjeta se ve buscado, no como un margen.
+                <div
+                  key={m.url}
+                  className="relative isolate flex h-full w-full shrink-0 snap-center items-center justify-center overflow-hidden px-4 pb-7 pt-9 lg:p-0"
+                  aria-hidden={i !== actual}
+                >
                   {m.tipo === "video" ? (
                     <video src={m.url} muted playsInline loop autoPlay preload="metadata" className="h-full w-full object-contain" />
                   ) : (
                     <>
                       {/* eslint-disable-next-line @next/next/no-img-element -- fondo difuminado del mismo cartel */}
-                      <img src={m.url} alt="" aria-hidden="true" className="absolute inset-0 -z-10 h-full w-full scale-125 object-cover opacity-55 blur-2xl" />
+                      <img src={m.url} alt="" aria-hidden="true" className="absolute inset-0 -z-20 h-full w-full scale-150 object-cover blur-3xl brightness-[0.6] saturate-150" />
+                      <span aria-hidden="true" className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,transparent_35%,rgb(0_0_0/0.5))]" />
                       {/* eslint-disable-next-line @next/next/no-img-element -- fotos subidas desde el panel (Storage) */}
                       <img
                         src={m.url}
                         alt={i === 0 ? evento.titulo : `${evento.titulo}, cartel ${i + 1}`}
                         loading={i === 0 ? "eager" : "lazy"}
                         draggable={false}
-                        className="h-full w-full select-none object-contain"
+                        className="max-h-full max-w-full select-none rounded-xl object-contain shadow-[0_18px_40px_-10px_rgb(0_0_0/0.7)] ring-1 ring-white/10 lg:h-full lg:w-full lg:max-w-none lg:rounded-none lg:shadow-none lg:ring-0"
                       />
                     </>
                   )}
@@ -240,7 +248,7 @@ function Dialogo({
 
         {/* Texto con scroll propio y botones siempre a la vista abajo. */}
         <div className="flex min-h-0 flex-1 flex-col lg:w-[26rem] lg:flex-none">
-          <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-4 pt-5 [scrollbar-width:thin] lg:px-10 lg:pb-8 lg:pt-12">
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-3 pt-4 [scrollbar-width:none] lg:[scrollbar-width:thin] lg:px-10 lg:pb-8 lg:pt-12">
             <p className="kicker flex items-center gap-2 text-brasa">
               <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-brasa" />
               {evento.tipo ?? "Evento"} · Próximamente
@@ -266,11 +274,11 @@ function Dialogo({
               ) : null}
             </ul>
 
+            {/* Descripción, programa y cuenta atrás, solo en escritorio: en el móvil están en «Ver el evento». */}
             {evento.descripcion ? (
-              <p className="mt-3 line-clamp-3 text-[0.95rem] leading-relaxed text-carbon-muted lg:mt-6 lg:line-clamp-none">{evento.descripcion}</p>
+              <p className="mt-6 hidden text-[0.95rem] leading-relaxed text-carbon-muted lg:block">{evento.descripcion}</p>
             ) : null}
 
-            {/* Programa y cuenta atrás, solo en escritorio: en el móvil están en la ficha del evento. */}
             {evento.programa.length > 0 ? (
               <div className="mt-6 hidden border-t border-tinta-line pt-5 lg:block">
                 <p className="mb-4 text-[0.66rem] font-semibold uppercase tracking-[0.16em] text-carbon-muted">Programa</p>
