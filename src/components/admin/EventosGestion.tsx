@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { ApuntadosEvento } from "@/components/admin/ApuntadosEvento";
 import { Modal } from "@/components/admin/Modal";
 import { AvisoFlotante } from "@/components/admin/AvisoFlotante";
 import { Aviso, aCentimos, aEuros, botonPeligro, botonPrimario, botonSecundario, card, input } from "@/components/admin/ui";
@@ -90,8 +91,10 @@ const hoy = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Madrid" }
 /** Por evento: personas apuntadas y en cuántas solicitudes (sin las canceladas). */
 export type Asistentes = Record<string, { personas: number; grupos: number }>;
 
-export function EventosGestion({ inicial, asistentes = {} }: { inicial: EventoBd[]; asistentes?: Asistentes }) {
+export function EventosGestion({ inicial, asistentes: asistentesIniciales = {} }: { inicial: EventoBd[]; asistentes?: Asistentes }) {
   const [eventos, setEventos] = useState(inicial);
+  const [asistentes, setAsistentes] = useState(asistentesIniciales);
+  const [viendoApuntados, setViendoApuntados] = useState<EventoBd | null>(null);
   const [editando, setEditando] = useState<EventoBd | "nuevo" | null>(null);
   const [aviso, setAviso] = useState<{ tono: "ok" | "error"; texto: string } | null>(null);
   const [cambiando, setCambiando] = useState<string | null>(null);
@@ -147,7 +150,8 @@ export function EventosGestion({ inicial, asistentes = {} }: { inicial: EventoBd
           const pasado = e.fecha < hoyISO;
           const portada = e.imagen_url || e.media?.find((m) => m.tipo === "imagen")?.url || e.programa?.find((p) => p.imagen)?.imagen;
           return (
-            <li key={e.id} className={`${card} flex gap-3 p-3 ${pasado ? "opacity-60" : ""} ${e.aviso_web && !pasado ? "border-neon-deep ring-2 ring-neon-deep/30" : ""}`}>
+            <li key={e.id} className={`${card} grid gap-3 p-3 ${pasado ? "opacity-60" : ""} ${e.aviso_web && !pasado ? "border-neon-deep ring-2 ring-neon-deep/30" : ""}`}>
+              <div className="flex gap-3">
               <button type="button" onClick={() => setEditando(e)} className="flex min-w-0 flex-1 gap-3 text-left">
                 <span className="h-24 w-[4.5rem] shrink-0 overflow-hidden rounded-xl bg-arena dark:bg-noche-3">
                   {portada ? (
@@ -171,14 +175,6 @@ export function EventosGestion({ inicial, asistentes = {} }: { inicial: EventoBd
                     {e.precio_centimos !== null ? ` · ${e.precio_centimos === 0 ? "entrada libre" : formatCentimos(e.precio_centimos)}` : ""}
                     {e.aforo ? ` · aforo ${e.aforo}` : ""}
                   </span>
-                  {!pasado && e.estado === "proximo" ? (
-                    <span className="mt-0.5 inline-flex items-center gap-1.5 text-sm font-semibold">
-                      <Icon name="users" className="h-4 w-4 shrink-0" />
-                      {asistentes[e.id]
-                        ? `${asistentes[e.id]!.personas}${e.aforo ? ` de ${e.aforo}` : ""} apuntados · ${asistentes[e.id]!.grupos} ${asistentes[e.id]!.grupos === 1 ? "solicitud" : "solicitudes"}`
-                        : "Nadie apuntado todavía"}
-                    </span>
-                  ) : null}
                   {e.programa?.length ? (
                     <span className="truncate text-sm opacity-70">{e.programa.map((p) => `${p.hora ? `${p.hora.slice(0, 5)} ` : ""}${p.titulo}`).join(" · ")}</span>
                   ) : null}
@@ -199,10 +195,35 @@ export function EventosGestion({ inicial, asistentes = {} }: { inicial: EventoBd
                   {cambiando === e.id ? "…" : e.aviso_web ? "Anunciado" : "Anunciar"}
                 </button>
               ) : null}
+              </div>
+              {!pasado && e.estado === "proximo" ? (
+                // Toca para ver quién va, con su teléfono, y confirmarlos o cancelarlos.
+                <button
+                  type="button"
+                  onClick={() => setViendoApuntados(e)}
+                  className="flex min-h-11 items-center gap-2 rounded-xl bg-neon-soft px-3 text-left text-sm font-semibold text-neon-deep transition-colors hover:brightness-95 dark:bg-neon/15 dark:text-neon"
+                >
+                  <Icon name="users" className="h-4 w-4 shrink-0" />
+                  <span className="min-w-0 flex-1 truncate">
+                    {asistentes[e.id]?.grupos
+                      ? `${asistentes[e.id]!.personas}${e.aforo ? ` de ${e.aforo}` : ""} apuntados · ${asistentes[e.id]!.grupos} ${asistentes[e.id]!.grupos === 1 ? "solicitud" : "solicitudes"}`
+                      : "Nadie apuntado todavía"}
+                  </span>
+                  <span className="shrink-0 font-normal opacity-80">Ver lista</span>
+                  <Icon name="chevronRight" className="h-4 w-4 shrink-0" />
+                </button>
+              ) : null}
             </li>
           );
         })}
       </ul>
+      {viendoApuntados ? (
+        <ApuntadosEvento
+          evento={viendoApuntados}
+          onClose={() => setViendoApuntados(null)}
+          onRecuento={(r) => setAsistentes((a) => ({ ...a, [viendoApuntados.id]: r ?? { personas: 0, grupos: 0 } }))}
+        />
+      ) : null}
       {editando ? (
         <EventoForm
           evento={editando === "nuevo" ? null : editando}

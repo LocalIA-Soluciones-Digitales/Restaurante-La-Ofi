@@ -10,7 +10,7 @@ import { colaCocina, rpcAdmin } from "@/lib/admin/actions";
 import type { MesaSalon, PedidoKds, Zona } from "@/lib/admin/types";
 import { formatCentimos, formatearFechaLarga, hoyEnMadrid } from "@/lib/format";
 
-type EstadoReserva = "PENDIENTE" | "CONFIRMADA" | "SENTADA" | "CANCELADA" | "NO_SHOW";
+export type EstadoReserva = "PENDIENTE" | "CONFIRMADA" | "SENTADA" | "CANCELADA" | "NO_SHOW";
 
 export interface Reserva {
   id: string;
@@ -38,7 +38,7 @@ export interface EventoLite {
   fecha: string;
 }
 
-const ESTADO: Record<EstadoReserva, { label: string; clase: string }> = {
+export const ESTADO: Record<EstadoReserva, { label: string; clase: string }> = {
   PENDIENTE: { label: "Por confirmar", clase: "bg-ratan text-carbon" },
   CONFIRMADA: { label: "Confirmada", clase: "bg-marino/10 text-marino dark:bg-neon/15 dark:text-neon" },
   SENTADA: { label: "Sentada", clase: "bg-oliva-soft text-oliva dark:bg-oliva/30 dark:text-oliva-soft" },
