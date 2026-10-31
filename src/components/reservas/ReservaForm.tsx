@@ -232,6 +232,8 @@ export function ReservaForm({
     return r;
   };
   const faltan = intentado ? revisar() : [];
+  // Los datos van al final y en el móvil quedan fuera de la vista: se avisa antes de pulsar.
+  const sinDatos = !f.nombre.trim() || f.telefono.replace(/\D/g, "").length < 9;
   const falta = (id: string) => faltan.some((x) => x.id === id);
 
   const elegidos = Object.values(f.cantidades).reduce((a, n) => a + n, 0);
@@ -712,6 +714,14 @@ export function ReservaForm({
             <p role="alert" className="mb-3 text-sm font-semibold text-terracota">
               {error}
             </p>
+          ) : sinDatos ? (
+            <a href="#reserva-nombre" className="mb-3 flex items-center gap-2 rounded-2xl bg-papel-2 px-4 py-2.5 text-sm text-carbon hover:bg-papel-3">
+              <Icon name="edit" className="h-4 w-4 shrink-0 text-brasa" />
+              <span>
+                Rellena <strong className="font-semibold">tu nombre y teléfono</strong> para {evento ? "apuntarte" : "enviarla"}.
+              </span>
+              <Icon name="arrow" className="ml-auto h-4 w-4 shrink-0 rotate-90 text-carbon-muted" />
+            </a>
           ) : null}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-carbon first-letter:uppercase" aria-live="polite">
@@ -720,7 +730,7 @@ export function ReservaForm({
             <button
               type="submit"
               disabled={estado === "enviando"}
-              className="btn-primary w-full shrink-0 sm:w-auto"
+              className={`btn-primary w-full shrink-0 transition-opacity sm:w-auto ${sinDatos ? "opacity-60" : ""}`}
             >
               <Icon name={evento ? "users" : "calendar"} className="h-4 w-4" />
               {estado === "enviando" ? "Enviando…" : evento ? "Apuntarme" : "Solicitar reserva"}
