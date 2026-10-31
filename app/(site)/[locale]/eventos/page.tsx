@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AgendaMensual } from "@/components/eventos/AgendaMensual";
 import { EventCard } from "@/components/eventos/EventCard";
 import { EventoPortada } from "@/components/eventos/EventoPortada";
 import { Icon } from "@/components/ui/Icon";
@@ -7,10 +8,10 @@ import { JsonLd } from "@/components/ui/JsonLd";
 import { PageHero } from "@/components/ui/PageHero";
 import { SectionRule } from "@/components/ui/SectionRule";
 import { IS_DEMO } from "@/lib/env";
+import { hoyEnMadrid } from "@/lib/format";
 import { href, type Locale } from "@/lib/i18n";
 import { getAgendaEventos } from "@/lib/restaurant/content";
 import { eventJsonLd } from "@/lib/restaurant/jsonld";
-import type { EventoView } from "@/lib/restaurant/types";
 import { pageMetadata } from "@/lib/seo";
 import { SITE } from "@/lib/site";
 
@@ -31,27 +32,15 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   });
 }
 
-const MES = new Intl.DateTimeFormat("es-ES", { month: "long", year: "numeric", timeZone: "UTC" });
-
-/** Agrupa por mes («noviembre de 2026»), respetando el orden de llegada. */
-function porMes(eventos: EventoView[]): [string, EventoView[]][] {
-  const grupos = new Map<string, EventoView[]>();
-  for (const e of eventos) {
-    const mes = e.fecha ? MES.format(new Date(`${e.fecha.slice(0, 7)}-15T12:00:00Z`)) : "Fecha por anunciar";
-    grupos.set(mes, [...(grupos.get(mes) ?? []), e]);
-  }
-  return [...grupos];
-}
-
 /**
  * Agenda de La Ofi: el evento que Carlos destaca (o el siguiente) a lo grande,
- * el resto del año por meses y, al final, lo ya celebrado este año.
+ * debajo la agenda completa mes a mes (con calendario) y, al final, lo ya
+ * celebrado este año.
  */
 export default async function EventosPage({ params }: Params) {
   const { locale } = await params;
   const { proximos, pasados } = await getAgendaEventos();
   const destacado = proximos.find((e) => e.destacado) ?? proximos[0] ?? null;
-  const resto = proximos.filter((e) => e !== destacado);
   const jsonLd = IS_DEMO ? [] : proximos.map(eventJsonLd).filter((e): e is NonNullable<typeof e> => e !== null);
 
   return (
@@ -67,19 +56,15 @@ export default async function EventosPage({ params }: Params) {
         lead="Tardeos, música en directo, DJ y partidos en pantalla grande. Todo lo que pasa en el 502 este año, con su programa y su cartel."
       >
         {proximos.length > 0 ? (
-          <p className="mt-8 text-sm font-semibold text-carbon-muted">
-            {proximos.length === 1 ? "1 evento en agenda" : `${proximos.length} eventos en agenda`}
-          </p>
+          <a href="#agenda" className="link-arrow mt-8 text-sm font-semibold">
+            {proximos.length === 1 ? "1 evento en agenda" : `${proximos.length} eventos en agenda`} · Ver por meses
+          </a>
         ) : null}
       </PageHero>
 
       {destacado ? (
-        <section aria-label="Próximo evento" className="relative overflow-hidden bg-noche py-16 text-crema sm:py-24">
-          <div aria-hidden="true" className="pointer-events-none absolute -left-40 top-0 h-[32rem] w-[32rem] rounded-full bg-neon-deep/20 blur-3xl" />
-          <div aria-hidden="true" className="pointer-events-none absolute -bottom-40 right-0 h-[28rem] w-[28rem] rounded-full bg-brasa/25 blur-3xl" />
-          <div className="relative">
-            <EventoPortada evento={destacado} locale={locale} />
-          </div>
+        <section aria-label="Próximo evento" className="section bg-papel-2">
+          <EventoPortada evento={destacado} locale={locale} />
         </section>
       ) : (
         <section className="section bg-papel-2">
@@ -102,26 +87,12 @@ export default async function EventosPage({ params }: Params) {
         </section>
       )}
 
-      {resto.length > 0 ? (
-        <section aria-labelledby="agenda-title" className="section bg-crema">
+      {proximos.length > 0 ? (
+        <section id="agenda" aria-labelledby="agenda-title" className="section scroll-mt-16 bg-crema">
           <div className="container-wide">
-            <SectionRule id="agenda-title" title="Lo que viene" aside={<span>Agenda {new Date().getFullYear()}</span>} />
-            {porMes(resto).map(([mes, eventos]) => (
-              <div key={mes} className="mt-12">
-                <h3 className="flex items-center gap-4 font-display text-2xl text-carbon first-letter:uppercase">
-                  {mes}
-                  <span aria-hidden="true" className="h-px flex-1 bg-tinta-line" />
-                  <span className="font-sans text-sm font-semibold normal-case text-carbon-muted">{eventos.length}</span>
-                </h3>
-                <ul className="mt-8 grid gap-x-8 gap-y-14 sm:grid-cols-2 xl:grid-cols-3">
-                  {eventos.map((e) => (
-                    <li key={e.id}>
-                      <EventCard evento={e} locale={locale} />
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+            <SectionRule id="agenda-title" title="Toda la agenda, mes a mes" aside={<span>Lo que viene</span>} />
+            <p className="lead mt-6 max-w-2xl">Elige un mes y mira qué hay programado. Los días marcados en el calendario tienen evento.</p>
+            <AgendaMensual eventos={proximos} hoy={hoyEnMadrid()} locale={locale} />
           </div>
         </section>
       ) : null}

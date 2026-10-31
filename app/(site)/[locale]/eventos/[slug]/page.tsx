@@ -45,7 +45,7 @@ export default async function EventoPage({ params }: Params) {
     <article>
       {jsonLd ? <JsonLd data={jsonLd} /> : null}
 
-      {/* Franja clara bajo la cabecera de la web (su texto es oscuro). */}
+      {/* Volver a la agenda, bajo la cabecera de la web. */}
       <div className="bg-crema pb-4 pt-24 lg:pt-28">
         <div className="container-wide">
           <Link href={href(locale, "/eventos")} className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-carbon-muted hover:text-carbon">
@@ -54,16 +54,12 @@ export default async function EventoPage({ params }: Params) {
           </Link>
         </div>
       </div>
-      <header className="relative overflow-hidden bg-noche py-14 text-crema sm:py-24">
-        <div aria-hidden="true" className="pointer-events-none absolute -left-40 top-0 h-[32rem] w-[32rem] rounded-full bg-neon-deep/20 blur-3xl" />
-        <div aria-hidden="true" className="pointer-events-none absolute -bottom-40 right-0 h-[28rem] w-[28rem] rounded-full bg-brasa/25 blur-3xl" />
-        <div className="relative">
-          <EventoPortada evento={evento} locale={locale} ficha />
-        </div>
+      <header className="bg-crema pb-16 pt-6 sm:pb-24">
+        <EventoPortada evento={evento} locale={locale} ficha />
       </header>
 
       {evento.descripcion ? (
-        <section aria-label="Sobre el evento" className="section bg-crema">
+        <section aria-label="Sobre el evento" className="section border-t border-tinta-line bg-crema">
           <div className="container-page max-w-3xl">
             <p className="whitespace-pre-line font-display text-[1.35rem] font-light leading-relaxed text-carbon sm:text-2xl">{evento.descripcion}</p>
           </div>
