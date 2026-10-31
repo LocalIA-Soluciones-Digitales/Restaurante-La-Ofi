@@ -1,11 +1,12 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Modal } from "@/components/admin/Modal";
 import { Aviso, botonPrimario, botonSecundario, card, input } from "@/components/admin/ui";
 import { Icon, type IconName } from "@/components/ui/Icon";
-import { rpcAdmin } from "@/lib/admin/actions";
-import type { MesaSalon, Zona } from "@/lib/admin/types";
+import { colaCocina, rpcAdmin } from "@/lib/admin/actions";
+import type { MesaSalon, PedidoKds, Zona } from "@/lib/admin/types";
 import { formatearFechaLarga, hoyEnMadrid } from "@/lib/format";
 
 type EstadoReserva = "PENDIENTE" | "CONFIRMADA" | "SENTADA" | "CANCELADA" | "NO_SHOW";
@@ -59,6 +60,8 @@ const ESPACIO: Record<Reserva["espacio"], { label: string; icon: IconName; franj
 const AFORO_DESPACHO = 30;
 /** Desde esta hora es turno de noche (igual que el aforo de El Despacho en la base de datos). */
 const NOCHE = "17:00";
+/** Antes de esta hora, desayunos: van en su propio grupo («Mañana»), no en el mediodía. */
+const MEDIODIA = "12:00";
 
 /** «Menú del día: 2× Lentejas, 1× Merluza» · «Carta» · null si solo reservan mesa. */
 export function resumenComida(c: Reserva["comida"]): string | null {
@@ -106,11 +109,16 @@ export function solapes(r: Pick<Reserva, "id" | "hora" | "duracion_min">, mesas:
  * recoger, eventos) que sirve de filtro, y la lista por turnos con un color por
  * espacio y el siguiente paso en un solo botón (confirmar → sentar). Tocar una
  * reserva la abre para editarla, asignar mesas, marcar «no vino» o cancelarla.
- * La vista «Por mesas» (línea de tiempo) sigue para quien trabaja con el salón.
+ * La vista «Por mesas» (línea de tiempo) sigue para quien trabaja con el salón
+ * (con `conMesas`; el encargado no usa mesas y no la ve).
  */
-export function ReservasBoard({ mesas, zonas, eventos }: { mesas: MesaSalon[]; zonas: Zona[]; eventos: EventoLite[] }) {
+export function ReservasBoard({ mesas, zonas, eventos, conMesas = true }: { mesas: MesaSalon[]; zonas: Zona[]; eventos: EventoLite[]; conMesas?: boolean }) {
   const hoy = hoyEnMadrid();
+  const router = useRouter();
   const [fecha, setFecha] = useState(hoy);
+  // Pedidos de «Pedir para llevar» de hoy (los pedidos son siempre del mismo día):
+  // cuentan en «Para recoger» y esa tarjeta lleva a Pedidos.
+  const [pedidosHoy, setPedidosHoy] = useState(0);
   const [vista, setVista] = useState<"lista" | "linea">("lista");
   const [filtro, setFiltro] = useState<Filtro>("todo");
   const [reservas, setReservas] = useState<Reserva[]>([]);
@@ -122,11 +130,17 @@ export function ReservasBoard({ mesas, zonas, eventos }: { mesas: MesaSalon[]; z
   const hasta = desplazar(desde, 6);
   const estaSemana = desde === lunesDe(hoy);
   const cargar = useCallback(async () => {
-    const r = await rpcAdmin<Reserva[]>("laofi_admin_reservas", { p_desde: desde, p_hasta: hasta });
+    const [r, enMarcha, hechos] = await Promise.all([
+      rpcAdmin<Reserva[]>("laofi_admin_reservas", { p_desde: desde, p_hasta: hasta }),
+      colaCocina<PedidoKds>(),
+      colaCocina<PedidoKds>(true),
+    ]);
     if (r.ok) {
       setReservas(r.data);
       setError(null);
     } else setError(r.error);
+    const recoger = (l: typeof enMarcha) => (l.ok ? l.data.filter((p) => p.tipo === "RECOGIDA" && p.estado !== "CANCELLED").length : 0);
+    setPedidosHoy(recoger(enMarcha) + recoger(hechos));
   }, [desde, hasta]);
 
   useEffect(() => {
@@ -146,12 +160,16 @@ export function ReservasBoard({ mesas, zonas, eventos }: { mesas: MesaSalon[]; z
   const pendientes = delDia.filter((r) => r.estado === "PENDIENTE");
   const visibles = delDia.filter((r) => filtro === "todo" || ESPACIO[r.espacio].filtro === filtro);
   const turnos = [
-    { titulo: "Mediodía", lista: visibles.filter((r) => r.hora < NOCHE) },
+    { titulo: "Mañana", lista: visibles.filter((r) => r.hora < MEDIODIA) },
+    { titulo: "Mediodía", lista: visibles.filter((r) => r.hora >= MEDIODIA && r.hora < NOCHE) },
     { titulo: "Noche", lista: visibles.filter((r) => r.hora >= NOCHE) },
   ].filter((t) => t.lista.length);
 
   const suma = (f: (r: Reserva) => boolean) => activasDia.filter(f).reduce((a, r) => a + r.personas, 0);
   const n = (f: (r: Reserva) => boolean) => activasDia.filter(f).length;
+  const pedidosDia = fecha === hoy ? pedidosHoy : 0;
+  const encargosDia = n((r) => r.espacio === "recogida");
+  const vistaEfectiva = conMesas ? vista : "lista";
   const dias = Array.from({ length: 7 }, (_, i) => desplazar(desde, i));
 
   return (
@@ -202,9 +220,12 @@ export function ReservasBoard({ mesas, zonas, eventos }: { mesas: MesaSalon[]; z
                 <span className="text-[0.6rem] font-semibold uppercase tracking-wide opacity-70 sm:text-[0.65rem]">
                   {d === hoy ? "Hoy" : DIA_SEMANA.format(new Date(`${d}T12:00:00Z`)).replace(".", "")}
                 </span>
-                <span className="font-display text-xl leading-tight tabular-nums sm:text-2xl">{Number(d.slice(8))}</span>
+                {/* El punto de «por confirmar», pegado al número del día (en escritorio la casilla es ancha). */}
+                <span className="relative font-display text-xl leading-tight tabular-nums sm:text-2xl">
+                  {Number(d.slice(8))}
+                  {porConfirmar ? <span aria-hidden="true" className="absolute -right-2 top-0.5 h-1.5 w-1.5 rounded-full bg-terracota sm:-right-2.5 sm:h-2 sm:w-2" /> : null}
+                </span>
                 <span className={`text-[0.68rem] font-semibold tabular-nums ${total ? "" : "opacity-35"}`}>{total || "–"}</span>
-                {porConfirmar ? <span aria-hidden="true" className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-terracota sm:h-2 sm:w-2" /> : null}
               </button>
             );
           })}
@@ -259,13 +280,14 @@ export function ReservasBoard({ mesas, zonas, eventos }: { mesas: MesaSalon[]; z
             );
           })}
         </Resumen>
+        {/* Los pedidos de «Pedir para llevar» se gestionan en Pedidos: si solo hay de esos, la tarjeta lleva allí. */}
         <Resumen
           activo={filtro === "recogida"}
-          onClick={() => setFiltro(filtro === "recogida" ? "todo" : "recogida")}
+          onClick={() => (pedidosDia && !encargosDia ? router.push("/admin/pedidos") : setFiltro(filtro === "recogida" ? "todo" : "recogida"))}
           espacio="recogida"
-          cifra={activasDia.filter((r) => r.espacio === "recogida").reduce((a, r) => a + (r.comida?.modo === "carta" ? 0 : r.personas), 0)}
-          unidad="menús"
-          detalle={plural(n((r) => r.espacio === "recogida"), "encargo", "encargos")}
+          cifra={pedidosDia + encargosDia}
+          unidad={pedidosDia + encargosDia === 1 ? "pedido" : "pedidos"}
+          detalle={pedidosDia ? `${plural(pedidosDia, "para llevar", "para llevar")}${encargosDia ? ` · ${plural(encargosDia, "encargo", "encargos")}` : ""} · ver en Pedidos →` : plural(encargosDia, "encargo", "encargos")}
         />
         <Resumen
           activo={filtro === "otros"}
@@ -293,22 +315,24 @@ export function ReservasBoard({ mesas, zonas, eventos }: { mesas: MesaSalon[]; z
             <Icon name="close" className="h-3.5 w-3.5" />
           </button>
         ) : null}
-        <div role="tablist" aria-label="Vista" className="ml-auto flex rounded-xl bg-arena p-1 dark:bg-noche-2">
-          {(["lista", "linea"] as const).map((v) => (
-            <button
-              key={v}
-              role="tab"
-              aria-selected={vista === v}
-              onClick={() => setVista(v)}
-              className="min-h-9 rounded-lg px-3 text-sm font-semibold aria-selected:bg-white aria-selected:shadow-card dark:aria-selected:bg-noche-3"
-            >
-              {v === "lista" ? "Lista" : "Por mesas"}
-            </button>
-          ))}
-        </div>
+        {conMesas ? (
+          <div role="tablist" aria-label="Vista" className="ml-auto flex rounded-xl bg-arena p-1 dark:bg-noche-2">
+            {(["lista", "linea"] as const).map((v) => (
+              <button
+                key={v}
+                role="tab"
+                aria-selected={vista === v}
+                onClick={() => setVista(v)}
+                className="min-h-9 rounded-lg px-3 text-sm font-semibold aria-selected:bg-white aria-selected:shadow-card dark:aria-selected:bg-noche-3"
+              >
+                {v === "lista" ? "Lista" : "Por mesas"}
+              </button>
+            ))}
+          </div>
+        ) : null}
       </div>
 
-      {vista === "lista" ? (
+      {vistaEfectiva === "lista" ? (
         visibles.length === 0 ? (
           <div className={`${card} grid place-items-center gap-2 p-10 text-center`}>
             <Icon name="calendar" className="h-8 w-8 opacity-30" />
