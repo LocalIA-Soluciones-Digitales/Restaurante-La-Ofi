@@ -18,13 +18,17 @@ const SEMANA = ["L", "M", "X", "J", "V", "S", "D"];
 const fechaUTC = (iso: string) => new Date(`${iso}T12:00:00Z`);
 const sinPunto = (s: string) => s.replace(".", "");
 
-/** Meses (YYYY-MM) desde el actual hasta el último con eventos, y al menos seis. */
+/**
+ * Meses (YYYY-MM) desde el actual hasta el último con eventos, y al menos seis.
+ * El mes en curso se salta si ya acaba (desde el 25) y no tiene nada.
+ */
 function mesesDesde(hoy: string, eventos: EventoView[]): string[] {
   const ultimo = eventos.reduce((max, e) => (e.fecha && e.fecha.slice(0, 7) > max ? e.fecha.slice(0, 7) : max), hoy.slice(0, 7));
   const [y, m] = hoy.split("-").map(Number) as [number, number];
+  const saltar = Number(hoy.slice(8, 10)) >= 25 && !eventos.some((e) => e.fecha?.startsWith(hoy.slice(0, 7))) ? 1 : 0;
   const meses: string[] = [];
   for (let i = 0; i < 24; i++) {
-    const d = new Date(Date.UTC(y, m - 1 + i, 1));
+    const d = new Date(Date.UTC(y, m - 1 + saltar + i, 1));
     const mes = d.toISOString().slice(0, 7);
     if (i >= 6 && mes > ultimo) break;
     meses.push(mes);
@@ -107,7 +111,7 @@ export function AgendaMensual({ eventos, hoy, locale }: { eventos: EventoView[];
       </div>
 
       <div id="agenda-mes" role="tabpanel" aria-label={nombre(mes)} className="mt-10 grid gap-10 lg:grid-cols-12 lg:gap-14">
-        <aside className="lg:col-span-4">
+        <aside className="order-2 lg:order-1 lg:col-span-4">
           <div className="rounded-3xl bg-crema p-5 ring-1 ring-tinta-line sm:p-6 lg:sticky lg:top-28">
             <div className="flex items-center justify-between">
               <p className="font-display text-2xl text-carbon first-letter:uppercase">
@@ -136,7 +140,7 @@ export function AgendaMensual({ eventos, hoy, locale }: { eventos: EventoView[];
           </div>
         </aside>
 
-        <div className="lg:col-span-8">
+        <div className="order-1 lg:order-2 lg:col-span-8">
           <p className="kicker text-carbon-muted">
             <span className="first-letter:uppercase">{nombre(mes)}</span> · {delMes.length === 0 ? "nada anunciado aún" : delMes.length === 1 ? "1 evento" : `${delMes.length} eventos`}
           </p>
