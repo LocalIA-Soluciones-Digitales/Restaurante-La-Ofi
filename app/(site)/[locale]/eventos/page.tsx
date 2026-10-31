@@ -91,7 +91,7 @@ export default async function EventosPage({ params }: Params) {
         <section id="agenda" aria-labelledby="agenda-title" className="section scroll-mt-16 bg-crema">
           <div className="container-wide">
             <SectionRule id="agenda-title" title="Toda la agenda, mes a mes" aside={<span>Lo que viene</span>} />
-            <p className="lead mt-6 max-w-2xl">Elige un mes y mira qué hay programado. Los días marcados en el calendario tienen evento.</p>
+            <p className="lead mt-6 max-w-2xl">Pasa de un mes a otro con las flechas. Los días marcados tienen evento y, en «Próximas fechas», ves lo que viene aunque caiga en otro mes.</p>
             <AgendaMensual eventos={proximos} hoy={hoyEnMadrid()} locale={locale} />
           </div>
         </section>

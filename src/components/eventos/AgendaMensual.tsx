@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CartelEvento } from "@/components/eventos/CartelEvento";
 import { horario } from "@/components/eventos/ProgramaEvento";
 import { Icon } from "@/components/ui/Icon";
@@ -19,28 +19,30 @@ const fechaUTC = (iso: string) => new Date(`${iso}T12:00:00Z`);
 const sinPunto = (s: string) => s.replace(".", "");
 
 /**
- * Meses (YYYY-MM) desde el actual hasta el último con eventos, y al menos seis.
- * El mes en curso se salta si ya acaba (desde el 25) y no tiene nada.
+ * Meses (YYYY-MM) por los que se puede pasar: desde el actual hasta el último con
+ * eventos, y al menos un año. El mes en curso se salta si ya acaba (desde el 25)
+ * y no tiene nada.
  */
 function mesesDesde(hoy: string, eventos: EventoView[]): string[] {
   const ultimo = eventos.reduce((max, e) => (e.fecha && e.fecha.slice(0, 7) > max ? e.fecha.slice(0, 7) : max), hoy.slice(0, 7));
   const [y, m] = hoy.split("-").map(Number) as [number, number];
   const saltar = Number(hoy.slice(8, 10)) >= 25 && !eventos.some((e) => e.fecha?.startsWith(hoy.slice(0, 7))) ? 1 : 0;
   const meses: string[] = [];
-  for (let i = 0; i < 24; i++) {
-    const d = new Date(Date.UTC(y, m - 1 + saltar + i, 1));
-    const mes = d.toISOString().slice(0, 7);
-    if (i >= 6 && mes > ultimo) break;
+  for (let i = 0; i < 36; i++) {
+    const mes = new Date(Date.UTC(y, m - 1 + saltar + i, 1)).toISOString().slice(0, 7);
+    if (i >= 12 && mes > ultimo) break;
     meses.push(mes);
   }
   return meses;
 }
 
+const cuantos = (n: number) => (n === 1 ? "1 evento" : `${n} eventos`);
+
 /**
- * Agenda por meses: una fila de meses con cuántos eventos tiene cada uno, el
- * calendario del mes elegido (los días con evento, marcados) y la lista de ese
- * mes. Así se ve qué hay el 29 de noviembre o qué tienen en diciembre aunque el
- * destacado se lleve la portada.
+ * Agenda mes a mes: se pasa de un mes a otro con las flechas; la lista del mes a
+ * un lado y, al otro, el calendario (días con evento marcados) y las próximas
+ * fechas de cualquier mes. Así, mirando noviembre, se ve igualmente que en
+ * diciembre hay algo, y un clic lleva allí.
  */
 export function AgendaMensual({ eventos, hoy, locale }: { eventos: EventoView[]; hoy: string; locale: Locale }) {
   const meses = useMemo(() => mesesDesde(hoy, eventos), [hoy, eventos]);
@@ -52,100 +54,55 @@ export function AgendaMensual({ eventos, hoy, locale }: { eventos: EventoView[];
   const primero = eventos.find((e) => e.fecha)?.fecha?.slice(0, 7);
   const [mes, setMes] = useState(primero && meses.includes(primero) ? primero : meses[0]!);
   const [resaltado, setResaltado] = useState<string | null>(null);
-  const tabs = useRef<HTMLDivElement>(null);
+  // Evento al que bajar en cuanto se pinte su mes (desde «Próximas fechas»).
+  const [pendiente, setPendiente] = useState<EventoView | null>(null);
 
   const delMes = porMes.get(mes) ?? [];
   const i = meses.indexOf(mes);
   const siguiente = meses.slice(i + 1).find((m) => porMes.has(m));
-  const anioActual = hoy.slice(0, 4);
+  const anterior = meses.slice(0, i).find((m) => porMes.has(m));
   const nombre = (m: string) => MES_LARGO.format(fechaUTC(`${m}-15`));
+  const conAnio = (m: string) => (m.slice(0, 4) === mes.slice(0, 4) ? nombre(m) : `${nombre(m)} ${m.slice(0, 4)}`);
+  const hayFuera = eventos.some((e) => e.fecha && !e.fecha.startsWith(mes));
+  const proximas = eventos.filter((e) => e.fecha).slice(0, 6);
 
-  function elegir(m: string) {
-    setMes(m);
-    tabs.current?.querySelector<HTMLElement>(`[data-mes="${m}"]`)?.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
-  }
+  useEffect(() => {
+    if (!pendiente?.fecha?.startsWith(mes)) return;
+    document.getElementById(`evento-${pendiente.id}`)?.scrollIntoView({ block: "center", behavior: "smooth" });
+    setResaltado(pendiente.id);
+    setPendiente(null);
+    const t = window.setTimeout(() => setResaltado(null), 1800);
+    return () => window.clearTimeout(t);
+  }, [mes, pendiente]);
 
+  /** Lleva a un evento: cambia de mes si hace falta y lo resalta en la lista. */
   function irA(e: EventoView) {
-    document.getElementById(`evento-${e.id}`)?.scrollIntoView({ block: "center", behavior: "smooth" });
-    setResaltado(e.id);
-    window.setTimeout(() => setResaltado(null), 1800);
+    if (e.fecha) setMes(e.fecha.slice(0, 7));
+    setPendiente(e);
   }
 
   return (
-    <div>
-      {/* Meses: deslizables en el móvil, con el número de eventos de cada uno. */}
-      <div ref={tabs} role="tablist" aria-label="Meses" className="-mx-4 mt-10 flex snap-x gap-2 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:mx-0 sm:px-0">
-        {meses.map((m) => {
-          const n = porMes.get(m)?.length ?? 0;
-          const activo = m === mes;
-          return (
-            <button
-              key={m}
-              type="button"
-              role="tab"
-              data-mes={m}
-              aria-selected={activo}
-              aria-controls="agenda-mes"
-              onClick={() => elegir(m)}
-              className={`group flex min-w-[6.5rem] shrink-0 snap-start flex-col items-start rounded-2xl px-4 py-3 text-left transition-colors ${
-                activo ? "bg-carbon text-crema" : "bg-crema text-carbon ring-1 ring-inset ring-tinta-line hover:ring-carbon/40"
-              }`}
-            >
-              <span className="font-display text-lg leading-tight first-letter:uppercase">
-                {nombre(m)}
-                {m.slice(0, 4) !== anioActual ? <span className={`ml-1 text-sm ${activo ? "text-crema/60" : "text-carbon-muted"}`}>{m.slice(0, 4)}</span> : null}
-              </span>
-              <span className={`mt-1 flex items-center gap-1.5 text-xs font-semibold ${activo ? "text-crema/75" : n > 0 ? "text-brasa" : "text-carbon-muted/70"}`}>
-                {n > 0 ? (
-                  <>
-                    <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${activo ? "bg-crema" : "bg-brasa"}`} />
-                    {n === 1 ? "1 evento" : `${n} eventos`}
-                  </>
-                ) : (
-                  "Sin anunciar"
-                )}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      <div id="agenda-mes" role="tabpanel" aria-label={nombre(mes)} className="mt-10 grid gap-10 lg:grid-cols-12 lg:gap-14">
-        <aside className="order-2 lg:order-1 lg:col-span-4">
-          <div className="rounded-3xl bg-crema p-5 ring-1 ring-tinta-line sm:p-6 lg:sticky lg:top-28">
-            <div className="flex items-center justify-between">
-              <p className="font-display text-2xl text-carbon first-letter:uppercase">
-                {nombre(mes)} <span className="text-carbon-muted">{mes.slice(0, 4)}</span>
-              </p>
-              <div className="flex gap-1">
-                <button type="button" onClick={() => elegir(meses[i - 1]!)} disabled={i === 0} aria-label="Mes anterior" className="grid h-9 w-9 place-items-center rounded-full text-carbon hover:bg-papel-2 disabled:opacity-30">
-                  <Icon name="chevronLeft" className="h-4 w-4" />
-                </button>
-                <button type="button" onClick={() => elegir(meses[i + 1]!)} disabled={i === meses.length - 1} aria-label="Mes siguiente" className="grid h-9 w-9 place-items-center rounded-full text-carbon hover:bg-papel-2 disabled:opacity-30">
-                  <Icon name="chevronRight" className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-            <Calendario mes={mes} hoy={hoy} eventos={delMes} onDia={irA} />
-            <p className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-tinta-line pt-4 text-xs text-carbon-muted">
-              <span className="inline-flex items-center gap-2">
-                <span aria-hidden="true" className="h-3 w-3 rounded-full bg-brasa" />
-                Hay evento
-              </span>
-              <span className="inline-flex items-center gap-2">
-                <span aria-hidden="true" className="h-3 w-3 rounded-full ring-1 ring-carbon" />
-                Hoy
-              </span>
+    <div className="mt-10 grid gap-10 lg:grid-cols-12 lg:gap-14">
+      <div className="lg:col-span-8">
+        {/* El mes en grande y las flechas; el punto avisa de que en esa dirección hay eventos. */}
+        <div className="flex items-end justify-between gap-4 border-b-[3px] border-carbon pb-4">
+          <div aria-live="polite">
+            <p className="whitespace-nowrap font-display text-[1.75rem] leading-none text-carbon first-letter:uppercase sm:text-[2.5rem]">
+              {nombre(mes)} <span className="text-carbon-muted">{mes.slice(0, 4)}</span>
+            </p>
+            <p className={`mt-2 text-sm font-semibold ${delMes.length > 0 ? "text-brasa" : "text-carbon-muted"}`}>
+              {delMes.length > 0 ? cuantos(delMes.length) : "Nada anunciado aún"}
             </p>
           </div>
-        </aside>
+          <div className="flex shrink-0 gap-2">
+            <FlechaMes direccion="anterior" destino={meses[i - 1]} hayEventos={Boolean(anterior)} nombre={nombre} onClick={setMes} />
+            <FlechaMes direccion="siguiente" destino={meses[i + 1]} hayEventos={Boolean(siguiente)} nombre={nombre} onClick={setMes} />
+          </div>
+        </div>
 
-        <div className="order-1 lg:order-2 lg:col-span-8">
-          <p className="kicker text-carbon-muted">
-            <span className="first-letter:uppercase">{nombre(mes)}</span> · {delMes.length === 0 ? "nada anunciado aún" : delMes.length === 1 ? "1 evento" : `${delMes.length} eventos`}
-          </p>
+        <div key={mes} className="motion-safe:animate-fade-in">
           {delMes.length > 0 ? (
-            <ol className="mt-4 border-t border-tinta-line">
+            <ol>
               {delMes.map((e) => (
                 <li key={e.id} id={`evento-${e.id}`} className="scroll-mt-28 border-b border-tinta-line py-1">
                   <FilaEvento evento={e} locale={locale} resaltado={resaltado === e.id} />
@@ -153,7 +110,7 @@ export function AgendaMensual({ eventos, hoy, locale }: { eventos: EventoView[];
               ))}
             </ol>
           ) : (
-            <div className="mt-4 rounded-3xl border border-dashed border-carbon/20 px-6 py-12 text-center sm:px-10">
+            <div className="mt-6 rounded-3xl border border-dashed border-carbon/20 px-6 py-12 text-center sm:px-10">
               <Icon name="calendar" className="mx-auto h-7 w-7 text-brasa" />
               <p className="t-h3 mt-4 text-carbon">
                 Aún no hay nada anunciado en <span className="lowercase">{nombre(mes)}</span>
@@ -161,23 +118,114 @@ export function AgendaMensual({ eventos, hoy, locale }: { eventos: EventoView[];
               <p className="mx-auto mt-3 max-w-md leading-relaxed text-carbon-muted">
                 Los eventos se anuncian con unas semanas de antelación. En cuanto haya fecha aparecerá aquí, y lo contamos antes en Instagram.
               </p>
-              <div className="mt-7 flex flex-wrap justify-center gap-3">
-                {siguiente ? (
-                  <button type="button" onClick={() => elegir(siguiente)} className="btn-dark px-6">
-                    Ver {nombre(siguiente)}
-                    <Icon name="arrow" className="h-4 w-4" />
-                  </button>
-                ) : null}
-                <a href={SITE.instagram.url} target="_blank" rel="noopener noreferrer" className="btn-secondary px-6">
-                  <Icon name="instagram" className="h-4 w-4" />
-                  {SITE.instagram.handle}
-                </a>
-              </div>
+              <a href={SITE.instagram.url} target="_blank" rel="noopener noreferrer" className="btn-secondary mt-7 px-6">
+                <Icon name="instagram" className="h-4 w-4" />
+                {SITE.instagram.handle}
+              </a>
             </div>
           )}
         </div>
+
+        {/* Lo siguiente, aunque caiga en otro mes: un clic y se pasa a él. */}
+        {siguiente ? (
+          <button
+            type="button"
+            onClick={() => setMes(siguiente)}
+            className="group mt-6 flex w-full items-center justify-between gap-4 rounded-2xl bg-papel-2 px-5 py-4 text-left ring-1 ring-inset ring-tinta-line transition-colors hover:bg-carbon hover:text-crema"
+          >
+            <span>
+              <span className="block text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-carbon-muted group-hover:text-crema/60">
+                {siguiente === meses[i + 1] ? "El mes que viene" : "Lo siguiente"}
+              </span>
+              <span className="mt-1 block font-display text-xl first-letter:uppercase">
+                {conAnio(siguiente)} · {cuantos(porMes.get(siguiente)!.length)}
+              </span>
+            </span>
+            <span aria-hidden="true" className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-carbon text-crema transition-transform group-hover:translate-x-1 group-hover:bg-crema group-hover:text-carbon">
+              <Icon name="arrow" className="h-4 w-4" />
+            </span>
+          </button>
+        ) : null}
       </div>
+
+      <aside className="space-y-6 lg:col-span-4">
+        <div className="rounded-3xl bg-crema p-5 ring-1 ring-tinta-line sm:p-6">
+          <p className="font-display text-xl text-carbon first-letter:uppercase">
+            {nombre(mes)} <span className="text-carbon-muted">{mes.slice(0, 4)}</span>
+          </p>
+          <Calendario mes={mes} hoy={hoy} eventos={delMes} onDia={irA} />
+          <p className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-tinta-line pt-4 text-xs text-carbon-muted">
+            <span className="inline-flex items-center gap-2">
+              <span aria-hidden="true" className="h-3 w-3 rounded-full bg-brasa" />
+              Hay evento
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <span aria-hidden="true" className="h-3 w-3 rounded-full ring-1 ring-carbon" />
+              Hoy
+            </span>
+          </p>
+        </div>
+
+        {hayFuera ? (
+          <div className="rounded-3xl bg-papel-2 p-5 ring-1 ring-tinta-line sm:p-6">
+            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-carbon-muted">Próximas fechas</p>
+            <ul className="mt-3 divide-y divide-tinta-line">
+              {proximas.map((e) => {
+                const f = fechaUTC(e.fecha!);
+                const aqui = e.fecha!.startsWith(mes);
+                return (
+                  <li key={e.id}>
+                    <button type="button" onClick={() => irA(e)} className="group flex w-full items-center gap-4 py-3 text-left">
+                      <span className={`grid w-12 shrink-0 place-items-center rounded-xl py-1.5 leading-none ${aqui ? "bg-carbon text-crema" : "bg-crema text-carbon ring-1 ring-tinta-line"}`}>
+                        <span className="font-display text-xl tabular-nums">{f.getUTCDate()}</span>
+                        <span className={`mt-0.5 text-[0.58rem] font-semibold uppercase tracking-[0.14em] ${aqui ? "text-crema/70" : "text-brasa"}`}>{sinPunto(MES_CORTO.format(f))}</span>
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-display text-lg leading-snug text-carbon group-hover:text-brasa">{e.titulo}</span>
+                        <span className="block text-xs text-carbon-muted">
+                          {e.tipo}
+                          {aqui ? " · este mes" : ""}
+                        </span>
+                      </span>
+                      <Icon name="chevronRight" className="h-4 w-4 shrink-0 text-carbon-muted transition-transform group-hover:translate-x-0.5" />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            {eventos.length > proximas.length ? <p className="mt-2 text-xs text-carbon-muted">y {cuantos(eventos.length - proximas.length)} más adelante</p> : null}
+          </div>
+        ) : null}
+      </aside>
     </div>
+  );
+}
+
+/** Flecha para pasar de mes; un punto si en esa dirección hay algún evento. */
+function FlechaMes({
+  direccion,
+  destino,
+  hayEventos,
+  nombre,
+  onClick,
+}: {
+  direccion: "anterior" | "siguiente";
+  destino: string | undefined;
+  hayEventos: boolean;
+  nombre: (m: string) => string;
+  onClick: (m: string) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => destino && onClick(destino)}
+      disabled={!destino}
+      aria-label={destino ? `Ver ${nombre(destino)}${hayEventos ? " (hay eventos)" : ""}` : `No hay mes ${direccion}`}
+      className="relative grid h-12 w-12 place-items-center rounded-full text-carbon ring-1 ring-inset ring-tinta-line transition-colors hover:bg-carbon hover:text-crema disabled:pointer-events-none disabled:opacity-30"
+    >
+      <Icon name={direccion === "anterior" ? "chevronLeft" : "chevronRight"} className="h-5 w-5" />
+      {hayEventos ? <span aria-hidden="true" className="absolute right-0.5 top-0.5 h-2.5 w-2.5 rounded-full bg-brasa ring-2 ring-crema" /> : null}
+    </button>
   );
 }
 
