@@ -6,6 +6,8 @@ import { HorarioHoy } from "@/components/ui/HorarioHoy";
 import { Icon } from "@/components/ui/Icon";
 import { estadoAhora, horarioDeHoy, type HorarioResuelto } from "@/lib/horario";
 import { href, type Locale } from "@/lib/i18n";
+import { PROXIMAMENTE } from "@/lib/lanzamiento";
+import { SITE } from "@/lib/site";
 import type { ContentState, MenuDiaView } from "@/lib/restaurant/types";
 
 /**
@@ -47,13 +49,20 @@ export function HoyEnLaOfi({
         </div>
 
         <div className="mt-10 flex flex-wrap justify-center gap-3">
-          <Link href={href(locale, "/reservar?para=hoy")} className="btn-primary">
-            Reservar para hoy
-            <Icon name="arrow" className="h-4 w-4" />
-          </Link>
+          {PROXIMAMENTE.reservas ? (
+            <a href={SITE.phone.href} className="btn-primary">
+              <Icon name="phone" className="h-4 w-4" />
+              Llamar para reservar
+            </a>
+          ) : (
+            <Link href={href(locale, "/reservar?para=hoy")} className="btn-primary">
+              Reservar para hoy
+              <Icon name="arrow" className="h-4 w-4" />
+            </Link>
+          )}
           <Link href={href(locale, "/pedir")} className="btn border border-crema/40 text-crema hover:bg-crema hover:text-carbon">
             <Icon name="bag" className="h-4 w-4" />
-            Pedir para llevar
+            {PROXIMAMENTE.pedidos ? "Para llevar · muy pronto" : "Pedir para llevar"}
           </Link>
         </div>
         <Link href={href(locale, "/menu-del-dia")} className="mt-6 inline-flex items-center gap-2 text-sm text-crema/75 underline decoration-crema/30 underline-offset-4 hover:text-crema">

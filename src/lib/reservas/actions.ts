@@ -3,6 +3,7 @@
 import { createHash } from "node:crypto";
 import { headers } from "next/headers";
 import type { ResultadoAccion } from "@/lib/pedidos/types";
+import { PROXIMAMENTE } from "@/lib/lanzamiento";
 import { rpcPublica } from "@/lib/supabase/rpc";
 
 export interface ReservaWeb {
@@ -54,6 +55,10 @@ function notasPresupuesto(p: NonNullable<ReservaWeb["presupuesto"]>, libre: stri
 
 /** Solicitud de reserva desde la web (queda PENDIENTE hasta que el local la confirme). */
 export async function solicitarReserva(r: ReservaWeb): Promise<ResultadoAccion<{ id: string }>> {
+  // Hasta que se abran (src/lib/lanzamiento.ts), desde la web solo eventos y presupuestos.
+  if (PROXIMAMENTE.reservas && r.espacio !== "evento" && r.espacio !== "presupuesto") {
+    return { ok: false, error: "Muy pronto podrás reservar desde la web. Mientras tanto, llámanos.", codigo: "NO_ACTIVO" };
+  }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(r.fecha) || !/^\d{2}:\d{2}$/.test(r.hora)) return { ok: false, error: "Elige día y hora.", codigo: "ERROR" };
   const notas = String(r.notas ?? "").trim().slice(0, 500);
   if (notas && r.consiente_salud !== true) {

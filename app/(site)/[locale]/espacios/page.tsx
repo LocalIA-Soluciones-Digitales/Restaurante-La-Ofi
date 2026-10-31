@@ -9,6 +9,7 @@ import { SectionRule } from "@/components/ui/SectionRule";
 import { SourceBadge } from "@/components/ui/SourceBadge";
 import { ESPACIOS, type Espacio } from "@/lib/home-content";
 import { href, type Locale } from "@/lib/i18n";
+import { PROXIMAMENTE } from "@/lib/lanzamiento";
 import { creditoFoto, IMAGES, imageKeyBySrc, type ImageKey } from "@/lib/images";
 import { pageMetadata } from "@/lib/seo";
 
@@ -28,7 +29,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 const EXTRA: Partial<Record<Espacio["id"], ImageKey>> = { barra: "barraMesasAltas", despacho: "despachoRotulo", terraza: "terrazaCarpa" };
 
 function cta(e: Espacio, locale: Locale) {
-  if (e.cta === "pedir") return { href: href(locale, "/pedir"), label: "Pedir para llevar" };
+  if (e.cta === "pedir") return { href: href(locale, "/pedir"), label: PROXIMAMENTE.pedidos ? "Para llevar, muy pronto" : "Pedir para llevar" };
   if (e.cta === "presupuesto") return { href: href(locale, "/grupos#contacto"), label: "Pedir presupuesto" };
   return { href: href(locale, "/reservar"), label: "Reservar mesa" };
 }

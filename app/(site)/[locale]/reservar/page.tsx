@@ -5,12 +5,14 @@ import { ReservaForm } from "@/components/reservas/ReservaForm";
 import { EstadoAhora } from "@/components/ui/EstadoAhora";
 import { HorarioHoy } from "@/components/ui/HorarioHoy";
 import { Icon } from "@/components/ui/Icon";
-import { hoyEnMadrid } from "@/lib/format";
+import { formatearFechaLarga, hoyEnMadrid } from "@/lib/format";
 import { estadoAhora, horarioDeHoy, resolverHorario } from "@/lib/horario";
 import { href, type Locale } from "@/lib/i18n";
 import { fotoDeFichaDe } from "@/lib/carta-fichas";
+import { Proximamente } from "@/components/ui/Proximamente";
 import { fotoDePlato, normalizarNombre } from "@/lib/carta-fotos";
 import { creditoFoto, IMAGES } from "@/lib/images";
+import { PROXIMAMENTE } from "@/lib/lanzamiento";
 import { getCarta, getCierres, getEventos, getHorario, getMenuDia } from "@/lib/restaurant/queries";
 import { pageMetadata } from "@/lib/seo";
 import { SITE } from "@/lib/site";
@@ -30,7 +32,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   });
 }
 
-/** Reserva online si el local la ha activado (/admin/configuracion); si no, teléfono. */
+/**
+ * Reserva online si el local la ha activado (/admin/configuracion); si no, teléfono.
+ * Mientras reservar mesa es «Próximamente» (src/lib/lanzamiento.ts), aquí solo se
+ * apunta uno a los eventos; lo demás, por teléfono.
+ */
 export default async function ReservarPage({ params, searchParams }: Props) {
   const { locale } = await params;
   const { espacio, para, evento } = await searchParams;
@@ -49,6 +55,7 @@ export default async function ReservarPage({ params, searchParams }: Props) {
   const ahora = new Date();
   // Llegando desde un evento (aviso, agenda): no es reservar mesa, es apuntarse.
   const aEvento = espacio === "evento" && reservables.length > 0;
+  const pronto = PROXIMAMENTE.reservas && !aEvento;
   // Cada plato con su foto, en el mismo orden que /carta: la suya de /admin, la real
   // del sitio o la de su ficha. El del menú del día, la del mismo plato de la carta.
   const cartaReserva = (carta ?? [])
@@ -79,13 +86,15 @@ export default async function ReservarPage({ params, searchParams }: Props) {
           <p className="lead mt-5">
             {aEvento && online
               ? "Dinos cuántos vais a venir y lo preparamos para que estéis a gusto."
+              : pronto
+              ? "Comedor, terraza o El Despacho. Muy pronto, desde aquí; mientras tanto, llámanos y te la guardamos."
               : online
               ? "Comedor (menú del día o carta) o El Despacho. Te confirmamos por teléfono."
               : "Comedor, terraza o El Despacho. Llámanos y te confirmamos al momento."}
           </p>
 
           <div className="mt-8 border-y border-tinta-line py-6">
-            <p className="text-sm text-carbon-muted">{online ? "¿Prefieres llamar?" : "Reservas por teléfono"}</p>
+            <p className="text-sm text-carbon-muted">{online && !pronto ? "¿Prefieres llamar?" : "Reservas por teléfono"}</p>
             <a href={SITE.phone.href} className="mt-1 inline-flex items-center gap-3 font-display text-4xl tabular-nums text-carbon hover:text-brasa">
               <Icon name="phone" className="h-6 w-6 text-brasa" />
               {SITE.phone.display}
@@ -128,8 +137,52 @@ export default async function ReservarPage({ params, searchParams }: Props) {
         </div>
 
         <div className="min-w-0 lg:col-span-8">
-          {online ? (
+          {pronto ? (
+            <Proximamente
+              titulo="Reserva tu mesa desde el móvil"
+              texto="Estamos terminando la reserva online del comedor y de El Despacho. Hasta entonces, te la guardamos por teléfono."
+              primero={espacio === "despacho" ? "El Despacho" : "Reservar mesa"}
+            >
+              <div className="flex flex-wrap items-center gap-3">
+                <a href={SITE.phone.href} className="btn bg-crema px-6 text-carbon hover:bg-white">
+                  <Icon name="phone" className="h-4 w-4" />
+                  Llamar al {SITE.phone.display}
+                </a>
+                <Link href={href(locale, "/menu-del-dia")} className="btn border border-crema/30 px-6 text-crema hover:bg-crema/10">
+                  Ver el menú de hoy
+                </Link>
+              </div>
+              {reservables.length ? (
+                <div className="mt-8">
+                  <p className="text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-crema/50">Ya puedes apuntarte</p>
+                  <ul className="mt-3 grid gap-2">
+                    {reservables.slice(0, 3).map((e) => (
+                      <li key={e.slug}>
+                        <Link
+                          href={href(locale, `/reservar?espacio=evento&evento=${e.slug}`)}
+                          className="group flex items-center justify-between gap-4 rounded-2xl bg-crema/[0.06] px-4 py-3 ring-1 ring-crema/10 hover:bg-crema/10"
+                        >
+                          <span className="min-w-0">
+                            <span className="block truncate font-display text-lg">{e.titulo}</span>
+                            <span className="block text-sm text-crema/60 first-letter:uppercase">
+                              {formatearFechaLarga(e.fecha)}
+                              {e.hora ? ` · ${e.hora.slice(0, 5)}` : ""}
+                            </span>
+                          </span>
+                          <span className="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-neon">
+                            Apuntarme
+                            <Icon name="arrow" className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                          </span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </Proximamente>
+          ) : online ? (
             <ReservaForm
+              soloEventos={PROXIMAMENTE.reservas}
               maxPersonas={cfg?.data?.max_personas ?? 12}
               aforoDespacho={cfg?.data?.aforo_despacho ?? 30}
               menuFranja={{ desde: cfg?.data?.menu_desde ?? "08:00", hasta: cfg?.data?.menu_hasta ?? "16:00" }}

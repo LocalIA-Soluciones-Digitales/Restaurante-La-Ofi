@@ -10,6 +10,7 @@ import { JsonLd } from "@/components/ui/JsonLd";
 import { IS_DEMO } from "@/lib/env";
 import { estadoAhora, horarioDeHoy, resolverHorario } from "@/lib/horario";
 import { href, type Locale } from "@/lib/i18n";
+import { PROXIMAMENTE } from "@/lib/lanzamiento";
 import { getCartaContent, getMenuDiaContent } from "@/lib/restaurant/content";
 import { menuJsonLd } from "@/lib/restaurant/jsonld";
 import { getCierres, getHorario } from "@/lib/restaurant/queries";
@@ -65,12 +66,19 @@ export default async function MenuDelDiaPage({ params }: Params) {
           </div>
 
           <div className="mt-10 flex flex-wrap justify-center gap-3">
-            <Link href={href(locale, "/reservar?para=hoy")} className="btn-primary">
-              Reservar para hoy
-            </Link>
+            {PROXIMAMENTE.reservas ? (
+              <a href={SITE.phone.href} className="btn-primary">
+                <Icon name="phone" className="h-4 w-4" />
+                Llamar para reservar
+              </a>
+            ) : (
+              <Link href={href(locale, "/reservar?para=hoy")} className="btn-primary">
+                Reservar para hoy
+              </Link>
+            )}
             <Link href={href(locale, "/pedir")} className="btn border border-crema/40 text-crema hover:bg-crema hover:text-carbon">
               <Icon name="bag" className="h-4 w-4" />
-              Pedir para llevar
+              {PROXIMAMENTE.pedidos ? "Para llevar · muy pronto" : "Pedir para llevar"}
             </Link>
             <a
               href="#la-carta"
@@ -93,7 +101,7 @@ export default async function MenuDelDiaPage({ params }: Params) {
         </div>
       </section>
 
-      <CartaBloque state={carta} config={null} pedirHref={href(locale, "/pedir")} />
+      <CartaBloque state={carta} config={null} pedirHref={PROXIMAMENTE.pedidos ? undefined : href(locale, "/pedir")} />
     </>
   );
 }

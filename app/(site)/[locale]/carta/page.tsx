@@ -6,6 +6,7 @@ import { JsonLd } from "@/components/ui/JsonLd";
 import { IS_DEMO } from "@/lib/env";
 import { formatCentimos } from "@/lib/format";
 import { href, type Locale } from "@/lib/i18n";
+import { PROXIMAMENTE } from "@/lib/lanzamiento";
 import { getCartaContent, getMenuDiaContent } from "@/lib/restaurant/content";
 import { menuJsonLd } from "@/lib/restaurant/jsonld";
 import { pageMetadata } from "@/lib/seo";
@@ -54,7 +55,7 @@ export default async function CartaPage({ params }: Params) {
           </Link>
         ) : null}
       </div>
-      <CartaBloque state={state} config={null} heading="h1" pedirHref={href(locale, "/pedir")} />
+      <CartaBloque state={state} config={null} heading="h1" pedirHref={PROXIMAMENTE.pedidos ? undefined : href(locale, "/pedir")} />
     </>
   );
 }

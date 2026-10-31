@@ -1,5 +1,6 @@
 "use server";
 
+import { PROXIMAMENTE } from "@/lib/lanzamiento";
 import { getCartaContent } from "@/lib/restaurant/content";
 import { getTitularResuelto } from "@/lib/restaurant/titular";
 import type { CartaSeccion } from "@/lib/restaurant/types";
@@ -103,6 +104,10 @@ export async function obtenerGrupo(token: string): Promise<ResultadoAccion<Grupo
 }
 
 export async function crearPedido(pedido: PedidoInput): Promise<ResultadoAccion<{ id: string; numero_dia: number; total_centimos: number }>> {
+  // Para llevar, aún no (src/lib/lanzamiento.ts); desde la mesa, sí.
+  if (PROXIMAMENTE.pedidos && pedido.tipo === "RECOGIDA") {
+    return { ok: false, error: "Muy pronto podrás pedir para llevar desde la web. Mientras tanto, llámanos.", codigo: "NO_ACTIVO" };
+  }
   if (!Array.isArray(pedido.items) || pedido.items.length === 0) return { ok: false, error: "Tu pedido está vacío.", codigo: "ERROR" };
   const idsValidos = (i: PedidoInput["items"][number]) => ("menu_dia" in i ? i.platos.length > 0 && i.platos.every((p) => UUID.test(p)) : UUID.test(i.producto_id));
   if (!pedido.items.every(idsValidos)) return { ok: false, error: "Hay platos de ejemplo que no se pueden pedir.", codigo: "ERROR" };

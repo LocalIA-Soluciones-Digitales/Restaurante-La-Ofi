@@ -102,6 +102,7 @@ export function ReservaForm({
   cierres,
   ahora,
   privacidadHref,
+  soloEventos = false,
 }: {
   maxPersonas: number;
   aforoDespacho: number;
@@ -118,6 +119,8 @@ export function ReservaForm({
   /** Hora de la petición (ISO), la misma en servidor y cliente para no desajustar la hidratación. */
   ahora: string;
   privacidadHref: string;
+  /** Mientras reservar mesa es «Próximamente» (src/lib/lanzamiento.ts): solo apuntarse a eventos. */
+  soloEventos?: boolean;
 }) {
   const momento = useMemo(() => new Date(ahora), [ahora]);
   const hoy = hoyEnMadrid(momento);
@@ -237,6 +240,8 @@ export function ReservaForm({
       ? [{ k: "evento" as const, titulo: "Ir a un evento", detalle: eventos.length === 1 ? eventos[0]!.titulo : `${eventos.length} próximos`, foto: eventos.find((e) => e.imagen)?.imagen ?? "terrazaNoche" }]
       : []),
   ];
+  // Con un único evento y solo eventos, no hay nada que elegir en el paso 1.
+  const inicio = soloEventos && eventos.length <= 1 ? 0 : 1;
   const lugar = evento?.titulo ?? espacios.find((e) => e.k === f.espacio)?.titulo ?? "";
   const gente = evento ? (f.personas === 1 ? "asistente" : "asistentes") : f.personas === 1 ? "persona" : "personas";
   const resumen = [
@@ -331,56 +336,60 @@ export function ReservaForm({
           setEstado("ok");
         }}
       >
-        {/* 1 · Dónde */}
-        <Paso n={1} titulo="¿Dónde?">
-          <div role="radiogroup" aria-label="Dónde" className={`grid gap-2.5 sm:gap-3 ${espacios.length === 3 ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
-            {espacios.map((e) => {
-              const marcado = f.espacio === e.k;
-              return (
-                <button
-                  key={e.k}
-                  type="button"
-                  role="radio"
-                  aria-checked={marcado}
-                  onClick={() => set({ espacio: e.k })}
-                  className={`group relative flex items-center overflow-hidden rounded-2xl bg-white text-left ring-1 transition-shadow sm:block ${marcado ? "shadow-lift ring-2 ring-marino" : "ring-carbon/12 hover:ring-carbon/30"}`}
-                >
-                  <span className="relative block h-20 w-28 shrink-0 overflow-hidden bg-papel-3 sm:aspect-[16/10] sm:h-auto sm:w-auto">
-                    {e.foto && /^(\/|https?:)/.test(e.foto) ? (
-                      <Image src={e.foto} alt="" fill sizes="(min-width: 640px) 240px, 50vw" className="object-cover transition-transform duration-500 group-hover:scale-105" />
-                    ) : e.foto ? (
-                      <Photo img={e.foto as ImageKey} sizes="(min-width: 640px) 240px, 50vw" decorative mobileBelow={0} imgClassName="object-cover transition-transform duration-500 group-hover:scale-105" />
-                    ) : null}
-                    <span
-                      className={`absolute left-2 top-2 grid h-7 w-7 sm:left-auto sm:right-2.5 sm:top-2.5 place-items-center rounded-full transition-all ${marcado ? "scale-100 bg-marino text-crema opacity-100" : "scale-75 bg-white/80 opacity-0"}`}
+        {/* 1 · Dónde (o a qué evento) */}
+        {inicio ? (
+          <Paso n={1} titulo={soloEventos ? "¿A qué evento?" : "¿Dónde?"}>
+            {!soloEventos ? (
+              <div role="radiogroup" aria-label="Dónde" className={`grid gap-2.5 sm:gap-3 ${espacios.length === 3 ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
+                {espacios.map((e) => {
+                  const marcado = f.espacio === e.k;
+                  return (
+                    <button
+                      key={e.k}
+                      type="button"
+                      role="radio"
+                      aria-checked={marcado}
+                      onClick={() => set({ espacio: e.k })}
+                      className={`group relative flex items-center overflow-hidden rounded-2xl bg-white text-left ring-1 transition-shadow sm:block ${marcado ? "shadow-lift ring-2 ring-marino" : "ring-carbon/12 hover:ring-carbon/30"}`}
                     >
-                      <Icon name="check" className="h-4 w-4" />
-                    </span>
-                  </span>
-                  <span className="block min-w-0 px-4 py-3">
-                    <span className="block font-display text-xl leading-tight text-carbon">{e.titulo}</span>
-                    <span className="mt-0.5 block truncate text-sm text-carbon-muted">{e.detalle}</span>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-          {f.espacio === "evento" && eventos.length > 1 ? (
-            <label className="mt-4 grid gap-1 text-sm">
-              <span className="font-semibold">Evento</span>
-              <select value={f.evento_slug} onChange={(e) => set({ evento_slug: e.target.value })} className={campo}>
-                {eventos.map((ev) => (
-                  <option key={ev.slug} value={ev.slug}>
-                    {ev.titulo} · {FECHA_CORTA.format(comoFecha(ev.fecha))}
-                  </option>
-                ))}
-              </select>
-            </label>
-          ) : null}
-        </Paso>
+                      <span className="relative block h-20 w-28 shrink-0 overflow-hidden bg-papel-3 sm:aspect-[16/10] sm:h-auto sm:w-auto">
+                        {e.foto && /^(\/|https?:)/.test(e.foto) ? (
+                          <Image src={e.foto} alt="" fill sizes="(min-width: 640px) 240px, 50vw" className="object-cover transition-transform duration-500 group-hover:scale-105" />
+                        ) : e.foto ? (
+                          <Photo img={e.foto as ImageKey} sizes="(min-width: 640px) 240px, 50vw" decorative mobileBelow={0} imgClassName="object-cover transition-transform duration-500 group-hover:scale-105" />
+                        ) : null}
+                        <span
+                          className={`absolute left-2 top-2 grid h-7 w-7 sm:left-auto sm:right-2.5 sm:top-2.5 place-items-center rounded-full transition-all ${marcado ? "scale-100 bg-marino text-crema opacity-100" : "scale-75 bg-white/80 opacity-0"}`}
+                        >
+                          <Icon name="check" className="h-4 w-4" />
+                        </span>
+                      </span>
+                      <span className="block min-w-0 px-4 py-3">
+                        <span className="block font-display text-xl leading-tight text-carbon">{e.titulo}</span>
+                        <span className="mt-0.5 block truncate text-sm text-carbon-muted">{e.detalle}</span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
+            {f.espacio === "evento" && eventos.length > 1 ? (
+              <label className="mt-4 grid gap-1 text-sm">
+                <span className="font-semibold">Evento</span>
+                <select value={f.evento_slug} onChange={(e) => set({ evento_slug: e.target.value })} className={campo}>
+                  {eventos.map((ev) => (
+                    <option key={ev.slug} value={ev.slug}>
+                      {ev.titulo} · {FECHA_CORTA.format(comoFecha(ev.fecha))}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+          </Paso>
+        ) : null}
 
         {/* 2 · Cuándo y cuántos */}
-        <Paso n={2} titulo={evento ? "¿Cuántos vais a venir?" : "¿Cuándo y cuántos?"}>
+        <Paso n={inicio + 1} titulo={evento ? "¿Cuántos vais a venir?" : "¿Cuándo y cuántos?"}>
           {evento ? (
             <div className="grid gap-5 sm:grid-cols-[1fr_auto] sm:items-end">
               <div className="flex items-center gap-4 rounded-2xl bg-white p-3 ring-1 ring-carbon/10">
@@ -596,7 +605,7 @@ export function ReservaForm({
         ) : null}
 
         {/* 4 · Tus datos */}
-        <Paso n={f.espacio === "evento" ? 3 : 4} titulo="Tus datos">
+        <Paso n={f.espacio === "evento" ? inicio + 2 : 4} titulo="Tus datos">
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="grid gap-1 text-sm">
               <span className="font-semibold">Nombre</span>

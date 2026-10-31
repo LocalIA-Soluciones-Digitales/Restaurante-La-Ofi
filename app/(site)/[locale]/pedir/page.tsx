@@ -3,7 +3,9 @@ import Link from "next/link";
 import { PedirExperience, type PedirModo } from "@/components/pedir/PedirExperience";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Icon } from "@/components/ui/Icon";
+import { Proximamente } from "@/components/ui/Proximamente";
 import { href, type Locale } from "@/lib/i18n";
+import { PROXIMAMENTE } from "@/lib/lanzamiento";
 import { obtenerConfigPedidos, obtenerGrupo, validarMesa } from "@/lib/pedidos/actions";
 import { getCartaContent, getMenuDiaContent } from "@/lib/restaurant/content";
 import { pageMetadata } from "@/lib/seo";
@@ -71,6 +73,45 @@ export default async function PedirPage({ params, searchParams }: Props) {
         : modo === "grupo"
           ? { tipo: "crear-grupo" }
           : { tipo: "recogida" };
+
+  // Para llevar y pedidos de grupo, «Próximamente» (src/lib/lanzamiento.ts); desde la mesa, sí.
+  if (PROXIMAMENTE.pedidos && (modoPedido.tipo === "recogida" || modoPedido.tipo === "crear-grupo")) {
+    return (
+      <div className="bg-crema pb-20 pt-24 sm:pb-28 lg:pt-32">
+        <div className="container-wide grid gap-12 lg:grid-cols-12 lg:gap-16">
+          <div className="lg:col-span-4">
+            <p className="kicker text-brasa">Para llevar</p>
+            <h1 className="t-display mt-4 text-carbon">Pide y recoge</h1>
+            <p className="lead mt-5">El menú del día o lo que quieras de la carta, listo en barra a tu hora. Muy pronto, desde aquí.</p>
+            <div className="mt-8 border-y border-tinta-line py-6">
+              <p className="text-sm text-carbon-muted">Mientras tanto, encárgalo por teléfono</p>
+              <a href={SITE.phone.href} className="mt-1 inline-flex items-center gap-3 font-display text-4xl tabular-nums text-carbon hover:text-brasa">
+                <Icon name="phone" className="h-6 w-6 text-brasa" />
+                {SITE.phone.display}
+              </a>
+            </div>
+          </div>
+          <div className="min-w-0 lg:col-span-8">
+            <Proximamente
+              titulo="Pide desde el móvil y recoge a tu hora"
+              texto="Estamos terminando los pedidos para llevar: el menú del día y la carta, con la hora de recogida que elijas."
+              primero="Pedir para llevar"
+            >
+              <div className="flex flex-wrap items-center gap-3">
+                <Link href={href(locale, "/menu-del-dia")} className="btn bg-crema px-6 text-carbon hover:bg-white">
+                  Ver el menú de hoy
+                </Link>
+                <Link href={href(locale, "/carta")} className="btn border border-crema/30 px-6 text-crema hover:bg-crema/10">
+                  <Icon name="utensils" className="h-4 w-4" />
+                  Ver la carta
+                </Link>
+              </div>
+            </Proximamente>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container-page pt-20 sm:pt-24">
