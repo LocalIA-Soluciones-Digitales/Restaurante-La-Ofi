@@ -95,13 +95,14 @@ export default async function PedirPage({ params, searchParams }: Props) {
             <Proximamente
               titulo="Pide desde el móvil y recoge a tu hora"
               texto="Estamos terminando los pedidos para llevar: el menú del día y la carta, con la hora de recogida que elijas."
+              foto="barra"
               primero="Pedir para llevar"
             >
               <div className="flex flex-wrap items-center gap-3">
-                <Link href={href(locale, "/menu-del-dia")} className="btn bg-crema px-6 text-carbon hover:bg-white">
+                <Link href={href(locale, "/menu-del-dia")} className="btn-primary px-6">
                   Ver el menú de hoy
                 </Link>
-                <Link href={href(locale, "/carta")} className="btn border border-crema/30 px-6 text-crema hover:bg-crema/10">
+                <Link href={href(locale, "/carta")} className="btn-secondary px-6">
                   <Icon name="utensils" className="h-4 w-4" />
                   Ver la carta
                 </Link>

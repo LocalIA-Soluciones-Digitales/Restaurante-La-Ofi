@@ -137,35 +137,36 @@ export default async function ReservarPage({ params, searchParams }: Props) {
             <Proximamente
               titulo="Reserva tu mesa desde el móvil"
               texto="Estamos terminando la reserva online del comedor y de El Despacho. Hasta entonces, te la guardamos por teléfono."
+              foto={espacio === "despacho" ? "despacho" : "comedorRatan"}
               primero={espacio === "despacho" ? "El Despacho" : "Reservar mesa"}
             >
               <div className="flex flex-wrap items-center gap-3">
-                <a href={SITE.phone.href} className="btn bg-crema px-6 text-carbon hover:bg-white">
+                <a href={SITE.phone.href} className="btn-primary px-6">
                   <Icon name="phone" className="h-4 w-4" />
                   Llamar al {SITE.phone.display}
                 </a>
-                <Link href={href(locale, "/menu-del-dia")} className="btn border border-crema/30 px-6 text-crema hover:bg-crema/10">
+                <Link href={href(locale, "/menu-del-dia")} className="btn-secondary px-6">
                   Ver el menú de hoy
                 </Link>
               </div>
               {reservables.length ? (
                 <div className="mt-8">
-                  <p className="text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-crema/50">Ya puedes apuntarte</p>
+                  <p className="kicker text-carbon-muted">Ya puedes apuntarte</p>
                   <ul className="mt-3 grid gap-2">
                     {reservables.slice(0, 3).map((e) => (
                       <li key={e.slug}>
                         <Link
                           href={href(locale, `/reservar?espacio=evento&evento=${e.slug}`)}
-                          className="group flex items-center justify-between gap-4 rounded-2xl bg-crema/[0.06] px-4 py-3 ring-1 ring-crema/10 hover:bg-crema/10"
+                          className="group flex items-center justify-between gap-4 rounded-2xl bg-white px-4 py-3 ring-1 ring-carbon/10 hover:ring-carbon/30"
                         >
                           <span className="min-w-0">
-                            <span className="block truncate font-display text-lg">{e.titulo}</span>
-                            <span className="block text-sm text-crema/60 first-letter:uppercase">
+                            <span className="block truncate font-display text-lg text-carbon">{e.titulo}</span>
+                            <span className="block text-sm text-carbon-muted first-letter:uppercase">
                               {formatearFechaLarga(e.fecha)}
                               {e.hora ? ` · ${e.hora.slice(0, 5)}` : ""}
                             </span>
                           </span>
-                          <span className="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-neon">
+                          <span className="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-brasa">
                             Apuntarme
                             <Icon name="arrow" className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                           </span>
