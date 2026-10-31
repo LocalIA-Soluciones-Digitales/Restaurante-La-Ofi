@@ -1,7 +1,7 @@
 import { AllergenList } from "@/components/menu/AllergenList";
+import { MenuSinPublicar } from "@/components/menu/MenuSinPublicar";
 import { SourceBadge } from "@/components/ui/SourceBadge";
 import { formatCentimos, formatearFechaLarga, formatearHoraActualizacion } from "@/lib/format";
-import { SITE } from "@/lib/site";
 import type { ContentState, MenuDiaPlato, MenuDiaView } from "@/lib/restaurant/types";
 
 const GRUPOS = [
@@ -59,19 +59,7 @@ export function MenuDelDia({
   const hoja = "relative bg-[#FFFDF8] px-6 py-9 text-center shadow-[0_1px_0_rgb(43_39_34/0.06),0_30px_60px_-40px_rgb(43_39_34/0.45)] ring-1 ring-tinta-line sm:px-12 sm:py-12";
 
   if (state.status === "empty") {
-    return (
-      <article className={hoja}>
-        <p className="kicker text-brasa">Menú del día</p>
-        <Heading className="mt-3 font-display text-2xl text-carbon sm:text-3xl">Hoy todavía no está publicado</Heading>
-        <Filete />
-        <p className="mx-auto max-w-sm text-carbon-muted">
-          Sale aquí cada día de 8:00 a 16:00, y entonces puedes reservar con menú o pedirlo para recoger. Mientras tanto, llámanos:
-        </p>
-        <a href={SITE.phone.href} className="btn-secondary mt-6">
-          {SITE.phone.display}
-        </a>
-      </article>
-    );
+    return <MenuSinPublicar hoja={hoja} headingLevel={Heading} filete={<Filete />} />;
   }
 
   const menu = state.data;
