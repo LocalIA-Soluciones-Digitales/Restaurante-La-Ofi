@@ -61,7 +61,8 @@ export function AnadirControl({
     >
       <Icon name="plus" className="h-4 w-4" />
       {compacto ? null : cantidad > 0 ? `${cantidad} · Añadir` : "Añadir"}
-      <span className="sr-only"> {item.nombre}</span>
+      {/* Compacto solo se ve el «+»: el lector de pantalla tiene que oír «Añadir», no solo el plato. */}
+      <span className="sr-only">{compacto ? `Añadir ${item.nombre}` : ` ${item.nombre}`}</span>
     </button>
   );
 }

@@ -19,10 +19,10 @@ import type { CartaItem, MenuDiaPlato } from "@/lib/restaurant/types";
 const campo = "h-12 w-full rounded-2xl border border-carbon/15 bg-white px-4 text-base text-carbon focus:border-marino focus:outline-none";
 /** Ficha elegible (día, hora, pestaña): marino cuando está marcada. */
 const ficha =
-  "rounded-2xl border border-carbon/12 bg-white text-carbon transition-colors hover:border-carbon/35 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:border-carbon/12 aria-pressed:border-marino aria-pressed:bg-marino aria-pressed:text-crema";
+  "rounded-2xl border border-carbon/[0.12] bg-white text-carbon transition-colors hover:border-carbon/35 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:border-carbon/[0.12] aria-pressed:border-marino aria-pressed:bg-marino aria-pressed:text-crema";
 
 /** Flecha para pasar de semana. */
-const flecha = "grid h-9 w-9 place-items-center rounded-full border border-carbon/12 bg-white text-carbon hover:border-carbon/35 disabled:cursor-not-allowed disabled:opacity-30";
+const flecha = "grid h-9 w-9 place-items-center rounded-full border border-carbon/[0.12] bg-white text-carbon hover:border-carbon/35 disabled:cursor-not-allowed disabled:opacity-30";
 
 /** Algo que falta para enviar: el texto y el id del campo donde se arregla. */
 interface Falta {
@@ -274,7 +274,13 @@ export function ReservaForm({
 
   if (estado === "ok") {
     return (
-      <div role="status" className="overflow-hidden rounded-3xl bg-[#FFFDF8] shadow-card ring-1 ring-tinta-line">
+      <div
+        role="status"
+        // El formulario se cambia por esta ficha, más corta: sin esto, en el móvil la página
+        // se queda abajo (en el pie) y no se ve que la reserva ha salido.
+        ref={(el) => el?.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "start" })}
+        className="scroll-mt-24 overflow-hidden rounded-3xl bg-[#FFFDF8] shadow-card ring-1 ring-tinta-line"
+      >
         <div className="bg-oliva-soft/70 px-6 py-10 text-center sm:px-10">
           <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-ok text-crema">
             <Icon name="check" className="h-8 w-8" />
@@ -370,7 +376,7 @@ export function ReservaForm({
                       role="radio"
                       aria-checked={marcado}
                       onClick={() => set({ espacio: e.k })}
-                      className={`group relative flex items-center overflow-hidden rounded-2xl bg-white text-left ring-1 transition-shadow sm:block ${marcado ? "shadow-lift ring-2 ring-marino" : "ring-carbon/12 hover:ring-carbon/30"}`}
+                      className={`group relative flex items-center overflow-hidden rounded-2xl bg-white text-left ring-1 transition-shadow sm:block ${marcado ? "shadow-lift ring-2 ring-marino" : "ring-carbon/[0.12] hover:ring-carbon/30"}`}
                     >
                       <span className="relative block h-20 w-28 shrink-0 overflow-hidden bg-papel-3 sm:aspect-[16/10] sm:h-auto sm:w-auto">
                         {e.foto && /^(\/|https?:)/.test(e.foto) ? (
@@ -579,6 +585,15 @@ export function ReservaForm({
                     </div>
                   ) : null;
                 })}
+                <ResumenMenu
+                  grupos={GRUPOS_MENU.map((g) => ({
+                    label: g.label,
+                    elegidos: menuHoy.platos.filter((p) => p.tipo === g.tipo).reduce((a, p) => a + (f.cantidades[p.id] ?? 0), 0),
+                    hay: menuHoy.platos.some((p) => p.tipo === g.tipo),
+                  }))}
+                  personas={f.personas}
+                  precio={menuHoy.precio_centimos}
+                />
               </div>
             ) : null}
 
@@ -750,7 +765,7 @@ function Opcion({ marcada, disabled, onClick, icono, titulo, detalle }: { marcad
       aria-checked={marcada}
       disabled={disabled}
       onClick={onClick}
-      className={`flex items-center gap-3 rounded-2xl p-3 text-left ring-1 transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${marcada ? "bg-marino text-crema ring-marino" : "bg-white text-carbon ring-carbon/12 hover:ring-carbon/30"}`}
+      className={`flex items-center gap-3 rounded-2xl p-3 text-left ring-1 transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${marcada ? "bg-marino text-crema ring-marino" : "bg-white text-carbon ring-carbon/[0.12] hover:ring-carbon/30"}`}
     >
       <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${marcada ? "bg-white/15" : "bg-papel-2 text-brasa"}`}>
         <Icon name={icono} className="h-5 w-5" />
@@ -769,7 +784,7 @@ function Contador({ valor, tope, onCambio, etiqueta, nota }: { valor: number; to
       <p id="reserva-personas" className="text-sm font-semibold text-carbon">
         {etiqueta}
       </p>
-      <div className="mt-2 inline-flex items-center gap-1 rounded-2xl border border-carbon/12 bg-white p-1">
+      <div className="mt-2 inline-flex items-center gap-1 rounded-2xl border border-carbon/[0.12] bg-white p-1">
         <BotonCantidad etiqueta="Una persona menos" icono="minus" disabled={valor <= 1} onClick={() => onCambio(valor - 1)} />
         <input
           type="number"
@@ -793,6 +808,41 @@ function BotonCantidad({ etiqueta, icono, disabled, onClick }: { etiqueta: strin
     <button type="button" aria-label={etiqueta} disabled={disabled} onClick={onClick} className="grid h-10 w-10 place-items-center rounded-xl text-carbon hover:bg-papel-2 disabled:opacity-30">
       <Icon name={icono} className="h-4 w-4" />
     </button>
+  );
+}
+
+/**
+ * Cuenta del menú del día: cuántos de cada grupo frente a las personas y lo que
+ * costará. Si no cuadra solo avisa (pueden compartir o no querer postre).
+ */
+function ResumenMenu({ grupos, personas, precio }: { grupos: { label: string; elegidos: number; hay: boolean }[]; personas: number; precio: number | null }) {
+  const conPlatos = grupos.filter((g) => g.hay);
+  const total = conPlatos.reduce((a, g) => a + g.elegidos, 0);
+  if (!total) return null;
+  const descuadre = conPlatos.filter((g) => g.elegidos !== personas);
+  return (
+    <div aria-live="polite" className="rounded-2xl bg-white p-4 ring-1 ring-carbon/10">
+      <ul className="flex flex-wrap gap-2 text-sm">
+        {conPlatos.map((g) => (
+          <li key={g.label} className={`rounded-full px-3 py-1 font-semibold tabular-nums ${g.elegidos === personas ? "bg-oliva-soft text-oliva" : "bg-ratan/35 text-carbon"}`}>
+            {g.label}: {g.elegidos}/{personas}
+          </li>
+        ))}
+      </ul>
+      {descuadre.length ? (
+        <p className="mt-2 text-sm text-carbon-muted">
+          Sois {personas}: {descuadre.map((g) => `${g.label.toLowerCase()} ${g.elegidos > personas ? "de más" : "de menos"}`).join(", ")}. Si es a propósito, sin problema.
+        </p>
+      ) : null}
+      {precio ? (
+        <p className="mt-3 flex items-baseline justify-between border-t border-tinta-line pt-3">
+          <span className="text-sm text-carbon-muted">
+            {personas} {personas === 1 ? "menú" : "menús"} × {formatCentimos(precio)} · se paga en el local
+          </span>
+          <span className="font-display text-2xl tabular-nums text-carbon">{formatCentimos(personas * precio)}</span>
+        </p>
+      ) : null}
+    </div>
   );
 }
 
