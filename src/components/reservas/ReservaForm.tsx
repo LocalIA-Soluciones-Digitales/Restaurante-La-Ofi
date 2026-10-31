@@ -4,6 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { MiniaturaPlato } from "@/components/carta/MiniaturaPlato";
+import { ProductoDetalle, type OrigenRect } from "@/components/carta/ProductoDetalle";
+import type { CartaCartControls } from "@/components/carta/types";
 import { Photo } from "@/components/media/Photo";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { formatCentimos, formatearFechaLarga, hoyEnMadrid } from "@/lib/format";
@@ -12,7 +14,7 @@ import { horasReservables, primerDiaReservable, type Cierre, type Semana } from 
 import type { ImageKey } from "@/lib/images";
 import { plazasDespacho, solicitarReserva, type ModoComida, type ReservaWeb } from "@/lib/reservas/actions";
 import { SITE } from "@/lib/site";
-import type { MenuDiaPlato } from "@/lib/restaurant/types";
+import type { CartaItem, MenuDiaPlato } from "@/lib/restaurant/types";
 
 const campo = "h-12 w-full rounded-2xl border border-carbon/15 bg-white px-4 text-base text-carbon focus:border-marino focus:outline-none";
 /** Ficha elegible (día, hora, pestaña): marino cuando está marcada. */
@@ -54,7 +56,8 @@ const comoFecha = (iso: string) => new Date(`${iso}T12:00:00Z`);
 export interface CartaReserva {
   id: string;
   nombre: string;
-  productos: { id: string; nombre: string; descripcion: string | null; precio_centimos: number; foto: string | null }[];
+  /** `ficha`: el plato completo de /carta, para abrir su ficha al tocarlo. */
+  productos: { id: string; nombre: string; descripcion: string | null; precio_centimos: number; foto: string | null; ficha: CartaItem }[];
 }
 
 export interface MenuReserva {
@@ -173,6 +176,8 @@ export function ReservaForm({
   const [intentado, setIntentado] = useState(false);
   const [plazas, setPlazas] = useState<{ fecha: string; comida: number; noche: number } | null>(null);
   const [seccion, setSeccion] = useState(carta[0]?.id ?? "");
+  /** Ficha de plato abierta (sección de la carta y posición en ella). */
+  const [fichaAbierta, setFichaAbierta] = useState<{ seccion: string; index: number; origen: OrigenRect | null } | null>(null);
   // Al cambiar de menú a carta (o a solo mesa) los platos elegidos ya no valen.
   const set = (p: Partial<Estado>) =>
     setF((x) => {
@@ -232,6 +237,21 @@ export function ReservaForm({
   const elegidos = Object.values(f.cantidades).reduce((a, n) => a + n, 0);
   const cambiarCantidad = (id: string, n: number) =>
     setF((x) => ({ ...x, cantidades: { ...x.cantidades, [id]: Math.max(0, Math.min(50, n)) } }));
+
+  // La ficha del plato añade a lo que se va a comer. La reserva no guarda opciones
+  // por plato: la ficha se abre sin ellas y su nota pasa a las notas de la reserva.
+  const seccionFicha = fichaAbierta ? carta.find((c) => c.id === fichaAbierta.seccion) : undefined;
+  const cestaFicha: CartaCartControls = {
+    cantidad: (id) => f.cantidades[id] ?? 0,
+    anadir: (item, o) =>
+      setF((x) => ({
+        ...x,
+        cantidades: { ...x.cantidades, [item.id]: Math.min(50, (x.cantidades[item.id] ?? 0) + (o?.cantidad ?? 1)) },
+        notas: o?.notas ? [x.notas?.trim(), `${item.nombre}: ${o.notas}`].filter(Boolean).join("\n").slice(0, 500) : x.notas,
+      })),
+    quitarUno: (id) => cambiarCantidad(id, (f.cantidades[id] ?? 0) - 1),
+    sePuedePedir: (item) => item.precioCentimos !== null,
+  };
 
   const espacios: { k: Espacio; titulo: string; detalle: string; foto: ImageKey | string | null }[] = [
     { k: "mesa", titulo: "Comedor", detalle: "Menú del día o carta", foto: "comedorRatan" },
@@ -585,9 +605,10 @@ export function ReservaForm({
                   .filter((c) => c.id === seccion)
                   .map((c) => (
                     <ul key={c.id} aria-label={c.nombre} className="mt-2 divide-y divide-tinta-line rounded-2xl bg-white ring-1 ring-carbon/10">
-                      {c.productos.map((p) => (
+                      {c.productos.map((p, i) => (
                         <LineaPlato
                           key={p.id}
+                          onVer={(origen) => setFichaAbierta({ seccion: c.id, index: i, origen })}
                           nombre={p.nombre}
                           detalle={p.descripcion}
                           precio={p.precio_centimos}
@@ -692,6 +713,18 @@ export function ReservaForm({
           </div>
         </div>
       </form>
+      {/* Fuera del formulario: los botones de la ficha no deben enviarlo. */}
+      {fichaAbierta && seccionFicha ? (
+        <ProductoDetalle
+          items={seccionFicha.productos.map((p) => ({ ...p.ficha, modificadores: [] }))}
+          index={Math.min(fichaAbierta.index, seccionFicha.productos.length - 1)}
+          seccion={seccionFicha.nombre}
+          origen={fichaAbierta.origen}
+          cart={cestaFicha}
+          onClose={() => setFichaAbierta(null)}
+          onNavigate={(index) => setFichaAbierta((x) => (x ? { ...x, index, origen: null } : x))}
+        />
+      ) : null}
     </>
   );
 }
@@ -771,6 +804,7 @@ function LineaPlato({
   seccion,
   cantidad,
   onCambio,
+  onVer,
 }: {
   nombre: string;
   detalle?: string | null;
@@ -779,15 +813,36 @@ function LineaPlato({
   seccion?: string;
   cantidad: number;
   onCambio: (n: number) => void;
+  /** Si se pasa, foto y nombre abren la ficha del plato (desde dónde, para el volteo). */
+  onVer?: (origen: OrigenRect) => void;
 }) {
-  return (
-    <li className={`flex items-center gap-3 p-3 transition-colors ${cantidad ? "bg-marino/[0.04]" : ""}`}>
+  const contenido = (
+    <>
       <MiniaturaPlato nombre={nombre} foto={foto} seccion={seccion} />
       <span className="min-w-0 flex-1">
-        <span className="block text-[0.95rem] font-medium leading-snug text-carbon">{nombre}</span>
+        <span className={`block text-[0.95rem] font-medium leading-snug text-carbon ${onVer ? "underline-offset-2 group-hover:underline" : ""}`}>{nombre}</span>
         {detalle ? <span className="line-clamp-2 block text-xs text-carbon-muted">{detalle}</span> : null}
         {precio !== undefined ? <span className="mt-0.5 block text-sm tabular-nums text-carbon">{formatCentimos(precio)}</span> : null}
       </span>
+    </>
+  );
+  return (
+    <li className={`flex items-center gap-3 p-3 transition-colors ${cantidad ? "bg-marino/[0.04]" : ""}`}>
+      {onVer ? (
+        <button
+          type="button"
+          aria-label={`Ver ${nombre}: foto, ingredientes y alérgenos`}
+          onClick={(e) => {
+            const r = e.currentTarget.getBoundingClientRect();
+            onVer({ left: r.left, top: r.top, width: r.width, height: r.height });
+          }}
+          className="group flex min-w-0 flex-1 items-center gap-3 rounded-xl text-left"
+        >
+          {contenido}
+        </button>
+      ) : (
+        contenido
+      )}
       {cantidad === 0 ? (
         <button
           type="button"

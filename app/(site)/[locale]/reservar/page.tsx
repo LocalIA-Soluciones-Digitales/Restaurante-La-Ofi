@@ -8,12 +8,12 @@ import { Icon } from "@/components/ui/Icon";
 import { formatearFechaLarga, hoyEnMadrid } from "@/lib/format";
 import { estadoAhora, horarioDeHoy, resolverHorario } from "@/lib/horario";
 import { href, type Locale } from "@/lib/i18n";
-import { fotoDeFichaDe } from "@/lib/carta-fichas";
 import { Proximamente } from "@/components/ui/Proximamente";
-import { fotoDePlato, normalizarNombre } from "@/lib/carta-fotos";
+import { normalizarNombre } from "@/lib/carta-fotos";
 import { creditoFoto, IMAGES } from "@/lib/images";
 import { PROXIMAMENTE } from "@/lib/lanzamiento";
-import { getCarta, getCierres, getEventos, getHorario, getMenuDia } from "@/lib/restaurant/queries";
+import { getCartaContent } from "@/lib/restaurant/content";
+import { getCierres, getEventos, getHorario, getMenuDia } from "@/lib/restaurant/queries";
 import { pageMetadata } from "@/lib/seo";
 import { SITE } from "@/lib/site";
 import { rpcPublica } from "@/lib/supabase/rpc";
@@ -47,7 +47,7 @@ export default async function ReservarPage({ params, searchParams }: Props) {
     getCierres(),
     // Solo devuelve el de hoy y dentro de su franja (8:00–16:00).
     getMenuDia(hoyEnMadrid()),
-    getCarta(),
+    getCartaContent(),
   ]);
   const online = Boolean(cfg?.data?.online);
   const reservables = (eventos ?? []).filter((e) => e.estado === "proximo");
@@ -56,21 +56,17 @@ export default async function ReservarPage({ params, searchParams }: Props) {
   // Llegando desde un evento (aviso, agenda): no es reservar mesa, es apuntarse.
   const aEvento = espacio === "evento" && reservables.length > 0;
   const pronto = PROXIMAMENTE.reservas && !aEvento;
-  // Cada plato con su foto, en el mismo orden que /carta: la suya de /admin, la real
-  // del sitio o la de su ficha. El del menú del día, la del mismo plato de la carta.
-  const cartaReserva = (carta ?? [])
+  // Cada plato con su ficha completa, la misma de /carta (fotos, ingredientes,
+  // alérgenos, nutrición): al tocarlo se abre igual que allí. Solo la carta real:
+  // los platos de ejemplo no existen en la base y no se podrían reservar. El del
+  // menú del día lleva la foto del mismo plato de la carta.
+  const cartaReserva = (carta.status === "real" ? carta.data : [])
     .map((c) => ({
       id: c.id,
       nombre: c.nombre,
-      productos: c.productos
-        .filter((p) => p.precio_centimos !== null)
-        .map((p) => ({
-          id: p.id,
-          nombre: p.nombre,
-          descripcion: p.descripcion,
-          precio_centimos: p.precio_centimos!,
-          foto: fotoDePlato(c.slug, p.nombre, [p.imagen_url, ...(p.imagenes ?? [])]) ?? fotoDeFichaDe(c.slug, p.nombre),
-        })),
+      productos: c.items
+        .filter((p) => p.precioCentimos !== null)
+        .map((p) => ({ id: p.id, nombre: p.nombre, descripcion: p.descripcion, precio_centimos: p.precioCentimos!, foto: p.imagen?.src ?? null, ficha: p })),
     }))
     .filter((c) => c.productos.length > 0);
   const fotoPorNombre = new Map(cartaReserva.flatMap((c) => c.productos.filter((p) => p.foto).map((p) => [normalizarNombre(p.nombre), p.foto] as const)));
@@ -192,7 +188,7 @@ export default async function ReservarPage({ params, searchParams }: Props) {
                   : null
               }
               carta={cartaReserva}
-              eventos={reservables.map((e) => ({ slug: e.slug, titulo: e.titulo, fecha: e.fecha, hora: e.hora, imagen: e.imagen_url }))}
+              eventos={reservables.map((e) => ({ slug: e.slug, titulo: e.titulo, fecha: e.fecha, hora: e.hora, imagen: e.imagen_url ?? e.media?.find((m) => m.tipo === "imagen")?.url ?? null }))}
               espacioInicial={espacio === "despacho" || (espacio === "evento" && reservables.length) ? (espacio as "despacho" | "evento") : "mesa"}
               eventoInicial={evento}
               paraHoy={para === "hoy"}
