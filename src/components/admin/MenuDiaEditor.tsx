@@ -172,18 +172,26 @@ export function MenuDiaEditor() {
   return (
     <div className="mx-auto grid max-w-2xl gap-4">
       <div className={`${card} grid gap-4 p-5`}>
-        <div className="flex flex-wrap items-end gap-3">
-          <label className="grid flex-1 gap-1 text-sm">
-            <span className="font-semibold">Día</span>
-            <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className={input} />
-            <span className="text-xs opacity-70">
-              Puedes dejarlo listo la víspera: en la web sale ese día de 8:00 a 16:00, y solo entonces se puede reservar con menú o pedirlo para recoger.
-            </span>
+        {/* Día y precio en la misma fila, a la misma altura; la ayuda debajo, a todo el ancho. */}
+        <div className="grid grid-cols-[minmax(0,1fr)_8rem] items-end gap-x-3 gap-y-1 text-sm">
+          <label htmlFor="menu-fecha" className="font-semibold">
+            Día
           </label>
-          <label className="grid w-32 gap-1 text-sm">
-            <span className="font-semibold">Precio €</span>
-            <input value={precio} onChange={(e) => setPrecio(e.target.value)} inputMode="decimal" placeholder="0,00" className={`${input} text-right text-lg`} />
+          <label htmlFor="menu-precio" className="font-semibold">
+            Precio €
           </label>
+          <input id="menu-fecha" type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className={input} />
+          <input
+            id="menu-precio"
+            value={precio}
+            onChange={(e) => setPrecio(e.target.value)}
+            inputMode="decimal"
+            placeholder="0,00"
+            className={`${input} text-right font-semibold tabular-nums`}
+          />
+          <p className="col-span-2 mt-1 text-xs opacity-70">
+            Puedes dejarlo listo la víspera: en la web sale ese día de 8:00 a 16:00, y solo entonces se puede reservar con menú o pedirlo para recoger.
+          </p>
         </div>
         <p className="text-sm opacity-70">
           <span className="first-letter:uppercase">{formatearFechaLarga(fecha)}</span>
