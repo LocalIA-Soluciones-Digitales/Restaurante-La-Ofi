@@ -319,6 +319,7 @@ export function CartaInteractiva({
                   <ProductoCard
                     key={item.id}
                     item={item}
+                    seccion={s.nombre}
                     cart={cart}
                     onOpen={(origen) => setDetalle({ seccion: s.slug, index: i, origen })}
                   />

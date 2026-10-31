@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useRef } from "react";
 import { AnadirControl } from "@/components/carta/AnadirControl";
+import { MiniaturaPlato } from "@/components/carta/MiniaturaPlato";
 import type { OrigenRect } from "@/components/carta/ProductoDetalle";
 import type { CartaCartControls } from "@/components/carta/types";
 import { AllergenIcon } from "@/components/menu/AllergenIcon";
@@ -19,10 +20,12 @@ import type { CartaItem } from "@/lib/restaurant/types";
  */
 export function ProductoCard({
   item,
+  seccion,
   cart,
   onOpen,
 }: {
   item: CartaItem;
+  seccion?: string;
   cart?: CartaCartControls;
   onOpen: (origen: OrigenRect | null) => void;
 }) {
@@ -93,7 +96,9 @@ export function ProductoCard({
           <div className="relative h-24 w-24 overflow-hidden rounded-2xl bg-arena sm:h-28 sm:w-28">
             <Image src={item.imagen.src} alt="" fill sizes="112px" className="object-cover transition-transform duration-500 group-hover:scale-105" />
           </div>
-        ) : null}
+        ) : (
+          <MiniaturaPlato nombre={item.nombre} seccion={seccion} className="h-24 w-24 rounded-2xl sm:h-28 sm:w-28" />
+        )}
         {pedible && cart ? <AnadirControl item={item} cart={cart} onRequiereFicha={abrir} /> : null}
       </div>
     </li>

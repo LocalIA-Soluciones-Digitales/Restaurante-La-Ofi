@@ -4,9 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { AnadirControl } from "@/components/carta/AnadirControl";
 import type { OrigenRect } from "@/components/carta/ProductoDetalle";
 import type { CartaCartControls } from "@/components/carta/types";
+import { MiniaturaPlato } from "@/components/carta/MiniaturaPlato";
 import { DishPhoto } from "@/components/media/DishPhoto";
 import { AllergenIcon } from "@/components/menu/AllergenIcon";
-import { BrandPlaceholder } from "@/components/ui/BrandPlaceholder";
 import { Icon } from "@/components/ui/Icon";
 import { prefersReducedMotion } from "@/hooks/useReducedMotion";
 import { getAlergeno, normalizarAlergenos } from "@/lib/allergens";
@@ -111,7 +111,7 @@ export function CartaSeccionEscena({
 
       <ul ref={listaRef} onPointerLeave={() => setSenalado(null)} className="mt-2 sm:mt-4">
         {seccion.items.map((item, i) => (
-          <Fila key={item.id} item={item} n={i} cart={cart} onEnter={() => setSenalado(i)} onOpen={(origen) => onOpen(i, origen)} />
+          <Fila key={item.id} item={item} seccion={seccion.nombre} cart={cart} onEnter={() => setSenalado(i)} onOpen={(origen) => onOpen(i, origen)} />
         ))}
       </ul>
 
@@ -139,13 +139,13 @@ export function CartaSeccionEscena({
 
 function Fila({
   item,
-  n,
+  seccion,
   cart,
   onEnter,
   onOpen,
 }: {
   item: CartaItem;
-  n: number;
+  seccion: string;
   cart?: CartaCartControls;
   onEnter: () => void;
   onOpen: (o: OrigenRect | null) => void;
@@ -164,17 +164,15 @@ function Fila({
 
   return (
     <li ref={ref} onPointerEnter={onEnter} className="group relative border-b border-tinta-line">
-      <div className="grid grid-cols-[4.5rem_minmax(0,1fr)_auto] items-center gap-4 py-4 sm:gap-6 lg:grid-cols-[2.5rem_minmax(0,1fr)_auto] lg:py-6">
-        <div className="relative h-[4.5rem] w-[4.5rem] overflow-hidden rounded-xl bg-papel-3 lg:hidden">
-          {item.imagen ? (
-            <DishPhoto imagen={item.imagen} sizes="72px" decorative />
-          ) : (
-            <BrandPlaceholder label={item.nombre} icon={item.estacion === "barra" ? "wine" : "utensils"} iconOnly />
-          )}
-        </div>
-        <span aria-hidden="true" className="hidden self-start pt-2.5 text-xs tabular-nums text-carbon-muted transition-colors group-hover:text-brasa lg:block">
-          {String(n + 1).padStart(2, "0")}
-        </span>
+      <div className="grid grid-cols-[4.5rem_minmax(0,1fr)_auto] items-center gap-4 py-4 sm:gap-6 lg:grid-cols-[5rem_minmax(0,1fr)_auto] lg:py-5">
+        {/* Todos los platos con su imagen pequeña: la foto si la hay; si no, su tipo ilustrado. */}
+        {item.imagen ? (
+          <div className="relative h-[4.5rem] w-[4.5rem] overflow-hidden rounded-xl bg-papel-3 lg:h-20 lg:w-20">
+            <DishPhoto imagen={item.imagen} sizes="80px" decorative />
+          </div>
+        ) : (
+          <MiniaturaPlato nombre={item.nombre} seccion={seccion} className="h-[4.5rem] w-[4.5rem] lg:h-20 lg:w-20" />
+        )}
 
         <div className="min-w-0">
           <h3 className="font-display text-[1.2rem] font-light leading-tight text-carbon transition-[color,transform] duration-500 ease-out-expo group-hover:text-brasa sm:text-[1.5rem] lg:text-[2rem] lg:group-hover:translate-x-2">
