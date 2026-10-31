@@ -39,10 +39,24 @@ function duracion(min: number): string {
   return min < 60 ? `${min} min` : `${Math.floor(min / 60)} h${min % 60 ? ` ${min % 60} min` : ""}`;
 }
 
+/** Pedidos de un paso agrupados por hora de recogida (ya vienen ordenados por ella). */
+function porHora(lista: PedidoKds[]): { hora: string; recogida: string | null; pedidos: PedidoKds[] }[] {
+  const out: { hora: string; recogida: string | null; pedidos: PedidoKds[] }[] = [];
+  for (const p of lista) {
+    const hora = p.recogida_en ? HORA.format(new Date(p.recogida_en)) : "Sin hora";
+    const ultimo = out[out.length - 1];
+    if (ultimo?.hora === hora) ultimo.pedidos.push(p);
+    else out.push({ hora, recogida: p.recogida_en, pedidos: [p] });
+  }
+  return out;
+}
+
 /**
  * «Pedidos»: los pedidos para recoger del día, pensados para el encargado desde el
  * móvil (no para la pantalla de cocina). Un botón por paso: Aceptar → Está listo →
  * Cobrar y entregar. Tiempo real con sondeo de respaldo y aviso sonoro al entrar uno.
+ * Para días con muchos pedidos: agrupados por hora, tarjetas compactas, en el móvil
+ * un paso a la vista (pestañas) y en escritorio tres columnas con scroll propio.
  */
 export function PedidosRecogida({ inicial }: { inicial: PedidoKds[] }) {
   const [pedidos, setPedidos] = useState(inicial);
@@ -50,6 +64,7 @@ export function PedidosRecogida({ inicial }: { inicial: PedidoKds[] }) {
   const [sonido, setSonido] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState<string | null>(null);
+  const [pestana, setPestana] = useState<Paso>(() => (inicial.some((p) => p.estado === "RECEIVED") ? "nuevos" : inicial.some((p) => p.estado === "READY") ? "listos" : "preparando"));
   const conocidos = useRef(new Set(inicial.map((p) => p.id)));
 
   const recargar = useCallback(async () => {
@@ -107,24 +122,49 @@ export function PedidosRecogida({ inicial }: { inicial: PedidoKds[] }) {
     void hacer(p, () => cancelarPedido(p.id));
   };
 
+  // En plena hora punta: aceptar de un toque todos los que han entrado.
+  const [aceptando, setAceptando] = useState(false);
+  const aceptarTodos = async () => {
+    const lista = grupos.nuevos;
+    if (!lista.length || !window.confirm(`¿Aceptar los ${lista.length} pedidos nuevos?`)) return;
+    setAceptando(true);
+    setError(null);
+    for (const p of lista) {
+      const r = await avanzarPedido<PedidoKds>(p.id, "ACCEPTED", null);
+      if (!r.ok) {
+        setError(r.error);
+        break;
+      }
+    }
+    setAceptando(false);
+    void recargar();
+  };
+
   return (
     <div className="grid gap-4">
       <div className="flex flex-wrap items-center gap-2">
-        {PASOS.map((s) => (
-          <a key={s.k} href={`#${s.k}`} className={`${card} flex min-h-11 items-center gap-2 px-4 text-sm font-semibold`}>
-            <span className={`h-2.5 w-2.5 rounded-full ${s.punto}`} aria-hidden="true" />
-            {s.titulo}
-            <span className={`grid h-6 min-w-6 place-items-center rounded-full px-1.5 text-xs font-bold tabular-nums ${grupos[s.k].length ? s.contador : "bg-carbon/10 text-carbon-muted dark:bg-crema/10 dark:text-crema/50"}`}>
-              {grupos[s.k].length}
-            </span>
-          </a>
-        ))}
-        <button
-          type="button"
-          onClick={() => setSonido(activarSonido())}
-          aria-pressed={sonido}
-          className={`${sonido ? botonSecundario : botonPrimario} ml-auto`}
-        >
+        {/* Móvil: los pasos son pestañas (uno a la vista). Escritorio: resumen, las tres columnas se ven a la vez. */}
+        <div role="tablist" aria-label="Paso" className="grid w-full grid-cols-3 gap-1 rounded-2xl bg-arena p-1 lg:w-auto lg:flex lg:bg-transparent lg:p-0 dark:bg-noche-2 lg:dark:bg-transparent">
+          {PASOS.map((s) => (
+            <button
+              key={s.k}
+              type="button"
+              role="tab"
+              aria-selected={pestana === s.k}
+              onClick={() => setPestana(s.k)}
+              className="flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl px-2 text-xs font-semibold aria-selected:bg-white aria-selected:shadow-card lg:min-h-11 lg:flex-row lg:gap-2 lg:bg-white lg:px-4 lg:text-sm lg:shadow-card lg:aria-selected:ring-0 dark:aria-selected:bg-noche-3 lg:dark:bg-noche-2"
+            >
+              <span className="flex items-center gap-1.5">
+                <span className={`h-2 w-2 rounded-full ${s.punto}`} aria-hidden="true" />
+                <span className="truncate">{s.k === "listos" ? <><span className="lg:hidden">Listos</span><span className="hidden lg:inline">{s.titulo}</span></> : s.titulo}</span>
+              </span>
+              <span className={`grid h-6 min-w-6 place-items-center rounded-full px-1.5 text-xs font-bold tabular-nums ${grupos[s.k].length ? s.contador : "bg-carbon/10 text-carbon-muted dark:bg-crema/10 dark:text-crema/50"}`}>
+                {grupos[s.k].length}
+              </span>
+            </button>
+          ))}
+        </div>
+        <button type="button" onClick={() => setSonido(activarSonido())} aria-pressed={sonido} className={`${sonido ? botonSecundario : botonPrimario} ml-auto`}>
           <Icon name="sound" className="h-4 w-4" />
           {sonido ? "Sonido activo" : "Activar sonido"}
         </button>
@@ -133,116 +173,148 @@ export function PedidosRecogida({ inicial }: { inicial: PedidoKds[] }) {
       {error ? <p role="alert" className="rounded-xl bg-terracota px-4 py-3 text-sm font-semibold text-crema">{error}</p> : null}
 
       {pedidos.length === 0 ? (
-        <p className={`${card} grid place-items-center gap-2 px-4 py-12 text-center text-carbon-muted lg:hidden dark:text-crema/60`}>
+        <p className={`${card} grid place-items-center gap-2 px-4 py-12 text-center text-carbon-muted dark:text-crema/60`}>
           <Icon name="bag" className="h-8 w-8 opacity-50" />
           No hay pedidos para recoger ahora mismo.
         </p>
-      ) : null}
-
-      <div className="grid items-start gap-4 lg:grid-cols-3">
-        {PASOS.map((s) => (
-          // En el móvil las secciones vacías no ocupan sitio: lo que hay que hacer queda arriba.
-          <section key={s.k} id={s.k} aria-label={s.titulo} className={`grid scroll-mt-20 gap-3 ${grupos[s.k].length ? "" : "max-lg:hidden"}`}>
-            <h2 className="flex items-center gap-2 px-1 font-display text-xl">
-              <span className={`h-3 w-3 rounded-full ${s.punto}`} aria-hidden="true" />
-              {s.titulo}
-            </h2>
-            {grupos[s.k].length === 0 ? (
-              <p className="rounded-[1.25rem] border border-dashed border-carbon/15 px-4 py-8 text-center text-sm text-carbon-muted dark:border-crema/15 dark:text-crema/50">{s.vacio}</p>
-            ) : null}
-            {grupos[s.k].map((p) => {
-              const c = cuando(p.recogida_en, ahora);
-              const pagado = p.payment_status === "PAID";
-              const productos = p.items.filter((i) => i.estado !== "CANCELLED");
-              const esperando = ocupado === p.id;
-              return (
-                <article key={p.id} className={`${card} overflow-hidden motion-safe:animate-fade-up`}>
-                  <div className={`h-1.5 ${s.banda}`} aria-hidden="true" />
-                  <div className="p-4">
-                    {/* Hora de recogida bien grande: es lo que manda. */}
-                    <div className="flex items-start gap-3">
-                      <div className="min-w-0 flex-1">
-                        <p className="font-display text-4xl leading-none tabular-nums">{p.recogida_en ? HORA.format(new Date(p.recogida_en)) : "—"}</p>
-                        <p className={`mt-1 text-sm font-semibold ${c.tarde && s.k !== "listos" ? "text-terracota" : "text-carbon-muted dark:text-crema/60"}`}>
-                          {c.texto ? `Recoge ${c.texto}` : "Sin hora"} · #{p.numero_dia}
-                        </p>
-                      </div>
-                      {p.telefono ? (
-                        <a href={`tel:${p.telefono.replace(/\s/g, "")}`} className={`${botonSecundario} h-12 w-12 shrink-0 !px-0`} aria-label={`Llamar a ${p.nombre_cliente ?? "cliente"}`}>
-                          <Icon name="phone" className="h-5 w-5" />
-                        </a>
-                      ) : null}
-                    </div>
-
-                    <p className="mt-3 truncate text-lg font-semibold">
-                      {p.nombre_cliente ?? "Sin nombre"}
-                      {p.grupo ? <span className="font-normal text-carbon-muted dark:text-crema/60"> · {p.grupo}</span> : null}
-                    </p>
-
-                    <ul className="mt-2 grid gap-1.5 border-t border-carbon/[0.08] pt-3 dark:border-crema/10">
-                      {productos.map((i) => (
-                        <li key={i.id} className="text-[0.95rem] leading-snug">
-                          <span className="font-semibold tabular-nums">{i.cantidad}×</span> {i.nombre}
-                          {i.modificadores.length > 0 ? (
-                            <span className="block pl-6 text-sm text-carbon-muted dark:text-crema/60">
-                              {i.modificadores.map((m) => m.opciones.map((o) => o.nombre).join(", ")).join(" · ")}
-                            </span>
-                          ) : null}
-                          {i.notas ? <span className="block pl-6 text-sm italic text-terracota">↳ {i.notas}</span> : null}
-                        </li>
+      ) : (
+        <div className="grid items-start gap-4 lg:h-[calc(100dvh-15rem)] lg:min-h-[28rem] lg:grid-cols-3">
+          {PASOS.map((s) => (
+            <section
+              key={s.k}
+              aria-label={s.titulo}
+              className={`min-h-0 flex-col gap-3 lg:flex lg:h-full ${pestana === s.k ? "flex" : "hidden"}`}
+            >
+              <h2 className="hidden items-center gap-2 px-1 font-display text-xl lg:flex">
+                <span className={`h-3 w-3 rounded-full ${s.punto}`} aria-hidden="true" />
+                {s.titulo}
+                <span className="ml-auto text-sm font-normal tabular-nums text-carbon-muted dark:text-crema/60">{grupos[s.k].length}</span>
+              </h2>
+              {s.k === "nuevos" && grupos.nuevos.length > 1 ? (
+                <button type="button" disabled={aceptando} onClick={() => void aceptarTodos()} className={`${botonSecundario} w-full`}>
+                  <Icon name="check" className="h-4 w-4" />
+                  {aceptando ? "Aceptando…" : `Aceptar los ${grupos.nuevos.length}`}
+                </button>
+              ) : null}
+              <div className="grid min-h-0 content-start gap-4 lg:overflow-y-auto lg:pr-1 lg:[scrollbar-width:thin]">
+                {grupos[s.k].length === 0 ? (
+                  <p className="rounded-[1.25rem] border border-dashed border-carbon/15 px-4 py-8 text-center text-sm text-carbon-muted dark:border-crema/15 dark:text-crema/50">{s.vacio}</p>
+                ) : null}
+                {porHora(grupos[s.k]).map((h) => {
+                  const c = cuando(h.recogida, ahora);
+                  return (
+                    <div key={h.hora} className="grid gap-2">
+                      <p className="flex items-baseline gap-2 px-1">
+                        <span className="font-display text-2xl tabular-nums">{h.hora}</span>
+                        <span className={`text-xs font-semibold ${c.tarde && s.k !== "listos" ? "text-terracota" : "text-carbon-muted dark:text-crema/60"}`}>{c.texto}</span>
+                        <span className="ml-auto text-xs text-carbon-muted dark:text-crema/60">{h.pedidos.length === 1 ? "1 pedido" : `${h.pedidos.length} pedidos`}</span>
+                      </p>
+                      {h.pedidos.map((p) => (
+                        <Tarjeta
+                          key={p.id}
+                          p={p}
+                          paso={s.k}
+                          banda={s.banda}
+                          ocupado={ocupado === p.id || aceptando}
+                          onAvanzar={(e) => void avanzar(p, e)}
+                          onCobrar={(m) => void cobrarYEntregar(p, m)}
+                          onCancelar={() => cancelar(p)}
+                        />
                       ))}
-                    </ul>
-                    {p.notas ? <p className="mt-3 rounded-lg bg-ratan/15 px-3 py-2 text-sm font-semibold">{p.notas}</p> : null}
-
-                    <div className="mt-3 flex items-center justify-between gap-2">
-                      <span className="text-xl font-bold tabular-nums">{formatCentimos(p.total_centimos)}</span>
-                      <span className={`rounded-full px-3 py-1 text-xs font-bold ${pagado ? "bg-oliva text-crema" : "bg-ratan/25 text-carbon dark:text-crema"}`}>
-                        {pagado ? "Pagado" : "Paga al recoger"}
-                      </span>
                     </div>
-
-                    <div className="mt-4 grid gap-2">
-                      {s.k === "nuevos" ? (
-                        <button type="button" disabled={esperando} onClick={() => void avanzar(p, "ACCEPTED")} className={`${botonPrimario} min-h-14 text-base`}>
-                          <Icon name="check" className="h-5 w-5" />
-                          Aceptar pedido
-                        </button>
-                      ) : s.k === "preparando" ? (
-                        <button type="button" disabled={esperando} onClick={() => void avanzar(p, "READY")} className={`${botonPrimario} min-h-14 text-base`}>
-                          <Icon name="bag" className="h-5 w-5" />
-                          Está listo
-                        </button>
-                      ) : pagado ? (
-                        <button type="button" disabled={esperando} onClick={() => void avanzar(p, "DELIVERED")} className={`${botonPrimario} min-h-14 text-base`}>
-                          <Icon name="check" className="h-5 w-5" />
-                          Entregado
-                        </button>
-                      ) : (
-                        <>
-                          <p className="text-center text-sm font-semibold">Cobrar {formatCentimos(p.total_centimos)} y entregar</p>
-                          <div className="grid grid-cols-2 gap-2">
-                            <button type="button" disabled={esperando} onClick={() => void cobrarYEntregar(p, "EFECTIVO")} className={`${botonPrimario} min-h-14 text-base`}>
-                              <Icon name="cash" className="h-5 w-5" />
-                              Efectivo
-                            </button>
-                            <button type="button" disabled={esperando} onClick={() => void cobrarYEntregar(p, "TARJETA")} className={`${botonPrimario} min-h-14 text-base`}>
-                              <Icon name="card" className="h-5 w-5" />
-                              Tarjeta
-                            </button>
-                          </div>
-                        </>
-                      )}
-                      <button type="button" disabled={esperando} onClick={() => cancelar(p)} className="min-h-10 text-sm font-semibold text-terracota underline-offset-4 hover:underline">
-                        Cancelar pedido
-                      </button>
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
-          </section>
-        ))}
-      </div>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
+        </div>
+      )}
     </div>
+  );
+}
+
+/** Un pedido en poco sitio: quién, qué lleva, cuánto, si está pagado y el botón del paso. */
+function Tarjeta({
+  p,
+  paso,
+  banda,
+  ocupado,
+  onAvanzar,
+  onCobrar,
+  onCancelar,
+}: {
+  p: PedidoKds;
+  paso: Paso;
+  banda: string;
+  ocupado: boolean;
+  onAvanzar: (e: "ACCEPTED" | "READY" | "DELIVERED") => void;
+  onCobrar: (m: "EFECTIVO" | "TARJETA") => void;
+  onCancelar: () => void;
+}) {
+  const pagado = p.payment_status === "PAID";
+  const productos = p.items.filter((i) => i.estado !== "CANCELLED");
+  const accion = "min-h-11 rounded-xl px-3 text-sm font-semibold transition-transform active:scale-[0.98] disabled:opacity-50";
+  return (
+    <article className={`${card} relative overflow-hidden py-3 pl-4 pr-3 motion-safe:animate-fade-up`}>
+      <span aria-hidden="true" className={`absolute inset-y-0 left-0 w-1.5 ${banda}`} />
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-semibold">
+            {p.nombre_cliente ?? "Sin nombre"}
+            <span className="ml-1.5 text-xs font-normal text-carbon-muted dark:text-crema/60">#{p.numero_dia}</span>
+          </p>
+          <ul className="mt-1 grid gap-0.5 text-sm leading-snug">
+            {productos.map((i) => (
+              <li key={i.id}>
+                <span className="font-semibold tabular-nums">{i.cantidad}×</span> {i.nombre}
+                {i.modificadores.length > 0 ? (
+                  <span className="text-carbon-muted dark:text-crema/60"> · {i.modificadores.map((m) => m.opciones.map((o) => o.nombre).join(", ")).join(" · ")}</span>
+                ) : null}
+                {i.notas ? <span className="italic text-terracota"> · {i.notas}</span> : null}
+              </li>
+            ))}
+          </ul>
+          {p.notas ? <p className="mt-1.5 rounded-lg bg-ratan/15 px-2 py-1 text-xs font-semibold">{p.notas}</p> : null}
+        </div>
+        <div className="grid shrink-0 justify-items-end gap-1">
+          <span className="font-bold tabular-nums">{formatCentimos(p.total_centimos)}</span>
+          <span className={`rounded-full px-2 py-0.5 text-[0.65rem] font-bold ${pagado ? "bg-oliva text-crema" : "bg-ratan/25 text-carbon dark:text-crema"}`}>{pagado ? "Pagado" : "Paga al recoger"}</span>
+          {p.telefono ? (
+            <a href={`tel:${p.telefono.replace(/\s/g, "")}`} className="mt-0.5 grid h-9 w-9 place-items-center rounded-full ring-1 ring-carbon/15 dark:ring-crema/15" aria-label={`Llamar a ${p.nombre_cliente ?? "cliente"}`}>
+              <Icon name="phone" className="h-4 w-4" />
+            </a>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="mt-2.5 flex items-center gap-2">
+        {paso === "nuevos" ? (
+          <button type="button" disabled={ocupado} onClick={() => onAvanzar("ACCEPTED")} className={`${accion} flex-1 bg-marino text-crema dark:bg-neon dark:text-noche`}>
+            Aceptar
+          </button>
+        ) : paso === "preparando" ? (
+          <button type="button" disabled={ocupado} onClick={() => onAvanzar("READY")} className={`${accion} flex-1 bg-marino text-crema dark:bg-neon dark:text-noche`}>
+            Está listo
+          </button>
+        ) : pagado ? (
+          <button type="button" disabled={ocupado} onClick={() => onAvanzar("DELIVERED")} className={`${accion} flex-1 bg-marino text-crema dark:bg-neon dark:text-noche`}>
+            Entregado
+          </button>
+        ) : (
+          <>
+            <span className="text-xs font-semibold text-carbon-muted dark:text-crema/60">Cobrar y entregar:</span>
+            <button type="button" disabled={ocupado} onClick={() => onCobrar("EFECTIVO")} className={`${accion} flex-1 bg-marino text-crema dark:bg-neon dark:text-noche`}>
+              Efectivo
+            </button>
+            <button type="button" disabled={ocupado} onClick={() => onCobrar("TARJETA")} className={`${accion} flex-1 bg-marino text-crema dark:bg-neon dark:text-noche`}>
+              Tarjeta
+            </button>
+          </>
+        )}
+        <button type="button" disabled={ocupado} onClick={onCancelar} aria-label={`Cancelar el pedido #${p.numero_dia}`} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-terracota ring-1 ring-carbon/10 dark:ring-crema/10">
+          <Icon name="close" className="h-4 w-4" />
+        </button>
+      </div>
+    </article>
   );
 }
