@@ -7,6 +7,7 @@ import { MiniaturaPlato } from "@/components/carta/MiniaturaPlato";
 import { Photo } from "@/components/media/Photo";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { formatCentimos, formatearFechaLarga, hoyEnMadrid } from "@/lib/format";
+import { prefersReducedMotion } from "@/hooks/useReducedMotion";
 import { horasReservables, primerDiaReservable, type Cierre, type Semana } from "@/lib/horario";
 import type { ImageKey } from "@/lib/images";
 import { plazasDespacho, solicitarReserva, type ModoComida, type ReservaWeb } from "@/lib/reservas/actions";
@@ -18,6 +19,15 @@ const campo = "h-12 w-full rounded-2xl border border-carbon/15 bg-white px-4 tex
 const ficha =
   "rounded-2xl border border-carbon/12 bg-white text-carbon transition-colors hover:border-carbon/35 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:border-carbon/12 aria-pressed:border-marino aria-pressed:bg-marino aria-pressed:text-crema";
 
+/** Flecha para pasar de semana. */
+const flecha = "grid h-9 w-9 place-items-center rounded-full border border-carbon/12 bg-white text-carbon hover:border-carbon/35 disabled:cursor-not-allowed disabled:opacity-30";
+
+/** Algo que falta para enviar: el texto y el id del campo donde se arregla. */
+interface Falta {
+  id: string;
+  texto: string;
+}
+
 /** La hora de comer si ese día se puede; si no, la primera libre. */
 const horaPorDefecto = (horas: string[]) => (horas.includes("14:00") ? "14:00" : (horas[0] ?? ""));
 /** La hora del evento o, si cae fuera de las reservables, la última antes (o la primera). */
@@ -27,16 +37,18 @@ const horaDeEvento = (horas: string[], hora?: string | null) => {
   return horas.includes(h) ? h : (horas.filter((x) => x <= h).at(-1) ?? horas[0] ?? "");
 };
 
-/** Días que se ven de un vistazo; el resto, con «Otra fecha». */
-const DIAS_VISIBLES = 21;
+/** Una semana a la vista (de hoy en adelante) y flechas para pasar de semana. */
+const SEMANAS_MAX = 26;
 const masDias = (iso: string, n: number) => {
   const [y, m, d] = iso.split("-").map(Number);
   return new Date(Date.UTC(y!, m! - 1, d! + n)).toISOString().slice(0, 10);
 };
+const diasEntre = (desde: string, hasta: string) => Math.round((Date.parse(`${hasta}T12:00:00Z`) - Date.parse(`${desde}T12:00:00Z`)) / 86_400_000);
 const fmt = (o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat("es-ES", { ...o, timeZone: "UTC" });
 const DIA_SEMANA = fmt({ weekday: "short" });
 const MES = fmt({ month: "short" });
 const FECHA_CORTA = fmt({ weekday: "short", day: "numeric", month: "short" });
+const DIA_MES = fmt({ day: "numeric", month: "short" });
 const comoFecha = (iso: string) => new Date(`${iso}T12:00:00Z`);
 
 export interface CartaReserva {
@@ -151,8 +163,11 @@ export function ReservaForm({
       cantidades: {},
     });
   });
+  const [semanaVista, setSemanaVista] = useState(() => (f.fecha ? Math.min(SEMANAS_MAX, Math.max(0, Math.floor(diasEntre(hoy, f.fecha) / 7))) : 0));
   const [estado, setEstado] = useState<"idle" | "enviando" | "ok">("idle");
   const [error, setError] = useState<string | null>(null);
+  /** Tras un primer intento de envío, lo que falta se muestra y se va quitando al arreglarlo. */
+  const [intentado, setIntentado] = useState(false);
   const [plazas, setPlazas] = useState<{ fecha: string; comida: number; noche: number } | null>(null);
   const [seccion, setSeccion] = useState(carta[0]?.id ?? "");
   // Al cambiar de menú a carta (o a solo mesa) los platos elegidos ya no valen.
@@ -169,13 +184,13 @@ export function ReservaForm({
   const evento = f.espacio === "evento" ? eventos.find((e) => e.slug === f.evento_slug) : undefined;
   const dias = useMemo(
     () =>
-      Array.from({ length: DIAS_VISIBLES }, (_, i) => {
-        const iso = masDias(hoy, i);
+      Array.from({ length: 7 }, (_, i) => {
+        const iso = masDias(hoy, semanaVista * 7 + i);
         return { iso, abierto: horasReservables(semana, cierres, iso, momento).length > 0 };
       }),
-    [hoy, semana, cierres, momento],
+    [hoy, semanaVista, semana, cierres, momento],
   );
-  const fueraDeLaTira = Boolean(f.fecha) && !dias.some((d) => d.iso === f.fecha);
+  const rangoSemana = `${DIA_MES.format(comoFecha(dias[0]!.iso))} – ${DIA_MES.format(comoFecha(dias[6]!.iso))}`.replace(/\./g, "");
 
   // Plazas libres de El Despacho para el día elegido.
   useEffect(() => {
@@ -190,6 +205,26 @@ export function ReservaForm({
   const libres = despacho && plazas?.fecha === f.fecha ? (noche ? plazas.noche : plazas.comida) : null;
   const tope = Math.max(1, despacho ? Math.min(aforoDespacho, libres ?? aforoDespacho) : maxPersonas);
   const despachoLleno = libres !== null && libres <= 0;
+
+  /** Lo que impide enviar, dicho claro y con el sitio al que ir a arreglarlo. */
+  const revisar = (): Falta[] => {
+    const r: Falta[] = [];
+    if (evento) {
+      if (horas.length === 0) r.push({ id: "reserva-cuando", texto: "Para este evento no se puede apuntar online: llámanos." });
+    } else if (!f.fecha) r.push({ id: "reserva-cuando", texto: "Elige el día." });
+    else if (diaCerrado) r.push({ id: "reserva-cuando", texto: "Ese día estamos cerrados: elige otro." });
+    else if (horas.length === 0) r.push({ id: "reserva-cuando", texto: "Ese día ya no quedan horas online: elige otro día." });
+    else if (!f.hora) r.push({ id: "reserva-hora", texto: "Elige la hora." });
+    if (despachoLleno) r.push({ id: "reserva-cuando", texto: "El Despacho está completo en ese turno: elige otro turno, otro día o el comedor." });
+    else if (!Number.isInteger(f.personas) || f.personas < 1 || f.personas > tope)
+      r.push({ id: "reserva-cuando", texto: `Indica cuántas personas (de 1 a ${tope}).` });
+    if (!f.nombre.trim()) r.push({ id: "reserva-nombre", texto: "Falta tu nombre." });
+    if (f.telefono.replace(/\D/g, "").length < 9) r.push({ id: "reserva-telefono", texto: "Falta tu teléfono (al menos 9 cifras) para confirmarte la reserva." });
+    if (f.notas?.trim() && !f.consiente_salud) r.push({ id: "reserva-consiente", texto: "Marca la casilla de consentimiento de las notas (o bórralas)." });
+    return r;
+  };
+  const faltan = intentado ? revisar() : [];
+  const falta = (id: string) => faltan.some((x) => x.id === id);
 
   const elegidos = Object.values(f.cantidades).reduce((a, n) => a + n, 0);
   const cambiarCantidad = (id: string, n: number) =>
@@ -269,11 +304,20 @@ export function ReservaForm({
       </noscript>
       <form
         id="form-reserva"
+        noValidate
         className="rounded-3xl bg-[#FFFDF8] shadow-card ring-1 ring-tinta-line"
         onSubmit={async (e) => {
           e.preventDefault();
-          setEstado("enviando");
           setError(null);
+          const pendientes = revisar();
+          setIntentado(true);
+          if (pendientes.length) {
+            const primero = document.getElementById(pendientes[0]!.id);
+            primero?.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "center" });
+            if (primero instanceof HTMLInputElement || primero instanceof HTMLSelectElement) primero.focus({ preventScroll: true });
+            return;
+          }
+          setEstado("enviando");
           const { modo, cantidades, ...resto } = f;
           const r = await solicitarReserva({
             ...resto,
@@ -360,9 +404,22 @@ export function ReservaForm({
             </div>
           ) : (
             <>
-            <p className="text-sm font-semibold text-carbon">Día</p>
-            <div className="-mx-1 mt-2 flex snap-x gap-2 overflow-x-auto px-1 pb-2 [scrollbar-width:thin]">
-              {dias.map((d, i) => (
+            <div id="reserva-cuando" className="flex scroll-mt-28 items-center justify-between gap-3">
+              <p className="text-sm font-semibold text-carbon">Día</p>
+              <div className="flex items-center gap-1">
+                <button type="button" aria-label="Semana anterior" disabled={semanaVista === 0} onClick={() => setSemanaVista((n) => n - 1)} className={flecha}>
+                  <Icon name="chevronLeft" className="h-4 w-4" />
+                </button>
+                <span aria-live="polite" className="min-w-[7.5rem] text-center text-sm tabular-nums text-carbon-muted">
+                  {semanaVista === 0 ? "Esta semana" : rangoSemana}
+                </span>
+                <button type="button" aria-label="Semana siguiente" disabled={semanaVista >= SEMANAS_MAX} onClick={() => setSemanaVista((n) => n + 1)} className={flecha}>
+                  <Icon name="chevronRight" className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+            <div className="mt-2 grid grid-cols-7 gap-1 sm:gap-2">
+              {dias.map((d) => (
                 <button
                   key={d.iso}
                   type="button"
@@ -370,26 +427,14 @@ export function ReservaForm({
                   aria-label={`${formatearFechaLarga(d.iso)}${d.abierto ? "" : ", cerrado"}`}
                   disabled={!d.abierto}
                   onClick={() => set({ fecha: d.iso })}
-                  className={`${ficha} flex w-[4.25rem] shrink-0 snap-start flex-col items-center py-2.5`}
+                  className={`${ficha} flex min-w-0 flex-col items-center px-0.5 py-2.5`}
                 >
-                  <span className="text-[0.7rem] font-semibold uppercase tracking-wide opacity-70">{i === 0 ? "Hoy" : DIA_SEMANA.format(comoFecha(d.iso)).replace(".", "")}</span>
-                  <span className="font-display text-2xl leading-tight tabular-nums">{Number(d.iso.slice(8))}</span>
-                  <span className="text-[0.7rem] opacity-70">{d.abierto ? MES.format(comoFecha(d.iso)).replace(".", "") : "cerrado"}</span>
+                  <span className="text-[0.65rem] font-semibold uppercase tracking-wide opacity-70 sm:text-[0.7rem]">{d.iso === hoy ? "Hoy" : DIA_SEMANA.format(comoFecha(d.iso)).replace(".", "")}</span>
+                  <span className="font-display text-xl leading-tight tabular-nums sm:text-2xl">{Number(d.iso.slice(8))}</span>
+                  <span className="max-w-full truncate text-[0.65rem] opacity-70 sm:text-[0.7rem]">{d.abierto ? MES.format(comoFecha(d.iso)).replace(".", "") : "cerrado"}</span>
                 </button>
               ))}
             </div>
-            <label className="mt-2 flex flex-wrap items-center gap-3 text-sm text-carbon-muted">
-              Otra fecha
-              <input
-                type="date"
-                min={hoy}
-                value={fueraDeLaTira ? f.fecha : ""}
-                onChange={(e) => e.target.value && set({ fecha: e.target.value })}
-                aria-describedby={diaCerrado || avisoHoy ? "reserva-dia-aviso" : undefined}
-                aria-invalid={diaCerrado || undefined}
-                className={`h-10 rounded-xl border px-3 text-carbon ${fueraDeLaTira ? "border-marino bg-marino/5" : "border-carbon/15 bg-white"}`}
-              />
-            </label>
             {diaCerrado || avisoHoy ? (
               <p id="reserva-dia-aviso" className={`mt-3 text-sm ${diaCerrado ? "font-semibold text-terracota" : "text-carbon-muted"}`}>
                 {diaCerrado
@@ -400,34 +445,41 @@ export function ReservaForm({
 
             <div className="mt-6 grid gap-6 sm:grid-cols-[1fr_auto]">
               <div>
-                <p className="text-sm font-semibold text-carbon">Hora</p>
+                <label htmlFor="reserva-hora" className="text-sm font-semibold text-carbon">
+                  Hora
+                </label>
                 {horas.length === 0 ? (
                   <p className="mt-2 rounded-2xl border border-dashed border-carbon/20 px-4 py-3 text-sm text-carbon-muted">
                     {f.fecha ? "Ese día no quedan horas online." : "Elige primero el día."}
                   </p>
                 ) : (
-                  (
-                    [
-                      ["Mediodía", horas.filter((h) => h < "17:00")],
-                      ["Noche", horas.filter((h) => h >= "17:00")],
-                    ] as const
-                  ).map(([turno, lista]) =>
-                    lista.length ? (
-                      <div key={turno} className="mt-2">
-                        <p className="mb-1.5 flex items-center gap-1.5 text-xs text-carbon-muted">
-                          <Icon name={turno === "Noche" ? "moon" : "sun"} className="h-3.5 w-3.5" />
-                          {turno}
-                        </p>
-                        <div className="grid grid-cols-5 gap-1.5 sm:flex sm:flex-wrap sm:gap-2">
-                          {lista.map((h) => (
-                            <button key={h} type="button" aria-pressed={f.hora === h} onClick={() => set({ hora: h })} className={`${ficha} min-h-10 text-sm font-semibold tabular-nums sm:px-3`}>
-                              {h}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    ) : null,
-                  )
+                  <div className="relative mt-2 max-w-xs">
+                    <select
+                      id="reserva-hora"
+                      value={f.hora}
+                      onChange={(e) => set({ hora: e.target.value })}
+                      aria-invalid={falta("reserva-hora") || undefined}
+                      className={`${campo} appearance-none pr-10 font-semibold tabular-nums`}
+                    >
+                      {(
+                        [
+                          ["Mediodía", horas.filter((h) => h < "17:00")],
+                          ["Noche", horas.filter((h) => h >= "17:00")],
+                        ] as const
+                      ).map(([turno, lista]) =>
+                        lista.length ? (
+                          <optgroup key={turno} label={turno}>
+                            {lista.map((h) => (
+                              <option key={h} value={h}>
+                                {h}
+                              </option>
+                            ))}
+                          </optgroup>
+                        ) : null,
+                      )}
+                    </select>
+                    <Icon name="chevronDown" className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-carbon-muted" />
+                  </div>
                 )}
               </div>
               <Contador
@@ -548,12 +600,14 @@ export function ReservaForm({
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="grid gap-1 text-sm">
               <span className="font-semibold">Nombre</span>
-              <input required autoComplete="name" value={f.nombre} onChange={(e) => set({ nombre: e.target.value.slice(0, 60) })} className={campo} />
+              <input id="reserva-nombre" required autoComplete="name" aria-invalid={falta("reserva-nombre") || undefined} value={f.nombre} onChange={(e) => set({ nombre: e.target.value.slice(0, 60) })} className={campo} />
             </label>
             <label className="grid gap-1 text-sm">
               <span className="font-semibold">Teléfono</span>
               <input
+                id="reserva-telefono"
                 required
+                aria-invalid={falta("reserva-telefono") || undefined}
                 type="tel"
                 inputMode="tel"
                 autoComplete="tel"
@@ -571,7 +625,7 @@ export function ReservaForm({
             </label>
             {f.notas?.trim() ? (
               <label className="flex items-start gap-3 text-sm sm:col-span-2">
-                <input type="checkbox" required checked={!!f.consiente_salud} onChange={(e) => set({ consiente_salud: e.target.checked })} className="mt-1 h-4 w-4 shrink-0 accent-[theme(colors.marino.DEFAULT)]" />
+                <input id="reserva-consiente" type="checkbox" required aria-invalid={falta("reserva-consiente") || undefined} checked={!!f.consiente_salud} onChange={(e) => set({ consiente_salud: e.target.checked })} className="mt-1 h-4 w-4 shrink-0 accent-[theme(colors.marino.DEFAULT)]" />
                 <span>Consiento que se usen las alergias o datos de salud que indico en las notas solo para atender mi reserva. Se borran después del servicio.</span>
               </label>
             ) : null}
@@ -596,7 +650,20 @@ export function ReservaForm({
 
         {/* Resumen y envío: siempre a mano al bajar. */}
         <div className="sticky bottom-0 z-10 rounded-b-3xl border-t border-tinta-line bg-[#FFFDF8]/95 px-5 py-4 backdrop-blur sm:px-8">
-          {error ? (
+          {faltan.length ? (
+            <div role="alert" className="mb-3 rounded-2xl bg-terracota-soft px-4 py-3 text-sm text-terracota">
+              <p className="font-semibold">{faltan.length === 1 ? "Falta una cosa para enviarla:" : "Faltan algunas cosas para enviarla:"}</p>
+              <ul className="mt-1 grid gap-0.5">
+                {faltan.map((x) => (
+                  <li key={x.texto}>
+                    <a href={`#${x.id}`} className="underline underline-offset-2">
+                      {x.texto}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : error ? (
             <p role="alert" className="mb-3 text-sm font-semibold text-terracota">
               {error}
             </p>
@@ -607,7 +674,7 @@ export function ReservaForm({
             </p>
             <button
               type="submit"
-              disabled={estado === "enviando" || diaCerrado || horas.length === 0 || despachoLleno}
+              disabled={estado === "enviando"}
               className="btn-primary w-full shrink-0 sm:w-auto"
             >
               <Icon name={evento ? "users" : "calendar"} className="h-4 w-4" />
