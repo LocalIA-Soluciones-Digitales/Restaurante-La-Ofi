@@ -8,6 +8,7 @@ import { Icon } from "@/components/ui/Icon";
 import { hoyEnMadrid } from "@/lib/format";
 import { estadoAhora, horarioDeHoy, resolverHorario } from "@/lib/horario";
 import { href, type Locale } from "@/lib/i18n";
+import { fotoDeFichaDe } from "@/lib/carta-fichas";
 import { fotoDePlato, normalizarNombre } from "@/lib/carta-fotos";
 import { creditoFoto, IMAGES } from "@/lib/images";
 import { getCarta, getCierres, getEventos, getHorario, getMenuDia } from "@/lib/restaurant/queries";
@@ -48,7 +49,8 @@ export default async function ReservarPage({ params, searchParams }: Props) {
   const ahora = new Date();
   // Llegando desde un evento (aviso, agenda): no es reservar mesa, es apuntarse.
   const aEvento = espacio === "evento" && reservables.length > 0;
-  // Cada plato con su foto si la tiene; el del menú del día, la del mismo plato de la carta.
+  // Cada plato con su foto, en el mismo orden que /carta: la suya de /admin, la real
+  // del sitio o la de su ficha. El del menú del día, la del mismo plato de la carta.
   const cartaReserva = (carta ?? [])
     .map((c) => ({
       id: c.id,
@@ -60,7 +62,7 @@ export default async function ReservarPage({ params, searchParams }: Props) {
           nombre: p.nombre,
           descripcion: p.descripcion,
           precio_centimos: p.precio_centimos!,
-          foto: fotoDePlato(c.slug, p.nombre, [p.imagen_url, ...(p.imagenes ?? [])]),
+          foto: fotoDePlato(c.slug, p.nombre, [p.imagen_url, ...(p.imagenes ?? [])]) ?? fotoDeFichaDe(c.slug, p.nombre),
         })),
     }))
     .filter((c) => c.productos.length > 0);

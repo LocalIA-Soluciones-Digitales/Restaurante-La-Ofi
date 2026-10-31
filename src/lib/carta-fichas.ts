@@ -107,6 +107,12 @@ export function fotoDeFicha(f: Ficha): ImagenRef | null {
   return f.foto ? { src: `/images/platos/${f.foto}.webp`, alt: `${f.nombre} en El Despacho de La Ofi` } : null;
 }
 
+/** Ruta de la foto de la ficha de un plato, o null si no tiene ficha o foto. */
+export function fotoDeFichaDe(seccion: string, nombre: string): string | null {
+  const f = fichaDe(seccion, nombre);
+  return f ? (fotoDeFicha(f)?.src ?? null) : null;
+}
+
 /** kcal redondeadas a la decena: es una estimación, no una medida. */
 export function kcalDeFicha(f: Ficha): number {
   const [p, c, g] = f.macros;
