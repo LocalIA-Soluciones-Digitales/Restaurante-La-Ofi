@@ -45,15 +45,23 @@ export default async function EventoPage({ params }: Params) {
     <article>
       {jsonLd ? <JsonLd data={jsonLd} /> : null}
 
-      {/* Volver a la agenda, bajo la cabecera de la web. */}
-      <div className="bg-crema pb-4 pt-24 lg:pt-28">
-        <div className="container-wide">
-          <Link href={href(locale, "/eventos")} className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-carbon-muted hover:text-carbon">
-            <Icon name="chevronLeft" className="h-4 w-4" />
-            Toda la agenda
-          </Link>
-        </div>
-      </div>
+      {/* Miga de pan bajo la cabecera de la web: de vuelta a la agenda, y dónde se está. */}
+      <nav aria-label="Ruta" className="bg-crema pb-2 pt-24 lg:pt-28">
+        <ol className="container-wide flex min-w-0 items-center gap-3 text-[0.72rem] font-semibold uppercase tracking-[0.18em]">
+          <li className="shrink-0">
+            <Link href={href(locale, "/eventos")} className="group inline-flex min-h-11 items-center gap-2.5 text-carbon-muted transition-colors hover:text-carbon">
+              <span aria-hidden="true" className="grid h-8 w-8 place-items-center rounded-full border border-tinta-line transition-[border-color,transform] duration-300 group-hover:-translate-x-0.5 group-hover:border-carbon">
+                <Icon name="chevronLeft" className="h-3.5 w-3.5" />
+              </span>
+              Agenda
+            </Link>
+          </li>
+          <li aria-hidden="true" className="h-px w-5 shrink-0 bg-tinta-line" />
+          <li aria-current="page" className="truncate text-carbon">
+            {evento.titulo}
+          </li>
+        </ol>
+      </nav>
       <header className="bg-crema pb-16 pt-6 sm:pb-24">
         <EventoPortada evento={evento} locale={locale} ficha />
       </header>
