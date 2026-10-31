@@ -33,14 +33,14 @@ export function MenuSinPublicar({ hoja, headingLevel: Heading, filete }: { hoja:
       texto: `Sale aquí cada día de ${sinCeros(DESDE)} a ${sinCeros(HASTA)}, y entonces puedes reservar con menú o pedirlo para recoger. Mientras tanto, llámanos:`,
     },
     despues: {
-      titulo: "El menú de hoy ya ha terminado",
-      texto: `El menú del día se sirve de ${sinCeros(DESDE)} a ${sinCeros(HASTA)}. ${
-        viernes ? "Vuelve el lunes" : "Mañana sale aquí otra vez"
-      } desde las ${sinCeros(DESDE)}. Ahora tienes la carta; para reservar o preguntar, llámanos:`,
+      titulo: "El menú de hoy ya se ha servido",
+      texto: `Servimos el menú del día de lunes a viernes, de ${sinCeros(DESDE)} a ${sinCeros(HASTA)}. ${
+        viernes ? "El próximo estará aquí el lunes" : "El de mañana estará aquí"
+      } a partir de las ${sinCeros(DESDE)}. Mientras tanto, nuestra carta sigue disponible. Para reservas o consultas:`,
     },
     finde: {
-      titulo: "El fin de semana no hay menú del día",
-      texto: `El menú del día es de lunes a viernes y vuelve el lunes desde las ${sinCeros(DESDE)}. Hoy tienes la carta; para reservar, llámanos:`,
+      titulo: "Menú del día, de lunes a viernes",
+      texto: `Durante el fin de semana servimos nuestra carta. El menú del día vuelve el lunes a partir de las ${sinCeros(DESDE)}. Para reservas o consultas:`,
     },
   };
   const t = textos[m];
