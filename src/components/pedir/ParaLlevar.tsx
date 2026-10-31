@@ -2,11 +2,13 @@
 
 import { useMemo, useState } from "react";
 import { AnadirControl } from "@/components/carta/AnadirControl";
+import { MiniaturaPlato } from "@/components/carta/MiniaturaPlato";
 import { ProductoDetalle } from "@/components/carta/ProductoDetalle";
 import type { CartaCartControls } from "@/components/carta/types";
 import { ActiveOrderBanner } from "@/components/pedir/ActiveOrderBanner";
 import { useCart } from "@/components/pedir/cart-context";
 import { Icon } from "@/components/ui/Icon";
+import { normalizarNombre } from "@/lib/carta-fotos";
 import { vibrar } from "@/lib/haptics";
 import { formatCentimos } from "@/lib/format";
 import type { ConfigPedidos } from "@/lib/pedidos/types";
@@ -40,6 +42,11 @@ export function ParaLlevar({ secciones, config, menu }: { secciones: CartaSeccio
   const [vista, setVista] = useState<"menu" | "carta">(hayMenu ? "menu" : "carta");
   const [detalle, setDetalle] = useState<{ seccion: CartaSeccion; index: number } | null>(null);
   const conItems = secciones.filter((s) => s.items.length > 0);
+  // Los platos del menú del día con la foto del mismo plato en la carta, si la tiene.
+  const fotoPorNombre = useMemo(
+    () => new Map(secciones.flatMap((s) => s.items.filter((i) => i.imagen).map((i) => [normalizarNombre(i.nombre), i.imagen!.src] as const))),
+    [secciones],
+  );
 
   const controles = useMemo<CartaCartControls | undefined>(
     () =>
@@ -128,7 +135,7 @@ export function ParaLlevar({ secciones, config, menu }: { secciones: CartaSeccio
 
       {vista === "menu" ? (
         hayMenu ? (
-          <ComponerMenu menu={menu!} puedeAnadir={Boolean(config)} />
+          <ComponerMenu menu={menu!} puedeAnadir={Boolean(config)} fotoPorNombre={fotoPorNombre} />
         ) : (
           <div className="mt-8 max-w-xl border border-tinta-line bg-[#FFFDF8] p-8">
             <p className="kicker text-brasa">Menú del día</p>
@@ -163,6 +170,10 @@ export function ParaLlevar({ secciones, config, menu }: { secciones: CartaSeccio
                 <ul className="divide-y divide-carbon/10">
                   {s.items.map((it, i) => (
                     <li key={it.id} className="flex items-center gap-4 py-4">
+                      {/* Como en /carta: la foto del plato si la hay; si no, su tipo ilustrado. */}
+                      <button type="button" tabIndex={-1} aria-hidden="true" onClick={() => setDetalle({ seccion: s, index: i })} className="shrink-0">
+                        <MiniaturaPlato nombre={it.nombre} foto={it.imagen?.src} seccion={s.slug} className="h-16 w-16" />
+                      </button>
                       <button type="button" onClick={() => setDetalle({ seccion: s, index: i })} className="min-w-0 flex-1 text-left">
                         <span className="block font-display text-lg leading-snug text-carbon">{it.nombre}</span>
                         {it.descripcion ? <span className="mt-0.5 line-clamp-2 block text-sm text-carbon-muted">{it.descripcion}</span> : null}
@@ -198,7 +209,7 @@ export function ParaLlevar({ secciones, config, menu }: { secciones: CartaSeccio
 }
 
 /** El menú como se compone en barra: un plato de cada grupo y cuántos menús así. */
-function ComponerMenu({ menu, puedeAnadir }: { menu: MenuParaLlevar; puedeAnadir: boolean }) {
+function ComponerMenu({ menu, puedeAnadir, fotoPorNombre }: { menu: MenuParaLlevar; puedeAnadir: boolean; fotoPorNombre: Map<string, string> }) {
   const cart = useCart();
   const grupos = GRUPOS.map((g) => ({ ...g, platos: menu.platos.filter((p) => p.tipo === g.tipo).sort((a, b) => a.orden - b.orden) })).filter((g) => g.platos.length > 0);
   const [eleccion, setEleccion] = useState<Record<string, string>>(() =>
@@ -236,8 +247,9 @@ function ComponerMenu({ menu, puedeAnadir }: { menu: MenuParaLlevar; puedeAnadir
                   type="button"
                   aria-pressed={eleccion[g.tipo] === p.id}
                   onClick={() => setEleccion((e) => ({ ...e, [g.tipo]: p.id }))}
-                  className="flex min-h-14 items-center gap-3 rounded-2xl border border-carbon/15 bg-[#FFFDF8] px-4 py-3 text-left aria-pressed:border-carbon aria-pressed:bg-carbon aria-pressed:text-crema"
+                  className="flex min-h-14 items-center gap-3 rounded-2xl border border-carbon/15 bg-[#FFFDF8] py-2 pl-2 pr-4 text-left aria-pressed:border-carbon aria-pressed:bg-carbon aria-pressed:text-crema"
                 >
+                  <MiniaturaPlato nombre={p.nombre} foto={fotoPorNombre.get(normalizarNombre(p.nombre))} seccion={p.tipo} className="h-14 w-14" />
                   <span aria-hidden="true" className="grid h-5 w-5 shrink-0 place-items-center rounded-full border border-current">
                     {eleccion[g.tipo] === p.id ? <span className="h-2.5 w-2.5 rounded-full bg-current" /> : null}
                   </span>

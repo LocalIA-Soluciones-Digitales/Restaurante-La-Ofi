@@ -1,9 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { MiniaturaPlato } from "@/components/carta/MiniaturaPlato";
 import { useCart, type CambioCarta, type CartLinea } from "@/components/pedir/cart-context";
 import { useTableSession } from "@/components/pedir/table-session-context";
 import { Icon, type IconName } from "@/components/ui/Icon";
@@ -285,7 +285,7 @@ export function CartDrawer({
               {cart.lineas.map((l) => (
                 <li key={l.key} className="py-4">
                   <div className="flex items-start gap-3">
-                    <Miniatura src={fotos.get(l.productoId)} className="h-16 w-16" />
+                    <Miniatura nombre={l.nombre} src={fotos.get(l.productoId)} className="h-16 w-16" />
                     <div className="min-w-0 flex-1">
                       <p className="font-display text-lg leading-tight text-carbon">{l.nombre}</p>
                       {l.resumen ? <p className="text-sm text-carbon-muted">{l.resumen}</p> : null}
@@ -519,14 +519,9 @@ export function CartDrawer({
 }
 
 /** Foto pequeña del plato; sin foto, un hueco con el icono de la carta. */
-function Miniatura({ src, className }: { src?: string; className: string }) {
-  return src ? (
-    <Image src={src} alt="" width={128} height={128} className={`${className} shrink-0 rounded-xl object-cover`} />
-  ) : (
-    <span aria-hidden="true" className={`${className} grid shrink-0 place-items-center rounded-xl bg-arena text-carbon-muted`}>
-      <Icon name="utensils" className="h-5 w-5" />
-    </span>
-  );
+/** Como en la carta: la foto del plato si la hay; si no, su tipo ilustrado. */
+function Miniatura({ nombre, src, className }: { nombre: string; src?: string; className: string }) {
+  return <MiniaturaPlato nombre={nombre} foto={src} className={className} />;
 }
 
 /** Resumen de solo lectura del pedido: lo que se va a enviar, tal cual. */
@@ -542,7 +537,7 @@ function ResumenPedido({ lineas, fotos, datos }: { lineas: CartLinea[]; fotos: M
       <ul className="divide-y divide-carbon/10 rounded-2xl border border-carbon/10 bg-white px-4">
         {lineas.map((l) => (
           <li key={l.key} className="flex items-center gap-3 py-3">
-            <Miniatura src={fotos.get(l.productoId)} className="h-12 w-12" />
+            <Miniatura nombre={l.nombre} src={fotos.get(l.productoId)} className="h-12 w-12" />
             <span className="min-w-8 font-semibold tabular-nums text-marino">{l.cantidad} ×</span>
             <div className="min-w-0 flex-1">
               <p className="font-display text-lg leading-tight text-carbon">{l.nombre}</p>
