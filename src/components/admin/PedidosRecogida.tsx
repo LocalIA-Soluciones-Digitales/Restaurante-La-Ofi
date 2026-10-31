@@ -12,13 +12,14 @@ import { escucharLaofi } from "@/lib/supabase/browser";
 const HORA = new Intl.DateTimeFormat("es-ES", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Madrid" });
 
 /** Tres pasos, cada uno con su color: así se ve de lejos en qué está cada pedido. */
-const PASOS = [
-  { k: "nuevos", titulo: "Nuevos", vacio: "Ningún pedido nuevo", punto: "bg-terracota", banda: "bg-terracota", contador: "bg-terracota text-crema" },
-  { k: "preparando", titulo: "Preparando", vacio: "Nada en marcha", punto: "bg-ratan", banda: "bg-ratan", contador: "bg-ratan text-noche" },
-  { k: "listos", titulo: "Listos para recoger", vacio: "Nada esperando al cliente", punto: "bg-oliva", banda: "bg-oliva", contador: "bg-oliva text-crema" },
-] as const;
+const PASOS = {
+  nuevos: { titulo: "Nuevos", corto: "Nuevo", banda: "bg-terracota", texto: "text-terracota", contador: "bg-terracota text-crema" },
+  preparando: { titulo: "Preparando", corto: "Preparando", banda: "bg-ratan", texto: "text-madera-oscura dark:text-ratan", contador: "bg-ratan text-noche" },
+  listos: { titulo: "Listos", corto: "Listo", banda: "bg-oliva", texto: "text-oliva dark:text-oliva-soft", contador: "bg-oliva text-crema" },
+} as const;
 
-type Paso = (typeof PASOS)[number]["k"];
+type Paso = keyof typeof PASOS;
+type Filtro = "todos" | Paso;
 
 function pasoDe(p: PedidoKds): Paso {
   if (p.estado === "RECEIVED") return "nuevos";
@@ -39,11 +40,11 @@ function duracion(min: number): string {
   return min < 60 ? `${min} min` : `${Math.floor(min / 60)} h${min % 60 ? ` ${min % 60} min` : ""}`;
 }
 
-/** Pedidos de un paso agrupados por hora de recogida (ya vienen ordenados por ella). */
+/** Pedidos agrupados por hora de recogida (ya vienen ordenados por ella). */
 function porHora(lista: PedidoKds[]): { hora: string; recogida: string | null; pedidos: PedidoKds[] }[] {
   const out: { hora: string; recogida: string | null; pedidos: PedidoKds[] }[] = [];
   for (const p of lista) {
-    const hora = p.recogida_en ? HORA.format(new Date(p.recogida_en)) : "Sin hora";
+    const hora = p.recogida_en ? HORA.format(new Date(p.recogida_en)) : "—";
     const ultimo = out[out.length - 1];
     if (ultimo?.hora === hora) ultimo.pedidos.push(p);
     else out.push({ hora, recogida: p.recogida_en, pedidos: [p] });
@@ -51,12 +52,20 @@ function porHora(lista: PedidoKds[]): { hora: string; recogida: string | null; p
   return out;
 }
 
+/** «2 menús, Ibérico, 2× Burrata»: lo que lleva, en una línea. */
+function queLleva(p: PedidoKds): string {
+  const productos = p.items.filter((i) => i.estado !== "CANCELLED");
+  const menus = productos.filter((i) => i.nombre === "Menú del día").reduce((a, i) => a + i.cantidad, 0);
+  const resto = productos.filter((i) => i.nombre !== "Menú del día").map((i) => (i.cantidad > 1 ? `${i.cantidad}× ${i.nombre}` : i.nombre));
+  return [menus ? `${menus} ${menus === 1 ? "menú" : "menús"}` : null, ...resto].filter(Boolean).join(", ");
+}
+
 /**
  * «Pedidos»: los pedidos para recoger del día, pensados para el encargado desde el
- * móvil (no para la pantalla de cocina). Un botón por paso: Aceptar → Está listo →
- * Cobrar y entregar. Tiempo real con sondeo de respaldo y aviso sonoro al entrar uno.
- * Para días con muchos pedidos: agrupados por hora, tarjetas compactas, en el móvil
- * un paso a la vista (pestañas) y en escritorio tres columnas con scroll propio.
+ * móvil (no para la pantalla de cocina). Agenda por hora de recogida, una línea por
+ * pedido con su paso (color) y su botón: Aceptar → Listo → Cobrar y entregar. Tocar
+ * un pedido despliega lo que lleva entero. Tiempo real con sondeo de respaldo y
+ * aviso sonoro al entrar uno.
  */
 export function PedidosRecogida({ inicial }: { inicial: PedidoKds[] }) {
   const [pedidos, setPedidos] = useState(inicial);
@@ -64,7 +73,8 @@ export function PedidosRecogida({ inicial }: { inicial: PedidoKds[] }) {
   const [sonido, setSonido] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState<string | null>(null);
-  const [pestana, setPestana] = useState<Paso>(() => (inicial.some((p) => p.estado === "RECEIVED") ? "nuevos" : inicial.some((p) => p.estado === "READY") ? "listos" : "preparando"));
+  const [filtro, setFiltro] = useState<Filtro>("todos");
+  const [abierto, setAbierto] = useState<string | null>(null);
   const conocidos = useRef(new Set(inicial.map((p) => p.id)));
 
   const recargar = useCallback(async () => {
@@ -88,11 +98,12 @@ export function PedidosRecogida({ inicial }: { inicial: PedidoKds[] }) {
     };
   }, [recargar]);
 
-  const grupos = useMemo(() => {
-    const g: Record<Paso, PedidoKds[]> = { nuevos: [], preparando: [], listos: [] };
-    for (const p of pedidos) g[pasoDe(p)].push(p);
-    return g;
+  const cuenta = useMemo(() => {
+    const c: Record<Paso, number> = { nuevos: 0, preparando: 0, listos: 0 };
+    for (const p of pedidos) c[pasoDe(p)]++;
+    return c;
   }, [pedidos]);
+  const visibles = filtro === "todos" ? pedidos : pedidos.filter((p) => pasoDe(p) === filtro);
 
   const hacer = async (p: PedidoKds, accion: () => Promise<{ ok: true } | { ok: false; error: string }>) => {
     setOcupado(p.id);
@@ -125,7 +136,7 @@ export function PedidosRecogida({ inicial }: { inicial: PedidoKds[] }) {
   // En plena hora punta: aceptar de un toque todos los que han entrado.
   const [aceptando, setAceptando] = useState(false);
   const aceptarTodos = async () => {
-    const lista = grupos.nuevos;
+    const lista = pedidos.filter((p) => pasoDe(p) === "nuevos");
     if (!lista.length || !window.confirm(`¿Aceptar los ${lista.length} pedidos nuevos?`)) return;
     setAceptando(true);
     setError(null);
@@ -140,30 +151,35 @@ export function PedidosRecogida({ inicial }: { inicial: PedidoKds[] }) {
     void recargar();
   };
 
+  const filtros: { k: Filtro; titulo: string; n: number; contador: string }[] = [
+    { k: "todos", titulo: "Todos", n: pedidos.length, contador: "bg-carbon text-crema dark:bg-crema dark:text-noche" },
+    ...(Object.keys(PASOS) as Paso[]).map((k) => ({ k, titulo: PASOS[k].titulo, n: cuenta[k], contador: PASOS[k].contador })),
+  ];
+
   return (
     <div className="grid gap-4">
       <div className="flex flex-wrap items-center gap-2">
-        {/* Móvil: los pasos son pestañas (uno a la vista). Escritorio: resumen, las tres columnas se ven a la vez. */}
-        <div role="tablist" aria-label="Paso" className="grid w-full grid-cols-3 gap-1 rounded-2xl bg-arena p-1 lg:w-auto lg:flex lg:bg-transparent lg:p-0 dark:bg-noche-2 lg:dark:bg-transparent">
-          {PASOS.map((s) => (
+        <div role="tablist" aria-label="Paso" className="grid w-full grid-cols-4 gap-1 rounded-2xl bg-arena p-1 sm:flex sm:w-auto dark:bg-noche-2">
+          {filtros.map((f) => (
             <button
-              key={s.k}
+              key={f.k}
               type="button"
               role="tab"
-              aria-selected={pestana === s.k}
-              onClick={() => setPestana(s.k)}
-              className="flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl px-2 text-xs font-semibold aria-selected:bg-white aria-selected:shadow-card lg:min-h-11 lg:flex-row lg:gap-2 lg:bg-white lg:px-4 lg:text-sm lg:shadow-card lg:aria-selected:ring-0 dark:aria-selected:bg-noche-3 lg:dark:bg-noche-2"
+              aria-selected={filtro === f.k}
+              onClick={() => setFiltro(f.k)}
+              className="flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl px-2 text-xs font-semibold aria-selected:bg-white aria-selected:shadow-card sm:min-h-10 sm:flex-row sm:gap-2 sm:px-3 sm:text-sm dark:aria-selected:bg-noche-3"
             >
-              <span className="flex items-center gap-1.5">
-                <span className={`h-2 w-2 rounded-full ${s.punto}`} aria-hidden="true" />
-                <span className="truncate">{s.k === "listos" ? <><span className="lg:hidden">Listos</span><span className="hidden lg:inline">{s.titulo}</span></> : s.titulo}</span>
-              </span>
-              <span className={`grid h-6 min-w-6 place-items-center rounded-full px-1.5 text-xs font-bold tabular-nums ${grupos[s.k].length ? s.contador : "bg-carbon/10 text-carbon-muted dark:bg-crema/10 dark:text-crema/50"}`}>
-                {grupos[s.k].length}
-              </span>
+              {f.titulo}
+              <span className={`grid h-5 min-w-5 place-items-center rounded-full px-1.5 text-[0.7rem] font-bold tabular-nums ${f.n ? f.contador : "bg-carbon/10 text-carbon-muted dark:bg-crema/10 dark:text-crema/50"}`}>{f.n}</span>
             </button>
           ))}
         </div>
+        {cuenta.nuevos > 1 && (filtro === "todos" || filtro === "nuevos") ? (
+          <button type="button" disabled={aceptando} onClick={() => void aceptarTodos()} className={botonSecundario}>
+            <Icon name="check" className="h-4 w-4" />
+            {aceptando ? "Aceptando…" : `Aceptar los ${cuenta.nuevos} nuevos`}
+          </button>
+        ) : null}
         <button type="button" onClick={() => setSonido(activarSonido())} aria-pressed={sonido} className={`${sonido ? botonSecundario : botonPrimario} ml-auto`}>
           <Icon name="sound" className="h-4 w-4" />
           {sonido ? "Sonido activo" : "Activar sonido"}
@@ -172,149 +188,153 @@ export function PedidosRecogida({ inicial }: { inicial: PedidoKds[] }) {
 
       {error ? <p role="alert" className="rounded-xl bg-terracota px-4 py-3 text-sm font-semibold text-crema">{error}</p> : null}
 
-      {pedidos.length === 0 ? (
+      {visibles.length === 0 ? (
         <p className={`${card} grid place-items-center gap-2 px-4 py-12 text-center text-carbon-muted dark:text-crema/60`}>
           <Icon name="bag" className="h-8 w-8 opacity-50" />
-          No hay pedidos para recoger ahora mismo.
+          {pedidos.length ? "Ningún pedido en este paso." : "No hay pedidos para recoger ahora mismo."}
         </p>
       ) : (
-        <div className="grid items-start gap-4 lg:h-[calc(100dvh-15rem)] lg:min-h-[28rem] lg:grid-cols-3">
-          {PASOS.map((s) => (
-            <section
-              key={s.k}
-              aria-label={s.titulo}
-              className={`min-h-0 flex-col gap-3 lg:flex lg:h-full ${pestana === s.k ? "flex" : "hidden"}`}
-            >
-              <h2 className="hidden items-center gap-2 px-1 font-display text-xl lg:flex">
-                <span className={`h-3 w-3 rounded-full ${s.punto}`} aria-hidden="true" />
-                {s.titulo}
-                <span className="ml-auto text-sm font-normal tabular-nums text-carbon-muted dark:text-crema/60">{grupos[s.k].length}</span>
-              </h2>
-              {s.k === "nuevos" && grupos.nuevos.length > 1 ? (
-                <button type="button" disabled={aceptando} onClick={() => void aceptarTodos()} className={`${botonSecundario} w-full`}>
-                  <Icon name="check" className="h-4 w-4" />
-                  {aceptando ? "Aceptando…" : `Aceptar los ${grupos.nuevos.length}`}
-                </button>
-              ) : null}
-              <div className="grid min-h-0 content-start gap-4 lg:overflow-y-auto lg:pr-1 lg:[scrollbar-width:thin]">
-                {grupos[s.k].length === 0 ? (
-                  <p className="rounded-[1.25rem] border border-dashed border-carbon/15 px-4 py-8 text-center text-sm text-carbon-muted dark:border-crema/15 dark:text-crema/50">{s.vacio}</p>
-                ) : null}
-                {porHora(grupos[s.k]).map((h) => {
-                  const c = cuando(h.recogida, ahora);
-                  return (
-                    <div key={h.hora} className="grid gap-2">
-                      <p className="flex items-baseline gap-2 px-1">
-                        <span className="font-display text-2xl tabular-nums">{h.hora}</span>
-                        <span className={`text-xs font-semibold ${c.tarde && s.k !== "listos" ? "text-terracota" : "text-carbon-muted dark:text-crema/60"}`}>{c.texto}</span>
-                        <span className="ml-auto text-xs text-carbon-muted dark:text-crema/60">{h.pedidos.length === 1 ? "1 pedido" : `${h.pedidos.length} pedidos`}</span>
-                      </p>
-                      {h.pedidos.map((p) => (
-                        <Tarjeta
-                          key={p.id}
-                          p={p}
-                          paso={s.k}
-                          banda={s.banda}
-                          ocupado={ocupado === p.id || aceptando}
-                          onAvanzar={(e) => void avanzar(p, e)}
-                          onCobrar={(m) => void cobrarYEntregar(p, m)}
-                          onCancelar={() => cancelar(p)}
-                        />
-                      ))}
-                    </div>
-                  );
-                })}
+        <div className="grid gap-3">
+          {porHora(visibles).map((h) => {
+            const c = cuando(h.recogida, ahora);
+            const pendientes = h.pedidos.some((p) => pasoDe(p) !== "listos");
+            return (
+              // Cada hora en una fila de la agenda: la hora a la izquierda y sus pedidos alineados a su lado.
+              <div key={h.hora} className="grid grid-cols-[3.4rem_minmax(0,1fr)] gap-2 sm:grid-cols-[4.5rem_minmax(0,1fr)] sm:gap-3">
+                <div className="pt-2.5 text-right">
+                  <p className="font-display text-xl leading-none tabular-nums sm:text-2xl">{h.hora}</p>
+                  <p className={`mt-1 text-[0.65rem] font-semibold leading-tight ${c.tarde && pendientes ? "text-terracota" : "text-carbon-muted dark:text-crema/55"}`}>{c.texto}</p>
+                </div>
+                <ul className={`${card} divide-y divide-carbon/[0.07] overflow-hidden dark:divide-crema/10`}>
+                  {h.pedidos.map((p) => (
+                    <li key={p.id}>
+                      <FilaPedido
+                        p={p}
+                        abierto={abierto === p.id}
+                        onAbrir={() => setAbierto(abierto === p.id ? null : p.id)}
+                        ocupado={ocupado === p.id || aceptando}
+                        onAvanzar={(e) => void avanzar(p, e)}
+                        onCobrar={(m) => void cobrarYEntregar(p, m)}
+                        onCancelar={() => cancelar(p)}
+                      />
+                    </li>
+                  ))}
+                </ul>
               </div>
-            </section>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
   );
 }
 
-/** Un pedido en poco sitio: quién, qué lleva, cuánto, si está pagado y el botón del paso. */
-function Tarjeta({
+/**
+ * Un pedido en una línea: su paso (color), quién y qué lleva, cuánto y el botón del
+ * paso. Tocarlo despliega todo: los platos de cada menú, las notas, llamar y cancelar.
+ */
+function FilaPedido({
   p,
-  paso,
-  banda,
+  abierto,
+  onAbrir,
   ocupado,
   onAvanzar,
   onCobrar,
   onCancelar,
 }: {
   p: PedidoKds;
-  paso: Paso;
-  banda: string;
+  abierto: boolean;
+  onAbrir: () => void;
   ocupado: boolean;
   onAvanzar: (e: "ACCEPTED" | "READY" | "DELIVERED") => void;
   onCobrar: (m: "EFECTIVO" | "TARJETA") => void;
   onCancelar: () => void;
 }) {
+  const paso = pasoDe(p);
+  const s = PASOS[paso];
   const pagado = p.payment_status === "PAID";
-  const productos = p.items.filter((i) => i.estado !== "CANCELLED");
-  const accion = "min-h-11 rounded-xl px-3 text-sm font-semibold transition-transform active:scale-[0.98] disabled:opacity-50";
-  return (
-    <article className={`${card} relative overflow-hidden py-3 pl-4 pr-3 motion-safe:animate-fade-up`}>
-      <span aria-hidden="true" className={`absolute inset-y-0 left-0 w-1.5 ${banda}`} />
-      <div className="flex items-start gap-2">
-        <div className="min-w-0 flex-1">
-          <p className="truncate font-semibold">
-            {p.nombre_cliente ?? "Sin nombre"}
-            <span className="ml-1.5 text-xs font-normal text-carbon-muted dark:text-crema/60">#{p.numero_dia}</span>
-          </p>
-          <ul className="mt-1 grid gap-0.5 text-sm leading-snug">
-            {productos.map((i) => (
-              <li key={i.id}>
-                <span className="font-semibold tabular-nums">{i.cantidad}×</span> {i.nombre}
-                {i.modificadores.length > 0 ? (
-                  <span className="text-carbon-muted dark:text-crema/60"> · {i.modificadores.map((m) => m.opciones.map((o) => o.nombre).join(", ")).join(" · ")}</span>
-                ) : null}
-                {i.notas ? <span className="italic text-terracota"> · {i.notas}</span> : null}
-              </li>
-            ))}
-          </ul>
-          {p.notas ? <p className="mt-1.5 rounded-lg bg-ratan/15 px-2 py-1 text-xs font-semibold">{p.notas}</p> : null}
-        </div>
-        <div className="grid shrink-0 justify-items-end gap-1">
-          <span className="font-bold tabular-nums">{formatCentimos(p.total_centimos)}</span>
-          <span className={`rounded-full px-2 py-0.5 text-[0.65rem] font-bold ${pagado ? "bg-oliva text-crema" : "bg-ratan/25 text-carbon dark:text-crema"}`}>{pagado ? "Pagado" : "Paga al recoger"}</span>
-          {p.telefono ? (
-            <a href={`tel:${p.telefono.replace(/\s/g, "")}`} className="mt-0.5 grid h-9 w-9 place-items-center rounded-full ring-1 ring-carbon/15 dark:ring-crema/15" aria-label={`Llamar a ${p.nombre_cliente ?? "cliente"}`}>
-              <Icon name="phone" className="h-4 w-4" />
-            </a>
-          ) : null}
-        </div>
-      </div>
+  const [cobrando, setCobrando] = useState(false);
+  const boton = "min-h-9 shrink-0 rounded-lg px-3 text-sm font-semibold transition-transform active:scale-[0.98] disabled:opacity-50";
+  const lleno = `${boton} bg-marino text-crema dark:bg-neon dark:text-noche`;
 
-      <div className="mt-2.5 flex items-center gap-2">
+  return (
+    <div className="relative">
+      <span aria-hidden="true" className={`absolute inset-y-0 left-0 w-1 ${s.banda}`} />
+      <div className="flex items-center gap-2.5 py-2.5 pl-3.5 pr-2.5">
+        <button type="button" onClick={onAbrir} aria-expanded={abierto} className="min-w-0 flex-1 text-left">
+          <span className="flex items-baseline gap-2">
+            <span className="truncate font-semibold">{p.nombre_cliente ?? "Sin nombre"}</span>
+            <span className="shrink-0 text-sm font-semibold tabular-nums text-carbon-muted dark:text-crema/65">{formatCentimos(p.total_centimos)}</span>
+          </span>
+          <span className="flex items-center gap-1.5 text-xs text-carbon-muted dark:text-crema/60">
+            <span className={`shrink-0 font-semibold ${s.texto}`}>{s.corto}</span>
+            <span className="truncate">· {queLleva(p)}</span>
+            {p.notas ? <Icon name="edit" className="h-3 w-3 shrink-0" /> : null}
+          </span>
+        </button>
         {paso === "nuevos" ? (
-          <button type="button" disabled={ocupado} onClick={() => onAvanzar("ACCEPTED")} className={`${accion} flex-1 bg-marino text-crema dark:bg-neon dark:text-noche`}>
+          <button type="button" disabled={ocupado} onClick={() => onAvanzar("ACCEPTED")} className={lleno}>
             Aceptar
           </button>
         ) : paso === "preparando" ? (
-          <button type="button" disabled={ocupado} onClick={() => onAvanzar("READY")} className={`${accion} flex-1 bg-marino text-crema dark:bg-neon dark:text-noche`}>
-            Está listo
+          <button type="button" disabled={ocupado} onClick={() => onAvanzar("READY")} className={`${boton} ring-1 ring-carbon/15 dark:ring-crema/20`}>
+            Listo
           </button>
         ) : pagado ? (
-          <button type="button" disabled={ocupado} onClick={() => onAvanzar("DELIVERED")} className={`${accion} flex-1 bg-marino text-crema dark:bg-neon dark:text-noche`}>
-            Entregado
+          <button type="button" disabled={ocupado} onClick={() => onAvanzar("DELIVERED")} className={lleno}>
+            Entregar
           </button>
         ) : (
-          <>
-            <span className="text-xs font-semibold text-carbon-muted dark:text-crema/60">Cobrar y entregar:</span>
-            <button type="button" disabled={ocupado} onClick={() => onCobrar("EFECTIVO")} className={`${accion} flex-1 bg-marino text-crema dark:bg-neon dark:text-noche`}>
-              Efectivo
-            </button>
-            <button type="button" disabled={ocupado} onClick={() => onCobrar("TARJETA")} className={`${accion} flex-1 bg-marino text-crema dark:bg-neon dark:text-noche`}>
-              Tarjeta
-            </button>
-          </>
+          <button type="button" disabled={ocupado} onClick={() => setCobrando(!cobrando)} aria-expanded={cobrando} className={lleno}>
+            Cobrar
+          </button>
         )}
-        <button type="button" disabled={ocupado} onClick={onCancelar} aria-label={`Cancelar el pedido #${p.numero_dia}`} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-terracota ring-1 ring-carbon/10 dark:ring-crema/10">
-          <Icon name="close" className="h-4 w-4" />
-        </button>
       </div>
-    </article>
+
+      {cobrando && paso === "listos" && !pagado ? (
+        <div className="flex items-center gap-2 px-3.5 pb-3">
+          <span className="mr-auto text-sm font-semibold">Cobrar {formatCentimos(p.total_centimos)} y entregar:</span>
+          <button type="button" disabled={ocupado} onClick={() => onCobrar("EFECTIVO")} className={lleno}>
+            Efectivo
+          </button>
+          <button type="button" disabled={ocupado} onClick={() => onCobrar("TARJETA")} className={lleno}>
+            Tarjeta
+          </button>
+        </div>
+      ) : null}
+
+      {abierto ? (
+        <div className="grid gap-2 border-t border-carbon/[0.07] bg-arena/40 px-3.5 py-3 text-sm dark:border-crema/10 dark:bg-noche-3/50">
+          <ul className="grid gap-1">
+            {p.items
+              .filter((i) => i.estado !== "CANCELLED")
+              .map((i) => (
+                <li key={i.id}>
+                  <span className="font-semibold tabular-nums">{i.cantidad}×</span> {i.nombre}
+                  {i.modificadores.length > 0 ? (
+                    <span className="block pl-6 text-xs text-carbon-muted dark:text-crema/60">{i.modificadores.map((m) => m.opciones.map((o) => o.nombre).join(", ")).join(" · ")}</span>
+                  ) : null}
+                  {i.notas ? <span className="block pl-6 text-xs italic text-terracota">↳ {i.notas}</span> : null}
+                </li>
+              ))}
+          </ul>
+          {p.notas ? <p className="rounded-lg bg-ratan/20 px-2.5 py-1.5 font-semibold">{p.notas}</p> : null}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-carbon-muted dark:text-crema/60">
+              #{p.numero_dia} · {pagado ? "pagado" : "paga al recoger"}
+            </span>
+            {p.telefono ? (
+              <a href={`tel:${p.telefono.replace(/\s/g, "")}`} className={`${botonSecundario} ml-auto min-h-9 px-3`}>
+                <Icon name="phone" className="h-4 w-4" />
+                Llamar
+              </a>
+            ) : null}
+            <button type="button" disabled={ocupado} onClick={onCancelar} className={`${p.telefono ? "" : "ml-auto"} min-h-9 rounded-lg px-3 text-sm font-semibold text-terracota ring-1 ring-carbon/10 dark:ring-crema/15`}>
+              Cancelar pedido
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 }
