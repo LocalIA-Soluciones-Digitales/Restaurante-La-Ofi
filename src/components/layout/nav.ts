@@ -11,7 +11,7 @@ export interface NavItem {
 /**
  * Menú desplegable: pocas entradas y claras. «Pedir para llevar» no va aquí: se
  * anuncia donde se decide qué comer (menú del día, carta y portada). Espacios
- * vive en el pie y en la portada.
+ * vive en la portada. El pie repite estas mismas entradas.
  */
 export function mainNav(locale: Locale, t: Dictionary): NavItem[] {
   return [
@@ -21,19 +21,6 @@ export function mainNav(locale: Locale, t: Dictionary): NavItem[] {
     { href: href(locale, "/grupos"), label: t.nav.grupos },
     { href: href(locale, "/galeria"), label: t.nav.galeria },
     { href: href(locale, "/contacto"), label: t.nav.contacto },
-  ];
-}
-
-/** Pie: lo del menú más Espacios y Pedir para llevar. */
-export function footerNav(locale: Locale, t: Dictionary): NavItem[] {
-  const [inicio, carta, ...resto] = mainNav(locale, t);
-  return [
-    inicio!,
-    carta!,
-    { href: href(locale, "/pedir"), label: t.nav.pedirRecoger },
-    ...resto.slice(0, 2),
-    { href: href(locale, "/espacios"), label: t.nav.espacios },
-    ...resto.slice(2),
   ];
 }
 
