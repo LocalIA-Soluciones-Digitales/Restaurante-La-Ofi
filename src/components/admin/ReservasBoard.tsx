@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Modal } from "@/components/admin/Modal";
@@ -7,7 +8,7 @@ import { Aviso, botonPrimario, botonSecundario, card, input } from "@/components
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { colaCocina, rpcAdmin } from "@/lib/admin/actions";
 import type { MesaSalon, PedidoKds, Zona } from "@/lib/admin/types";
-import { formatearFechaLarga, hoyEnMadrid } from "@/lib/format";
+import { formatCentimos, formatearFechaLarga, hoyEnMadrid } from "@/lib/format";
 
 type EstadoReserva = "PENDIENTE" | "CONFIRMADA" | "SENTADA" | "CANCELADA" | "NO_SHOW";
 
@@ -117,8 +118,8 @@ export function ReservasBoard({ mesas, zonas, eventos, conMesas = true }: { mesa
   const router = useRouter();
   const [fecha, setFecha] = useState(hoy);
   // Pedidos de «Pedir para llevar» de hoy (los pedidos son siempre del mismo día):
-  // cuentan en «Para recoger» y esa tarjeta lleva a Pedidos.
-  const [pedidosHoy, setPedidosHoy] = useState(0);
+  // cuentan en «Para recoger» y salen en la agenda en su hora de recogida.
+  const [pedidosHoy, setPedidosHoy] = useState<PedidoKds[]>([]);
   const [vista, setVista] = useState<"lista" | "linea">("lista");
   const [filtro, setFiltro] = useState<Filtro>("todo");
   const [reservas, setReservas] = useState<Reserva[]>([]);
@@ -139,8 +140,8 @@ export function ReservasBoard({ mesas, zonas, eventos, conMesas = true }: { mesa
       setReservas(r.data);
       setError(null);
     } else setError(r.error);
-    const recoger = (l: typeof enMarcha) => (l.ok ? l.data.filter((p) => p.tipo === "RECOGIDA" && p.estado !== "CANCELLED").length : 0);
-    setPedidosHoy(recoger(enMarcha) + recoger(hechos));
+    const recoger = (l: typeof enMarcha) => (l.ok ? l.data.filter((p) => p.tipo === "RECOGIDA" && p.estado !== "CANCELLED") : []);
+    setPedidosHoy([...recoger(enMarcha), ...recoger(hechos)]);
   }, [desde, hasta]);
 
   useEffect(() => {
@@ -159,15 +160,13 @@ export function ReservasBoard({ mesas, zonas, eventos, conMesas = true }: { mesa
   const activasDia = delDia.filter(activa);
   const pendientes = delDia.filter((r) => r.estado === "PENDIENTE");
   const visibles = delDia.filter((r) => filtro === "todo" || ESPACIO[r.espacio].filtro === filtro);
-  const turnos = [
-    { titulo: "Mañana", lista: visibles.filter((r) => r.hora < MEDIODIA) },
-    { titulo: "Mediodía", lista: visibles.filter((r) => r.hora >= MEDIODIA && r.hora < NOCHE) },
-    { titulo: "Noche", lista: visibles.filter((r) => r.hora >= NOCHE) },
-  ].filter((t) => t.lista.length);
 
   const suma = (f: (r: Reserva) => boolean) => activasDia.filter(f).reduce((a, r) => a + r.personas, 0);
   const n = (f: (r: Reserva) => boolean) => activasDia.filter(f).length;
-  const pedidosDia = fecha === hoy ? pedidosHoy : 0;
+  const pedidosDia = fecha === hoy ? pedidosHoy.length : 0;
+  const pedidosVisibles = fecha === hoy && (filtro === "todo" || filtro === "recogida") ? pedidosHoy : [];
+  // La agenda del día: reservas y pedidos para recoger juntos, por turno y por hora.
+  const agenda = turnosDeAgenda(visibles, pedidosVisibles);
   const encargosDia = n((r) => r.espacio === "recogida");
   const vistaEfectiva = conMesas ? vista : "lista";
   const dias = Array.from({ length: 7 }, (_, i) => desplazar(desde, i));
@@ -333,26 +332,40 @@ export function ReservasBoard({ mesas, zonas, eventos, conMesas = true }: { mesa
       </div>
 
       {vistaEfectiva === "lista" ? (
-        visibles.length === 0 ? (
+        agenda.length === 0 ? (
           <div className={`${card} grid place-items-center gap-2 p-10 text-center`}>
             <Icon name="calendar" className="h-8 w-8 opacity-30" />
             <p className="font-semibold">{delDia.length ? "Nada de este tipo este día." : "Sin reservas este día."}</p>
           </div>
         ) : (
-          turnos.map((t) => (
-            <section key={t.titulo} aria-label={t.titulo}>
-              <h3 className="mb-2 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.16em] text-carbon-muted dark:text-crema/60">
+          agenda.map((t) => (
+            <section key={t.titulo} aria-label={t.titulo} className="grid gap-2">
+              <h3 className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.16em] text-carbon-muted dark:text-crema/60">
                 {t.titulo}
                 <span className="h-px flex-1 bg-carbon/10 dark:bg-crema/10" />
-                <span className="normal-case tracking-normal">{t.lista.filter(activa).reduce((a, r) => a + (r.espacio === "recogida" ? 0 : r.personas), 0)} pers.</span>
+                <span className="normal-case tracking-normal">{resumenHueco(t.horas.flatMap((h) => h.reservas), t.horas.flatMap((h) => h.pedidos))}</span>
               </h3>
-              <ul className="grid gap-2 lg:grid-cols-2">
-                {t.lista.map((r) => (
-                  <li key={r.id}>
-                    <TarjetaReserva r={r} onAbrir={() => setEditando(r)} onEstado={(e) => void estado(r, e)} />
-                  </li>
-                ))}
-              </ul>
+              {t.horas.map((h) => (
+                // Cada hora en una fila de la agenda: la hora a la izquierda y todo lo de esa hora alineado a su lado.
+                <div key={h.hora} className="grid grid-cols-[3.4rem_minmax(0,1fr)] gap-2 sm:grid-cols-[4.5rem_minmax(0,1fr)] sm:gap-3">
+                  <div className="pt-2.5 text-right">
+                    <p className="font-display text-xl leading-none tabular-nums sm:text-2xl">{h.hora}</p>
+                    <p className="mt-1 text-[0.65rem] leading-tight text-carbon-muted dark:text-crema/55">{resumenHueco(h.reservas, h.pedidos, true)}</p>
+                  </div>
+                  <ul className={`${card} divide-y divide-carbon/[0.07] overflow-hidden dark:divide-crema/10`}>
+                    {h.reservas.map((r) => (
+                      <li key={r.id}>
+                        <FilaReserva r={r} onAbrir={() => setEditando(r)} onEstado={(e) => void estado(r, e)} />
+                      </li>
+                    ))}
+                    {h.pedidos.map((p) => (
+                      <li key={p.id}>
+                        <FilaPedido p={p} />
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
             </section>
           ))
         )
@@ -426,66 +439,142 @@ function Resumen({
   );
 }
 
-/** Una reserva: franja de color del espacio, hora grande, quién y cuántos, y el siguiente paso. */
-function TarjetaReserva({ r, onAbrir, onEstado }: { r: Reserva; onAbrir: () => void; onEstado: (e: EstadoReserva) => void }) {
+/** Hora «HH:MM» en Madrid de un pedido para recoger. */
+const HORA_MADRID = new Intl.DateTimeFormat("es-ES", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Madrid" });
+const horaPedido = (p: PedidoKds) => (p.recogida_en ? HORA_MADRID.format(new Date(p.recogida_en)) : "00:00");
+
+interface HuecoAgenda {
+  hora: string;
+  reservas: Reserva[];
+  pedidos: PedidoKds[];
+}
+
+/** Turnos (mañana, mediodía, noche) con sus horas; en cada hora, sus reservas y sus pedidos. */
+function turnosDeAgenda(reservas: Reserva[], pedidos: PedidoKds[]): { titulo: string; horas: HuecoAgenda[] }[] {
+  const huecos = new Map<string, HuecoAgenda>();
+  const hueco = (hora: string) => {
+    const h = huecos.get(hora) ?? { hora, reservas: [], pedidos: [] };
+    huecos.set(hora, h);
+    return h;
+  };
+  for (const r of reservas) hueco(r.hora.slice(0, 5)).reservas.push(r);
+  for (const p of pedidos) hueco(horaPedido(p)).pedidos.push(p);
+  const horas = [...huecos.values()].sort((a, b) => a.hora.localeCompare(b.hora));
+  return [
+    { titulo: "Mañana", horas: horas.filter((h) => h.hora < MEDIODIA) },
+    { titulo: "Mediodía", horas: horas.filter((h) => h.hora >= MEDIODIA && h.hora < NOCHE) },
+    { titulo: "Noche", horas: horas.filter((h) => h.hora >= NOCHE) },
+  ].filter((t) => t.horas.length);
+}
+
+/** «13 pers. · 2 recoger» (corto, debajo de la hora) o «13 personas · 2 para recoger». */
+function resumenHueco(reservas: Reserva[], pedidos: PedidoKds[], corto = false): string {
+  const personas = reservas.filter((r) => activa(r) && r.espacio !== "recogida").reduce((a, r) => a + r.personas, 0);
+  return [
+    personas ? (corto ? `${personas} pers.` : plural(personas, "persona", "personas")) : null,
+    pedidos.length ? (corto ? `${pedidos.length} recoger` : `${pedidos.length} para recoger`) : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
+
+/**
+ * Una reserva en una línea: el espacio (color e icono), quién, cuántos, en qué
+ * estado y si traen comida o notas; a la derecha, el siguiente paso. Tocarla abre
+ * todo el detalle.
+ */
+function FilaReserva({ r, onAbrir, onEstado }: { r: Reserva; onAbrir: () => void; onEstado: (e: EstadoReserva) => void }) {
   const e = ESPACIO[r.espacio];
-  const comida = resumenComida(r.comida);
   const cerrada = !activa(r);
   const siguiente: { label: string; estado: EstadoReserva } | null =
     r.estado === "PENDIENTE"
       ? { label: "Confirmar", estado: "CONFIRMADA" }
       : r.estado === "CONFIRMADA"
-        ? { label: r.espacio === "recogida" ? "Recogido" : "Han llegado", estado: "SENTADA" }
+        ? { label: r.espacio === "recogida" ? "Recogido" : "Llegaron", estado: "SENTADA" }
         : null;
+  const platos = r.comida?.lineas.reduce((a, l) => a + l.cantidad, 0) ?? 0;
+  const extras = [
+    r.comida ? `${r.comida.modo === "menu" ? "Menú del día" : "Carta"}${platos ? ` (${platos})` : ""}` : null,
+    r.evento,
+    r.mesas.length ? `Mesa ${r.mesas.map((m) => m.numero).join("+")}` : null,
+  ].filter(Boolean);
 
   return (
-    <article className={`${card} relative flex overflow-hidden ${cerrada ? "opacity-55" : ""}`}>
-      <span aria-hidden="true" className={`w-1.5 shrink-0 ${e.franja}`} />
-      <div className="min-w-0 flex-1 p-3.5">
-        <button type="button" onClick={onAbrir} className="flex w-full items-start gap-3 text-left">
-          <span className="w-[4.6rem] shrink-0">
-            <span className="block font-display text-[1.65rem] leading-none tabular-nums">{r.hora}</span>
-            <span className={`mt-1.5 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[0.65rem] font-semibold ${e.chip}`}>
-              <Icon name={e.icon} className="h-3 w-3" />
-              {r.espacio === "mesa" ? "Comedor" : r.espacio === "despacho" ? "Despacho" : r.espacio === "recogida" ? "Recoger" : e.label}
+    <div className={`relative flex items-center gap-2.5 py-2.5 pl-3.5 pr-2.5 ${cerrada ? "opacity-50" : ""}`}>
+      <span aria-hidden="true" className={`absolute inset-y-0 left-0 w-1 ${e.franja}`} />
+      <button type="button" onClick={onAbrir} className="flex min-w-0 flex-1 items-center gap-2.5 text-left">
+        <span className={`hidden h-8 w-8 shrink-0 place-items-center rounded-lg sm:grid ${e.chip}`} title={e.label}>
+          <Icon name={e.icon} className="h-4 w-4" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="flex items-baseline gap-2">
+            <span className="truncate font-semibold">{r.nombre}</span>
+            <span className="shrink-0 text-sm font-semibold tabular-nums text-carbon-muted dark:text-crema/65">
+              {cuantos(r)} {r.espacio === "recogida" ? unidad(r) : "p."}
             </span>
           </span>
-          <span className="min-w-0 flex-1">
-            <span className="flex items-start justify-between gap-2">
-              <span className="truncate text-[1.05rem] font-semibold">{r.nombre}</span>
-              <span className={`shrink-0 rounded-full px-2 py-0.5 text-[0.7rem] font-semibold ${ESTADO[r.estado].clase}`}>{ESTADO[r.estado].label}</span>
+          <span className="flex items-center gap-1.5 text-xs text-carbon-muted dark:text-crema/60">
+            <span className={`shrink-0 font-semibold ${r.estado === "PENDIENTE" ? "text-terracota" : r.estado === "SENTADA" ? "text-oliva dark:text-oliva-soft" : ""}`}>
+              {ESTADO[r.estado].label}
             </span>
-            <span className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm">
-              <span className="inline-flex items-center gap-1 font-semibold">
-                <Icon name={r.espacio === "recogida" ? "bag" : "users"} className="h-4 w-4 opacity-60" />
-                {cuantos(r)} {unidad(r)}
+            {extras.length ? <span className="truncate">· {extras.join(" · ")}</span> : null}
+            {r.notas ? (
+              <span className="inline-flex shrink-0 items-center gap-0.5" title={r.notas}>
+                · <Icon name="edit" className="h-3 w-3" />
+                <span className="sr-only">Tiene notas: {r.notas}</span>
               </span>
-              {r.mesas.length ? <span className="opacity-70">Mesa {r.mesas.map((m) => m.numero).join(" + ")}</span> : null}
-              {r.origen === "web" ? <span className="opacity-50">web</span> : null}
-            </span>
-            {r.evento ? <span className="mt-1 block truncate text-sm font-semibold text-neon-deep dark:text-neon">{r.evento}</span> : null}
-            {comida ? <span className="mt-1 block text-sm text-oliva dark:text-oliva-soft">{comida}</span> : null}
-            {r.notas ? <span className="mt-1 block text-sm italic opacity-75">«{r.notas}»</span> : null}
+            ) : null}
           </span>
+        </span>
+      </button>
+      {siguiente ? (
+        <button
+          type="button"
+          onClick={() => onEstado(siguiente.estado)}
+          className={`min-h-9 shrink-0 rounded-lg px-3 text-sm font-semibold ${siguiente.estado === "CONFIRMADA" ? "bg-marino text-crema dark:bg-neon dark:text-noche" : "ring-1 ring-carbon/15 dark:ring-crema/20"}`}
+        >
+          {siguiente.label}
         </button>
-        {siguiente ? (
-          <div className="mt-3 flex gap-2">
-            <button
-              type="button"
-              onClick={() => onEstado(siguiente.estado)}
-              className={`${siguiente.estado === "CONFIRMADA" ? botonPrimario : botonSecundario} flex-1`}
-            >
-              <Icon name="check" className="h-4 w-4" />
-              {siguiente.label}
-            </button>
-            <a href={`tel:${r.telefono.replace(/\s/g, "")}`} className={`${botonSecundario} px-4`}>
-              <Icon name="phone" className="h-4 w-4" />
-              <span className="sr-only sm:not-sr-only">Llamar</span>
-            </a>
-          </div>
-        ) : null}
-      </div>
-    </article>
+      ) : null}
+      {/* En el móvil, sin el botón de llamar: el nombre necesita el sitio y el teléfono está al abrir la reserva. */}
+      <a href={`tel:${r.telefono.replace(/\s/g, "")}`} className="hidden h-9 w-9 shrink-0 place-items-center rounded-lg ring-1 ring-carbon/10 sm:grid dark:ring-crema/15" aria-label={`Llamar a ${r.nombre}`}>
+        <Icon name="phone" className="h-4 w-4" />
+      </a>
+    </div>
+  );
+}
+
+const PASO_PEDIDO: Record<string, { label: string; clase: string }> = {
+  RECEIVED: { label: "Nuevo", clase: "bg-terracota text-crema" },
+  ACCEPTED: { label: "Preparando", clase: "bg-ratan text-carbon" },
+  PREPARING: { label: "Preparando", clase: "bg-ratan text-carbon" },
+  READY: { label: "Listo", clase: "bg-oliva text-crema" },
+  DELIVERED: { label: "Entregado", clase: "bg-carbon/10 text-carbon-muted dark:bg-crema/10 dark:text-crema/60" },
+};
+
+/** Un pedido para recoger en la agenda: quién, qué y en qué paso va. Se gestiona en Pedidos. */
+function FilaPedido({ p }: { p: PedidoKds }) {
+  const e = ESPACIO.recogida;
+  const paso = PASO_PEDIDO[p.estado] ?? PASO_PEDIDO.RECEIVED!;
+  const productos = p.items.filter((i) => i.estado !== "CANCELLED");
+  const menus = productos.filter((i) => i.nombre === "Menú del día").reduce((a, i) => a + i.cantidad, 0);
+  const resto = productos.filter((i) => i.nombre !== "Menú del día").map((i) => (i.cantidad > 1 ? `${i.cantidad}× ${i.nombre}` : i.nombre));
+  const que = [menus ? plural(menus, "menú", "menús") : null, ...resto].filter(Boolean).join(", ");
+  return (
+    <Link href="/admin/pedidos" className={`relative flex items-center gap-2.5 py-2.5 pl-3.5 pr-2.5 hover:bg-arena/50 dark:hover:bg-noche-3 ${p.estado === "DELIVERED" ? "opacity-50" : ""}`}>
+      <span aria-hidden="true" className={`absolute inset-y-0 left-0 w-1 ${e.franja}`} />
+      <span className={`hidden h-8 w-8 shrink-0 place-items-center rounded-lg sm:grid ${e.chip}`} title={e.label}>
+        <Icon name="bag" className="h-4 w-4" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-baseline gap-2">
+          <span className="truncate font-semibold">{p.nombre_cliente ?? "Sin nombre"}</span>
+          <span className="shrink-0 text-sm font-semibold tabular-nums text-carbon-muted dark:text-crema/65">{formatCentimos(p.total_centimos)}</span>
+        </span>
+        <span className="block truncate text-xs text-carbon-muted dark:text-crema/60">Para recoger · {que}</span>
+      </span>
+      <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ${paso.clase}`}>{paso.label}</span>
+    </Link>
   );
 }
 
@@ -604,6 +693,16 @@ function ReservaForm({
 
   return (
     <Modal titulo={r ? `Reserva de ${r.nombre}` : "Nueva reserva"} onClose={onClose} ancho="max-w-2xl">
+      {/* La fila de la agenda va resumida: aquí, lo que han pedido y llamar con un toque. */}
+      {r ? (
+        <div className="mb-4 grid gap-2 rounded-2xl bg-arena/60 p-3 dark:bg-noche-3">
+          <a href={`tel:${r.telefono.replace(/\s/g, "")}`} className={`${botonSecundario} justify-self-start`}>
+            <Icon name="phone" className="h-4 w-4" />
+            Llamar · {r.telefono}
+          </a>
+          {resumenComida(r.comida) ? <p className="text-sm text-oliva dark:text-oliva-soft">{resumenComida(r.comida)}</p> : null}
+        </div>
+      ) : null}
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="grid gap-1 text-sm">
           <span className="font-semibold">Nombre</span>
