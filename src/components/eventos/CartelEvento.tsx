@@ -1,10 +1,11 @@
 import Image from "next/image";
+import { CartelImagen } from "@/components/eventos/CartelImagen";
 
 /**
  * Cartel o foto de un evento entero, sin recortar: los carteles suelen ser
  * verticales (formato historia de Instagram) y con `object-cover` se perdían el
  * titular y la fecha. Detrás, la misma imagen ampliada y difuminada rellena el
- * hueco, así un cartel vertical en una caja apaisada no deja bandas vacías.
+ * hueco, y los bordes del cartel se funden con él en vez de cortar en seco.
  */
 export function CartelEvento({
   src,
@@ -28,16 +29,7 @@ export function CartelEvento({
     <div className={`relative isolate overflow-hidden bg-noche ${className}`}>
       <Image src={src} alt="" aria-hidden="true" fill sizes="96px" unoptimized={unoptimized} className="-z-10 scale-125 object-cover opacity-60 blur-2xl saturate-150" />
       <div aria-hidden="true" className="absolute inset-0 -z-10 bg-gradient-to-b from-noche/10 via-transparent to-noche/40" />
-      <Image
-        src={src}
-        alt={alt}
-        fill
-        sizes={sizes}
-        priority={priority}
-        unoptimized={unoptimized}
-        onLoad={onProporcion ? (e) => e.currentTarget.naturalHeight && onProporcion(e.currentTarget.naturalWidth / e.currentTarget.naturalHeight) : undefined}
-        className="object-contain drop-shadow-[0_18px_40px_rgb(0_0_0/0.45)]"
-      />
+      <CartelImagen src={src} alt={alt} sizes={sizes} priority={priority} unoptimized={unoptimized} onProporcion={onProporcion} />
     </div>
   );
 }
