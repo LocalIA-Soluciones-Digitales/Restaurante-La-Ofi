@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { cartelesDe } from "@/components/eventos/CartelEvento";
-import { CartelesRotativos } from "@/components/eventos/CartelesRotativos";
+import { CartelPortada } from "@/components/eventos/CartelPortada";
 import { Countdown } from "@/components/eventos/Countdown";
 import { ProgramaEvento } from "@/components/eventos/ProgramaEvento";
 import { BrandPlaceholder } from "@/components/ui/BrandPlaceholder";
@@ -30,18 +30,16 @@ export function EventoPortada({ evento, locale, ficha = false }: { evento: Event
   return (
     <div className="container-wide grid items-center gap-10 lg:grid-cols-12 lg:gap-16">
       <div className="lg:col-span-5">
-        <div className="relative mx-auto max-w-md overflow-hidden rounded-3xl ring-1 ring-tinta-line shadow-[0_40px_90px_-40px_rgb(43_39_34/0.55)] lg:max-w-none">
-          {carteles.length > 0 ? (
-            <CartelesRotativos imagenes={carteles} sizes="(min-width: 1024px) 38vw, (min-width: 448px) 448px, 100vw" priority={ficha} className="aspect-[4/5]" />
-          ) : (
-            <div className="relative aspect-[4/5] bg-papel-3">
-              <BrandPlaceholder label={evento.tipo} icon="music" />
-            </div>
-          )}
-        </div>
+        {carteles.length > 0 ? (
+          <CartelPortada imagenes={carteles} sizes="(min-width: 1024px) 38vw, (min-width: 448px) 448px, 100vw" priority={ficha} />
+        ) : (
+          <div className="relative mx-auto aspect-[4/5] max-w-md overflow-hidden rounded-3xl bg-papel-3 ring-1 ring-tinta-line lg:max-w-none">
+            <BrandPlaceholder label={evento.tipo} icon="music" />
+          </div>
+        )}
       </div>
 
-      <div className="lg:col-span-7">
+      <div className="lg:col-span-7 [&>*]:motion-safe:animate-fade-up [&>*:nth-child(2)]:[animation-delay:80ms] [&>*:nth-child(3)]:[animation-delay:160ms] [&>*:nth-child(4)]:[animation-delay:240ms] [&>*:nth-child(5)]:[animation-delay:320ms] [&>*:nth-child(6)]:[animation-delay:400ms]">
         <p className="flex items-center gap-2.5 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-brasa">
           {proximo ? (
             <span aria-hidden="true" className="relative flex h-2 w-2">

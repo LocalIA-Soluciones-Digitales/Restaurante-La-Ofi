@@ -16,15 +16,24 @@ export function CartelesRotativos({
   sizes,
   priority = false,
   className = "",
+  onProporcion,
 }: {
   imagenes: { src: string; alt: string }[];
   sizes: string;
   priority?: boolean;
   className?: string;
+  /** Proporción del cartel que se ve (cambia al turnarse), para que el marco tome su forma. */
+  onProporcion?: (r: number) => void;
 }) {
   const [actual, setActual] = useState(0);
   const [pausa, setPausa] = useState(false);
+  const [proporciones, setProporciones] = useState<Record<number, number>>({});
   const n = imagenes.length;
+
+  useEffect(() => {
+    const r = proporciones[actual];
+    if (r) onProporcion?.(r);
+  }, [actual, proporciones, onProporcion]);
 
   useEffect(() => {
     if (n < 2 || pausa || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -35,7 +44,7 @@ export function CartelesRotativos({
   }, [n, pausa, actual]);
 
   if (n === 0) return null;
-  if (n === 1) return <CartelEvento src={imagenes[0]!.src} alt={imagenes[0]!.alt} sizes={sizes} priority={priority} className={className} />;
+  if (n === 1) return <CartelEvento src={imagenes[0]!.src} alt={imagenes[0]!.alt} sizes={sizes} priority={priority} className={className} onProporcion={onProporcion} />;
 
   return (
     <div
@@ -52,7 +61,7 @@ export function CartelesRotativos({
           aria-hidden={i !== actual}
           className={`absolute inset-0 transition-opacity duration-700 ease-out ${i === actual ? "opacity-100" : "opacity-0"}`}
         >
-          <CartelEvento src={img.src} alt={img.alt} sizes={sizes} priority={priority && i === 0} className="h-full w-full" />
+          <CartelEvento src={img.src} alt={img.alt} sizes={sizes} priority={priority && i === 0} className="h-full w-full" onProporcion={(r) => setProporciones((p) => (p[i] === r ? p : { ...p, [i]: r }))} />
         </div>
       ))}
       <div className="absolute inset-x-0 bottom-3 z-10 flex justify-center gap-1.5">

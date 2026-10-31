@@ -92,6 +92,11 @@ const config: Config = {
           "0%": { width: "0%" },
           "100%": { width: "100%" },
         },
+        // Cartel que se asienta al aparecer (aviso del evento).
+        "cartel-in": {
+          "0%": { opacity: "0", transform: "scale(1.06)", filter: "blur(6px)" },
+          "100%": { opacity: "1", transform: "scale(1)", filter: "blur(0)" },
+        },
         "fade-in": {
           "0%": { opacity: "0" },
           "100%": { opacity: "1" },

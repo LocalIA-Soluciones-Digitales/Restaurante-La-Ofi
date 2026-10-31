@@ -47,6 +47,8 @@ export function AvisoEvento({
   agendaHref: string;
 }) {
   const [abierto, setAbierto] = useState(false);
+  // Forma del primer cartel (ancho/alto): la tarjeta se corta a su medida.
+  const [proporcion, setProporcion] = useState(2 / 3);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -56,9 +58,28 @@ export function AvisoEvento({
     } catch {
       // Sin almacenamiento (navegación privada estricta): se enseña igual.
     }
-    // Un instante tras pintar la página, para que se vea entrar y no tape la carga.
-    const t = window.setTimeout(() => setAbierto(true), 350);
-    return () => window.clearTimeout(t);
+    // Un instante tras pintar la página, para que se vea entrar y no tape la carga; mientras,
+    // se precarga el cartel para abrir ya con su forma (sin saltos ni hueco vacío).
+    const inicio = Date.now();
+    let t: number | undefined;
+    const abrir = () => {
+      if (t === undefined) t = window.setTimeout(() => setAbierto(true), Math.max(0, 350 - (Date.now() - inicio)));
+    };
+    const primera = evento.media.find((m) => m.tipo === "imagen")?.url;
+    if (primera) {
+      const img = new window.Image();
+      img.onload = () => {
+        if (img.naturalHeight) setProporcion(img.naturalWidth / img.naturalHeight);
+        abrir();
+      };
+      img.onerror = abrir;
+      img.src = primera;
+    } else abrir();
+    const tope = window.setTimeout(abrir, 2500);
+    return () => {
+      window.clearTimeout(tope);
+      if (t !== undefined) window.clearTimeout(t);
+    };
     // Solo al entrar: cambiar de página no lo vuelve a abrir.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -72,7 +93,7 @@ export function AvisoEvento({
       // Sin almacenamiento: volverá a salir al recargar.
     }
   };
-  return <Dialogo evento={evento} verHref={verHref} reservarHref={reservarHref} agendaHref={agendaHref} onClose={cerrar} />;
+  return <Dialogo evento={evento} proporcion={proporcion} verHref={verHref} reservarHref={reservarHref} agendaHref={agendaHref} onClose={cerrar} />;
 }
 
 /** Tras tocar o arrastrar los carteles, cuánto se espera antes de volver a turnarlos. */
@@ -80,17 +101,21 @@ const REANUDAR_MS = 8000;
 
 function Dialogo({
   evento,
+  proporcion,
   verHref,
   reservarHref,
   agendaHref,
   onClose,
 }: {
   evento: AvisoEventoDatos;
+  proporcion: number;
   verHref: string;
   reservarHref: string;
   agendaHref: string;
   onClose: () => void;
 }) {
+  // Entre una historia (9:16 aprox.) y un cuadrado: más ancho no cabe junto al texto.
+  const forma = Math.min(1, Math.max(0.5, proporcion));
   const ref = useDialogA11y<HTMLDivElement>(onClose);
   const pista = useRef<HTMLDivElement>(null);
   const [actual, setActual] = useState(0);
@@ -143,7 +168,8 @@ function Dialogo({
         aria-labelledby="aviso-evento-titulo"
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className="relative flex max-h-[min(88svh,46rem)] w-full max-w-[24rem] flex-col overflow-hidden rounded-3xl bg-crema text-carbon shadow-[0_30px_90px_-20px_rgb(34_30_26/0.6)] motion-safe:animate-fade-up lg:h-[min(86svh,44rem)] lg:max-h-none lg:w-auto lg:max-w-[calc(100vw-3rem)] lg:flex-row"
+        style={{ ["--r" as string]: forma }}
+        className="relative flex max-h-[min(88svh,46rem)] w-[clamp(19rem,calc(54svh*var(--r)),24rem)] max-w-full flex-col overflow-hidden rounded-3xl bg-crema text-carbon shadow-[0_30px_90px_-20px_rgb(34_30_26/0.6)] motion-safe:animate-fade-up lg:h-[min(86svh,44rem)] lg:max-h-none lg:w-auto lg:max-w-[calc(100vw-3rem)] lg:flex-row"
       >
         <button
           type="button"
@@ -155,10 +181,10 @@ function Dialogo({
         </button>
 
         {media.length > 0 ? (
-          // Hueco de tamaño fijo (móvil: algo menos de media pantalla; escritorio: columna 2:3 a todo el
-          // alto): el cartel se ve entero sobre un fondo difuminado de sí mismo.
+          // Hueco con la forma del cartel (móvil: a todo el ancho, hasta media pantalla; escritorio:
+          // columna a todo el alto), así se ve entero y sin bandas a los lados.
           <div
-            className="group relative h-[min(46svh,25rem)] w-full shrink-0 bg-carbon lg:aspect-[2/3] lg:h-full lg:w-auto"
+            className="group relative w-full shrink-0 overflow-hidden bg-carbon [aspect-ratio:var(--r)] max-h-[54svh] lg:h-full lg:max-h-none lg:w-auto"
             onMouseEnter={() => setEncima(true)}
             onMouseLeave={() => setEncima(false)}
           >
@@ -170,12 +196,11 @@ function Dialogo({
               className="flex h-full snap-x snap-mandatory overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
               {media.map((m, i) => (
-                // Como una portada de disco: el cartel entero, con sombra y esquinas, sobre su
-                // propio ambiente (él mismo, muy difuminado y con viñeteado). Así el hueco que
-                // deja un cartel más estrecho que la tarjeta se ve buscado, no como un margen.
+                // El cartel ocupa todo el hueco; si otro cartel del carrusel tiene otra forma, el
+                // sobrante se rellena con él mismo muy difuminado, no con un margen.
                 <div
                   key={m.url}
-                  className="relative isolate flex h-full w-full shrink-0 snap-center items-center justify-center overflow-hidden px-4 pb-7 pt-9 lg:p-0"
+                  className="relative isolate flex h-full w-full shrink-0 snap-center items-center justify-center overflow-hidden"
                   aria-hidden={i !== actual}
                 >
                   {m.tipo === "video" ? (
@@ -191,7 +216,7 @@ function Dialogo({
                         alt={i === 0 ? evento.titulo : `${evento.titulo}, cartel ${i + 1}`}
                         loading={i === 0 ? "eager" : "lazy"}
                         draggable={false}
-                        className="max-h-full max-w-full select-none rounded-xl object-contain shadow-[0_18px_40px_-10px_rgb(0_0_0/0.7)] ring-1 ring-white/10 lg:h-full lg:w-full lg:max-w-none lg:rounded-none lg:shadow-none lg:ring-0"
+                        className="h-full w-full select-none object-contain motion-safe:animate-[cartel-in_0.9s_cubic-bezier(0.16,1,0.3,1)_both]"
                       />
                     </>
                   )}
@@ -300,8 +325,8 @@ function Dialogo({
                 </Link>
               ) : null}
               <Link href={verHref} onClick={onClose} className={`btn-secondary w-full px-3 ${evento.reservable ? "" : "col-span-2"}`}>
-                Ver el evento
-                <Icon name="arrow" className="h-4 w-4" />
+                <span className="whitespace-nowrap">Ver el evento</span>
+                <Icon name="arrow" className="hidden h-4 w-4 sm:block" />
               </Link>
             </div>
             <Link href={agendaHref} onClick={onClose} className="justify-self-center text-sm text-carbon-muted underline decoration-carbon/25 underline-offset-4 hover:text-carbon">
