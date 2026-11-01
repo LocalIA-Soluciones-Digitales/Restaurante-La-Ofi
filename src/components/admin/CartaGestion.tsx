@@ -7,7 +7,8 @@ import { Aviso, aCentimos, aEuros, botonPeligro, botonPrimario, botonSecundario,
 import { AllergenIcon } from "@/components/menu/AllergenIcon";
 import { Icon } from "@/components/ui/Icon";
 import { borrar, guardar } from "@/lib/admin/actions";
-import { ALERGENOS } from "@/lib/allergens";
+import cargadorImagen from "@/lib/image-loader";
+import { ALERGENOS, type AlergenoKey } from "@/lib/allergens";
 import { ETIQUETAS, MOMENTOS } from "@/lib/carta";
 import { formatCentimos } from "@/lib/format";
 import type { Etiqueta, MomentoCarta } from "@/lib/restaurant/types";
@@ -76,6 +77,48 @@ const slugify = (s: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 
+type FiltroEstado = "todos" | "agotados" | "destacados" | "pendientes";
+
+const FILTROS: { key: FiltroEstado; label: string }[] = [
+  { key: "todos", label: "Todos" },
+  { key: "agotados", label: "Agotados" },
+  { key: "destacados", label: "Recomendados" },
+  { key: "pendientes", label: "Alérgenos sin confirmar" },
+];
+
+const chip =
+  "inline-flex min-h-10 shrink-0 items-center gap-2 rounded-full border px-3.5 text-sm font-semibold transition-colors border-carbon/10 bg-white text-carbon hover:bg-arena aria-pressed:border-marino aria-pressed:bg-marino aria-pressed:text-crema dark:border-crema/10 dark:bg-noche-3 dark:text-crema dark:hover:bg-noche-2 dark:aria-pressed:border-neon dark:aria-pressed:bg-neon dark:aria-pressed:text-noche";
+const contador = "rounded-full bg-carbon/[0.07] px-1.5 text-xs tabular-nums dark:bg-crema/10";
+const iconoBoton =
+  "grid h-11 w-11 shrink-0 place-items-center rounded-xl text-carbon-muted transition-colors hover:bg-arena hover:text-carbon disabled:opacity-30 disabled:hover:bg-transparent dark:text-crema/60 dark:hover:bg-noche-3 dark:hover:text-crema";
+const etiqueta = "inline-flex items-center whitespace-nowrap gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide";
+
+/** Interruptor grande (44 px de alto) para disponible/agotado y visible/oculta. */
+function Interruptor({ activo, onCambiar, si, no, nombre }: { activo: boolean; onCambiar: () => void; si: string; no: string; nombre: string }) {
+  return (
+    <button type="button" role="switch" aria-checked={activo} aria-label={`${nombre}: ${activo ? si : no}`} onClick={onCambiar} className="group/sw inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl px-2 text-sm font-semibold">
+      <span className={`relative h-6 w-11 rounded-full transition-colors ${activo ? "bg-oliva dark:bg-neon" : "bg-terracota/80"}`}>
+        <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-[left] duration-200 ${activo ? "left-[1.375rem]" : "left-0.5"}`} />
+      </span>
+      <span className={`hidden w-20 text-left sm:inline ${activo ? "text-oliva dark:text-neon" : "text-terracota dark:text-terracota-soft"}`}>{activo ? si : no}</span>
+    </button>
+  );
+}
+
+function Miniatura({ p, bebida }: { p: ProductoBd; bebida: boolean }) {
+  const src = p.imagen_url || p.imagenes[0];
+  return (
+    <span className={`grid h-12 w-12 shrink-0 place-items-center sm:h-14 sm:w-14 overflow-hidden rounded-xl bg-arena text-madera dark:bg-noche-3 dark:text-crema/40 ${p.disponible ? "" : "opacity-50 grayscale"}`}>
+      {src ? (
+        // eslint-disable-next-line @next/next/no-img-element -- miniatura del panel
+        <img src={cargadorImagen({ src, width: 96 })} alt="" loading="lazy" className="h-full w-full object-cover" />
+      ) : (
+        <Icon name={bebida ? "wine" : "utensils"} className="h-5 w-5" />
+      )}
+    </span>
+  );
+}
+
 /**
  * Carta (portado de CartaTabs/ProductosGestion/CategoriasGestion de Palomita):
  * categorías y productos con todo lo que muestra la carta interactiva. "Agotado"
@@ -88,83 +131,200 @@ export function CartaGestion(props: { categorias: CategoriaBd[]; productos: Prod
   const [mods, setMods] = useState(props.modificadores);
   const [ops, setOps] = useState(props.opciones);
   const [filtroCat, setFiltroCat] = useState("");
+  const [estado, setEstado] = useState<FiltroEstado>("todos");
   const [busca, setBusca] = useState("");
   const [editando, setEditando] = useState<ProductoBd | "nuevo" | null>(null);
   const [aviso, setAviso] = useState<{ tono: "ok" | "error"; texto: string } | null>(null);
 
-  const lista = useMemo(() => {
-    const q = busca.trim().toLowerCase();
-    return productos.filter((p) => (!filtroCat || p.categoria_id === filtroCat) && (!q || p.nombre.toLowerCase().includes(q)));
-  }, [productos, filtroCat, busca]);
+  const ordenadas = useMemo(() => [...categorias].sort((a, b) => a.orden - b.orden), [categorias]);
+  const porCategoria = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const p of productos) m.set(p.categoria_id, (m.get(p.categoria_id) ?? 0) + 1);
+    return m;
+  }, [productos]);
+  const cuenta: Record<FiltroEstado, number> = {
+    todos: productos.length,
+    agotados: productos.filter((p) => !p.disponible).length,
+    destacados: productos.filter((p) => p.destacado).length,
+    pendientes: productos.filter((p) => !p.alergenos_confirmados).length,
+  };
+
+  // Agrupada por categoría, en el orden de la carta.
+  const grupos = useMemo(() => {
+    const q = busca
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "");
+    const pasa = (p: ProductoBd) =>
+      (!filtroCat || p.categoria_id === filtroCat) &&
+      (estado === "todos" || (estado === "agotados" && !p.disponible) || (estado === "destacados" && p.destacado) || (estado === "pendientes" && !p.alergenos_confirmados)) &&
+      (!q || p.nombre.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").includes(q));
+    return ordenadas
+      .map((c) => ({ c, items: productos.filter((p) => p.categoria_id === c.id && pasa(p)).sort((a, b) => a.orden - b.orden || a.nombre.localeCompare(b.nombre, "es")) }))
+      .filter((g) => g.items.length > 0);
+  }, [productos, ordenadas, filtroCat, estado, busca]);
+  const total = grupos.reduce((n, g) => n + g.items.length, 0);
 
   const ok = (texto: string) => setAviso({ tono: "ok", texto });
   const ko = (texto: string) => setAviso({ tono: "error", texto });
 
+  // Optimista: el cambio se ve al tocar y se deshace si el servidor falla.
   const toggle = async (p: ProductoBd, campo: "disponible" | "destacado") => {
-    const r = await guardar<ProductoBd>("productos", { id: p.id, [campo]: !p[campo] });
-    if (!r.ok) return ko(r.error);
+    const valor = !p[campo];
+    setProductos((l) => l.map((x) => (x.id === p.id ? { ...x, [campo]: valor } : x)));
+    const r = await guardar<ProductoBd>("productos", { id: p.id, [campo]: valor });
+    if (!r.ok) {
+      setProductos((l) => l.map((x) => (x.id === p.id ? { ...x, [campo]: p[campo] } : x)));
+      return ko(r.error);
+    }
     setProductos((l) => l.map((x) => (x.id === p.id ? r.data : x)));
-    ok(campo === "disponible" ? `${p.nombre}: ${r.data.disponible ? "disponible" : "agotado"} (ya en la web).` : `${p.nombre} actualizado.`);
+    ok(campo === "disponible" ? `${p.nombre}: ${valor ? "disponible" : "agotado"} (ya en la web).` : `${p.nombre}: ${valor ? "recomendado" : "ya no es recomendado"}.`);
   };
 
   return (
     <div className="grid gap-4">
-      <div role="tablist" className="flex w-fit rounded-xl bg-arena p-1 dark:bg-noche-2">
-        {(["productos", "categorias"] as const).map((t) => (
-          <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)} className="min-h-11 rounded-lg px-5 text-sm font-semibold capitalize aria-selected:bg-[theme(colors.marino.DEFAULT)] aria-selected:text-crema dark:aria-selected:bg-neon dark:aria-selected:text-noche">
-            {t === "productos" ? "Productos" : "Categorías"}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div role="tablist" className="flex w-fit rounded-xl bg-arena p-1 dark:bg-noche-2">
+          {(["productos", "categorias"] as const).map((t) => (
+            <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)} className="inline-flex min-h-11 items-center gap-2 rounded-lg px-5 text-sm font-semibold transition-colors aria-selected:bg-[theme(colors.marino.DEFAULT)] aria-selected:text-crema dark:aria-selected:bg-neon dark:aria-selected:text-noche">
+              {t === "productos" ? "Productos" : "Categorías"}
+              <span className="text-xs tabular-nums opacity-60">{t === "productos" ? productos.length : categorias.length}</span>
+            </button>
+          ))}
+        </div>
+        {tab === "productos" ? (
+          <button type="button" onClick={() => setEditando("nuevo")} className={botonPrimario}>
+            <Icon name="plus" className="h-4 w-4" />
+            Nuevo producto
           </button>
-        ))}
+        ) : null}
       </div>
       <AvisoFlotante aviso={aviso} onCerrar={() => setAviso(null)} />
 
       {tab === "productos" ? (
-        <section className={`${card} p-4`}>
-          <div className="flex flex-wrap gap-2">
-            <select value={filtroCat} onChange={(e) => setFiltroCat(e.target.value)} className={`${input} max-w-xs`} aria-label="Categoría">
-              <option value="">Todas las categorías</option>
-              {categorias.map((c) => (
-                <option key={c.id} value={c.id}>
+        <>
+          <section className={`${card} grid gap-3 p-3 sm:p-4`}>
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="relative min-w-0 flex-1 basis-60">
+                <Icon name="search" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 opacity-50" />
+                <input type="search" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar un plato o bebida…" className={`${input} pl-9`} aria-label="Buscar producto" />
+              </label>
+              <div className="flex gap-2 overflow-x-auto pb-1 sm:pb-0">
+                {FILTROS.map((x) => (
+                  <button key={x.key} type="button" aria-pressed={estado === x.key} onClick={() => setEstado(x.key)} className={chip}>
+                    {x.label}
+                    <span className={contador}>{cuenta[x.key]}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="-mx-3 flex gap-2 overflow-x-auto px-3 pb-1 sm:-mx-4 sm:px-4" aria-label="Categorías">
+              <button type="button" aria-pressed={!filtroCat} onClick={() => setFiltroCat("")} className={chip}>
+                Toda la carta
+              </button>
+              {ordenadas.map((c) => (
+                <button key={c.id} type="button" aria-pressed={filtroCat === c.id} onClick={() => setFiltroCat(filtroCat === c.id ? "" : c.id)} className={`${chip} ${c.visible ? "" : "opacity-60"}`}>
                   {c.nombre}
-                </option>
+                  <span className={contador}>{porCategoria.get(c.id) ?? 0}</span>
+                </button>
               ))}
-            </select>
-            <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar" className={`${input} max-w-xs`} aria-label="Buscar producto" />
-            <button type="button" onClick={() => setEditando("nuevo")} className={`${botonPrimario} ml-auto`}>
-              <Icon name="plus" className="h-4 w-4" />
-              Nuevo producto
-            </button>
-          </div>
-          <ul className="mt-4 divide-y divide-carbon/10 dark:divide-crema/10">
-            {lista.map((p) => (
-              <li key={p.id} className="flex flex-wrap items-center gap-3 py-3">
-                <button type="button" onClick={() => setEditando(p)} className="min-w-0 flex-1 text-left">
-                  <span className="block font-semibold">{p.nombre}</span>
-                  <span className="text-sm opacity-70">
-                    {categorias.find((c) => c.id === p.categoria_id)?.nombre} · {p.precio_centimos !== null ? formatCentimos(p.precio_centimos) : "precio en el local"} · {p.estacion}
-                    {!p.alergenos_confirmados ? " · alérgenos sin confirmar" : ""}
-                  </span>
-                </button>
-                <button type="button" aria-pressed={!p.disponible} onClick={() => void toggle(p, "disponible")} className={`min-h-11 rounded-xl px-4 text-sm font-semibold ${p.disponible ? "bg-oliva-soft text-oliva" : "bg-terracota text-crema"}`}>
-                  {p.disponible ? "Disponible" : "Agotado"}
-                </button>
-                <button type="button" aria-pressed={p.destacado} onClick={() => void toggle(p, "destacado")} className="grid h-11 w-11 place-items-center rounded-xl border border-carbon/15 aria-pressed:bg-ratan dark:border-crema/15">
-                  <Icon name="star" className="h-4 w-4" />
-                  <span className="sr-only">Recomendado</span>
-                </button>
-              </li>
-            ))}
-            {lista.length === 0 ? <li className="py-6 text-center text-sm opacity-60">Sin productos.</li> : null}
-          </ul>
-        </section>
+            </div>
+          </section>
+
+          {grupos.map(({ c, items }) => (
+            <section key={c.id} className={`${card} overflow-hidden`}>
+              <header className="flex items-center gap-2 border-b border-carbon/[0.06] bg-arena/40 px-4 py-2.5 dark:border-crema/10 dark:bg-noche-3/40">
+                <Icon name={c.tipo === "bebida" ? "wine" : "utensils"} className="h-4 w-4 opacity-50" />
+                <h2 className="font-display text-lg">{c.nombre}</h2>
+                <span className="text-sm tabular-nums text-carbon-muted dark:text-crema/55">{items.length}</span>
+                {!c.visible ? <span className={`${etiqueta} bg-carbon/10 dark:bg-crema/10`}>Oculta en la web</span> : null}
+              </header>
+              <ul className="divide-y divide-carbon/[0.06] dark:divide-crema/10">
+                {items.map((p) => (
+                  <li key={p.id} className="flex items-center gap-1 pr-2 transition-colors hover:bg-arena/40 dark:hover:bg-noche-3/40 sm:gap-2 sm:pr-3">
+                    <button type="button" onClick={() => setEditando(p)} className="flex min-w-0 flex-1 items-center gap-3 py-3 pl-3 text-left sm:pl-4" aria-label={`Editar ${p.nombre}`}>
+                      <Miniatura p={p} bebida={c.tipo === "bebida"} />
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-baseline gap-2">
+                          <span className={`min-w-0 truncate font-semibold ${p.disponible ? "" : "text-carbon-muted line-through decoration-terracota/60 dark:text-crema/50"}`}>{p.nombre}</span>
+                          {!p.disponible ? <span className={`${etiqueta} shrink-0 bg-terracota-soft text-terracota`}>Agotado</span> : null}
+                        </span>
+                        <span className="block font-display tabular-nums sm:hidden">{p.precio_centimos !== null ? formatCentimos(p.precio_centimos) : "Precio en el local"}</span>
+                        {p.descripcion ? <span className="hidden truncate sm:block text-sm text-carbon-muted dark:text-crema/60">{p.descripcion}</span> : null}
+                        <span className="mt-1 flex flex-wrap items-center gap-1.5">
+                          <span className={`${etiqueta} ${p.estacion === "barra" ? "bg-neon/30 text-marino dark:bg-neon/15 dark:text-neon" : "bg-ratan/30 text-carbon dark:bg-ratan/20 dark:text-ratan"}`}>{p.estacion === "barra" ? "Barra" : "Cocina"}</span>
+                          {p.alergenos_confirmados ? (
+                            p.alergenos.length ? (
+                              <span className="inline-flex items-center gap-0.5 opacity-80" title={`Alérgenos: ${p.alergenos.map((a) => ALERGENOS.find((x) => x.key === a)?.label ?? a).join(", ")}`}>
+                                {p.alergenos.slice(0, 6).map((a) => (
+                                  <AllergenIcon key={a} alergeno={a as AlergenoKey} />
+                                ))}
+                                {p.alergenos.length > 6 ? <span className="text-xs">+{p.alergenos.length - 6}</span> : null}
+                              </span>
+                            ) : (
+                              <span className={`${etiqueta} bg-oliva-soft text-oliva`}>Sin alérgenos</span>
+                            )
+                          ) : (
+                            <span className={`${etiqueta} bg-terracota-soft/70 text-terracota`}>
+                              <Icon name="info" className="h-3 w-3" />
+                              Alérgenos sin confirmar
+                            </span>
+                          )}
+                        </span>
+                      </span>
+                      <span className={`hidden shrink-0 text-right font-display text-lg tabular-nums sm:block ${p.precio_centimos === null ? "text-sm text-carbon-muted dark:text-crema/55" : ""}`}>
+                        {p.precio_centimos !== null ? formatCentimos(p.precio_centimos) : "En el local"}
+                      </span>
+                    </button>
+                    <Interruptor activo={p.disponible} onCambiar={() => void toggle(p, "disponible")} si="Disponible" no="Agotado" nombre={p.nombre} />
+                    <button type="button" aria-pressed={p.destacado} onClick={() => void toggle(p, "destacado")} title={p.destacado ? "Recomendado" : "Marcar como recomendado"} className={`${iconoBoton} aria-pressed:text-madera dark:aria-pressed:text-ratan`}>
+                      <Icon name="star" className={`h-5 w-5 ${p.destacado ? "fill-ratan" : ""}`} />
+                      <span className="sr-only">Recomendado</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+          {total === 0 ? (
+            <div className={`${card} grid place-items-center gap-3 px-6 py-12 text-center`}>
+              <Icon name="search" className="h-8 w-8 opacity-30" />
+              <p className="text-sm text-carbon-muted dark:text-crema/60">Ningún producto coincide con la búsqueda.</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setBusca("");
+                  setEstado("todos");
+                  setFiltroCat("");
+                }}
+                className={botonSecundario}
+              >
+                Ver toda la carta
+              </button>
+            </div>
+          ) : null}
+        </>
       ) : (
-        <Categorias categorias={categorias} setCategorias={setCategorias} ok={ok} ko={ko} />
+        <Categorias
+          categorias={ordenadas}
+          porCategoria={porCategoria}
+          setCategorias={setCategorias}
+          verProductos={(id) => {
+            setFiltroCat(id);
+            setEstado("todos");
+            setBusca("");
+            setTab("productos");
+          }}
+          ok={ok}
+          ko={ko}
+        />
       )}
 
       {editando ? (
         <ProductoForm
           producto={editando === "nuevo" ? null : editando}
-          categorias={categorias}
+          categorias={ordenadas}
           mods={mods.filter((m) => editando !== "nuevo" && m.producto_id === editando.id)}
           ops={ops}
           setMods={setMods}
@@ -186,108 +346,143 @@ export function CartaGestion(props: { categorias: CategoriaBd[]; productos: Prod
   );
 }
 
+const campoEnLinea =
+  "w-full rounded-lg border border-transparent bg-transparent px-2 transition-colors hover:border-carbon/15 focus:border-marino focus:bg-white focus:outline-none dark:hover:border-crema/15 dark:focus:border-neon dark:focus:bg-noche-3";
+
 function Categorias({
   categorias,
+  porCategoria,
   setCategorias,
+  verProductos,
   ok,
   ko,
 }: {
   categorias: CategoriaBd[];
+  porCategoria: Map<string, number>;
   setCategorias: (f: (l: CategoriaBd[]) => CategoriaBd[]) => void;
+  verProductos: (id: string) => void;
   ok: (t: string) => void;
   ko: (t: string) => void;
 }) {
-  const [nueva, setNueva] = useState("");
+  const [nueva, setNueva] = useState({ nombre: "", tipo: "comida" as CategoriaBd["tipo"] });
+  const cambiar = async (c: CategoriaBd, patch: Partial<CategoriaBd>, texto?: string) => {
+    setCategorias((l) => l.map((x) => (x.id === c.id ? { ...x, ...patch } : x)));
+    const r = await guardar<CategoriaBd>("categorias", { id: c.id, ...patch });
+    if (!r.ok) {
+      setCategorias((l) => l.map((x) => (x.id === c.id ? c : x)));
+      return ko(r.error);
+    }
+    setCategorias((l) => l.map((x) => (x.id === c.id ? r.data : x)));
+    if (texto) ok(texto);
+  };
   const mover = async (c: CategoriaBd, delta: -1 | 1) => {
-    const orden = [...categorias].sort((a, b) => a.orden - b.orden);
-    const i = orden.findIndex((x) => x.id === c.id);
-    const otra = orden[i + delta];
+    const i = categorias.findIndex((x) => x.id === c.id);
+    const otra = categorias[i + delta];
     if (!otra) return;
     const [r1, r2] = await Promise.all([guardar<CategoriaBd>("categorias", { id: c.id, orden: otra.orden }), guardar<CategoriaBd>("categorias", { id: otra.id, orden: c.orden })]);
     if (!r1.ok || !r2.ok) return ko("No se pudo reordenar.");
     setCategorias((l) => l.map((x) => (x.id === c.id ? r1.data : x.id === otra.id ? r2.data : x)));
   };
   return (
-    <section className={`${card} p-4`}>
-      <ul className="divide-y divide-carbon/10 dark:divide-crema/10">
-        {[...categorias]
-          .sort((a, b) => a.orden - b.orden)
-          .map((c) => (
-            <li key={c.id} className="grid gap-2 py-3 sm:grid-cols-[1fr_2fr_auto] sm:items-center">
-              <input
-                defaultValue={c.nombre}
-                aria-label="Nombre"
-                onBlur={async (e) => {
-                  if (e.target.value === c.nombre) return;
-                  const r = await guardar<CategoriaBd>("categorias", { id: c.id, nombre: e.target.value });
-                  if (r.ok) ok("Categoría guardada.");
-                  else ko(r.error);
-                }}
-                className={input}
-              />
-              <input
-                defaultValue={c.descripcion ?? ""}
-                placeholder="Texto bajo el título (opcional)"
-                aria-label="Descripción"
-                onBlur={async (e) => {
-                  const r = await guardar<CategoriaBd>("categorias", { id: c.id, descripcion: e.target.value || null });
-                  if (!r.ok) ko(r.error);
-                }}
-                className={input}
-              />
-              <div className="flex gap-1">
-                <button type="button" onClick={() => void mover(c, -1)} className="grid h-11 w-11 place-items-center rounded-xl border border-carbon/15 dark:border-crema/15">
-                  <Icon name="chevronUp" className="h-4 w-4" />
-                  <span className="sr-only">Subir</span>
-                </button>
-                <button type="button" onClick={() => void mover(c, 1)} className="grid h-11 w-11 place-items-center rounded-xl border border-carbon/15 dark:border-crema/15">
-                  <Icon name="chevronDown" className="h-4 w-4" />
-                  <span className="sr-only">Bajar</span>
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={!c.visible}
-                  onClick={async () => {
-                    const r = await guardar<CategoriaBd>("categorias", { id: c.id, visible: !c.visible });
-                    if (r.ok) setCategorias((l) => l.map((x) => (x.id === c.id ? r.data : x)));
+    <section className={`${card} overflow-hidden`}>
+      <p className="border-b border-carbon/[0.06] bg-arena/40 px-4 py-2.5 text-sm text-carbon-muted dark:border-crema/10 dark:bg-noche-3/40 dark:text-crema/60">
+        Así se ordena la carta en la web. Toca un nombre o un texto para cambiarlo; se guarda solo al salir del campo.
+      </p>
+      <ol className="divide-y divide-carbon/[0.06] dark:divide-crema/10">
+        {categorias.map((c, i) => {
+          const n = porCategoria.get(c.id) ?? 0;
+          return (
+            <li key={c.id} className={`grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-2 px-3 py-3 sm:grid-cols-[auto_1fr_auto] sm:px-4 ${c.visible ? "" : "bg-carbon/[0.02] dark:bg-crema/[0.02]"}`}>
+              <span className={`grid h-10 w-10 place-items-center rounded-xl ${c.tipo === "bebida" ? "bg-neon/25 text-marino dark:bg-neon/15 dark:text-neon" : "bg-ratan/25 text-madera dark:bg-ratan/15 dark:text-ratan"} ${c.visible ? "" : "opacity-40"}`}>
+                <Icon name={c.tipo === "bebida" ? "wine" : "utensils"} className="h-5 w-5" />
+              </span>
+              <div className={`min-w-0 ${c.visible ? "" : "opacity-60"}`}>
+                <input
+                  key={`n-${c.nombre}`}
+                  defaultValue={c.nombre}
+                  aria-label={`Nombre de ${c.nombre}`}
+                  onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+                  onBlur={(e) => {
+                    const v = e.target.value.trim();
+                    if (!v) e.target.value = c.nombre;
+                    else if (v !== c.nombre) void cambiar(c, { nombre: v }, "Categoría guardada.");
                   }}
-                  className="grid h-11 w-11 place-items-center rounded-xl border border-carbon/15 aria-pressed:opacity-40 dark:border-crema/15"
-                >
-                  <Icon name="eye" className="h-4 w-4" />
-                  <span className="sr-only">{c.visible ? "Ocultar" : "Mostrar"}</span>
+                  className={`${campoEnLinea} h-9 font-display text-lg`}
+                />
+                <input
+                  key={`d-${c.descripcion}`}
+                  defaultValue={c.descripcion ?? ""}
+                  placeholder="Añadir texto bajo el título…"
+                  aria-label={`Descripción de ${c.nombre}`}
+                  onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+                  onBlur={(e) => {
+                    const v = e.target.value.trim() || null;
+                    if (v !== c.descripcion) void cambiar(c, { descripcion: v }, "Texto guardado.");
+                  }}
+                  className={`${campoEnLinea} h-8 text-sm text-carbon-muted placeholder:italic placeholder:opacity-60 dark:text-crema/60`}
+                />
+              </div>
+              <div className="col-span-2 flex items-center justify-end gap-1 sm:col-span-1">
+                <button type="button" onClick={() => verProductos(c.id)} className="mr-auto inline-flex min-h-11 items-center gap-1 rounded-xl px-3 text-sm font-semibold text-marino sm:mr-0 hover:bg-arena dark:text-neon dark:hover:bg-noche-3">
+                  {n} {n === 1 ? "producto" : "productos"}
+                  <Icon name="chevronRight" className="h-4 w-4" />
+                </button>
+                <select value={c.tipo} onChange={(e) => void cambiar(c, { tipo: e.target.value as CategoriaBd["tipo"] }, "Categoría guardada.")} aria-label={`Tipo de ${c.nombre}`} className="hidden h-11 rounded-xl border border-transparent bg-transparent px-2 text-sm hover:border-carbon/15 dark:hover:border-crema/15 sm:block">
+                  <option value="comida">Comida</option>
+                  <option value="bebida">Bebida</option>
+                </select>
+                <Interruptor activo={c.visible} onCambiar={() => void cambiar(c, { visible: !c.visible }, c.visible ? `«${c.nombre}» oculta en la web.` : `«${c.nombre}» visible en la web.`)} si="Visible" no="Oculta" nombre={c.nombre} />
+                <span className="mx-1 hidden h-6 w-px bg-carbon/10 dark:bg-crema/10 sm:block" />
+                <button type="button" disabled={i === 0} onClick={() => void mover(c, -1)} className={iconoBoton} title="Subir">
+                  <Icon name="chevronUp" className="h-4 w-4" />
+                  <span className="sr-only">Subir {c.nombre}</span>
+                </button>
+                <button type="button" disabled={i === categorias.length - 1} onClick={() => void mover(c, 1)} className={iconoBoton} title="Bajar">
+                  <Icon name="chevronDown" className="h-4 w-4" />
+                  <span className="sr-only">Bajar {c.nombre}</span>
                 </button>
                 <button
                   type="button"
+                  disabled={n > 0}
+                  title={n > 0 ? "Para borrarla, primero mueve o borra sus productos" : "Borrar categoría"}
                   onClick={async () => {
-                    if (!window.confirm(`¿Borrar «${c.nombre}»? Solo se puede si no tiene productos.`)) return;
+                    if (!window.confirm(`¿Borrar la categoría «${c.nombre}»?`)) return;
                     const r = await borrar("categorias", c.id);
                     if (!r.ok) return ko("No se puede borrar: tiene productos.");
                     setCategorias((l) => l.filter((x) => x.id !== c.id));
+                    ok("Categoría borrada.");
                   }}
-                  className="grid h-11 w-11 place-items-center rounded-xl border border-carbon/15 text-terracota dark:border-crema/15"
+                  className={`${iconoBoton} hover:text-terracota dark:hover:text-terracota-soft`}
                 >
                   <Icon name="trash" className="h-4 w-4" />
-                  <span className="sr-only">Borrar</span>
+                  <span className="sr-only">Borrar {c.nombre}</span>
                 </button>
               </div>
             </li>
-          ))}
-      </ul>
+          );
+        })}
+      </ol>
       <form
-        className="mt-4 flex gap-2"
+        className="flex flex-wrap items-center gap-2 border-t border-dashed border-carbon/15 bg-arena/30 p-3 dark:border-crema/15 dark:bg-noche-3/30 sm:px-4"
         onSubmit={async (e) => {
           e.preventDefault();
-          const r = await guardar<CategoriaBd>("categorias", { nombre: nueva, slug: slugify(nueva), orden: categorias.length + 1 });
+          const nombre = nueva.nombre.trim();
+          if (!nombre) return;
+          const r = await guardar<CategoriaBd>("categorias", { nombre, slug: slugify(nombre), tipo: nueva.tipo, orden: Math.max(0, ...categorias.map((c) => c.orden)) + 1 });
           if (!r.ok) return ko(r.error);
           setCategorias((l) => [...l, r.data]);
-          setNueva("");
-          ok("Categoría creada.");
+          setNueva({ nombre: "", tipo: nueva.tipo });
+          ok(`Categoría «${nombre}» creada al final de la carta.`);
         }}
       >
-        <input required value={nueva} onChange={(e) => setNueva(e.target.value)} placeholder="Nueva categoría" className={`${input} max-w-sm`} />
-        <button type="submit" className={botonPrimario}>
+        <input required value={nueva.nombre} onChange={(e) => setNueva({ ...nueva, nombre: e.target.value })} placeholder="Nueva categoría (p. ej. Vinos tintos)" aria-label="Nombre de la nueva categoría" className={`${input} min-w-0 !w-auto flex-1 basis-56`} />
+        <select value={nueva.tipo} onChange={(e) => setNueva({ ...nueva, tipo: e.target.value as CategoriaBd["tipo"] })} aria-label="Tipo de la nueva categoría" className={`${input} !w-36`}>
+          <option value="comida">Comida</option>
+          <option value="bebida">Bebida</option>
+        </select>
+        <button type="submit" disabled={!nueva.nombre.trim()} className={botonPrimario}>
           <Icon name="plus" className="h-4 w-4" />
-          Añadir
+          Añadir categoría
         </button>
       </form>
     </section>
