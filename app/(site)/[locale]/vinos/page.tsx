@@ -25,8 +25,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 
 /**
  * La carta de vinos en su propia página (antes iba al final de la carta y
- * pasaba desapercibida): la vinoteca junto al título y debajo la bodega por
- * tipos y denominaciones, con los vinos de la casa arriba.
+ * pasaba desapercibida): la vinoteca, entera, junto al título y debajo la carta
+ * por tipos y denominaciones, con los vinos de la casa arriba.
  */
 export default async function VinosPage({ params }: Params) {
   const { locale } = await params;
@@ -35,16 +35,12 @@ export default async function VinosPage({ params }: Params) {
 
   return (
     <>
-      {/* La vinoteca del local a un lado y el título al otro: la foto, nítida y sin texto encima. */}
-      <section aria-labelledby="vinos-title" data-header="light" className="bg-carbon text-crema">
-        <div className="grid lg:min-h-[44rem] lg:grid-cols-2">
-          <div className="relative aspect-[4/3] overflow-hidden lg:order-2 lg:aspect-auto">
-            <Photo img="comedorPanoramica" sizes="(min-width: 1024px) 50vw, 100vw" priority mobileBelow={0} decorative />
-            <div aria-hidden="true" className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-carbon/70 to-transparent" />
-          </div>
-          <div className="flex flex-col justify-center px-6 pb-14 pt-10 sm:px-12 lg:px-16 lg:pb-20 lg:pt-36 xl:pl-[max(4rem,calc((100vw-90rem)/2+2.5rem))]">
+      {/* El título a un lado y la vinoteca del local al otro, entera y enmarcada. */}
+      <section aria-labelledby="vinos-title" data-header="light" className="bg-carbon pb-16 pt-28 text-crema sm:pb-24 lg:pt-36">
+        <div className="container-wide grid items-center gap-12 lg:grid-cols-12 lg:gap-16">
+          <div className="lg:col-span-5">
             <p className="kicker text-[#E2B98A]">Vinos · Cavas · Champagnes</p>
-            <h1 id="vinos-title" className="mt-4 font-display text-[clamp(3.25rem,7vw,6.5rem)] font-light leading-[0.95] tracking-tight">
+            <h1 id="vinos-title" className="mt-4 font-display text-[clamp(3.25rem,6.5vw,6rem)] font-light leading-[0.95] tracking-tight">
               Carta <em className="text-[#E2B98A]">de vinos</em>
             </h1>
             <p className="mt-6 max-w-lg text-lg leading-relaxed text-crema/80">{TEXTO_BODEGA}</p>
@@ -59,6 +55,12 @@ export default async function VinosPage({ params }: Params) {
               </Link>
             </div>
           </div>
+          <figure className="lg:col-span-7">
+            <div className="relative aspect-[3/2] overflow-hidden rounded-sm shadow-[0_40px_80px_-40px_rgb(0_0_0/0.8)]">
+              <Photo img="comedorPanoramica" sizes="(min-width: 1024px) 55vw, 100vw" priority mobileBelow={0} decorative />
+            </div>
+            <figcaption className="mt-3 text-xs text-crema/50">La vinoteca, en el centro del local.</figcaption>
+          </figure>
         </div>
       </section>
 
