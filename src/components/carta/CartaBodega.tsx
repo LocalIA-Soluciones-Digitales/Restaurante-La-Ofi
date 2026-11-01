@@ -6,28 +6,7 @@ import { Photo } from "@/components/media/Photo";
 import { Icon } from "@/components/ui/Icon";
 import { formatCentimos } from "@/lib/format";
 import type { CartaItem, CartaSeccion } from "@/lib/restaurant/types";
-
-/** Secciones de vino de la carta (vinos-blancos, vinos-tintos, cavas-champagnes…): van en la carta de vinos. */
-export const esSeccionDeVino = (s: Pick<CartaSeccion, "slug">) => /^(vinos|cavas)-/.test(s.slug);
-
-/** Cada tipo con su título, el color del vino y una línea de para qué es, como en una carta impresa. */
-const TIPO: Record<string, { titulo: string; color: string; nota: string }> = {
-  "vinos-tintos": { titulo: "Tintos", color: "#7A2635", nota: "Con cuerpo, para la brasa y las carnes." },
-  "vinos-blancos": { titulo: "Blancos", color: "#D9C27A", nota: "Frescos y aromáticos: para el pescado, las tostadas y el aperitivo." },
-  "vinos-rosados": { titulo: "Rosados", color: "#E39A93", nota: "Ligeros y afrutados, para la terraza." },
-  "cavas-champagnes": { titulo: "Espumosos", color: "#D8C9A0", nota: "Cavas y champagnes para brindar." },
-  "vinos-dulces": { titulo: "Dulces y generosos", color: "#B5752E", nota: "Para el postre y la sobremesa." },
-};
-const tipo = (s: CartaSeccion) => TIPO[s.slug] ?? { titulo: s.nombre, color: "#B08A55", nota: "" };
-
-/** Lo que es la bodega, sin contar referencias: cambia con la carta. */
-export const TEXTO_BODEGA =
-  "Una selección de distintas denominaciones y variedades: de los blancos de Rueda y el txakoli a los cavas y champagnes. Precio por botella; pregúntanos por los vinos por copa.";
-
-/** Tintos primero (cuando Carlos los pase), luego blancos, rosados, espumosos y dulces. */
-const ORDEN = ["vinos-tintos", "vinos-blancos", "vinos-rosados", "cavas-champagnes", "vinos-dulces"];
-const ordenar = (secciones: CartaSeccion[]) =>
-  secciones.filter((s) => s.items.length > 0).sort((a, b) => (ORDEN.indexOf(a.slug) + 1 || 99) - (ORDEN.indexOf(b.slug) + 1 || 99));
+import { ordenar, TEXTO_BODEGA, tipo } from "@/lib/vinos";
 
 /**
  * «D.O. Rueda · Verdejo 100 %» → { grupo: "D.O. Rueda", detalle: "Verdejo 100 %" }.

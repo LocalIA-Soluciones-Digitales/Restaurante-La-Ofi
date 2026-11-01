@@ -1,5 +1,6 @@
 import { AllergenLegend } from "@/components/menu/AllergenLegend";
-import { BodegaDestacada, CartaBodega, esSeccionDeVino } from "@/components/carta/CartaBodega";
+import { BodegaDestacada, CartaBodega } from "@/components/carta/CartaBodega";
+import { esSeccionDeVino } from "@/lib/vinos";
 import { CartaConPedido } from "@/components/carta/CartaConPedido";
 import { CartaInteractiva } from "@/components/carta/CartaInteractiva";
 import { EmptyState } from "@/components/ui/EmptyState";

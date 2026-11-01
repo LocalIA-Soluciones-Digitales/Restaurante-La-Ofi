@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CartaBodega, esSeccionDeVino, TEXTO_BODEGA } from "@/components/carta/CartaBodega";
+import { CartaBodega } from "@/components/carta/CartaBodega";
 import { Photo } from "@/components/media/Photo";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Icon } from "@/components/ui/Icon";
 import { href, type Locale } from "@/lib/i18n";
 import { getCartaContent } from "@/lib/restaurant/content";
 import { pageMetadata } from "@/lib/seo";
+import { esSeccionDeVino, TEXTO_BODEGA } from "@/lib/vinos";
 import { SITE } from "@/lib/site";
 
 export const revalidate = 300;
