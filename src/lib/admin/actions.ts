@@ -202,7 +202,9 @@ type ReservaConEmail = ReservaAvisable & { email: string | null; estado: string 
 
 /** Qué aviso le toca al cliente al pasar de un estado a otro (los presupuestos se responden a mano). */
 function avisoDeCambio(r: ReservaConEmail, anterior: string | null): AvisoReserva | null {
-  if (r.espacio === "presupuesto" || r.estado === anterior) return null;
+  if (r.estado === anterior) return null;
+  // Descartar una petición de presupuesto no se le comunica como «hemos cancelado tu reserva».
+  if (r.espacio === "presupuesto" && r.estado === "CANCELADA" && anterior === "PENDIENTE") return null;
   if (r.estado === "CONFIRMADA" && (anterior === null || anterior === "PENDIENTE" || anterior === "CANCELADA" || anterior === "NO_SHOW")) return "confirmada";
   if (r.estado === "CANCELADA" && (anterior === "PENDIENTE" || anterior === "CONFIRMADA")) return "cancelada";
   return null;

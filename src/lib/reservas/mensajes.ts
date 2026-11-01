@@ -3,7 +3,8 @@ import { formatearFechaLarga } from "@/lib/format";
 // Lo que se le dice al cliente sobre su reserva, igual por WhatsApp (panel, con un
 // toque) que por email (automático). Sin dependencias de servidor: lo usa el panel.
 
-export type AvisoReserva = "recibida" | "confirmada" | "cancelada";
+/** «presupuesto»: el mensaje con el que el local responde a una petición de presupuesto (solo WhatsApp/email a mano). */
+export type AvisoReserva = "recibida" | "confirmada" | "cancelada" | "presupuesto";
 
 export interface ReservaAvisable {
   id: string;
@@ -47,6 +48,7 @@ export function asunto(tipo: AvisoReserva, r: ReservaAvisable): string {
   const dia = `${formatearFechaLarga(r.fecha)}, ${r.hora.slice(0, 5)}`;
   if (tipo === "recibida") return `Hemos recibido tu solicitud · La Ofi, ${dia}`;
   if (tipo === "confirmada") return `Reserva confirmada · La Ofi, ${dia}`;
+  if (tipo === "presupuesto") return `Tu presupuesto · La Ofi, ${dia}`;
   return `Reserva cancelada · La Ofi, ${dia}`;
 }
 
@@ -54,6 +56,18 @@ export function asunto(tipo: AvisoReserva, r: ReservaAvisable): string {
 export function parrafos(tipo: AvisoReserva, r: ReservaAvisable, enlace: string, telefono: string): string[] {
   const hola = `¡Hola, ${pila(r.nombre)}!`;
   const que = queReserva(r);
+  if (tipo === "presupuesto") {
+    // La propuesta la completa el local antes de enviarla: van los huecos a rellenar.
+    return [
+      hola,
+      `Te escribimos de La Ofi por el presupuesto que nos pediste: ${que} ${cuando(r)}.`,
+      "Te proponemos:\n• Menú: \n• Precio por persona: ",
+      `¿Qué te parece? Si os encaja, lo dejamos reservado. Para cualquier duda, llámanos al ${telefono}.`,
+    ];
+  }
+  if (tipo === "recibida" && r.espacio === "presupuesto") {
+    return [hola, `Hemos recibido tu petición de presupuesto para ${r.personas} personas ${cuando(r)} en La Ofi. En breve te escribimos o te llamamos con la propuesta.`];
+  }
   if (tipo === "recibida") {
     return [
       hola,

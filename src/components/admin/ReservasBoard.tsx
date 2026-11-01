@@ -5,12 +5,13 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AvisarCliente, BotonWhatsApp, avisoSegunEstado } from "@/components/admin/AvisarCliente";
 import { Modal } from "@/components/admin/Modal";
-import { Aviso, botonPrimario, botonSecundario, card, input } from "@/components/admin/ui";
+import { Aviso, boton, botonPrimario, botonSecundario, card, input } from "@/components/admin/ui";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { colaCocina, estadoReserva, guardarReserva, rpcAdmin } from "@/lib/admin/actions";
 import type { MesaSalon, PedidoKds, Zona } from "@/lib/admin/types";
 import { formatCentimos, formatearFechaLarga, hoyEnMadrid } from "@/lib/format";
-import type { AvisoReserva } from "@/lib/reservas/mensajes";
+import { asunto, textoAviso, type AvisoReserva } from "@/lib/reservas/mensajes";
+import { SITE } from "@/lib/site";
 
 export type EstadoReserva = "PENDIENTE" | "CONFIRMADA" | "SENTADA" | "CANCELADA" | "NO_SHOW";
 
@@ -712,6 +713,9 @@ function BandejaPresupuestos({ lista, onAbrir, onIrDia }: { lista: Reserva[]; on
               <span className="block first-letter:uppercase">{DIA_SEMANA.format(new Date(`${r.fecha}T12:00:00Z`)).replace(".", "")} {diaMes(r.fecha)}</span>
               <span className="font-normal opacity-60">{r.hora.slice(0, 5)}</span>
             </button>
+            <BotonWhatsApp tipo="presupuesto" reserva={r} className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-[#1F7A4D] ring-1 ring-carbon/10 dark:text-[#4CC38A] dark:ring-crema/15">
+              <span className="sr-only">WhatsApp a {r.nombre}</span>
+            </BotonWhatsApp>
             {r.email ? (
               <a href={mailPresupuesto(r)} className="grid h-9 w-9 shrink-0 place-items-center rounded-lg ring-1 ring-carbon/10 dark:ring-crema/15" aria-label={`Escribir a ${r.nombre}`}>
                 <Icon name="mail" className="h-4 w-4" />
@@ -727,8 +731,9 @@ function BandejaPresupuestos({ lista, onAbrir, onIrDia }: { lista: Reserva[]; on
   );
 }
 
+/** El mismo texto que el WhatsApp del presupuesto, en un email que se termina y se envía desde el correo del local. */
 const mailPresupuesto = (r: Reserva) =>
-  `mailto:${r.email}?subject=${encodeURIComponent(`Presupuesto La Ofi · ${formatearFechaLarga(r.fecha)}, ${r.personas} personas`)}&body=${encodeURIComponent(`Hola, ${r.nombre}:\n\n`)}`;
+  `mailto:${r.email}?subject=${encodeURIComponent(asunto("presupuesto", r))}&body=${encodeURIComponent(textoAviso("presupuesto", r, "", SITE.phone.display))}`;
 
 /**
  * Mesas en un desplegable: solo las del espacio elegido, agrupadas por zona, con
@@ -898,7 +903,7 @@ function ReservaForm({
   const enviar = async () => {
     setError(null);
     // Nueva y con email: le llega la confirmación (guardarReserva).
-    const res = await guardarReserva<Reserva>({ ...(r ? { id: r.id } : { origen: "telefono", estado: "CONFIRMADA" }), ...f, evento_id: f.evento_id || null });
+    const res = await guardarReserva<Reserva>({ ...(r ? { id: r.id } : { origen: "telefono", estado: f.espacio === "presupuesto" ? "PENDIENTE" : "CONFIRMADA" }), ...f, evento_id: f.evento_id || null });
     if (!res.ok) return setError(res.error);
     onGuardada();
   };
@@ -911,6 +916,12 @@ function ReservaForm({
       {r ? (
         <div className="mb-5 grid gap-2 rounded-2xl bg-arena/60 p-3 dark:bg-noche-3">
           <div className="flex flex-wrap gap-2">
+            {/* Presupuesto sin cerrar: lo primero, mandarle la propuesta por WhatsApp (el teléfono siempre lo dejan). */}
+            {r.espacio === "presupuesto" && r.estado === "PENDIENTE" ? (
+              <BotonWhatsApp tipo="presupuesto" reserva={r} className={`${boton} bg-[#1F7A4D] text-white hover:brightness-110`}>
+                Enviar presupuesto
+              </BotonWhatsApp>
+            ) : null}
             <a href={`tel:${r.telefono.replace(/\s/g, "")}`} className={botonSecundario}>
               <Icon name="phone" className="h-4 w-4" />
               Llamar · {r.telefono}
@@ -918,10 +929,10 @@ function ReservaForm({
             {r.email ? (
               <a href={r.espacio === "presupuesto" ? mailPresupuesto(r) : `mailto:${r.email}`} className={botonSecundario}>
                 <Icon name="mail" className="h-4 w-4" />
-                {r.espacio === "presupuesto" ? "Enviar presupuesto" : "Escribir"}
+                {r.espacio === "presupuesto" ? "Por email" : "Escribir"}
               </a>
             ) : null}
-            {r.espacio !== "presupuesto" ? <BotonWhatsApp tipo={avisoSegunEstado(r.estado)} reserva={r} /> : null}
+            {r.espacio !== "presupuesto" || r.estado !== "PENDIENTE" ? <BotonWhatsApp tipo={avisoSegunEstado(r.estado)} reserva={r} /> : null}
           </div>
           {resumenComida(r.comida) ? <p className="text-sm text-oliva dark:text-oliva-soft">{resumenComida(r.comida)}</p> : null}
         </div>
