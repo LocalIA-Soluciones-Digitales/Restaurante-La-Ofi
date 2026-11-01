@@ -77,18 +77,21 @@ const slugify = (s: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 
-type FiltroEstado = "todos" | "agotados" | "destacados" | "pendientes";
+type FiltroEstado = "todos" | "disponibles" | "agotados" | "destacados" | "pendientes" | "con_foto" | "sin_foto";
 
-const FILTROS: { key: FiltroEstado; label: string }[] = [
-  { key: "todos", label: "Todos" },
-  { key: "agotados", label: "Agotados" },
-  { key: "destacados", label: "Recomendados" },
-  { key: "pendientes", label: "Alérgenos sin confirmar" },
+const FILTROS: { key: FiltroEstado; label: string; pasa: (p: ProductoBd, foto: string | null) => boolean }[] = [
+  { key: "todos", label: "Todos los estados", pasa: () => true },
+  { key: "disponibles", label: "Disponibles", pasa: (p) => p.disponible },
+  { key: "agotados", label: "Agotados", pasa: (p) => !p.disponible },
+  { key: "destacados", label: "Recomendados", pasa: (p) => p.destacado },
+  { key: "pendientes", label: "Alérgenos sin confirmar", pasa: (p) => !p.alergenos_confirmados },
+  { key: "con_foto", label: "Con foto", pasa: (_, foto) => !!foto },
+  { key: "sin_foto", label: "Sin foto", pasa: (_, foto) => !foto },
 ];
 
-const chip =
-  "inline-flex min-h-10 shrink-0 items-center gap-2 rounded-full border px-3.5 text-sm font-semibold transition-colors border-carbon/10 bg-white text-carbon hover:bg-arena aria-pressed:border-marino aria-pressed:bg-marino aria-pressed:text-crema dark:border-crema/10 dark:bg-noche-3 dark:text-crema dark:hover:bg-noche-2 dark:aria-pressed:border-neon dark:aria-pressed:bg-neon dark:aria-pressed:text-noche";
-const contador = "rounded-full bg-carbon/[0.07] px-1.5 text-xs tabular-nums dark:bg-crema/10";
+/** Desplegable de filtro: resaltado cuando filtra algo. */
+const filtroSelect = (activo: boolean) =>
+  `${input} cursor-pointer pr-8 text-sm font-semibold ${activo ? "!border-marino bg-marino/[0.06] text-marino dark:!border-neon dark:bg-neon/10 dark:text-neon" : ""}`;
 const iconoBoton =
   "grid h-11 w-11 shrink-0 place-items-center rounded-xl text-carbon-muted transition-colors hover:bg-arena hover:text-carbon disabled:opacity-30 disabled:hover:bg-transparent dark:text-crema/60 dark:hover:bg-noche-3 dark:hover:text-crema";
 const etiqueta = "inline-flex items-center whitespace-nowrap gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide";
@@ -105,13 +108,18 @@ function Interruptor({ activo, onCambiar, si, no, nombre }: { activo: boolean; o
   );
 }
 
-function Miniatura({ p, bebida }: { p: ProductoBd; bebida: boolean }) {
-  const src = p.imagen_url || p.imagenes[0];
+/** La foto que enseña la web: la subida desde el panel o, si no hay, la del sitio (fotos reales o de la ficha). */
+const fotoProducto = (p: ProductoBd, delSitio: Record<string, string>) => p.imagen_url || p.imagenes[0] || delSitio[p.id] || null;
+
+function Miniatura({ p, foto, bebida }: { p: ProductoBd; foto: string | null; bebida: boolean }) {
   return (
-    <span className={`grid h-12 w-12 shrink-0 place-items-center sm:h-14 sm:w-14 overflow-hidden rounded-xl bg-arena text-madera dark:bg-noche-3 dark:text-crema/40 ${p.disponible ? "" : "opacity-50 grayscale"}`}>
-      {src ? (
+    <span
+      title={foto ? undefined : "Sin foto"}
+      className={`grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-xl sm:h-14 sm:w-14 ${foto ? "bg-arena shadow-sm ring-1 ring-carbon/10 dark:bg-noche-3 dark:ring-crema/10" : "border border-dashed border-carbon/20 text-carbon/30 dark:border-crema/20 dark:text-crema/30"} ${p.disponible ? "" : "opacity-50 grayscale"}`}
+    >
+      {foto ? (
         // eslint-disable-next-line @next/next/no-img-element -- miniatura del panel
-        <img src={cargadorImagen({ src, width: 96 })} alt="" loading="lazy" className="h-full w-full object-cover" />
+        <img src={cargadorImagen({ src: foto, width: 96 })} alt="" loading="lazy" className="h-full w-full object-cover" />
       ) : (
         <Icon name={bebida ? "wine" : "utensils"} className="h-5 w-5" />
       )}
@@ -124,7 +132,14 @@ function Miniatura({ p, bebida }: { p: ProductoBd; bebida: boolean }) {
  * categorías y productos con todo lo que muestra la carta interactiva. "Agotado"
  * es un toque y la web lo refleja al instante.
  */
-export function CartaGestion(props: { categorias: CategoriaBd[]; productos: ProductoBd[]; modificadores: ModificadorBd[]; opciones: OpcionBd[] }) {
+export function CartaGestion(props: {
+  categorias: CategoriaBd[];
+  productos: ProductoBd[];
+  modificadores: ModificadorBd[];
+  opciones: OpcionBd[];
+  /** Foto que pone la web a los platos sin foto propia (id de producto → URL). */
+  fotosDelSitio: Record<string, string>;
+}) {
   const [tab, setTab] = useState<"productos" | "categorias">("productos");
   const [categorias, setCategorias] = useState(props.categorias);
   const [productos, setProductos] = useState(props.productos);
@@ -142,11 +157,10 @@ export function CartaGestion(props: { categorias: CategoriaBd[]; productos: Prod
     for (const p of productos) m.set(p.categoria_id, (m.get(p.categoria_id) ?? 0) + 1);
     return m;
   }, [productos]);
-  const cuenta: Record<FiltroEstado, number> = {
-    todos: productos.length,
-    agotados: productos.filter((p) => !p.disponible).length,
-    destacados: productos.filter((p) => p.destacado).length,
-    pendientes: productos.filter((p) => !p.alergenos_confirmados).length,
+  const foto = (p: ProductoBd) => fotoProducto(p, props.fotosDelSitio);
+  const cuenta = (k: FiltroEstado) => {
+    const x = FILTROS.find((y) => y.key === k)!;
+    return productos.filter((p) => x.pasa(p, foto(p))).length;
   };
 
   // Agrupada por categoría, en el orden de la carta.
@@ -156,15 +170,22 @@ export function CartaGestion(props: { categorias: CategoriaBd[]; productos: Prod
       .toLowerCase()
       .normalize("NFD")
       .replace(/[̀-ͯ]/g, "");
+    const filtro = FILTROS.find((x) => x.key === estado)!;
     const pasa = (p: ProductoBd) =>
       (!filtroCat || p.categoria_id === filtroCat) &&
-      (estado === "todos" || (estado === "agotados" && !p.disponible) || (estado === "destacados" && p.destacado) || (estado === "pendientes" && !p.alergenos_confirmados)) &&
+      filtro.pasa(p, fotoProducto(p, props.fotosDelSitio)) &&
       (!q || p.nombre.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").includes(q));
     return ordenadas
       .map((c) => ({ c, items: productos.filter((p) => p.categoria_id === c.id && pasa(p)).sort((a, b) => a.orden - b.orden || a.nombre.localeCompare(b.nombre, "es")) }))
       .filter((g) => g.items.length > 0);
-  }, [productos, ordenadas, filtroCat, estado, busca]);
+  }, [productos, ordenadas, filtroCat, estado, busca, props.fotosDelSitio]);
   const total = grupos.reduce((n, g) => n + g.items.length, 0);
+  const filtrando = !!filtroCat || estado !== "todos" || !!busca.trim();
+  const limpiar = () => {
+    setBusca("");
+    setEstado("todos");
+    setFiltroCat("");
+  };
 
   const ok = (texto: string) => setAviso({ tono: "ok", texto });
   const ko = (texto: string) => setAviso({ tono: "error", texto });
@@ -210,25 +231,40 @@ export function CartaGestion(props: { categorias: CategoriaBd[]; productos: Prod
                 <Icon name="search" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 opacity-50" />
                 <input type="search" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar un plato o bebida…" className={`${input} pl-9`} aria-label="Buscar producto" />
               </label>
-              <div className="flex gap-2 overflow-x-auto pb-1 sm:pb-0">
-                {FILTROS.map((x) => (
-                  <button key={x.key} type="button" aria-pressed={estado === x.key} onClick={() => setEstado(x.key)} className={chip}>
-                    {x.label}
-                    <span className={contador}>{cuenta[x.key]}</span>
-                  </button>
+              <select value={filtroCat} onChange={(e) => setFiltroCat(e.target.value)} aria-label="Categoría" className={`${filtroSelect(!!filtroCat)} min-w-0 flex-1 basis-48 sm:max-w-64`}>
+                <option value="">Todas las categorías ({productos.length})</option>
+                {ordenadas.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nombre} ({porCategoria.get(c.id) ?? 0}){c.visible ? "" : " · oculta"}
+                  </option>
                 ))}
-              </div>
+              </select>
+              <select value={estado} onChange={(e) => setEstado(e.target.value as FiltroEstado)} aria-label="Estado" className={`${filtroSelect(estado !== "todos")} min-w-0 flex-1 basis-48 sm:max-w-64`}>
+                {FILTROS.map((x) => (
+                  <option key={x.key} value={x.key}>
+                    {x.label} ({cuenta(x.key)})
+                  </option>
+                ))}
+              </select>
             </div>
-            <div className="-mx-3 flex gap-2 overflow-x-auto px-3 pb-1 sm:-mx-4 sm:px-4" aria-label="Categorías">
-              <button type="button" aria-pressed={!filtroCat} onClick={() => setFiltroCat("")} className={chip}>
-                Toda la carta
-              </button>
-              {ordenadas.map((c) => (
-                <button key={c.id} type="button" aria-pressed={filtroCat === c.id} onClick={() => setFiltroCat(filtroCat === c.id ? "" : c.id)} className={`${chip} ${c.visible ? "" : "opacity-60"}`}>
-                  {c.nombre}
-                  <span className={contador}>{porCategoria.get(c.id) ?? 0}</span>
+            <div className="flex min-h-6 flex-wrap items-center justify-between gap-2 px-1 text-sm text-carbon-muted dark:text-crema/60">
+              <span>
+                {filtrando ? (
+                  <>
+                    Mostrando <b className="text-carbon dark:text-crema">{total}</b> de {productos.length} productos
+                  </>
+                ) : (
+                  <>
+                    {productos.length} productos · {cuenta("agotados")} agotados · {cuenta("sin_foto")} sin foto
+                  </>
+                )}
+              </span>
+              {filtrando ? (
+                <button type="button" onClick={limpiar} className="inline-flex items-center gap-1 rounded-lg px-2 py-1 font-semibold text-marino hover:bg-arena dark:text-neon dark:hover:bg-noche-3">
+                  <Icon name="close" className="h-3.5 w-3.5" />
+                  Quitar filtros
                 </button>
-              ))}
+              ) : null}
             </div>
           </section>
 
@@ -244,7 +280,7 @@ export function CartaGestion(props: { categorias: CategoriaBd[]; productos: Prod
                 {items.map((p) => (
                   <li key={p.id} className="flex items-center gap-1 pr-2 transition-colors hover:bg-arena/40 dark:hover:bg-noche-3/40 sm:gap-2 sm:pr-3">
                     <button type="button" onClick={() => setEditando(p)} className="flex min-w-0 flex-1 items-center gap-3 py-3 pl-3 text-left sm:pl-4" aria-label={`Editar ${p.nombre}`}>
-                      <Miniatura p={p} bebida={c.tipo === "bebida"} />
+                      <Miniatura p={p} foto={foto(p)} bebida={c.tipo === "bebida"} />
                       <span className="min-w-0 flex-1">
                         <span className="flex items-baseline gap-2">
                           <span className={`min-w-0 truncate font-semibold ${p.disponible ? "" : "text-carbon-muted line-through decoration-terracota/60 dark:text-crema/50"}`}>{p.nombre}</span>
@@ -291,15 +327,7 @@ export function CartaGestion(props: { categorias: CategoriaBd[]; productos: Prod
             <div className={`${card} grid place-items-center gap-3 px-6 py-12 text-center`}>
               <Icon name="search" className="h-8 w-8 opacity-30" />
               <p className="text-sm text-carbon-muted dark:text-crema/60">Ningún producto coincide con la búsqueda.</p>
-              <button
-                type="button"
-                onClick={() => {
-                  setBusca("");
-                  setEstado("todos");
-                  setFiltroCat("");
-                }}
-                className={botonSecundario}
-              >
+              <button type="button" onClick={limpiar} className={botonSecundario}>
                 Ver toda la carta
               </button>
             </div>
