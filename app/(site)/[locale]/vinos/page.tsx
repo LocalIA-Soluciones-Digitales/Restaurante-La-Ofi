@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 
 /**
  * La carta de vinos en su propia página (antes iba al final de la carta y
- * pasaba desapercibida): la vinoteca a todo el ancho y debajo la bodega por
+ * pasaba desapercibida): la vinoteca junto al título y debajo la bodega por
  * tipos y denominaciones, con los vinos de la casa arriba.
  */
 export default async function VinosPage({ params }: Params) {
@@ -35,24 +35,29 @@ export default async function VinosPage({ params }: Params) {
 
   return (
     <>
-      <section aria-labelledby="vinos-title" data-header="light" className="relative isolate overflow-hidden bg-carbon pb-20 pt-32 text-crema sm:pb-28 lg:pt-44">
-        <Photo img="despachoRotulo" sizes="100vw" priority mobileBelow={0} decorative imgClassName="motion-safe:animate-kenburns" />
-        <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-carbon/80 via-carbon/45 to-carbon" />
-        <div className="container-wide relative flex flex-col items-center text-center">
-          <p className="kicker text-[#E2B98A]">Vinos · Cavas · Champagnes</p>
-          <h1 id="vinos-title" className="t-display mt-4 text-crema">
-            Carta <em className="text-[#E2B98A]">de vinos</em>
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-crema/80">{TEXTO_BODEGA}</p>
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <a href="#la-bodega" className="btn bg-crema px-6 text-carbon hover:bg-white">
-              Ver los vinos
-              <Icon name="chevronDown" className="h-4 w-4" />
-            </a>
-            <Link href={href(locale, "/carta")} className="btn border border-crema/40 px-6 text-crema hover:bg-crema hover:text-carbon">
-              <Icon name="utensils" className="h-4 w-4" />
-              La carta
-            </Link>
+      {/* La vinoteca del local a un lado y el título al otro: la foto, nítida y sin texto encima. */}
+      <section aria-labelledby="vinos-title" data-header="light" className="bg-carbon text-crema">
+        <div className="grid lg:min-h-[44rem] lg:grid-cols-2">
+          <div className="relative aspect-[4/3] overflow-hidden lg:order-2 lg:aspect-auto">
+            <Photo img="comedorPanoramica" sizes="(min-width: 1024px) 50vw, 100vw" priority mobileBelow={0} decorative />
+            <div aria-hidden="true" className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-carbon/70 to-transparent" />
+          </div>
+          <div className="flex flex-col justify-center px-6 pb-14 pt-10 sm:px-12 lg:px-16 lg:pb-20 lg:pt-36 xl:pl-[max(4rem,calc((100vw-90rem)/2+2.5rem))]">
+            <p className="kicker text-[#E2B98A]">Vinos · Cavas · Champagnes</p>
+            <h1 id="vinos-title" className="mt-4 font-display text-[clamp(3.25rem,7vw,6.5rem)] font-light leading-[0.95] tracking-tight">
+              Carta <em className="text-[#E2B98A]">de vinos</em>
+            </h1>
+            <p className="mt-6 max-w-lg text-lg leading-relaxed text-crema/80">{TEXTO_BODEGA}</p>
+            <div className="mt-9 flex flex-wrap gap-3">
+              <a href="#la-bodega" className="btn bg-[#E2B98A] px-6 text-carbon hover:bg-crema">
+                Ver los vinos
+                <Icon name="chevronDown" className="h-4 w-4" />
+              </a>
+              <Link href={href(locale, "/carta")} className="btn border border-crema/30 px-6 text-crema hover:bg-crema hover:text-carbon">
+                <Icon name="utensils" className="h-4 w-4" />
+                La carta
+              </Link>
+            </div>
           </div>
         </div>
       </section>
