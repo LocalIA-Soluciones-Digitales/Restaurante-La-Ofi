@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Modal } from "@/components/admin/Modal";
 import { Aviso, botonPrimario, botonSecundario, card, input } from "@/components/admin/ui";
 import { Icon, type IconName } from "@/components/ui/Icon";
@@ -124,6 +124,7 @@ export function ReservasBoard({ mesas, zonas, eventos, conMesas = true }: { mesa
   const [filtro, setFiltro] = useState<Filtro>("todo");
   const [reservas, setReservas] = useState<Reserva[]>([]);
   const [editando, setEditando] = useState<Reserva | "nueva" | null>(null);
+  const [presupuestos, setPresupuestos] = useState<Reserva[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   // La semana (lunes a domingo) del día elegido: se carga entera para ver cuántas hay cada día.
@@ -131,18 +132,21 @@ export function ReservasBoard({ mesas, zonas, eventos, conMesas = true }: { mesa
   const hasta = desplazar(desde, 6);
   const estaSemana = desde === lunesDe(hoy);
   const cargar = useCallback(async () => {
-    const [r, enMarcha, hechos] = await Promise.all([
+    const [r, enMarcha, hechos, futuras] = await Promise.all([
       rpcAdmin<Reserva[]>("laofi_admin_reservas", { p_desde: desde, p_hasta: hasta }),
       colaCocina<PedidoKds>(),
       colaCocina<PedidoKds>(true),
+      // Presupuestos por responder del próximo año, estén en la semana que estén.
+      rpcAdmin<Reserva[]>("laofi_admin_reservas", { p_desde: hoy, p_hasta: desplazar(hoy, 365) }),
     ]);
     if (r.ok) {
       setReservas(r.data);
       setError(null);
     } else setError(r.error);
+    if (futuras.ok) setPresupuestos(futuras.data.filter((x) => x.espacio === "presupuesto" && x.estado === "PENDIENTE"));
     const recoger = (l: typeof enMarcha) => (l.ok ? l.data.filter((p) => p.tipo === "RECOGIDA" && p.estado !== "CANCELLED") : []);
     setPedidosHoy([...recoger(enMarcha), ...recoger(hechos)]);
-  }, [desde, hasta]);
+  }, [desde, hasta, hoy]);
 
   useEffect(() => {
     void cargar();
@@ -154,6 +158,7 @@ export function ReservasBoard({ mesas, zonas, eventos, conMesas = true }: { mesa
     const res = await rpcAdmin<Reserva>("laofi_admin_reserva_estado", { p_id: r.id, p_estado: e });
     if (!res.ok) return setError(res.error);
     setReservas((l) => l.map((x) => (x.id === r.id ? res.data : x)));
+    setPresupuestos((l) => l.filter((x) => x.id !== r.id || res.data.estado === "PENDIENTE"));
   };
 
   const delDia = reservas.filter((r) => r.fecha === fecha);
@@ -173,6 +178,8 @@ export function ReservasBoard({ mesas, zonas, eventos, conMesas = true }: { mesa
 
   return (
     <div className="grid gap-4">
+      {presupuestos.length ? <BandejaPresupuestos lista={presupuestos} onAbrir={setEditando} onIrDia={setFecha} /> : null}
+
       {/* La semana entera de un vistazo (lunes a domingo, sin scroll) y flechas para cambiar de semana. */}
       <div className={`${card} p-2.5 sm:p-3`}>
         <div className="mb-2 flex items-center gap-1">
@@ -378,8 +385,9 @@ export function ReservasBoard({ mesas, zonas, eventos, conMesas = true }: { mesa
           reserva={editando === "nueva" ? null : editando}
           fecha={fecha}
           mesas={mesas}
+          zonas={zonas}
           eventos={eventos}
-          todas={delDia}
+          todas={reservas}
           onClose={() => setEditando(null)}
           onEstado={async (e) => {
             if (editando === "nueva") return;
@@ -644,10 +652,189 @@ function LineaTiempo({ reservas, mesas, zonas, onAbrir }: { reservas: Reserva[];
   );
 }
 
+/** Los tipos de reserva en el orden del formulario, con lo que pide cada uno. */
+const TIPOS: { espacio: Reserva["espacio"]; label: string; ayuda: string }[] = [
+  { espacio: "mesa", label: "Comedor", ayuda: "Mesa en el comedor, la barra o la terraza." },
+  { espacio: "despacho", label: "El Despacho", ayuda: "Sala aparte, con su propio aforo por turno." },
+  { espacio: "recogida", label: "Recoger", ayuda: "Menús del día para llevar: sin mesa." },
+  { espacio: "evento", label: "Evento", ayuda: "Se apuntan a un evento de la agenda." },
+  { espacio: "presupuesto", label: "Presupuesto", ayuda: "Grupo o empresa que pide precio: sin mesa hasta cerrarlo." },
+];
+
+/** Solo comedor y El Despacho ocupan mesas (y duran un tiempo). */
+const conMesa = (e: Reserva["espacio"]) => e === "mesa" || e === "despacho";
+
+/** Las notas que deja la web en un presupuesto, sin el «Presupuesto ·» del principio. */
+const detallePresupuesto = (notas: string | null) => (notas ?? "").replace(/^Presupuesto\s*·\s*/, "");
+
+/**
+ * Peticiones de presupuesto aún sin responder, sea cual sea su fecha: la agenda
+ * va por días y un grupo para dentro de un mes no saldría hasta llegar a esa semana.
+ */
+function BandejaPresupuestos({ lista, onAbrir, onIrDia }: { lista: Reserva[]; onAbrir: (r: Reserva) => void; onIrDia: (f: string) => void }) {
+  const e = ESPACIO.presupuesto;
+  return (
+    <section aria-label="Presupuestos por responder" className={`${card} relative overflow-hidden`}>
+      <span aria-hidden="true" className={`absolute inset-y-0 left-0 w-1.5 ${e.franja}`} />
+      <div className="flex items-center gap-2 border-b border-carbon/[0.07] py-3 pl-5 pr-4 dark:border-crema/10">
+        <span className={`grid h-7 w-7 place-items-center rounded-lg ${e.chip}`}>
+          <Icon name={e.icon} className="h-4 w-4" />
+        </span>
+        <h2 className="text-sm font-semibold">Presupuestos por responder</h2>
+        <span className="grid h-6 min-w-6 place-items-center rounded-full bg-terracota px-1.5 text-xs font-semibold text-crema">{lista.length}</span>
+        <span className="ml-auto hidden text-xs text-carbon-muted sm:block dark:text-crema/60">Llama o escribe con el precio y confírmalo cuando lo acepten.</span>
+      </div>
+      <ul className="divide-y divide-carbon/[0.07] dark:divide-crema/10">
+        {lista.map((r) => (
+          <li key={r.id} className="flex items-center gap-3 py-3 pl-5 pr-3">
+            <button type="button" onClick={() => onAbrir(r)} className="min-w-0 flex-1 text-left">
+              <span className="flex items-baseline gap-2">
+                <span className="truncate font-semibold">{r.nombre}</span>
+                <span className="shrink-0 text-sm font-semibold tabular-nums text-carbon-muted dark:text-crema/65">{r.personas} p.</span>
+              </span>
+              <span className="block truncate text-xs text-carbon-muted dark:text-crema/60">{detallePresupuesto(r.notas) || "Sin detalles"}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onIrDia(r.fecha)}
+              className="hidden shrink-0 rounded-lg px-2.5 py-1.5 text-right text-xs font-semibold leading-tight hover:bg-arena sm:block dark:hover:bg-noche-3"
+              title="Ver ese día en la agenda"
+            >
+              <span className="block first-letter:uppercase">{DIA_SEMANA.format(new Date(`${r.fecha}T12:00:00Z`)).replace(".", "")} {diaMes(r.fecha)}</span>
+              <span className="font-normal opacity-60">{r.hora.slice(0, 5)}</span>
+            </button>
+            {r.email ? (
+              <a href={mailPresupuesto(r)} className="grid h-9 w-9 shrink-0 place-items-center rounded-lg ring-1 ring-carbon/10 dark:ring-crema/15" aria-label={`Escribir a ${r.nombre}`}>
+                <Icon name="mail" className="h-4 w-4" />
+              </a>
+            ) : null}
+            <a href={`tel:${r.telefono.replace(/\s/g, "")}`} className="grid h-9 w-9 shrink-0 place-items-center rounded-lg ring-1 ring-carbon/10 dark:ring-crema/15" aria-label={`Llamar a ${r.nombre}`}>
+              <Icon name="phone" className="h-4 w-4" />
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+const mailPresupuesto = (r: Reserva) =>
+  `mailto:${r.email}?subject=${encodeURIComponent(`Presupuesto La Ofi · ${formatearFechaLarga(r.fecha)}, ${r.personas} personas`)}&body=${encodeURIComponent(`Hola, ${r.nombre}:\n\n`)}`;
+
+/**
+ * Mesas en un desplegable: solo las del espacio elegido, agrupadas por zona, con
+ * sus plazas y avisando de las que ya están reservadas a esa hora.
+ */
+function SelectorMesas({
+  mesas,
+  zonas,
+  elegidas,
+  ocupadas,
+  onChange,
+}: {
+  mesas: MesaSalon[];
+  zonas: Zona[];
+  elegidas: string[];
+  ocupadas: Set<string>;
+  onChange: (ids: string[]) => void;
+}) {
+  const [abierto, setAbierto] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!abierto || !el) return;
+    const fuera = (e: PointerEvent) => !el.contains(e.target as Node) && setAbierto(false);
+    // Escape cierra el desplegable, no el modal entero.
+    const tecla = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.stopPropagation();
+      setAbierto(false);
+    };
+    document.addEventListener("pointerdown", fuera);
+    el.addEventListener("keydown", tecla);
+    return () => {
+      document.removeEventListener("pointerdown", fuera);
+      el.removeEventListener("keydown", tecla);
+    };
+  }, [abierto]);
+
+  const porNumero = (a: MesaSalon, b: MesaSalon) => a.numero.localeCompare(b.numero, "es", { numeric: true });
+  const grupos = [
+    ...zonas.map((z) => ({ id: z.id, nombre: z.nombre, mesas: mesas.filter((m) => m.zona_id === z.id).sort(porNumero) })),
+    { id: "sin-zona", nombre: "Sin zona", mesas: mesas.filter((m) => !zonas.some((z) => z.id === m.zona_id)).sort(porNumero) },
+  ].filter((g) => g.mesas.length);
+  const nombres = mesas.filter((m) => elegidas.includes(m.id)).sort(porNumero).map((m) => m.numero);
+  const alternar = (id: string) => onChange(elegidas.includes(id) ? elegidas.filter((x) => x !== id) : [...elegidas, id]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setAbierto((a) => !a)}
+        aria-expanded={abierto}
+        aria-haspopup="listbox"
+        className={`${input} flex items-center gap-2 text-left`}
+      >
+        <span className={`min-w-0 flex-1 truncate ${nombres.length ? "" : "text-carbon-muted dark:text-crema/50"}`}>
+          {nombres.length ? `${nombres.length === 1 ? "Mesa" : "Mesas"} ${nombres.join(" + ")}` : "Sin asignar"}
+        </span>
+        <Icon name="chevronDown" className={`h-4 w-4 shrink-0 opacity-60 transition-transform ${abierto ? "rotate-180" : ""}`} />
+      </button>
+      {abierto ? (
+        <div
+          role="listbox"
+          aria-multiselectable="true"
+          aria-label="Mesas"
+          className="absolute inset-x-0 top-full z-10 mt-1.5 max-h-72 overflow-y-auto rounded-xl border border-carbon/10 bg-white p-1.5 shadow-lift dark:border-crema/15 dark:bg-noche-3"
+        >
+          {grupos.map((g) => (
+            <div key={g.id} role="group" aria-label={g.nombre}>
+              {grupos.length > 1 ? (
+                <p className="px-2.5 pb-1 pt-2 text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-carbon-muted dark:text-crema/55">{g.nombre}</p>
+              ) : null}
+              {g.mesas.map((m) => {
+                const sel = elegidas.includes(m.id);
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    role="option"
+                    aria-selected={sel}
+                    onClick={() => alternar(m.id)}
+                    className="flex min-h-10 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-sm hover:bg-arena aria-selected:bg-marino/[0.07] dark:hover:bg-noche-2 dark:aria-selected:bg-neon/10"
+                  >
+                    <span
+                      className={`grid h-5 w-5 shrink-0 place-items-center rounded-md border ${
+                        sel ? "border-marino bg-marino text-crema dark:border-neon dark:bg-neon dark:text-noche" : "border-carbon/25 dark:border-crema/25"
+                      }`}
+                    >
+                      {sel ? <Icon name="check" className="h-3.5 w-3.5" /> : null}
+                    </span>
+                    <span className="font-semibold">Mesa {m.numero}</span>
+                    {ocupadas.has(m.id) ? <span className="rounded-full bg-terracota-soft px-2 py-0.5 text-[0.68rem] font-semibold text-terracota">Reservada a esa hora</span> : null}
+                    <span className="ml-auto text-xs tabular-nums text-carbon-muted dark:text-crema/55">{plural(m.capacidad, "plaza", "plazas")}</span>
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+          {elegidas.length ? (
+            <button type="button" onClick={() => onChange([])} className="mt-1 w-full rounded-lg px-2.5 py-2 text-left text-sm font-semibold text-terracota hover:bg-arena dark:hover:bg-noche-2">
+              Quitar todas
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function ReservaForm({
   reserva,
   fecha,
   mesas,
+  zonas,
   eventos,
   todas,
   onClose,
@@ -657,6 +844,7 @@ function ReservaForm({
   reserva: Reserva | null;
   fecha: string;
   mesas: MesaSalon[];
+  zonas: Zona[];
   eventos: EventoLite[];
   todas: Reserva[];
   onClose: () => void;
@@ -670,7 +858,7 @@ function ReservaForm({
     email: r?.email ?? "",
     personas: r?.personas ?? 2,
     fecha: r?.fecha ?? fecha,
-    hora: r?.hora ?? "14:00",
+    hora: r?.hora.slice(0, 5) ?? "14:00",
     duracion_min: r?.duracion_min ?? 90,
     espacio: r?.espacio ?? ("mesa" as Reserva["espacio"]),
     evento_id: r?.evento_id ?? "",
@@ -679,8 +867,24 @@ function ReservaForm({
   });
   const [error, setError] = useState<string | null>(null);
   const set = (p: Partial<typeof f>) => setF((x) => ({ ...x, ...p }));
-  const choques = solapes({ id: r?.id ?? "", hora: f.hora, duracion_min: f.duracion_min }, f.mesas, todas);
+
+  // Las mesas de El Despacho son las de su zona; el comedor, todas las demás (barra y terraza incluidas).
+  const despacho = new Set(zonas.filter((z) => z.tipo === "despacho").map((z) => z.id));
+  const mesasDe = (e: Reserva["espacio"]) =>
+    e === "despacho" ? mesas.filter((m) => m.zona_id && despacho.has(m.zona_id)) : e === "mesa" ? mesas.filter((m) => !m.zona_id || !despacho.has(m.zona_id)) : [];
+  const delEspacio = mesasDe(f.espacio);
+  const delDia = todas.filter((x) => x.fecha === f.fecha);
+  const hueco = { id: r?.id ?? "", hora: f.hora, duracion_min: f.duracion_min };
+  const choques = solapes(hueco, f.mesas, delDia);
+  const ocupadas = new Set(delEspacio.filter((m) => solapes(hueco, [m.id], delDia).length).map((m) => m.id));
   const plazas = mesas.filter((m) => f.mesas.includes(m.id)).reduce((a, m) => a + m.capacidad, 0);
+  const tipo = TIPOS.find((t) => t.espacio === f.espacio) ?? TIPOS[0]!;
+
+  // Al cambiar de tipo se quedan solo las mesas que siguen valiendo (ninguna si no lleva mesa).
+  const cambiarTipo = (espacio: Reserva["espacio"]) => {
+    const validas = new Set(mesasDe(espacio).map((m) => m.id));
+    set({ espacio, mesas: f.mesas.filter((id) => validas.has(id)), evento_id: espacio === "evento" ? f.evento_id : "" });
+  };
 
   const enviar = async () => {
     setError(null);
@@ -691,119 +895,179 @@ function ReservaForm({
     onGuardada();
   };
 
+  const etiqueta = "text-xs font-semibold uppercase tracking-[0.14em] text-carbon-muted dark:text-crema/60";
+
   return (
-    <Modal titulo={r ? `Reserva de ${r.nombre}` : "Nueva reserva"} onClose={onClose} ancho="max-w-2xl">
-      {/* La fila de la agenda va resumida: aquí, lo que han pedido y llamar con un toque. */}
+    <Modal titulo={r ? `${r.espacio === "presupuesto" ? "Presupuesto" : "Reserva"} de ${r.nombre}` : "Nueva reserva"} onClose={onClose} ancho="max-w-2xl">
+      {/* La fila de la agenda va resumida: aquí, lo que han pedido y llamar o escribir con un toque. */}
       {r ? (
-        <div className="mb-4 grid gap-2 rounded-2xl bg-arena/60 p-3 dark:bg-noche-3">
-          <a href={`tel:${r.telefono.replace(/\s/g, "")}`} className={`${botonSecundario} justify-self-start`}>
-            <Icon name="phone" className="h-4 w-4" />
-            Llamar · {r.telefono}
-          </a>
+        <div className="mb-5 grid gap-2 rounded-2xl bg-arena/60 p-3 dark:bg-noche-3">
+          <div className="flex flex-wrap gap-2">
+            <a href={`tel:${r.telefono.replace(/\s/g, "")}`} className={botonSecundario}>
+              <Icon name="phone" className="h-4 w-4" />
+              Llamar · {r.telefono}
+            </a>
+            {r.email ? (
+              <a href={r.espacio === "presupuesto" ? mailPresupuesto(r) : `mailto:${r.email}`} className={botonSecundario}>
+                <Icon name="mail" className="h-4 w-4" />
+                {r.espacio === "presupuesto" ? "Enviar presupuesto" : "Escribir"}
+              </a>
+            ) : null}
+          </div>
           {resumenComida(r.comida) ? <p className="text-sm text-oliva dark:text-oliva-soft">{resumenComida(r.comida)}</p> : null}
         </div>
       ) : null}
-      <div className="grid gap-3 sm:grid-cols-2">
-        <label className="grid gap-1 text-sm">
-          <span className="font-semibold">Nombre</span>
-          <input value={f.nombre} onChange={(e) => set({ nombre: e.target.value })} className={input} />
-        </label>
-        <label className="grid gap-1 text-sm">
-          <span className="font-semibold">Teléfono</span>
-          <input value={f.telefono} onChange={(e) => set({ telefono: e.target.value })} inputMode="tel" className={input} />
-        </label>
-        <label className="grid gap-1 text-sm">
-          <span className="font-semibold">Fecha</span>
-          <input type="date" value={f.fecha} onChange={(e) => set({ fecha: e.target.value })} className={input} />
-        </label>
-        <div className="grid grid-cols-3 gap-2">
+
+      <div className="grid gap-5">
+        {/* Primero qué es: de eso depende el resto del formulario. */}
+        <fieldset>
+          <legend className={etiqueta}>Tipo de reserva</legend>
+          <div className="mt-2 grid grid-cols-3 gap-1.5 sm:grid-cols-5">
+            {TIPOS.map((t) => {
+              const e = ESPACIO[t.espacio];
+              return (
+                <button
+                  key={t.espacio}
+                  type="button"
+                  aria-pressed={f.espacio === t.espacio}
+                  onClick={() => cambiarTipo(t.espacio)}
+                  className="flex min-h-[4.25rem] flex-col items-center justify-center gap-1.5 rounded-xl border border-carbon/15 bg-white px-1 text-xs font-semibold transition-colors hover:bg-arena aria-pressed:border-carbon aria-pressed:ring-1 aria-pressed:ring-carbon dark:border-crema/15 dark:bg-noche-3 dark:hover:bg-noche-2 dark:aria-pressed:border-crema dark:aria-pressed:ring-crema"
+                >
+                  <span className={`grid h-7 w-7 place-items-center rounded-lg ${e.chip}`}>
+                    <Icon name={e.icon} className="h-4 w-4" />
+                  </span>
+                  {t.label}
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-2 text-xs text-carbon-muted dark:text-crema/60">{tipo.ayuda}</p>
+        </fieldset>
+
+        <fieldset className="grid gap-3 sm:grid-cols-2">
+          <legend className={`${etiqueta} mb-2`}>{f.espacio === "presupuesto" ? "Quién lo pide" : "Cliente"}</legend>
+          <label className="grid gap-1 text-sm">
+            <span className="font-semibold">Nombre</span>
+            <input value={f.nombre} onChange={(e) => set({ nombre: e.target.value })} className={input} />
+          </label>
+          <label className="grid gap-1 text-sm">
+            <span className="font-semibold">Teléfono</span>
+            <input value={f.telefono} onChange={(e) => set({ telefono: e.target.value })} inputMode="tel" className={input} />
+          </label>
+          <label className="grid gap-1 text-sm sm:col-span-2">
+            <span className="font-semibold">
+              Email <span className="font-normal text-carbon-muted dark:text-crema/55">{f.espacio === "presupuesto" ? "(para enviar el presupuesto)" : "(opcional)"}</span>
+            </span>
+            <input value={f.email} onChange={(e) => set({ email: e.target.value })} inputMode="email" className={input} />
+          </label>
+        </fieldset>
+
+        <fieldset className={`grid gap-3 ${conMesa(f.espacio) ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"}`}>
+          <legend className={`${etiqueta} mb-2`}>{f.espacio === "recogida" ? "Cuándo lo recogen" : f.espacio === "presupuesto" ? "Para cuándo" : "Cuándo"}</legend>
+          <label className="col-span-2 grid gap-1 text-sm sm:col-span-1">
+            <span className="font-semibold">Fecha</span>
+            <input type="date" value={f.fecha} onChange={(e) => set({ fecha: e.target.value })} className={input} />
+          </label>
           <label className="grid gap-1 text-sm">
             <span className="font-semibold">Hora</span>
             <input type="time" value={f.hora} onChange={(e) => set({ hora: e.target.value })} className={input} />
           </label>
           <label className="grid gap-1 text-sm">
-            <span className="font-semibold">Pers.</span>
+            <span className="font-semibold">{f.espacio === "recogida" ? "Menús" : "Personas"}</span>
             <input type="number" min={1} max={220} value={f.personas} onChange={(e) => set({ personas: Number(e.target.value) })} className={input} />
           </label>
-          <label className="grid gap-1 text-sm">
-            <span className="font-semibold">Min.</span>
-            <input type="number" min={15} step={15} value={f.duracion_min} onChange={(e) => set({ duracion_min: Number(e.target.value) })} className={input} />
-          </label>
-        </div>
-        <label className="grid gap-1 text-sm">
-          <span className="font-semibold">Espacio</span>
-          <select value={f.espacio} onChange={(e) => set({ espacio: e.target.value as Reserva["espacio"] })} className={input}>
-            <option value="mesa">Comedor</option>
-            <option value="despacho">El Despacho</option>
-            <option value="recogida">Recogida de menú</option>
-            <option value="evento">Evento</option>
-            <option value="presupuesto">Presupuesto de grupo</option>
-          </select>
-        </label>
+          {conMesa(f.espacio) ? (
+            <label className="grid gap-1 text-sm">
+              <span className="font-semibold">Duración</span>
+              <select value={f.duracion_min} onChange={(e) => set({ duracion_min: Number(e.target.value) })} className={input}>
+                {[...new Set([60, 90, 120, 150, 180, 240, f.duracion_min])].sort((a, b) => a - b).map((m) => (
+                  <option key={m} value={m}>
+                    {m % 60 ? `${Math.floor(m / 60)} h ${m % 60}` : `${m / 60} h`}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+        </fieldset>
+
         {f.espacio === "evento" ? (
           <label className="grid gap-1 text-sm">
             <span className="font-semibold">Evento</span>
             <select value={f.evento_id} onChange={(e) => set({ evento_id: e.target.value })} className={input}>
-              <option value="">—</option>
+              <option value="">Elige el evento…</option>
               {eventos.map((ev) => (
                 <option key={ev.id} value={ev.id}>
-                  {ev.titulo} ({ev.fecha})
+                  {ev.titulo} · {diaMes(ev.fecha)}
                 </option>
               ))}
             </select>
           </label>
-        ) : (
-          <label className="grid gap-1 text-sm">
-            <span className="font-semibold">Email (opcional)</span>
-            <input value={f.email} onChange={(e) => set({ email: e.target.value })} inputMode="email" className={input} />
-          </label>
-        )}
-        <fieldset className="sm:col-span-2">
-          <legend className="text-sm font-semibold">
-            Mesas {f.mesas.length ? `· ${plazas} plazas para ${f.personas} personas` : ""}
-          </legend>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {[...mesas].sort((a, b) => a.numero.localeCompare(b.numero, "es", { numeric: true })).map((m) => (
-              <button
-                key={m.id}
-                type="button"
-                aria-pressed={f.mesas.includes(m.id)}
-                onClick={() => set({ mesas: f.mesas.includes(m.id) ? f.mesas.filter((x) => x !== m.id) : [...f.mesas, m.id] })}
-                className="min-h-10 rounded-xl border border-carbon/15 px-3 text-sm aria-pressed:border-marino aria-pressed:bg-[theme(colors.marino.DEFAULT)] aria-pressed:text-crema dark:border-crema/15 dark:aria-pressed:bg-neon dark:aria-pressed:text-noche"
-              >
-                {m.numero} <span className="opacity-60">({m.capacidad})</span>
-              </button>
-            ))}
+        ) : null}
+
+        {conMesa(f.espacio) && delEspacio.length ? (
+          <div className="grid gap-1 text-sm">
+            <span className="flex items-baseline justify-between gap-2">
+              <span className="font-semibold">Mesas {f.espacio === "despacho" ? "de El Despacho" : ""}</span>
+              {f.mesas.length ? (
+                <span className={`text-xs font-semibold tabular-nums ${plazas < f.personas ? "text-terracota" : "text-oliva dark:text-oliva-soft"}`}>
+                  {plazas} plazas para {f.personas}
+                </span>
+              ) : (
+                <span className="text-xs text-carbon-muted dark:text-crema/55">Se puede asignar luego</span>
+              )}
+            </span>
+            <SelectorMesas mesas={delEspacio} zonas={zonas} elegidas={f.mesas} ocupadas={ocupadas} onChange={(ids) => set({ mesas: ids })} />
+            {choques.length ? <p className="mt-1 text-sm font-semibold text-terracota">Ojo: la mesa {choques.join(", ")} ya está reservada a esa hora.</p> : null}
+            {f.mesas.length && plazas < f.personas ? <p className="mt-1 text-sm text-terracota">Las mesas elegidas no llegan a {f.personas} plazas.</p> : null}
           </div>
-          {choques.length ? <p className="mt-2 text-sm font-semibold text-terracota">Ojo: la mesa {choques.join(", ")} ya está reservada a esa hora.</p> : null}
-          {f.mesas.length && plazas < f.personas ? <p className="mt-1 text-sm text-terracota">Las mesas elegidas no llegan a {f.personas} plazas.</p> : null}
-        </fieldset>
-        <label className="grid gap-1 text-sm sm:col-span-2">
-          <span className="font-semibold">Notas</span>
-          <input value={f.notas} onChange={(e) => set({ notas: e.target.value })} placeholder="Trona, celíaco, cumpleaños…" className={input} />
+        ) : null}
+
+        <label className="grid gap-1 text-sm">
+          <span className="font-semibold">{f.espacio === "presupuesto" ? "Qué piden" : "Notas"}</span>
+          {f.espacio === "presupuesto" ? (
+            <textarea
+              value={f.notas}
+              onChange={(e) => set({ notas: e.target.value })}
+              rows={3}
+              placeholder="Comida de empresa, 25 € por persona, necesitan factura…"
+              className={`${input} h-auto py-2.5`}
+            />
+          ) : (
+            <input value={f.notas} onChange={(e) => set({ notas: e.target.value })} placeholder="Trona, celíaco, cumpleaños…" className={input} />
+          )}
         </label>
-        {error ? (
-          <div className="sm:col-span-2">
-            <Aviso>{error}</Aviso>
-          </div>
-        ) : null}
-        <button type="button" onClick={() => void enviar()} disabled={!f.nombre.trim() || f.telefono.replace(/\D/g, "").length < 9} className={`${botonPrimario} sm:col-span-2`}>
-          Guardar reserva
-        </button>
-        {r && (r.estado === "PENDIENTE" || r.estado === "CONFIRMADA") ? (
-          <div className="grid grid-cols-2 gap-2 border-t border-carbon/10 pt-3 sm:col-span-2 dark:border-crema/10">
-            <button type="button" onClick={() => void onEstado("NO_SHOW")} className={botonSecundario}>
-              No vino
-            </button>
-            <button type="button" onClick={() => window.confirm(`¿Cancelar la reserva de ${r.nombre}?`) && void onEstado("CANCELADA")} className={`${botonSecundario} text-terracota`}>
-              Cancelar reserva
-            </button>
-          </div>
-        ) : r ? (
-          <button type="button" onClick={() => void onEstado("CONFIRMADA")} className={`${botonSecundario} sm:col-span-2`}>
-            Volver a activarla
+
+        {error ? <Aviso>{error}</Aviso> : null}
+        <div className="grid gap-2">
+          <button type="button" onClick={() => void enviar()} disabled={!f.nombre.trim() || f.telefono.replace(/\D/g, "").length < 9} className={botonPrimario}>
+            {r ? "Guardar cambios" : f.espacio === "presupuesto" ? "Guardar petición" : "Guardar reserva"}
           </button>
-        ) : null}
+          {r && r.estado === "PENDIENTE" && r.espacio === "presupuesto" ? (
+            // Aún sin cerrar: o lo aceptan (pasa a confirmada) o se descarta.
+            <div className="grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => void onEstado("CONFIRMADA")} className={botonSecundario}>
+                <Icon name="check" className="h-4 w-4" />
+                Lo han aceptado
+              </button>
+              <button type="button" onClick={() => window.confirm(`¿Descartar el presupuesto de ${r.nombre}?`) && void onEstado("CANCELADA")} className={`${botonSecundario} text-terracota`}>
+                Descartar
+              </button>
+            </div>
+          ) : r && (r.estado === "PENDIENTE" || r.estado === "CONFIRMADA") ? (
+            <div className="grid grid-cols-2 gap-2 border-t border-carbon/10 pt-3 dark:border-crema/10">
+              <button type="button" onClick={() => void onEstado("NO_SHOW")} className={botonSecundario}>
+                No vino
+              </button>
+              <button type="button" onClick={() => window.confirm(`¿Cancelar la reserva de ${r.nombre}?`) && void onEstado("CANCELADA")} className={`${botonSecundario} text-terracota`}>
+                Cancelar reserva
+              </button>
+            </div>
+          ) : r ? (
+            <button type="button" onClick={() => void onEstado("CONFIRMADA")} className={botonSecundario}>
+              Volver a activarla
+            </button>
+          ) : null}
+        </div>
       </div>
     </Modal>
   );
