@@ -14,6 +14,8 @@ const es = {
     eventos: "Eventos",
     laOfi: "La Ofi",
     galeria: "Galería",
+    vinos: "Carta de vinos",
+    vinosCorto: "Vinos",
     contacto: "Contacto",
     pedir: "Pedir",
     pedirRecoger: "Pedir para llevar",

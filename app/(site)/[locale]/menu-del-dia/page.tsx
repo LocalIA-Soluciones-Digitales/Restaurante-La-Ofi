@@ -101,7 +101,7 @@ export default async function MenuDelDiaPage({ params }: Params) {
         </div>
       </section>
 
-      <CartaBloque state={carta} config={null} pedirHref={PROXIMAMENTE.pedidos ? undefined : href(locale, "/pedir")} />
+      <CartaBloque state={carta} config={null} pedirHref={PROXIMAMENTE.pedidos ? undefined : href(locale, "/pedir")} vinosHref={href(locale, "/vinos")} />
     </>
   );
 }

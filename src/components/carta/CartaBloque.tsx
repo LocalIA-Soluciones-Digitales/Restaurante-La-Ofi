@@ -1,5 +1,5 @@
 import { AllergenLegend } from "@/components/menu/AllergenLegend";
-import { CartaBodega, esSeccionDeVino } from "@/components/carta/CartaBodega";
+import { BodegaDestacada, CartaBodega, esSeccionDeVino } from "@/components/carta/CartaBodega";
 import { CartaConPedido } from "@/components/carta/CartaConPedido";
 import { CartaInteractiva } from "@/components/carta/CartaInteractiva";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -18,6 +18,7 @@ export function CartaBloque({
   config,
   heading: Heading = "h2",
   pedirHref,
+  vinosHref,
 }: {
   state: ContentState<CartaSeccion[]>;
   /** Con los pedidos online configurados, la carta deja añadir a la cesta. */
@@ -25,6 +26,8 @@ export function CartaBloque({
   heading?: "h1" | "h2";
   /** «Pedir para llevar»: se anuncia aquí, donde se elige qué comer. */
   pedirHref?: string;
+  /** La carta de vinos en su página: al final va su entrada en vez de la bodega entera. */
+  vinosHref?: string;
 }) {
   // Los vinos no son platos: van en «La bodega», con formato de carta de vinos.
   const todas = state.status === "empty" ? [] : state.data.filter((s) => s.items.length > 0);
@@ -52,8 +55,8 @@ export function CartaBloque({
                   <>
                     {" "}
                     Y para acompañar,{" "}
-                    <a href="#la-bodega" className="link-underline">
-                      la bodega
+                    <a href={vinosHref ?? "#la-bodega"} className="link-underline">
+                      la carta de vinos
                     </a>
                     .
                   </>
@@ -91,7 +94,7 @@ export function CartaBloque({
           </div>
         </div>
       </section>
-      <CartaBodega secciones={vinos} />
+      {vinosHref ? <BodegaDestacada secciones={vinos} href={vinosHref} /> : <CartaBodega secciones={vinos} />}
     </>
   );
 }

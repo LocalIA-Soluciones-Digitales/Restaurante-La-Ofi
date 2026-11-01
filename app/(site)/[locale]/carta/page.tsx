@@ -55,7 +55,7 @@ export default async function CartaPage({ params }: Params) {
           </Link>
         ) : null}
       </div>
-      <CartaBloque state={state} config={null} heading="h1" pedirHref={PROXIMAMENTE.pedidos ? undefined : href(locale, "/pedir")} />
+      <CartaBloque state={state} config={null} heading="h1" pedirHref={PROXIMAMENTE.pedidos ? undefined : href(locale, "/pedir")} vinosHref={href(locale, "/vinos")} />
     </>
   );
 }

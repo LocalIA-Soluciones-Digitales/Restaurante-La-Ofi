@@ -1,3 +1,6 @@
+import Link from "next/link";
+import { Photo } from "@/components/media/Photo";
+import { Icon } from "@/components/ui/Icon";
 import { formatCentimos } from "@/lib/format";
 import type { CartaItem, CartaSeccion } from "@/lib/restaurant/types";
 
@@ -12,6 +15,10 @@ const TITULO: Record<string, string> = {
   "cavas-champagnes": "Espumosos",
   "vinos-dulces": "Dulces y generosos",
 };
+/** Lo que es la bodega, sin contar referencias: cambia con la carta. */
+export const TEXTO_BODEGA =
+  "Una selección de distintas denominaciones y variedades: de los blancos de Rueda y el txakoli a los cavas y champagnes. Precio por botella; pregúntanos por los vinos por copa.";
+
 /** Tintos primero (cuando Carlos los pase), luego blancos, rosados, espumosos y dulces. */
 const ORDEN = ["vinos-tintos", "vinos-blancos", "vinos-rosados", "cavas-champagnes", "vinos-dulces"];
 
@@ -54,34 +61,34 @@ function Vino({ vino, conGrupo = false }: { vino: CartaItem; conGrupo?: boolean 
  * tipos (tintos, blancos, rosados, espumosos, dulces) y, dentro, por D.O. Arriba,
  * «Vinos de la casa»: los que Carlos marca con la estrella en /admin/carta.
  */
-export function CartaBodega({ secciones }: { secciones: CartaSeccion[] }) {
+export function CartaBodega({ secciones, cabecera = true }: { secciones: CartaSeccion[]; cabecera?: boolean }) {
   const tipos = secciones
     .filter((s) => s.items.length > 0)
     .sort((a, b) => (ORDEN.indexOf(a.slug) + 1 || 99) - (ORDEN.indexOf(b.slug) + 1 || 99));
   if (tipos.length === 0) return null;
   const deLaCasa = tipos.flatMap((s) => s.items.filter((it) => it.destacado));
-  const referencias = tipos.reduce((n, s) => n + s.items.length, 0);
 
   return (
-    <section id="la-bodega" aria-labelledby="bodega-title" className="scroll-mt-4 bg-carbon py-16 text-crema sm:py-24">
+    <section id="la-bodega" aria-labelledby={cabecera ? "bodega-title" : "vinos-title"} className="scroll-mt-4 bg-carbon py-16 text-crema sm:py-24">
       <div className="container-wide">
-        <div className="grid gap-6 lg:grid-cols-12 lg:items-end lg:gap-14">
-          <div className="lg:col-span-7">
-            <p className="kicker text-[#E2B98A]">Vinos · Cavas · Champagnes</p>
-            <h2 id="bodega-title" className="mt-3 font-display text-[clamp(3rem,8vw,6.5rem)] font-light leading-[0.95] tracking-tight">
-              La bodega
-            </h2>
+        {cabecera ? (
+          <div className="grid gap-6 lg:grid-cols-12 lg:items-end lg:gap-14">
+            <div className="lg:col-span-7">
+              <p className="kicker text-[#E2B98A]">Vinos · Cavas · Champagnes</p>
+              <h2 id="bodega-title" className="mt-3 font-display text-[clamp(3rem,8vw,6.5rem)] font-light leading-[0.95] tracking-tight">
+                La bodega
+              </h2>
+            </div>
+            <div className="lg:col-span-5 lg:pb-3">
+              <p className="text-lg leading-relaxed text-crema/80">
+                {TEXTO_BODEGA}
+              </p>
+            </div>
           </div>
-          <div className="lg:col-span-5 lg:pb-3">
-            <p className="text-lg leading-relaxed text-crema/80">
-              {referencias} referencias seleccionadas, de los blancos de Rueda y el txakoli a los champagnes. Precio por botella; pregúntanos por los vinos
-              por copa y por el resto de la bodega.
-            </p>
-          </div>
-        </div>
+        ) : null}
 
         {deLaCasa.length > 0 ? (
-          <div className="mt-12 border border-[#E2B98A]/40 p-6 sm:p-8">
+          <div className={`${cabecera ? "mt-12" : ""} border border-[#E2B98A]/40 p-6 sm:p-8`}>
             <p className="kicker text-[#E2B98A]">Vinos de la casa</p>
             <p className="mt-1 text-sm text-crema/60">Los que elegimos para acompañar la carta.</p>
             <ul className="mt-4 grid gap-x-12 sm:grid-cols-2">
@@ -93,7 +100,7 @@ export function CartaBodega({ secciones }: { secciones: CartaSeccion[] }) {
         ) : null}
 
         {/* Índice de tipos: saltos dentro de la bodega. */}
-        <nav aria-label="Tipos de vino" className="mt-12 flex flex-wrap gap-2">
+        <nav aria-label="Tipos de vino" className={`${cabecera || deLaCasa.length > 0 ? "mt-12" : ""} flex flex-wrap gap-2`}>
           {tipos.map((s) => (
             <a key={s.id} href={`#bodega-${s.slug}`} className="min-h-11 rounded-full border border-crema/20 px-4 py-2.5 text-sm font-semibold hover:border-crema/60">
               {TITULO[s.slug] ?? s.nombre}
@@ -120,6 +127,45 @@ export function CartaBodega({ secciones }: { secciones: CartaSeccion[] }) {
               ))}
             </div>
           ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * Al final de la carta, la entrada a la carta de vinos (/vinos): la vinoteca, qué
+ * hay (por tipos) y un botón claro. Así la bodega no queda escondida bajo la carta.
+ */
+export function BodegaDestacada({ secciones, href }: { secciones: CartaSeccion[]; href: string }) {
+  const tipos = secciones
+    .filter((s) => s.items.length > 0)
+    .sort((a, b) => (ORDEN.indexOf(a.slug) + 1 || 99) - (ORDEN.indexOf(b.slug) + 1 || 99));
+  if (tipos.length === 0) return null;
+  return (
+    <section id="la-bodega" aria-labelledby="bodega-title" className="bg-carbon text-crema">
+      <div className="grid lg:grid-cols-2">
+        <div className="relative aspect-[4/3] overflow-hidden lg:aspect-auto lg:min-h-[34rem]">
+          <Photo img="despachoRotulo" sizes="(min-width: 1024px) 50vw, 100vw" mobileBelow={0} decorative />
+        </div>
+        <div className="flex flex-col justify-center px-6 py-14 sm:px-12 lg:px-16 lg:py-20">
+          <p className="kicker text-[#E2B98A]">Vinos · Cavas · Champagnes</p>
+          <h2 id="bodega-title" className="mt-3 font-display text-[clamp(2.75rem,6vw,5rem)] font-light leading-[0.95] tracking-tight">
+            Carta <em className="text-[#E2B98A]">de vinos</em>
+          </h2>
+          <p className="mt-6 max-w-lg text-lg leading-relaxed text-crema/80">{TEXTO_BODEGA}</p>
+          <ul className="mt-6 flex flex-wrap gap-2">
+            {tipos.map((s) => (
+              <li key={s.id} className="rounded-full border border-crema/20 px-4 py-2 text-sm">
+                {TITULO[s.slug] ?? s.nombre}
+              </li>
+            ))}
+          </ul>
+          <Link href={href} className="btn mt-9 self-start bg-[#E2B98A] px-6 text-carbon hover:bg-crema">
+            <Icon name="wine" className="h-4 w-4" />
+            Ver la carta de vinos
+            <Icon name="arrow" className="h-4 w-4" />
+          </Link>
         </div>
       </div>
     </section>

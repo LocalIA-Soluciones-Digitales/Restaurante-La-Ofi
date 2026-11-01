@@ -10,9 +10,9 @@ import { Icon } from "@/components/ui/Icon";
 import { useDialogA11y } from "@/hooks/useDialogA11y";
 import type { ImageKey } from "@/lib/images";
 
-// Foto del panel del menú para cada página, en el orden de mainNav (inicio, carta y
-// menú, pedir, espacios, grupos y eventos, galería, contacto).
-const MENU_FOTOS: ImageKey[] = ["comedorPanoramica", "comedorRatan", "barra", "barraMesasAltas", "despacho", "rotuloAguila", "terrazaCarpa"];
+// Foto del panel del menú para cada página, en el orden de mainNav (inicio, menú y
+// carta, carta de vinos, eventos, empresas, galería, contacto).
+const MENU_FOTOS: ImageKey[] = ["comedorPanoramica", "comedorRatan", "despachoRotulo", "barra", "barraMesasAltas", "despacho", "rotuloAguila", "terrazaCarpa"];
 
 interface Props {
   homeHref: string;

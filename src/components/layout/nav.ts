@@ -9,7 +9,8 @@ export interface NavItem {
 }
 
 /**
- * Menú desplegable: pocas entradas y claras. «Pedir para llevar» no va aquí: se
+ * Menú desplegable: pocas entradas y claras. La carta de vinos tiene la suya
+ * para que no quede escondida al final de la carta. «Pedir para llevar» no va aquí: se
  * anuncia donde se decide qué comer (menú del día, carta y portada). Espacios
  * vive en la portada. El pie repite estas mismas entradas.
  */
@@ -17,6 +18,7 @@ export function mainNav(locale: Locale, t: Dictionary): NavItem[] {
   return [
     { href: href(locale), label: t.nav.inicio },
     cartaYMenu(locale, t),
+    { href: href(locale, "/vinos"), label: t.nav.vinos },
     { href: href(locale, "/eventos"), label: t.nav.eventos },
     { href: href(locale, "/grupos"), label: t.nav.grupos },
     { href: href(locale, "/galeria"), label: t.nav.galeria },
@@ -31,7 +33,12 @@ export function mainNav(locale: Locale, t: Dictionary): NavItem[] {
  * desplegable.
  */
 export function primaryNav(locale: Locale, t: Dictionary): NavItem[] {
-  return [cartaYMenu(locale, t), { href: href(locale, "/eventos"), label: t.nav.eventos }, { href: href(locale, "/grupos"), label: t.nav.grupos }];
+  return [
+    cartaYMenu(locale, t),
+    { href: href(locale, "/vinos"), label: t.nav.vinosCorto },
+    { href: href(locale, "/eventos"), label: t.nav.eventos },
+    { href: href(locale, "/grupos"), label: t.nav.grupos },
+  ];
 }
 
 /** Menú del día y carta: una sola entrada en toda la navegación. */
