@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     locale,
     path: "/reservar",
     title: "Reservar mesa",
-    description: "Reserva mesa en La Ofi (Derio, Parque Tecnológico de Bizkaia): comedor, terraza cubierta o El Despacho para comidas de trabajo. Te confirmamos por teléfono.",
+    description: "Reserva mesa en La Ofi (Derio, Parque Tecnológico de Bizkaia): comedor, terraza cubierta o El Despacho para comidas de trabajo. Te confirmamos por WhatsApp o email.",
   });
 }
 
@@ -85,7 +85,7 @@ export default async function ReservarPage({ params, searchParams }: Props) {
               : pronto
               ? "Comedor, terraza o El Despacho. Muy pronto, desde aquí; mientras tanto, llámanos y te la guardamos."
               : online
-              ? "Comedor (menú del día o carta) o El Despacho. Te confirmamos por teléfono."
+              ? "Comedor (menú del día o carta) o El Despacho. Te confirmamos por WhatsApp o email."
               : "Comedor, terraza o El Despacho. Llámanos y te confirmamos al momento."}
           </p>
 

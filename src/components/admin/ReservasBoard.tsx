@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { AvisarCliente, BotonWhatsApp, avisoSegunEstado } from "@/components/admin/AvisarCliente";
 import { Modal } from "@/components/admin/Modal";
 import { Aviso, botonPrimario, botonSecundario, card, input } from "@/components/admin/ui";
 import { Icon, type IconName } from "@/components/ui/Icon";
-import { colaCocina, rpcAdmin } from "@/lib/admin/actions";
+import { colaCocina, estadoReserva, guardarReserva, rpcAdmin } from "@/lib/admin/actions";
 import type { MesaSalon, PedidoKds, Zona } from "@/lib/admin/types";
 import { formatCentimos, formatearFechaLarga, hoyEnMadrid } from "@/lib/format";
+import type { AvisoReserva } from "@/lib/reservas/mensajes";
 
 export type EstadoReserva = "PENDIENTE" | "CONFIRMADA" | "SENTADA" | "CANCELADA" | "NO_SHOW";
 
@@ -125,6 +127,8 @@ export function ReservasBoard({ mesas, zonas, eventos, conMesas = true }: { mesa
   const [reservas, setReservas] = useState<Reserva[]>([]);
   const [editando, setEditando] = useState<Reserva | "nueva" | null>(null);
   const [presupuestos, setPresupuestos] = useState<Reserva[]>([]);
+  /** Recién confirmada o cancelada: falta que el cliente se entere. */
+  const [avisar, setAvisar] = useState<{ tipo: AvisoReserva; reserva: Reserva; email: boolean } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // La semana (lunes a domingo) del día elegido: se carga entera para ver cuántas hay cada día.
@@ -155,10 +159,12 @@ export function ReservasBoard({ mesas, zonas, eventos, conMesas = true }: { mesa
   }, [cargar]);
 
   const estado = async (r: Reserva, e: EstadoReserva) => {
-    const res = await rpcAdmin<Reserva>("laofi_admin_reserva_estado", { p_id: r.id, p_estado: e });
+    const res = await estadoReserva<Reserva>(r.id, e, r.estado);
     if (!res.ok) return setError(res.error);
-    setReservas((l) => l.map((x) => (x.id === r.id ? res.data : x)));
-    setPresupuestos((l) => l.filter((x) => x.id !== r.id || res.data.estado === "PENDIENTE"));
+    const { reserva, aviso, email } = res.data;
+    setReservas((l) => l.map((x) => (x.id === r.id ? reserva : x)));
+    setPresupuestos((l) => l.filter((x) => x.id !== r.id || reserva.estado === "PENDIENTE"));
+    setAvisar(aviso ? { tipo: aviso, reserva, email } : null);
   };
 
   const delDia = reservas.filter((r) => r.fecha === fecha);
@@ -400,6 +406,9 @@ export function ReservasBoard({ mesas, zonas, eventos, conMesas = true }: { mesa
           }}
         />
       ) : null}
+
+      {/* Con una reserva abierta se esconde (tapaba sus botones): ahí está el WhatsApp de la barra de contacto. */}
+      {avisar && !editando ? <AvisarCliente key={`${avisar.reserva.id}-${avisar.tipo}`} {...avisar} onCerrar={() => setAvisar(null)} /> : null}
     </div>
   );
 }
@@ -888,9 +897,8 @@ function ReservaForm({
 
   const enviar = async () => {
     setError(null);
-    const res = await rpcAdmin<Reserva>("laofi_admin_guardar_reserva", {
-      p: { ...(r ? { id: r.id } : { origen: "telefono", estado: "CONFIRMADA" }), ...f, evento_id: f.evento_id || null },
-    });
+    // Nueva y con email: le llega la confirmación (guardarReserva).
+    const res = await guardarReserva<Reserva>({ ...(r ? { id: r.id } : { origen: "telefono", estado: "CONFIRMADA" }), ...f, evento_id: f.evento_id || null });
     if (!res.ok) return setError(res.error);
     onGuardada();
   };
@@ -913,6 +921,7 @@ function ReservaForm({
                 {r.espacio === "presupuesto" ? "Enviar presupuesto" : "Escribir"}
               </a>
             ) : null}
+            {r.espacio !== "presupuesto" ? <BotonWhatsApp tipo={avisoSegunEstado(r.estado)} reserva={r} /> : null}
           </div>
           {resumenComida(r.comida) ? <p className="text-sm text-oliva dark:text-oliva-soft">{resumenComida(r.comida)}</p> : null}
         </div>

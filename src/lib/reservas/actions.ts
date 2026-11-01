@@ -2,8 +2,10 @@
 
 import { createHash } from "node:crypto";
 import { headers } from "next/headers";
+import { after } from "next/server";
 import type { ResultadoAccion } from "@/lib/pedidos/types";
 import { PROXIMAMENTE } from "@/lib/lanzamiento";
+import { enviarAvisoReserva } from "@/lib/reservas/email";
 import { rpcPublica } from "@/lib/supabase/rpc";
 
 export interface ReservaWeb {
@@ -85,6 +87,53 @@ export async function solicitarReserva(r: ReservaWeb): Promise<ResultadoAccion<{
     }
     console.error("[reservas]", res.error.code, res.error.message);
     return { ok: false, error: "No hemos podido enviar la solicitud. Inténtalo de nuevo o llámanos.", codigo: "ERROR" };
+  }
+  // Con email, el acuse de recibo con el enlace para seguirla (sin hacer esperar al cliente).
+  if (p.email) {
+    const id = res.data!.id;
+    after(async () => {
+      const r = await obtenerReserva(id);
+      if (r.ok && r.data) await enviarAvisoReserva("recibida", avisable(r.data), p.email);
+    });
+  }
+  return { ok: true, data: res.data! };
+}
+
+/** La reserva tal y como la ve el cliente en /reserva/<id> (sin teléfono, email ni notas). */
+export interface ReservaPublica {
+  id: string;
+  nombre: string;
+  fecha: string;
+  hora: string;
+  personas: number;
+  espacio: ReservaWeb["espacio"];
+  estado: "PENDIENTE" | "CONFIRMADA" | "SENTADA" | "CANCELADA" | "NO_SHOW";
+  evento: { titulo: string; slug: string } | null;
+  comida: { modo: ModoComida; lineas: { nombre: string; cantidad: number }[] } | null;
+  cancelable: boolean;
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const avisable = (r: ReservaPublica) => ({ ...r, evento: r.evento?.titulo ?? null });
+
+/** El uuid de la reserva (no adivinable) es la llave, como en el seguimiento del pedido. */
+export async function obtenerReserva(id: string): Promise<ResultadoAccion<ReservaPublica | null>> {
+  if (!UUID.test(id)) return { ok: true, data: null };
+  const res = await rpcPublica<ReservaPublica>("laofi_get_reserva", { p_id: id });
+  if (!res || res.error) return { ok: false, error: "No hemos podido cargar la reserva.", codigo: "ERROR" };
+  return { ok: true, data: res.data };
+}
+
+/** El cliente cancela su reserva desde /reserva/<id>; al local le llega un aviso al móvil. */
+export async function cancelarReserva(id: string): Promise<ResultadoAccion<ReservaPublica>> {
+  if (!UUID.test(id)) return { ok: false, error: "Reserva no encontrada.", codigo: "ERROR" };
+  const res = await rpcPublica<ReservaPublica>("laofi_cancelar_reserva", { p_id: id });
+  if (!res) return { ok: false, error: "No hemos podido cancelarla: llámanos.", codigo: "ERROR" };
+  if (res.error) {
+    if (res.error.code === "P0001") return { ok: false, error: res.error.message, codigo: "ERROR" };
+    console.error("[reservas] cancelar", res.error.code, res.error.message);
+    return { ok: false, error: "No hemos podido cancelarla: inténtalo de nuevo o llámanos.", codigo: "ERROR" };
   }
   return { ok: true, data: res.data! };
 }

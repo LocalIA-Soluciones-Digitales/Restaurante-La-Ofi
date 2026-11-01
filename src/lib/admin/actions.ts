@@ -2,9 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { inicioDe } from "@/lib/admin/roles";
 import { obtenerSesionAdmin, supabaseStaff } from "@/lib/admin/session";
 import type { ResultadoAccion } from "@/lib/pedidos/types";
+import { emailActivo, enviarAvisoReserva } from "@/lib/reservas/email";
+import type { AvisoReserva, ReservaAvisable } from "@/lib/reservas/mensajes";
 import { rpcStaff } from "@/lib/supabase/rpc";
 
 // Server Actions del panel. Toda la autorización real está en Postgres (RLS +
@@ -191,6 +194,46 @@ export async function cierresCaja<T>() {
 /** Llamada genérica a una RPC laofi_admin_* (las de reservas, informes, etc.). */
 export async function rpcAdmin<T>(fn: `laofi_admin_${string}`, args: Record<string, unknown> = {}) {
   return staff<T>(fn, args);
+}
+
+// --- Reservas: avisar al cliente -------------------------------------------------------
+
+type ReservaConEmail = ReservaAvisable & { email: string | null; estado: string };
+
+/** Qué aviso le toca al cliente al pasar de un estado a otro (los presupuestos se responden a mano). */
+function avisoDeCambio(r: ReservaConEmail, anterior: string | null): AvisoReserva | null {
+  if (r.espacio === "presupuesto" || r.estado === anterior) return null;
+  if (r.estado === "CONFIRMADA" && (anterior === null || anterior === "PENDIENTE" || anterior === "CANCELADA" || anterior === "NO_SHOW")) return "confirmada";
+  if (r.estado === "CANCELADA" && (anterior === "PENDIENTE" || anterior === "CONFIRMADA")) return "cancelada";
+  return null;
+}
+
+/**
+ * Cambia el estado de una reserva y, si el cliente dejó email, se lo manda (confirmada o
+ * cancelada por el local) sin hacer esperar al panel. `aviso` es lo que el panel ofrece
+ * mandar por WhatsApp, y `email`, si además le llega por email.
+ */
+export async function estadoReserva<T extends ReservaConEmail>(
+  id: string,
+  estado: string,
+  anterior: string,
+): Promise<ResultadoAccion<{ reserva: T; aviso: AvisoReserva | null; email: boolean }>> {
+  const r = await staff<T>("laofi_admin_reserva_estado", { p_id: id, p_estado: estado });
+  if (!r.ok) return r;
+  const aviso = avisoDeCambio(r.data, anterior);
+  const email = Boolean(aviso && r.data.email && emailActivo());
+  if (aviso && email) after(() => enviarAvisoReserva(aviso, r.data, r.data.email).then(() => undefined));
+  return { ok: true, data: { reserva: r.data, aviso, email } };
+}
+
+/** Guarda una reserva del panel; si es nueva (por teléfono) y trae email, le llega la confirmación. */
+export async function guardarReserva<T extends ReservaConEmail>(p: Record<string, unknown>): Promise<ResultadoAccion<{ reserva: T; email: boolean }>> {
+  const r = await staff<T>("laofi_admin_guardar_reserva", { p });
+  if (!r.ok) return r;
+  const aviso = p.id ? null : avisoDeCambio(r.data, null);
+  const email = Boolean(aviso && r.data.email && emailActivo());
+  if (aviso && email) after(() => enviarAvisoReserva(aviso, r.data, r.data.email).then(() => undefined));
+  return { ok: true, data: { reserva: r.data, email } };
 }
 
 // --- Avisos al móvil (Web Push) -------------------------------------------------------

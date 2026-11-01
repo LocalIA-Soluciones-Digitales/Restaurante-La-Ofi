@@ -36,8 +36,8 @@ export default async function PrivacidadPage() {
         <h2>Qué datos tratamos, para qué y durante cuánto tiempo</h2>
         <ul>
           <li>
-            <strong>Reservas.</strong> Nombre, teléfono, día, hora, número de personas y notas, para gestionar tu
-            solicitud y avisarte de cualquier cambio. Base legal: las medidas precontractuales que solicitas (art. 6.1.b
+            <strong>Reservas.</strong> Nombre, teléfono, email (si lo dejas), día, hora, número de personas y notas, para
+            gestionar tu solicitud y avisarte de su confirmación o de cualquier cambio por WhatsApp, SMS o email. Base legal: las medidas precontractuales que solicitas (art. 6.1.b
             RGPD). Los conservamos 12 meses desde la fecha de la reserva.
           </li>
           <li>
@@ -78,12 +78,14 @@ export default async function PrivacidadPage() {
           <li>Vercel Inc.: alojamiento de la web, con servidores en Dublín (Irlanda).</li>
           <li>Supabase Inc.: base de datos de reservas, pedidos, carta y eventos, alojada en Dublín (Irlanda).</li>
           <li>Stripe Payments Europe Ltd.: pagos online.</li>
+          <li>Google Ireland Ltd. (Gmail): envío de los emails sobre tu reserva, si nos dejas tu email.</li>
+          <li>WhatsApp Ireland Ltd.: los avisos de la reserva que te mandamos por WhatsApp.</li>
           <li>
             OpenFreeMap: sirve el mapa de ubicación; al cargarlo recibe tu dirección IP, pero no instala cookies.
           </li>
         </ul>
         <p>
-          Vercel, Supabase y Stripe pertenecen a grupos de EE. UU. y pueden acceder a datos desde allí. Esas
+          Vercel, Supabase, Stripe, Google y WhatsApp (Meta) pertenecen a grupos de EE. UU. y pueden acceder a datos desde allí. Esas
           transferencias se amparan en el Marco de Privacidad de Datos UE-EE. UU. y en cláusulas contractuales tipo de la
           Comisión Europea.
         </p>

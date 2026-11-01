@@ -171,6 +171,8 @@ export function ReservaForm({
   });
   const [semanaVista, setSemanaVista] = useState(() => (f.fecha ? Math.min(SEMANAS_MAX, Math.max(0, Math.floor(diasEntre(hoy, f.fecha) / 7))) : 0));
   const [estado, setEstado] = useState<"idle" | "enviando" | "ok">("idle");
+  /** La reserva ya creada: su página de seguimiento (/reserva/<id>). */
+  const [creada, setCreada] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   /** Tras un primer intento de envío, lo que falta se muestra y se va quitando al arreglarlo. */
   const [intentado, setIntentado] = useState(false);
@@ -291,7 +293,9 @@ export function ReservaForm({
           <p className="mx-auto mt-2 max-w-md text-carbon-muted">
             {evento
               ? "Gracias por avisar: así sabemos cuántos vamos a ser. Si al final no podéis venir, llámanos."
-              : "Te llamamos para confirmarla. Si tienes prisa, llámanos tú."}
+              : f.email?.trim()
+                ? "Te avisamos por WhatsApp y por email en cuanto la confirmemos."
+                : "Te avisamos por WhatsApp en cuanto la confirmemos. Si tienes prisa, llámanos."}
           </p>
         </div>
         <dl className="grid gap-px bg-tinta-line sm:grid-cols-2">
@@ -312,12 +316,24 @@ export function ReservaForm({
           ))}
         </dl>
         <div className="flex flex-wrap items-center justify-between gap-4 px-6 py-5">
-          <span className="text-sm text-carbon-muted">¿Algún cambio?</span>
+          {creada ? (
+            <Link href={`/es/reserva/${creada}`} className="btn-primary">
+              Ver cómo va mi reserva
+              <Icon name="arrow" className="h-4 w-4" />
+            </Link>
+          ) : (
+            <span className="text-sm text-carbon-muted">¿Algún cambio?</span>
+          )}
           <a href={SITE.phone.href} className="btn-secondary">
             <Icon name="phone" className="h-4 w-4" />
             {SITE.phone.display}
           </a>
         </div>
+        {creada ? (
+          <p className="px-6 pb-5 text-sm text-carbon-muted">
+            Guarda ese enlace{f.email?.trim() ? " (también te lo mandamos por email)" : ""}: ahí verás cuándo está confirmada y podrás cancelarla si no puedes venir.
+          </p>
+        ) : null}
       </div>
     );
   }
@@ -361,6 +377,7 @@ export function ReservaForm({
             setEstado("idle");
             return setError(r.error);
           }
+          setCreada(r.data.id);
           setEstado("ok");
         }}
       >
@@ -666,6 +683,12 @@ export function ReservaForm({
             </label>
             <label className="grid gap-1 text-sm sm:col-span-2">
               <span className="font-semibold">
+                Email <span className="font-normal text-carbon-muted">(opcional, para recibir la confirmación)</span>
+              </span>
+              <input type="email" inputMode="email" autoComplete="email" value={f.email ?? ""} onChange={(e) => set({ email: e.target.value.trim().slice(0, 120) })} className={campo} />
+            </label>
+            <label className="grid gap-1 text-sm sm:col-span-2">
+              <span className="font-semibold">
                 Notas <span className="font-normal text-carbon-muted">(alergias, trona, celebración…)</span>
               </span>
               <textarea value={f.notas} onChange={(e) => set({ notas: e.target.value.slice(0, 500) })} rows={2} className={`${campo} h-auto py-3`} />
@@ -685,8 +708,8 @@ export function ReservaForm({
             </label>
           </div>
           <p className="mt-5 text-xs leading-relaxed text-carbon-muted">
-            <strong className="font-semibold">Protección de datos.</strong> El responsable es el titular de {SITE.name}. Usamos tu nombre, tu teléfono y los
-            datos de la reserva solo para gestionarla y avisarte de cambios (art. 6.1.b RGPD); no los cedemos ni los usamos para publicidad. Puedes acceder,
+            <strong className="font-semibold">Protección de datos.</strong> El responsable es el titular de {SITE.name}. Usamos tu nombre, tu teléfono, tu email si
+            lo dejas y los datos de la reserva solo para gestionarla y avisarte de su confirmación o de cambios por WhatsApp, SMS o email (art. 6.1.b RGPD); no los cedemos ni los usamos para publicidad. Puedes acceder,
             rectificar o suprimir tus datos y reclamar ante la AEPD.{" "}
             <Link href={privacidadHref} className="underline">
               Más información en la política de privacidad

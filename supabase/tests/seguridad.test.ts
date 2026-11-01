@@ -10,6 +10,7 @@ let t: TestDb;
 const PUBLICAS_ANON = [
   "laofi_asumir_reparto",
   "laofi_avisar",
+  "laofi_cancelar_reserva",
   "laofi_crear_grupo",
   "laofi_crear_pedido",
   "laofi_crear_resena",
@@ -25,6 +26,7 @@ const PUBLICAS_ANON = [
   "laofi_get_menu_dia",
   "laofi_get_pedido",
   "laofi_get_resenas",
+  "laofi_get_reserva",
   "laofi_get_sesion",
   "laofi_get_titular",
   "laofi_iniciar_sesion_mesa",
