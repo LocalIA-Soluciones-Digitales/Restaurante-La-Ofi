@@ -148,7 +148,7 @@ export function ReservasBoard({ mesas, zonas, eventos, conMesas = true }: { mesa
       setReservas(r.data);
       setError(null);
     } else setError(r.error);
-    if (futuras.ok) setPresupuestos(futuras.data.filter((x) => x.espacio === "presupuesto" && x.estado === "PENDIENTE"));
+    if (futuras.ok) setPresupuestos(futuras.data.filter(enBandeja));
     const recoger = (l: typeof enMarcha) => (l.ok ? l.data.filter((p) => p.tipo === "RECOGIDA" && p.estado !== "CANCELLED") : []);
     setPedidosHoy([...recoger(enMarcha), ...recoger(hechos)]);
   }, [desde, hasta, hoy]);
@@ -164,8 +164,18 @@ export function ReservasBoard({ mesas, zonas, eventos, conMesas = true }: { mesa
     if (!res.ok) return setError(res.error);
     const { reserva, aviso, email } = res.data;
     setReservas((l) => l.map((x) => (x.id === r.id ? reserva : x)));
-    setPresupuestos((l) => l.filter((x) => x.id !== r.id || reserva.estado === "PENDIENTE"));
+    setPresupuestos((l) => l.map((x) => (x.id === r.id ? reserva : x)).filter(enBandeja));
     setAvisar(aviso ? { tipo: aviso, reserva, email } : null);
+  };
+
+  // Se ha mandado la propuesta (WhatsApp, email o por teléfono): pasa a «esperando respuesta».
+  const marcarEnviada = async (r: Reserva, notas = conMarcaEnviada(r.notas)) => {
+    if (r.estado !== "PENDIENTE") return;
+    const res = await guardarReserva<Reserva>({ id: r.id, notas });
+    if (!res.ok) return setError(res.error);
+    const { reserva } = res.data;
+    setPresupuestos((l) => l.map((x) => (x.id === r.id ? reserva : x)));
+    setReservas((l) => l.map((x) => (x.id === r.id ? reserva : x)));
   };
 
   const delDia = reservas.filter((r) => r.fecha === fecha);
@@ -185,7 +195,15 @@ export function ReservasBoard({ mesas, zonas, eventos, conMesas = true }: { mesa
 
   return (
     <div className="grid gap-4">
-      {presupuestos.length ? <BandejaPresupuestos lista={presupuestos} onAbrir={setEditando} onIrDia={setFecha} /> : null}
+      {presupuestos.length ? (
+        <BandejaPresupuestos
+          lista={presupuestos}
+          onAbrir={setEditando}
+          onIrDia={setFecha}
+          onEnviada={(r) => void marcarEnviada(r)}
+          onAceptado={(r) => void estado(r, "CONFIRMADA")}
+        />
+      ) : null}
 
       {/* La semana entera de un vistazo (lunes a domingo, sin scroll) y flechas para cambiar de semana. */}
       <div className={`${card} p-2.5 sm:p-3`}>
@@ -401,6 +419,7 @@ export function ReservasBoard({ mesas, zonas, eventos, conMesas = true }: { mesa
             await estado(editando, e);
             setEditando(null);
           }}
+          onEnviada={(notas) => editando !== "nueva" && void marcarEnviada(editando, notas)}
           onGuardada={() => {
             setEditando(null);
             void cargar();
@@ -668,65 +687,157 @@ const TIPOS: { espacio: Reserva["espacio"]; label: string; ayuda: string }[] = [
   { espacio: "despacho", label: "El Despacho", ayuda: "Sala aparte, con su propio aforo por turno." },
   { espacio: "recogida", label: "Recoger", ayuda: "Menús del día para llevar: sin mesa." },
   { espacio: "evento", label: "Evento", ayuda: "Se apuntan a un evento de la agenda." },
-  { espacio: "presupuesto", label: "Presupuesto", ayuda: "Grupo o empresa que pide precio: sin mesa hasta cerrarlo." },
+  { espacio: "presupuesto", label: "Presupuesto", ayuda: "Grupo o empresa que pide precio. Cuando lo aceptan, se le asignan mesas." },
 ];
 
 /** Solo comedor y El Despacho ocupan mesas (y duran un tiempo). */
 const conMesa = (e: Reserva["espacio"]) => e === "mesa" || e === "despacho";
 
-/** Las notas que deja la web en un presupuesto, sin el «Presupuesto ·» del principio. */
-const detallePresupuesto = (notas: string | null) => (notas ?? "").replace(/^Presupuesto\s*·\s*/, "");
+/** Presupuestos en curso: por responder, esperando respuesta o ya confirmados. */
+const enBandeja = (r: Reserva) => r.espacio === "presupuesto" && (r.estado === "PENDIENTE" || r.estado === "CONFIRMADA");
 
 /**
- * Peticiones de presupuesto aún sin responder, sea cual sea su fecha: la agenda
- * va por días y un grupo para dentro de un mes no saldría hasta llegar a esa semana.
+ * Al mandar la propuesta, el panel lo apunta al final de las notas («Propuesta enviada el 1/11»):
+ * así se distingue lo que falta por responder de lo que espera respuesta del cliente.
  */
-function BandejaPresupuestos({ lista, onAbrir, onIrDia }: { lista: Reserva[]; onAbrir: (r: Reserva) => void; onIrDia: (f: string) => void }) {
+const MARCA_ENVIADA = /\s*(?:·\s*)?Propuesta enviada el (\d{1,2}\/\d{1,2})/;
+const enviadaEl = (notas: string | null) => notas?.match(MARCA_ENVIADA)?.[1] ?? null;
+function conMarcaEnviada(notas: string | null): string {
+  const hoy = hoyEnMadrid();
+  const marca = `Propuesta enviada el ${Number(hoy.slice(8))}/${Number(hoy.slice(5, 7))}`;
+  const base = (notas ?? "").replace(MARCA_ENVIADA, "").trim();
+  return base ? `${base.slice(0, 500 - marca.length - 3)} · ${marca}` : marca;
+}
+
+/** Las notas que deja la web en un presupuesto, sin el «Presupuesto ·» del principio ni la marca de enviada. */
+const detallePresupuesto = (notas: string | null) => (notas ?? "").replace(/^Presupuesto\s*·\s*/, "").replace(MARCA_ENVIADA, "");
+
+const fechaCorta = (r: Reserva) => `${DIA_SEMANA.format(new Date(`${r.fecha}T12:00:00Z`)).replace(".", "")} ${diaMes(r.fecha)}`;
+const botonIcono = "grid h-9 w-9 shrink-0 place-items-center rounded-lg ring-1 ring-carbon/10 dark:ring-crema/15";
+
+/**
+ * Los presupuestos de principio a fin, sea cual sea su fecha (la agenda va por días y un
+ * grupo para dentro de un mes no saldría hasta llegar a esa semana): por responder, con la
+ * propuesta enviada esperando respuesta, y los grupos ya confirmados que vienen.
+ */
+function BandejaPresupuestos({
+  lista,
+  onAbrir,
+  onIrDia,
+  onEnviada,
+  onAceptado,
+}: {
+  lista: Reserva[];
+  onAbrir: (r: Reserva) => void;
+  onIrDia: (f: string) => void;
+  onEnviada: (r: Reserva) => void;
+  onAceptado: (r: Reserva) => void;
+}) {
   const e = ESPACIO.presupuesto;
+  const porResponder = lista.filter((r) => r.estado === "PENDIENTE" && !enviadaEl(r.notas));
+  const enviadas = lista.filter((r) => r.estado === "PENDIENTE" && enviadaEl(r.notas));
+  const cerrados = lista.filter((r) => r.estado === "CONFIRMADA").sort((a, b) => (a.fecha + a.hora).localeCompare(b.fecha + b.hora));
+
+  const fila = (r: Reserva, linea: ReactNode, acciones: ReactNode) => (
+    <li key={r.id} className="flex items-center gap-3 py-3 pl-5 pr-3">
+      <button type="button" onClick={() => onAbrir(r)} className="min-w-0 flex-1 text-left">
+        <span className="flex items-baseline gap-2">
+          <span className="truncate font-semibold">{r.nombre}</span>
+          <span className="shrink-0 text-sm font-semibold tabular-nums text-carbon-muted dark:text-crema/65">{r.personas} p.</span>
+        </span>
+        <span className="block truncate text-xs text-carbon-muted dark:text-crema/60">
+          {/* En el móvil no cabe la columna de la fecha: va delante. */}
+          <span className="font-semibold first-letter:uppercase sm:hidden">{fechaCorta(r)} · </span>
+          {linea}
+        </span>
+      </button>
+      <button
+        type="button"
+        onClick={() => onIrDia(r.fecha)}
+        className="hidden shrink-0 rounded-lg px-2.5 py-1.5 text-right text-xs font-semibold leading-tight hover:bg-arena sm:block dark:hover:bg-noche-3"
+        title="Ver ese día en la agenda"
+      >
+        <span className="block first-letter:uppercase">{fechaCorta(r)}</span>
+        <span className="font-normal opacity-60">{r.hora.slice(0, 5)}</span>
+      </button>
+      {acciones}
+    </li>
+  );
+  const whatsapp = (r: Reserva) => (
+    <span onClick={() => onEnviada(r)} className="contents">
+      <BotonWhatsApp tipo="presupuesto" reserva={r} className={`${botonIcono} text-[#1F7A4D] dark:text-[#4CC38A]`}>
+        <span className="sr-only">Enviar el presupuesto por WhatsApp a {r.nombre}</span>
+      </BotonWhatsApp>
+    </span>
+  );
+  const llamar = (r: Reserva) => (
+    <a href={`tel:${r.telefono.replace(/\s/g, "")}`} className={botonIcono} aria-label={`Llamar a ${r.nombre}`}>
+      <Icon name="phone" className="h-4 w-4" />
+    </a>
+  );
+  const apartado = (titulo: string, items: Reserva[], render: (r: Reserva) => ReactNode) =>
+    items.length ? (
+      <div>
+        <h3 className="flex items-center gap-2 bg-arena/50 py-1.5 pl-5 pr-4 text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-carbon-muted dark:bg-noche-3/60 dark:text-crema/60">
+          {titulo}
+          <span className="tabular-nums opacity-70">{items.length}</span>
+        </h3>
+        <ul className="divide-y divide-carbon/[0.07] dark:divide-crema/10">{items.map(render)}</ul>
+      </div>
+    ) : null;
+
   return (
-    <section aria-label="Presupuestos por responder" className={`${card} relative overflow-hidden`}>
+    <section aria-label="Presupuestos y grupos" className={`${card} relative overflow-hidden`}>
       <span aria-hidden="true" className={`absolute inset-y-0 left-0 w-1.5 ${e.franja}`} />
       <div className="flex items-center gap-2 border-b border-carbon/[0.07] py-3 pl-5 pr-4 dark:border-crema/10">
         <span className={`grid h-7 w-7 place-items-center rounded-lg ${e.chip}`}>
           <Icon name={e.icon} className="h-4 w-4" />
         </span>
-        <h2 className="text-sm font-semibold">Presupuestos por responder</h2>
-        <span className="grid h-6 min-w-6 place-items-center rounded-full bg-terracota px-1.5 text-xs font-semibold text-crema">{lista.length}</span>
-        <span className="ml-auto hidden text-xs text-carbon-muted sm:block dark:text-crema/60">Llama o escribe con el precio y confírmalo cuando lo acepten.</span>
+        <h2 className="text-sm font-semibold">Presupuestos y grupos</h2>
+        {porResponder.length ? (
+          <span className="grid h-6 min-w-6 place-items-center rounded-full bg-terracota px-1.5 text-xs font-semibold text-crema" title="Por responder">
+            {porResponder.length}
+          </span>
+        ) : null}
       </div>
-      <ul className="divide-y divide-carbon/[0.07] dark:divide-crema/10">
-        {lista.map((r) => (
-          <li key={r.id} className="flex items-center gap-3 py-3 pl-5 pr-3">
-            <button type="button" onClick={() => onAbrir(r)} className="min-w-0 flex-1 text-left">
-              <span className="flex items-baseline gap-2">
-                <span className="truncate font-semibold">{r.nombre}</span>
-                <span className="shrink-0 text-sm font-semibold tabular-nums text-carbon-muted dark:text-crema/65">{r.personas} p.</span>
-              </span>
-              <span className="block truncate text-xs text-carbon-muted dark:text-crema/60">{detallePresupuesto(r.notas) || "Sin detalles"}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => onIrDia(r.fecha)}
-              className="hidden shrink-0 rounded-lg px-2.5 py-1.5 text-right text-xs font-semibold leading-tight hover:bg-arena sm:block dark:hover:bg-noche-3"
-              title="Ver ese día en la agenda"
-            >
-              <span className="block first-letter:uppercase">{DIA_SEMANA.format(new Date(`${r.fecha}T12:00:00Z`)).replace(".", "")} {diaMes(r.fecha)}</span>
-              <span className="font-normal opacity-60">{r.hora.slice(0, 5)}</span>
-            </button>
-            <BotonWhatsApp tipo="presupuesto" reserva={r} className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-[#1F7A4D] ring-1 ring-carbon/10 dark:text-[#4CC38A] dark:ring-crema/15">
-              <span className="sr-only">WhatsApp a {r.nombre}</span>
-            </BotonWhatsApp>
+      {apartado("Por responder", porResponder, (r) =>
+        fila(
+          r,
+          detallePresupuesto(r.notas) || "Sin detalles",
+          <>
+            {whatsapp(r)}
             {r.email ? (
-              <a href={mailPresupuesto(r)} className="grid h-9 w-9 shrink-0 place-items-center rounded-lg ring-1 ring-carbon/10 dark:ring-crema/15" aria-label={`Escribir a ${r.nombre}`}>
+              <a href={mailPresupuesto(r)} onClick={() => onEnviada(r)} className={botonIcono} aria-label={`Enviar el presupuesto por email a ${r.nombre}`}>
                 <Icon name="mail" className="h-4 w-4" />
               </a>
             ) : null}
-            <a href={`tel:${r.telefono.replace(/\s/g, "")}`} className="grid h-9 w-9 shrink-0 place-items-center rounded-lg ring-1 ring-carbon/10 dark:ring-crema/15" aria-label={`Llamar a ${r.nombre}`}>
-              <Icon name="phone" className="h-4 w-4" />
-            </a>
-          </li>
-        ))}
-      </ul>
+            {llamar(r)}
+          </>,
+        ),
+      )}
+      {apartado("Propuesta enviada · esperando respuesta", enviadas, (r) =>
+        fila(
+          r,
+          <>Enviada el {enviadaEl(r.notas)}</>,
+          <>
+            <button type="button" onClick={() => onAceptado(r)} className="min-h-9 shrink-0 rounded-lg bg-marino px-3 text-sm font-semibold text-crema dark:bg-neon dark:text-noche">
+              Aceptado
+            </button>
+            {llamar(r)}
+          </>,
+        ),
+      )}
+      {apartado("Grupos confirmados", cerrados, (r) =>
+        fila(
+          r,
+          r.mesas.length ? (
+            `Mesa ${r.mesas.map((m) => m.numero).join("+")}`
+          ) : (
+            <span className="font-semibold text-terracota">Sin mesas asignadas</span>
+          ),
+          llamar(r),
+        ),
+      )}
     </section>
   );
 }
@@ -853,6 +964,7 @@ function ReservaForm({
   todas,
   onClose,
   onEstado,
+  onEnviada,
   onGuardada,
 }: {
   reserva: Reserva | null;
@@ -863,6 +975,8 @@ function ReservaForm({
   todas: Reserva[];
   onClose: () => void;
   onEstado: (e: EstadoReserva) => void | Promise<void>;
+  /** Se ha mandado la propuesta de un presupuesto: guarda estas notas (con la marca de enviada). */
+  onEnviada: (notas: string) => void;
   onGuardada: () => void;
 }) {
   const r = reserva;
@@ -884,8 +998,23 @@ function ReservaForm({
 
   // Las mesas de El Despacho son las de su zona; el comedor, todas las demás (barra y terraza incluidas).
   const despacho = new Set(zonas.filter((z) => z.tipo === "despacho").map((z) => z.id));
+  // Un presupuesto aceptado ya es un grupo que viene: se sienta donde toque (comedor, terraza o El Despacho).
+  const grupoCerrado = !!r && r.espacio === "presupuesto" && r.estado !== "PENDIENTE";
   const mesasDe = (e: Reserva["espacio"]) =>
-    e === "despacho" ? mesas.filter((m) => m.zona_id && despacho.has(m.zona_id)) : e === "mesa" ? mesas.filter((m) => !m.zona_id || !despacho.has(m.zona_id)) : [];
+    e === "despacho"
+      ? mesas.filter((m) => m.zona_id && despacho.has(m.zona_id))
+      : e === "mesa"
+        ? mesas.filter((m) => !m.zona_id || !despacho.has(m.zona_id))
+        : e === "presupuesto" && grupoCerrado
+          ? mesas
+          : [];
+  const llevaMesa = conMesa(f.espacio) || (f.espacio === "presupuesto" && grupoCerrado);
+  const enviada = r?.espacio === "presupuesto" && r.estado === "PENDIENTE" ? enviadaEl(f.notas) : null;
+  const marcarEnviada = () => {
+    const notas = conMarcaEnviada(f.notas);
+    set({ notas });
+    onEnviada(notas);
+  };
   const delEspacio = mesasDe(f.espacio);
   const delDia = todas.filter((x) => x.fecha === f.fecha);
   const hueco = { id: r?.id ?? "", hora: f.hora, duracion_min: f.duracion_min };
@@ -918,16 +1047,22 @@ function ReservaForm({
           <div className="flex flex-wrap gap-2">
             {/* Presupuesto sin cerrar: lo primero, mandarle la propuesta por WhatsApp (el teléfono siempre lo dejan). */}
             {r.espacio === "presupuesto" && r.estado === "PENDIENTE" ? (
-              <BotonWhatsApp tipo="presupuesto" reserva={r} className={`${boton} bg-[#1F7A4D] text-white hover:brightness-110`}>
-                Enviar presupuesto
-              </BotonWhatsApp>
+              <span onClick={marcarEnviada} className="contents">
+                <BotonWhatsApp tipo="presupuesto" reserva={r} className={`${boton} bg-[#1F7A4D] text-white hover:brightness-110`}>
+                  {enviada ? "Volver a enviar" : "Enviar presupuesto"}
+                </BotonWhatsApp>
+              </span>
             ) : null}
             <a href={`tel:${r.telefono.replace(/\s/g, "")}`} className={botonSecundario}>
               <Icon name="phone" className="h-4 w-4" />
               Llamar · {r.telefono}
             </a>
             {r.email ? (
-              <a href={r.espacio === "presupuesto" ? mailPresupuesto(r) : `mailto:${r.email}`} className={botonSecundario}>
+              <a
+                href={r.espacio === "presupuesto" ? mailPresupuesto(r) : `mailto:${r.email}`}
+                onClick={r.espacio === "presupuesto" && r.estado === "PENDIENTE" ? marcarEnviada : undefined}
+                className={botonSecundario}
+              >
                 <Icon name="mail" className="h-4 w-4" />
                 {r.espacio === "presupuesto" ? "Por email" : "Escribir"}
               </a>
@@ -935,6 +1070,18 @@ function ReservaForm({
             {r.espacio !== "presupuesto" || r.estado !== "PENDIENTE" ? <BotonWhatsApp tipo={avisoSegunEstado(r.estado)} reserva={r} /> : null}
           </div>
           {resumenComida(r.comida) ? <p className="text-sm text-oliva dark:text-oliva-soft">{resumenComida(r.comida)}</p> : null}
+          {r.espacio === "presupuesto" && r.estado === "PENDIENTE" ? (
+            enviada ? (
+              <p className="flex items-center gap-1.5 text-sm font-semibold text-oliva dark:text-oliva-soft">
+                <Icon name="check" className="h-4 w-4" />
+                Propuesta enviada el {enviada} · esperando respuesta
+              </p>
+            ) : (
+              <button type="button" onClick={marcarEnviada} className="justify-self-start text-sm font-semibold text-marino underline underline-offset-2 dark:text-neon">
+                Ya se la he dado por teléfono
+              </button>
+            )
+          ) : null}
         </div>
       ) : null}
 
@@ -982,7 +1129,7 @@ function ReservaForm({
           </label>
         </fieldset>
 
-        <fieldset className={`grid gap-3 ${conMesa(f.espacio) ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"}`}>
+        <fieldset className={`grid gap-3 ${llevaMesa ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"}`}>
           <legend className={`${etiqueta} mb-2`}>{f.espacio === "recogida" ? "Cuándo lo recogen" : f.espacio === "presupuesto" ? "Para cuándo" : "Cuándo"}</legend>
           <label className="col-span-2 grid gap-1 text-sm sm:col-span-1">
             <span className="font-semibold">Fecha</span>
@@ -996,7 +1143,7 @@ function ReservaForm({
             <span className="font-semibold">{f.espacio === "recogida" ? "Menús" : "Personas"}</span>
             <input type="number" min={1} max={220} value={f.personas} onChange={(e) => set({ personas: Number(e.target.value) })} className={input} />
           </label>
-          {conMesa(f.espacio) ? (
+          {llevaMesa ? (
             <label className="grid gap-1 text-sm">
               <span className="font-semibold">Duración</span>
               <select value={f.duracion_min} onChange={(e) => set({ duracion_min: Number(e.target.value) })} className={input}>
@@ -1024,10 +1171,10 @@ function ReservaForm({
           </label>
         ) : null}
 
-        {conMesa(f.espacio) && delEspacio.length ? (
+        {llevaMesa && delEspacio.length ? (
           <div className="grid gap-1 text-sm">
             <span className="flex items-baseline justify-between gap-2">
-              <span className="font-semibold">Mesas {f.espacio === "despacho" ? "de El Despacho" : ""}</span>
+              <span className="font-semibold">{f.espacio === "presupuesto" ? "Dónde se sientan" : `Mesas ${f.espacio === "despacho" ? "de El Despacho" : ""}`}</span>
               {f.mesas.length ? (
                 <span className={`text-xs font-semibold tabular-nums ${plazas < f.personas ? "text-terracota" : "text-oliva dark:text-oliva-soft"}`}>
                   {plazas} plazas para {f.personas}
@@ -1043,7 +1190,7 @@ function ReservaForm({
         ) : null}
 
         <label className="grid gap-1 text-sm">
-          <span className="font-semibold">{f.espacio === "presupuesto" ? "Qué piden" : "Notas"}</span>
+          <span className="font-semibold">{f.espacio === "presupuesto" ? (grupoCerrado ? "Qué piden y lo acordado" : "Qué piden") : "Notas"}</span>
           {f.espacio === "presupuesto" ? (
             <textarea
               value={f.notas}
