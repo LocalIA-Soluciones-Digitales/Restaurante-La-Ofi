@@ -1049,7 +1049,7 @@ function ReservaForm({
               value={f.notas}
               onChange={(e) => set({ notas: e.target.value })}
               rows={3}
-              placeholder="Comida de empresa, 25 € por persona, necesitan factura…"
+              placeholder="Comida de empresa, necesitan factura, 3 vegetarianos…"
               className={`${input} h-auto py-2.5`}
             />
           ) : (

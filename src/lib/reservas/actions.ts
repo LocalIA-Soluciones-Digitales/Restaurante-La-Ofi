@@ -27,7 +27,7 @@ export interface ReservaWeb {
   /** Consentimiento explícito para las alergias u otros datos de salud de las notas (RGPD art. 9.2.a). */
   consiente_salud?: boolean;
   /** Solo con espacio «presupuesto»: lo que pide la empresa (no son datos de salud). */
-  presupuesto?: { empresa?: string; tipo?: string; porPersona?: string; factura?: boolean };
+  presupuesto?: { empresa?: string; tipo?: string; factura?: boolean };
   /** Campo trampa: los humanos no lo ven; si llega relleno, es un bot. */
   web?: string;
 }
@@ -39,14 +39,13 @@ export interface ComidaReserva {
   lineas: { id: string; cantidad: number }[];
 }
 
-/** Notas del presupuesto para el panel: «Presupuesto · Comida de empresa · Acme SL · 25 €/persona · Factura · …». */
+/** Notas del presupuesto para el panel: «Presupuesto · Comida de empresa · Acme SL · Necesita factura · …». */
 function notasPresupuesto(p: NonNullable<ReservaWeb["presupuesto"]>, libre: string): string {
   const corto = (v: string | undefined, n: number) => String(v ?? "").trim().slice(0, n);
   return [
     "Presupuesto",
     corto(p.tipo, 40),
     corto(p.empresa, 80),
-    corto(p.porPersona, 20) ? `${corto(p.porPersona, 20)} por persona` : "",
     p.factura ? "Necesita factura" : "",
     libre,
   ]

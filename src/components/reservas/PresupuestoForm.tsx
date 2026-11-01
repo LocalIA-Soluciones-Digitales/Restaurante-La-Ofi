@@ -30,7 +30,6 @@ export function PresupuestoForm({ privacidadHref }: { privacidadHref: string }) 
     fecha: "",
     hora: "14:00",
     personas: 15,
-    porPersona: "",
     factura: false,
     nombre: "",
     telefono: "",
@@ -81,7 +80,7 @@ export function PresupuestoForm({ privacidadHref }: { privacidadHref: string }) 
             personas: f.personas,
             notas: f.notas,
             consiente_salud: f.consiente_salud,
-            presupuesto: { empresa: f.empresa, tipo: f.tipo, porPersona: f.porPersona, factura: f.factura },
+            presupuesto: { empresa: f.empresa, tipo: f.tipo, factura: f.factura },
             web: f.web,
           });
           if (!r.ok) {
@@ -125,13 +124,7 @@ export function PresupuestoForm({ privacidadHref }: { privacidadHref: string }) 
             <input type="number" required min={1} max={220} value={f.personas} onChange={(e) => set({ personas: Number(e.target.value) })} className={campo} />
           </label>
         </div>
-        <label className="grid gap-1 text-sm">
-          <span className="font-semibold">
-            Presupuesto por persona <span className="font-normal text-carbon-muted">(opcional)</span>
-          </span>
-          <input inputMode="decimal" placeholder="p. ej. 25 €" value={f.porPersona} onChange={(e) => set({ porPersona: e.target.value.slice(0, 20) })} className={campo} />
-        </label>
-        <label className="flex min-h-12 items-center gap-3 self-end text-sm">
+        <label className="flex min-h-12 items-center gap-3 text-sm sm:col-span-2">
           <input type="checkbox" checked={f.factura} onChange={(e) => set({ factura: e.target.checked })} className="h-5 w-5 shrink-0 accent-[theme(colors.marino.DEFAULT)]" />
           <span>Necesitamos factura a nombre de la empresa</span>
         </label>
