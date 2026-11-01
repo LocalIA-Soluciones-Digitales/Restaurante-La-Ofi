@@ -46,10 +46,12 @@ export default async function MenuDelDiaPage({ params }: Params) {
   return (
     <>
       {carta.status === "real" && !IS_DEMO ? <JsonLd data={menuJsonLd(carta.data)} /> : null}
-      {/* El comedor a todo el ancho y la hoja del menú en el centro, por encima. */}
-      <section aria-labelledby="menu-dia-title" data-header="light" className="relative isolate overflow-hidden bg-carbon pb-16 pt-28 text-crema sm:pb-24 lg:pt-36">
+      {/* El comedor a todo el ancho y la hoja del menú en el centro, por encima. Abajo,
+          la foto se funde con el crema de la carta en vez de cortar en seco. */}
+      <section aria-labelledby="menu-dia-title" data-header="light" className="relative isolate overflow-hidden bg-carbon pb-40 pt-28 text-crema sm:pb-56 lg:pt-36">
         <Photo img="comedorRatan" sizes="100vw" priority mobileBelow={0} decorative imgClassName="motion-safe:animate-kenburns" />
-        <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-carbon/75 via-carbon/40 to-carbon/85" />
+        <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-carbon/75 via-carbon/45 to-carbon/60" />
+        <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent to-crema sm:h-56" />
 
         <div className="container-wide relative flex flex-col items-center text-center">
           <p className="kicker text-crema/75">Mediodía · Lunes a viernes</p>

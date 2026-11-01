@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useMemo, useState } from "react";
 import { Photo } from "@/components/media/Photo";
 import { Icon } from "@/components/ui/Icon";
 import { formatCentimos } from "@/lib/format";
@@ -48,6 +51,28 @@ function porDenominacion(items: CartaItem[]) {
 }
 
 /** Precio de carta impresa: «14» o «14,50», sin el símbolo en cada línea. */
+/** Sin tildes ni mayúsculas, para buscar «albarino» y encontrar «Albariño». */
+const normal = (t: string) =>
+  t
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+/** Los tipos con solo los vinos que casan con la búsqueda (nombre, uva o denominación). */
+function filtrar(tipos: CartaSeccion[], q: string): CartaSeccion[] {
+  const palabras = normal(q).split(/\s+/).filter(Boolean);
+  if (palabras.length === 0) return tipos;
+  return tipos
+    .map((s) => ({
+      ...s,
+      items: s.items.filter((v) => {
+        const texto = normal(`${v.nombre} ${v.descripcion ?? ""} ${tipo(s).titulo}`);
+        return palabras.every((w) => texto.includes(w));
+      }),
+    }))
+    .filter((s) => s.items.length > 0);
+}
+
 const precio = (v: CartaItem) => (v.precioCentimos === null ? "—" : formatCentimos(v.precioCentimos).replace(/,00\s?€$/, "").replace(/\s?€$/, ""));
 
 function Vino({ vino, conGrupo = false }: { vino: CartaItem; conGrupo?: boolean }) {
@@ -71,15 +96,31 @@ function Vino({ vino, conGrupo = false }: { vino: CartaItem; conGrupo?: boolean 
  * Arriba, «Vinos de la casa» (los que Carlos marca con la estrella en /admin/carta).
  */
 export function CartaBodega({ secciones, cabecera = true }: { secciones: CartaSeccion[]; cabecera?: boolean }) {
-  const tipos = ordenar(secciones);
-  if (tipos.length === 0) return null;
-  const deLaCasa = tipos.flatMap((s) => s.items.filter((it) => it.destacado));
+  const todos = useMemo(() => ordenar(secciones), [secciones]);
+  const [q, setQ] = useState("");
+  const buscando = q.trim().length > 0;
+  const tipos = useMemo(() => filtrar(todos, q), [todos, q]);
+  if (todos.length === 0) return null;
+  const deLaCasa = buscando ? [] : tipos.flatMap((s) => s.items.filter((it) => it.destacado));
+  const encontrados = tipos.reduce((n, s) => n + s.items.length, 0);
 
   return (
     <section id="la-bodega" aria-labelledby={cabecera ? "bodega-title" : "vinos-title"} className="scroll-mt-4 bg-[#F6F0E5] pb-20 text-carbon sm:pb-28">
-      {/* Índice de tipos, fijo al bajar. */}
+      {/* Buscador e índice de tipos, fijos al bajar. */}
       <nav aria-label="Tipos de vino" className="sticky top-16 z-10 border-b border-tinta-line bg-[#F6F0E5]/92 backdrop-blur lg:top-[4.5rem]">
-        <div className="container-wide flex gap-7 overflow-x-auto py-4 [scrollbar-width:none]">
+        <div className="container-wide flex flex-col gap-3 py-3 lg:flex-row lg:items-center lg:gap-8">
+          <label className="relative block lg:order-2 lg:ml-auto lg:w-80">
+            <span className="sr-only">Buscar un vino</span>
+            <Icon name="search" className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-carbon-muted" />
+            <input
+              type="search"
+              value={q}
+              onChange={(e) => setQ(e.target.value.slice(0, 60))}
+              placeholder="Busca un vino, una uva o una D.O."
+              className="h-11 w-full rounded-full border border-carbon/15 bg-white/70 pl-11 pr-4 text-[0.95rem] text-carbon placeholder:text-carbon-muted/80 focus:border-madera-oscura focus:bg-white focus:outline-none"
+            />
+          </label>
+        <div className="flex gap-7 overflow-x-auto [scrollbar-width:none] lg:order-1">
           {tipos.map((s) => (
             <a key={s.id} href={`#bodega-${s.slug}`} className="group inline-flex shrink-0 items-baseline gap-2 text-sm text-carbon-muted hover:text-carbon">
               <span aria-hidden="true" className="h-2 w-2 translate-y-[-1px] rounded-full" style={{ background: tipo(s).color }} />
@@ -88,7 +129,23 @@ export function CartaBodega({ secciones, cabecera = true }: { secciones: CartaSe
             </a>
           ))}
         </div>
+        </div>
       </nav>
+
+      {buscando ? (
+        <p role="status" className="container-wide pt-10 text-sm text-carbon-muted">
+          {encontrados ? (
+            <>
+              {encontrados} {encontrados === 1 ? "vino" : "vinos"} para «{q.trim()}».{" "}
+            </>
+          ) : (
+            <>No encontramos «{q.trim()}» en la carta: pregúntanos, puede que lo tengamos en bodega. </>
+          )}
+          <button type="button" onClick={() => setQ("")} className="font-semibold text-carbon underline underline-offset-4">
+            Ver todos
+          </button>
+        </p>
+      ) : null}
 
       <div className="container-wide">
         {cabecera ? (
