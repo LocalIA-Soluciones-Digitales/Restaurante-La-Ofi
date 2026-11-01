@@ -6,7 +6,7 @@ import { card } from "@/components/admin/ui";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { accionMesa, rpcAdmin } from "@/lib/admin/actions";
 import { cargarHoy, type DatosHoy } from "@/lib/admin/hoy";
-import { etiquetaPedido, type MesaSalon, type PedidoKds } from "@/lib/admin/types";
+import { etiquetaPedido, presupuestoSinCerrar, type MesaSalon, type PedidoKds } from "@/lib/admin/types";
 import { formatCentimos } from "@/lib/format";
 import { sonarAviso } from "@/lib/notify-sound";
 import type { EstadoPedido } from "@/lib/restaurant/types";
@@ -95,7 +95,7 @@ export function PanelHoy({ inicial, yo, sala, gestion }: { inicial: DatosHoy; yo
 
   const minAhora = enMinutos(HORA.format(ahora));
   const reservasActivas = d.reservas
-    .filter((r) => r.estado === "PENDIENTE" || r.estado === "CONFIRMADA")
+    .filter((r) => (r.estado === "PENDIENTE" || r.estado === "CONFIRMADA") && !presupuestoSinCerrar(r))
     .sort((a, b) => enMinutos(a.hora) - enMinutos(b.hora));
   const proximas = reservasActivas.filter((r) => enMinutos(r.hora) >= minAhora - 30);
   const personasReserva = reservasActivas.reduce((s, r) => s + r.personas, 0);

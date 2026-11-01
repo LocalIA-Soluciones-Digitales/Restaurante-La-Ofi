@@ -8,7 +8,7 @@ import { Modal } from "@/components/admin/Modal";
 import { Aviso, boton, botonPrimario, botonSecundario, card, input } from "@/components/admin/ui";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { colaCocina, estadoReserva, guardarReserva, rpcAdmin } from "@/lib/admin/actions";
-import type { MesaSalon, PedidoKds, Zona } from "@/lib/admin/types";
+import { presupuestoSinCerrar, type MesaSalon, type PedidoKds, type Zona } from "@/lib/admin/types";
 import { formatCentimos, formatearFechaLarga, hoyEnMadrid } from "@/lib/format";
 import { asunto, textoAviso, type AvisoReserva } from "@/lib/reservas/mensajes";
 import { SITE } from "@/lib/site";
@@ -178,7 +178,7 @@ export function ReservasBoard({ mesas, zonas, eventos, conMesas = true }: { mesa
     setReservas((l) => l.map((x) => (x.id === r.id ? reserva : x)));
   };
 
-  const delDia = reservas.filter((r) => r.fecha === fecha);
+  const delDia = reservas.filter((r) => r.fecha === fecha && !presupuestoSinCerrar(r));
   const activasDia = delDia.filter(activa);
   const pendientes = delDia.filter((r) => r.estado === "PENDIENTE");
   const visibles = delDia.filter((r) => filtro === "todo" || ESPACIO[r.espacio].filtro === filtro);
@@ -228,8 +228,8 @@ export function ReservasBoard({ mesas, zonas, eventos, conMesas = true }: { mesa
         </div>
         <div className="grid grid-cols-7 gap-1 sm:gap-2">
           {dias.map((d) => {
-            const total = reservas.filter((r) => r.fecha === d && activa(r)).length;
-            const porConfirmar = reservas.some((r) => r.fecha === d && r.estado === "PENDIENTE");
+            const total = reservas.filter((r) => r.fecha === d && activa(r) && !presupuestoSinCerrar(r)).length;
+            const porConfirmar = reservas.some((r) => r.fecha === d && r.estado === "PENDIENTE" && !presupuestoSinCerrar(r));
             const sel = d === fecha;
             return (
               <button
@@ -687,7 +687,7 @@ const TIPOS: { espacio: Reserva["espacio"]; label: string; ayuda: string }[] = [
   { espacio: "despacho", label: "El Despacho", ayuda: "Sala aparte, con su propio aforo por turno." },
   { espacio: "recogida", label: "Recoger", ayuda: "Menús del día para llevar: sin mesa." },
   { espacio: "evento", label: "Evento", ayuda: "Se apuntan a un evento de la agenda." },
-  { espacio: "presupuesto", label: "Presupuesto", ayuda: "Grupo o empresa que pide precio. Cuando lo aceptan, se le asignan mesas." },
+  { espacio: "presupuesto", label: "Presupuesto", ayuda: "Grupo o empresa que pide precio. No ocupa el día hasta que lo aceptan; entonces se le asignan mesas." },
 ];
 
 /** Solo comedor y El Despacho ocupan mesas (y duran un tiempo). */

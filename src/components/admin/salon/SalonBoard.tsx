@@ -11,7 +11,7 @@ import { Icon } from "@/components/ui/Icon";
 import { accionMesa, accionSalon, cobrar, rpcAdmin, salonYReservas } from "@/lib/admin/actions";
 import { minutosDesde, posicionesPorDefecto } from "@/lib/admin/plano";
 import type { Rol } from "@/lib/admin/roles";
-import { ESTADO_MESA, estadoMesa, type EstadoMesa, type MesaSalon, type ReservaDia, type SalonData } from "@/lib/admin/types";
+import { ESTADO_MESA, estadoMesa, presupuestoSinCerrar, type EstadoMesa, type MesaSalon, type ReservaDia, type SalonData } from "@/lib/admin/types";
 import { formatCentimos, hoyEnMadrid } from "@/lib/format";
 import { cuentaHTML, imprimirHTML, type DatosFiscales } from "@/lib/print/ticket";
 import { escucharLaofi } from "@/lib/supabase/browser";
@@ -177,7 +177,7 @@ export function SalonBoard({
 
   const misMesas = useMemo(() => new Set(data.mesas.filter((m) => m.camarero_id === yo).map((m) => m.id)), [data, yo]);
   const reservasHoy = useMemo(
-    () => reservas.filter((r) => r.estado === "PENDIENTE" || r.estado === "CONFIRMADA").sort((a, b) => a.hora.localeCompare(b.hora)),
+    () => reservas.filter((r) => (r.estado === "PENDIENTE" || r.estado === "CONFIRMADA") && !presupuestoSinCerrar(r)).sort((a, b) => a.hora.localeCompare(b.hora)),
     [reservas],
   );
 

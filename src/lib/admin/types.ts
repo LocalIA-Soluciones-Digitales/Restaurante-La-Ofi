@@ -60,11 +60,17 @@ export interface ReservaDia {
   fecha: string;
   hora: string;
   duracion_min: number;
-  espacio: "mesa" | "despacho" | "evento";
+  espacio: "mesa" | "despacho" | "evento" | "presupuesto" | "recogida";
   estado: "PENDIENTE" | "CONFIRMADA" | "SENTADA" | "CANCELADA" | "NO_SHOW";
   notas: string | null;
   mesas: { id: string; numero: string }[];
 }
+
+/**
+ * Un presupuesto sin cerrar no ocupa el día: hasta que el cliente lo acepta es solo una
+ * propuesta, y vive en la bandeja de presupuestos, no en la agenda ni en el salón.
+ */
+export const presupuestoSinCerrar = (r: { espacio: string; estado: string }) => r.espacio === "presupuesto" && r.estado === "PENDIENTE";
 
 export interface PersonaStaff {
   user_id: string;
