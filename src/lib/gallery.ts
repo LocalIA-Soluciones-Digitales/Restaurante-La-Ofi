@@ -22,13 +22,10 @@ const ORDEN: { key: ImageKey; categoria: CategoriaGaleria }[] = [
   { key: "tostadaBonita", categoria: "platos" },
   { key: "terraza", categoria: "espacio" },
   { key: "rotuloAguila", categoria: "ambiente" },
-  { key: "tostadaRevuelta", categoria: "platos" },
   { key: "despachoRotulo", categoria: "ambiente" },
   { key: "barraMesasAltas", categoria: "espacio" },
-  { key: "cartaTostadas", categoria: "platos" },
   { key: "salonNoche", categoria: "ambiente" },
   { key: "terrazaCarpa", categoria: "espacio" },
-  { key: "tostadaSalmon", categoria: "platos" },
   { key: "furgoneta", categoria: "ambiente" },
 ];
 
