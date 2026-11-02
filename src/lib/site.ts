@@ -12,6 +12,7 @@ const whatsapp = (process.env.NEXT_PUBLIC_WHATSAPP || "").replace(/\D/g, "");
 
 const LAT = 43.295441;
 const LNG = -2.8672436;
+const DESTINO_MAPS = "Restaurante La Ofi, Barrio de Arteaga 502, 48160 Derio";
 
 export const SITE = {
   name: "Restaurante La Ofi",
@@ -41,8 +42,10 @@ export const SITE = {
   google: { ficha: "https://www.google.com/search?kgmid=/g/11rtmgj80h" },
   maps: {
     // URL canónica de Google Maps (no el acortador share.google, que oculta el destino).
-    place: `https://www.google.com/maps/search/?api=1&query=${LAT},${LNG}`,
-    directions: `https://www.google.com/maps/dir/?api=1&destination=${LAT},${LNG}`,
+    // Por nombre y dirección, no por coordenadas: así abre la ficha del restaurante
+    // (reseñas, horario, «Reservar») y no un pin suelto.
+    place: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(DESTINO_MAPS)}`,
+    directions: `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(DESTINO_MAPS)}`,
   },
 } as const;
 
