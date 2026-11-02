@@ -68,4 +68,15 @@ describe("seed de la carta de vinos", () => {
     expect(precio["vinos-rosados/Flamingo"]).toBe(2900);
     expect(precio["cavas-champagnes/Ayala Blanc de Blancs"]).toBe(9600);
   });
+
+  it("añade los tintos antes de los blancos, de forma idempotente", async () => {
+    for (let i = 0; i < 2; i++) await t.db.exec(read("seed/la_ofi_carta_tintos.sql"));
+    const c = await carta();
+    expect(c.map((s) => s.slug).slice(-5)).toEqual(["vinos-tintos", "vinos-blancos", "vinos-rosados", "cavas-champagnes", "vinos-dulces"]);
+    expect(c.slice(-5).map((s) => s.productos.length)).toEqual([30, 27, 4, 7, 4]);
+    const precio = Object.fromEntries(c.flatMap((s) => s.productos.map((p) => [`${s.slug}/${p.nombre}`, p.precio_centimos])));
+    expect(precio["vinos-tintos/Ondarre 7 Parcelas"]).toBe(1400);
+    expect(precio["vinos-tintos/Victorino"]).toBe(5400);
+    expect(precio["vinos-tintos/Viernes"]).toBe(1800);
+  });
 });

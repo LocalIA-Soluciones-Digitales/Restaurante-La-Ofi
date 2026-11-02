@@ -17,9 +17,9 @@ export const tipo = (s: CartaSeccion) => TIPO[s.slug] ?? { titulo: s.nombre, col
 
 /** Lo que es la bodega, sin contar referencias: cambia con la carta. */
 export const TEXTO_BODEGA =
-  "Una selección de distintas denominaciones y variedades: de los blancos de Rueda y el txakoli a los cavas y champagnes. Precio por botella; pregúntanos por los vinos por copa.";
+  "Una selección de distintas denominaciones y variedades: de los tintos de Rioja, Ribera y Toro a los blancos de Rueda, el txakoli y los cavas y champagnes. Precio por botella; pregúntanos por los vinos por copa.";
 
-/** Tintos primero (cuando Carlos los pase), luego blancos, rosados, espumosos y dulces. */
+/** Tintos primero, luego blancos, rosados, espumosos y dulces. */
 export const ORDEN = ["vinos-tintos", "vinos-blancos", "vinos-rosados", "cavas-champagnes", "vinos-dulces"];
 export const ordenar = (secciones: CartaSeccion[]) =>
   secciones.filter((s) => s.items.length > 0).sort((a, b) => (ORDEN.indexOf(a.slug) + 1 || 99) - (ORDEN.indexOf(b.slug) + 1 || 99));

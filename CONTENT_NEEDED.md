@@ -40,7 +40,7 @@ Checklist para la visita al restaurante. Lo marcado con ⚠️ bloquea el paso a
 - [ ] Modificadores y suplementos reales (puntos de la carne, extras con precio)
 - [ ] Tipo de IVA por producto si alguno no es el 10 %
 - [x] Vinos blancos, rosados, cavas/champagnes y dulces (foto de la carta, 29/10/2026 → `seed/la_ofi_carta_vinos.sql`)
-- [ ] Vinos **tintos** (la otra cara de la carta; Carlos habla de más de 150 referencias)
+- [x] Vinos **tintos** (foto de la carta, 02/11/2026 → `seed/la_ofi_carta_tintos.sql`)
 - [ ] Vinos dulces: ¿precio por copa? (3–4 €, hoy sin indicar)
 
 ## Pedidos, pagos y salón
