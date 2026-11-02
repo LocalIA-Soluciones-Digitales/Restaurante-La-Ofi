@@ -60,20 +60,14 @@ function Vino({ vino, conGrupo = false }: { vino: CartaItem; conGrupo?: boolean 
   const sub = conGrupo ? [grupo, detalle].filter(Boolean).join(" · ") : detalle;
   const encargo = useEncargoVinos();
   return (
-    <li className="flex items-center gap-4 py-2.5">
-      <div className="min-w-0 flex-1">
-        <p className="flex items-baseline justify-between gap-6">
-          <span className="font-display text-[1.3rem] leading-tight text-carbon">{vino.nombre}</span>
-          <span className="shrink-0 font-display text-[1.2rem] tabular-nums text-carbon">{precio(vino)}</span>
-        </p>
-        {sub ? <p className="mt-0.5 font-display text-[0.95rem] italic leading-snug text-carbon-muted">{sub}</p> : null}
-      </div>
-      {/* En /vinos, cada botella se puede encargar para llevar. */}
-      {encargo ? (
-        <span className="flex w-24 shrink-0 justify-end">
-          <Botellas vino={vino} />
-        </span>
-      ) : null}
+    <li className="py-2.5">
+      {/* Nombre, precio y (en /vinos) el botón de encargar en la misma línea base, como en la carta impresa. */}
+      <p className="flex items-baseline gap-4">
+        <span className="min-w-0 flex-1 font-display text-[1.3rem] leading-tight text-carbon">{vino.nombre}</span>
+        <span className="shrink-0 font-display text-[1.2rem] tabular-nums text-carbon">{precio(vino)}</span>
+        {encargo ? <Botellas vino={vino} /> : null}
+      </p>
+      {sub ? <p className="mt-0.5 font-display text-[0.95rem] italic leading-snug text-carbon-muted">{sub}</p> : null}
     </li>
   );
 }

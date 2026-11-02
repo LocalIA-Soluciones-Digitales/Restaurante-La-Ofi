@@ -93,30 +93,38 @@ export function EncargoVinos({ secciones, locale, privacidadHref, children }: { 
   );
 }
 
-/** − 2 + : en la carta y en el panel. Sin botellas, solo el «+». */
+/**
+ * «+ Añadir» y, con botellas, «− 2 +». Los dos estados miden lo mismo: el precio no se
+ * mueve al encargar. En la carta se alinea con la primera línea del nombre (los
+ * nombres largos ocupan dos); en el panel, centrado en su fila.
+ */
 export function Botellas({ vino, claro = false }: { vino: CartaItem; claro?: boolean }) {
   const e = useEncargoVinos();
-  if (!e || vino.precioCentimos === null) return null;
+  // 26px de línea del nombre y 32px de píldora: 3px arriba para centrarla en la primera línea.
+  const caja = `inline-flex h-8 w-[5.5rem] shrink-0 items-center rounded-full ${claro ? "" : "-mt-[3px] self-start"}`;
+  if (!e) return null;
+  if (vino.precioCentimos === null) return claro ? null : <span aria-hidden="true" className={caja} />;
   const n = e.cantidad(vino.id);
-  const redondo = "grid h-9 w-9 place-items-center rounded-full transition-[background-color,transform] duration-150 active:scale-90";
+  const redondo = "grid h-8 w-8 shrink-0 place-items-center rounded-full transition-[background-color,transform] duration-150 active:scale-90";
   if (n === 0) {
     return (
       <button
         type="button"
         onClick={() => e.cambiar(vino.id, 1)}
         aria-label={`Encargar ${vino.nombre}`}
-        className={`${redondo} shrink-0 border border-carbon/20 text-carbon hover:border-carbon hover:bg-carbon hover:text-crema`}
+        className={`${caja} justify-center gap-1.5 border border-carbon/20 font-sans text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-carbon transition-colors duration-150 hover:border-carbon hover:bg-carbon hover:text-crema active:scale-95`}
       >
-        <Icon name="plus" className="h-4 w-4" />
+        <Icon name="plus" className="h-3.5 w-3.5" />
+        Añadir
       </button>
     );
   }
   return (
-    <span className={`inline-flex shrink-0 items-center rounded-full ${claro ? "bg-white ring-1 ring-carbon/15" : "bg-carbon text-crema"} motion-safe:animate-bump`}>
+    <span className={`${caja} font-sans ${claro ? "bg-white ring-1 ring-carbon/15" : "bg-carbon text-crema"} motion-safe:animate-bump`}>
       <button type="button" onClick={() => e.cambiar(vino.id, n - 1)} aria-label={`Una botella menos de ${vino.nombre}`} className={`${redondo} ${claro ? "hover:bg-arena" : "hover:bg-white/10"}`}>
         <Icon name={n === 1 ? "close" : "minus"} className="h-3.5 w-3.5" />
       </button>
-      <span aria-live="polite" className="min-w-6 text-center text-sm font-semibold tabular-nums">
+      <span aria-live="polite" className="flex-1 text-center text-sm font-semibold tabular-nums">
         {n}
         <span className="sr-only"> {n === 1 ? "botella" : "botellas"}</span>
       </span>

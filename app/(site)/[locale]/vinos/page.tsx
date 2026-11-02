@@ -90,7 +90,7 @@ export default async function VinosPage({ params }: Params) {
 }
 
 const PASOS = [
-  { titulo: "Elige tus botellas", texto: "Toca «+» junto a cada vino de la carta. Tintos, blancos, cavas y champagnes." },
+  { titulo: "Elige tus botellas", texto: "Toca «Añadir» junto a cada vino de la carta. Tintos, blancos, cavas y champagnes." },
   { titulo: "Lo preparamos", texto: "Te avisamos por WhatsApp o por teléfono en cuanto esté listo." },
   { titulo: "Recoges y pagas", texto: "En La Ofi, cuando te venga bien. Sin pago online ni gastos de envío." },
 ];
