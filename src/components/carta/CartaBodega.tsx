@@ -58,7 +58,7 @@ const precio = (v: CartaItem) => (v.precioCentimos === null ? "—" : formatCent
 function Vino({ vino, conGrupo = false }: { vino: CartaItem; conGrupo?: boolean }) {
   const { grupo, detalle } = partes(vino.descripcion);
   const sub = conGrupo ? [grupo, detalle].filter(Boolean).join(" · ") : detalle;
-  const encargo = useEncargoVinos();
+  const encargo = useEncargoVinos()?.activo;
   return (
     <li className="py-2.5">
       {/* Nombre, precio y (en /vinos) el botón de encargar en la misma línea base, como en la carta impresa. */}
@@ -81,6 +81,7 @@ function Vino({ vino, conGrupo = false }: { vino: CartaItem; conGrupo?: boolean 
 export function CartaBodega({ secciones, cabecera = true }: { secciones: CartaSeccion[]; cabecera?: boolean }) {
   const todos = useMemo(() => ordenar(secciones), [secciones]);
   const [q, setQ] = useState("");
+  const encargo = useEncargoVinos();
   const buscando = q.trim().length > 0;
   const tipos = useMemo(() => filtrar(todos, q), [todos, q]);
   if (todos.length === 0) return null;
@@ -113,6 +114,23 @@ export function CartaBodega({ secciones, cabecera = true }: { secciones: CartaSe
           ))}
         </div>
         </div>
+        {/* Modo encargo: la carta se puede encargar para llevar; fuera de él, solo se consulta. */}
+        {encargo?.activo ? (
+          <div className="border-t border-tinta-line bg-carbon text-crema">
+            <div className="container-wide flex items-center gap-3 py-2.5">
+              <Icon name="wine" className="h-4 w-4 shrink-0 text-[#E2B98A]" />
+              <p className="min-w-0 flex-1 text-sm leading-snug">
+                <span className="font-semibold">Encargo para llevar.</span>{" "}
+                <span className="text-crema/75">
+                  Pulsa <span className="inline-grid h-5 w-5 translate-y-[-1px] place-items-center rounded-full align-middle ring-1 ring-crema/40">+</span> en los vinos que quieras llevarte.
+                </span>
+              </p>
+              <button type="button" onClick={encargo.salir} className="shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold text-[#E2B98A] hover:bg-white/10">
+                Terminar
+              </button>
+            </div>
+          </div>
+        ) : null}
       </nav>
 
       {buscando ? (

@@ -675,6 +675,12 @@
     opacity: 0.85;
   }
 }
+/* El «+» de la carta de vinos se despliega en «− 2 +» al encargar la primera botella. */
+@keyframes encargo-abre {
+  from {
+    width: 2rem;
+  }
+}
 @keyframes intro-up {
   from {
     opacity: 0;
