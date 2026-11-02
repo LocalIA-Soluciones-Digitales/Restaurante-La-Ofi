@@ -94,7 +94,7 @@ describe("pedidos", () => {
     const [p] = await peticiones();
     expect(p?.titulo).toBe("Pedido para recoger nº 901");
     expect(p?.cuerpo).toMatch(/^Mikel · 23,50 € · recoge a las \d\d:\d\d$/);
-    expect(p?.url).toBe("/admin/cocina");
+    expect(p?.url).toBe("/admin/pedidos");
   });
 
   it("los pedidos en mesa vienen apagados", async () => {

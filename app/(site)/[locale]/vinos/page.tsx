@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { CartaBodega } from "@/components/carta/CartaBodega";
 import { Photo } from "@/components/media/Photo";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Icon } from "@/components/ui/Icon";
+import { EncargoVinos } from "@/components/vinos/EncargoVinos";
 import { href, type Locale } from "@/lib/i18n";
+import { ENCARGOS_VINO } from "@/lib/lanzamiento";
 import { getCartaContent } from "@/lib/restaurant/content";
 import { pageMetadata } from "@/lib/seo";
 import { esSeccionDeVino, TEXTO_BODEGA } from "@/lib/vinos";
@@ -20,19 +21,23 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     locale,
     path: "/vinos",
     title: "Carta de vinos",
-    description: "La carta de vinos de La Ofi en Derio: blancos, rosados, cavas, champagnes y vinos dulces de distintas denominaciones, con precio por botella.",
+    description: ENCARGOS_VINO
+      ? "La carta de vinos de La Ofi en Derio, para tomar aquí o para llevar: encarga tus botellas online y recógelas y págalas en el local."
+      : "La carta de vinos de La Ofi en Derio: blancos, rosados, cavas, champagnes y vinos dulces de distintas denominaciones, con precio por botella.",
   });
 }
 
 /**
  * La carta de vinos en su propia página (antes iba al final de la carta y
  * pasaba desapercibida): la vinoteca a todo el ancho con el título y debajo la carta
- * por tipos y denominaciones, con los vinos de la casa arriba.
+ * por tipos y denominaciones, con los vinos de la casa arriba. Con los encargos abiertos
+ * (ENCARGOS_VINO), cada vino se puede encargar para llevar desde la propia carta.
  */
 export default async function VinosPage({ params }: Params) {
   const { locale } = await params;
   const carta = await getCartaContent();
   const vinos = carta.status === "empty" ? [] : carta.data.filter((s) => s.items.length > 0 && esSeccionDeVino(s));
+  const encargos = ENCARGOS_VINO && vinos.length > 0;
 
   return (
     <>
@@ -48,19 +53,26 @@ export default async function VinosPage({ params }: Params) {
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-crema/85">{TEXTO_BODEGA}</p>
           <div className="mt-9 flex flex-wrap justify-center gap-3">
-            <a href="#la-bodega" className="btn bg-[#E2B98A] px-6 text-carbon hover:bg-crema">
+            {encargos ? (
+              <a href="#encargar" className="btn bg-[#E2B98A] px-6 text-carbon hover:bg-crema">
+                <Icon name="wine" className="h-4 w-4" />
+                Encargar para llevar
+              </a>
+            ) : null}
+            <a href="#la-bodega" className={`btn px-6 ${encargos ? "border border-crema/40 text-crema hover:bg-crema hover:text-carbon" : "bg-[#E2B98A] text-carbon hover:bg-crema"}`}>
               Ver los vinos
               <Icon name="chevronDown" className="h-4 w-4" />
             </a>
-            <Link href={href(locale, "/carta")} className="btn border border-crema/40 px-6 text-crema hover:bg-crema hover:text-carbon">
-              <Icon name="utensils" className="h-4 w-4" />
-              La carta
-            </Link>
           </div>
         </div>
       </section>
 
-      {vinos.length ? (
+      {encargos ? (
+        <EncargoVinos secciones={vinos} locale={locale} privacidadHref={href(locale, "/privacidad")}>
+          <ComoEncargar />
+          <CartaBodega secciones={vinos} cabecera={false} />
+        </EncargoVinos>
+      ) : vinos.length ? (
         <CartaBodega secciones={vinos} cabecera={false} />
       ) : (
         <div className="container-page max-w-2xl py-20">
@@ -74,5 +86,39 @@ export default async function VinosPage({ params }: Params) {
         </div>
       )}
     </>
+  );
+}
+
+const PASOS = [
+  { titulo: "Elige tus botellas", texto: "Toca «+» junto a cada vino de la carta. Tintos, blancos, cavas y champagnes." },
+  { titulo: "Lo preparamos", texto: "Te avisamos por WhatsApp o por teléfono en cuanto esté listo." },
+  { titulo: "Recoges y pagas", texto: "En La Ofi, cuando te venga bien. Sin pago online ni gastos de envío." },
+];
+
+/** Cómo funciona el encargo, entre la vinoteca y la carta: tres pasos, como una nota impresa. */
+function ComoEncargar() {
+  return (
+    <section id="encargar" aria-labelledby="encargar-title" className="scroll-mt-20 bg-[#F6F0E5] pb-16 text-carbon sm:pb-20">
+      <div className="container-wide grid gap-10 border-b border-tinta-line py-12 lg:grid-cols-12 lg:gap-14 lg:py-14">
+        <div className="lg:col-span-5">
+          <p className="kicker text-madera-oscura">Navidad · Para llevar</p>
+          <h2 id="encargar-title" className="mt-3 font-display text-[clamp(2.5rem,4.5vw,3.75rem)] font-light leading-[0.98] tracking-tight">
+            Lo mejor de nuestra bodega, <em className="text-madera-oscura">para tu mesa</em>
+          </h2>
+          <p className="mt-5 max-w-md text-lg leading-relaxed text-carbon-muted">
+            Encarga tus vinos para las fiestas con el precio de la carta. Te los dejamos preparados y los recoges en La Ofi.
+          </p>
+        </div>
+        <ol className="grid gap-8 sm:grid-cols-3 sm:gap-6 lg:col-span-7 lg:self-end">
+          {PASOS.map((p, i) => (
+            <li key={p.titulo} className="border-t border-carbon/80 pt-4">
+              <p className="font-display text-sm tabular-nums text-madera-oscura">{String(i + 1).padStart(2, "0")}</p>
+              <p className="mt-2 font-display text-2xl leading-tight">{p.titulo}</p>
+              <p className="mt-2 text-[0.95rem] leading-relaxed text-carbon-muted">{p.texto}</p>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
   );
 }

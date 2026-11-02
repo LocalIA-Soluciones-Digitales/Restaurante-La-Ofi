@@ -21,7 +21,7 @@ export interface Seccion {
 }
 
 // De momento el encargado (Carlos) solo ve lo que usa: reservas, pedidos para recoger
-// («Pedidos», no la pantalla de cocina), menú del día, carta y eventos. No trabaja con
+// («Pedidos», no la pantalla de cocina), encargos de vino, menú del día, carta y eventos. No trabaja con
 // mesas, TPV ni caja.
 const TODOS = ["admin", "encargado", "camarero", "cocina"] as const;
 const SALA = ["admin", "camarero"] as const;
@@ -36,6 +36,7 @@ export const SECCIONES: Seccion[] = [
   { href: "/admin/cocina", label: "Cocina y barra", icon: "flame", roles: ["admin", "camarero", "cocina"], grupo: "servicio" },
   { href: "/admin/reservas", label: "Reservas", icon: "calendar", roles: SERVICIO, grupo: "servicio" },
   { href: "/admin/pedidos", label: "Pedidos", icon: "bag", roles: SERVICIO, grupo: "servicio" },
+  { href: "/admin/encargos", label: "Encargos de vino", icon: "wine", roles: SERVICIO, grupo: "servicio" },
   { href: "/admin/menu-del-dia", label: "Menú del día", icon: "sun", roles: GESTION, grupo: "gestion" },
   { href: "/admin/carta", label: "Carta", icon: "utensils", roles: GESTION, grupo: "gestion" },
   { href: "/admin/eventos", label: "Eventos", icon: "music", roles: GESTION, grupo: "gestion" },

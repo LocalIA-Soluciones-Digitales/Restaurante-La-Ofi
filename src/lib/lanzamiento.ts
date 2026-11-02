@@ -9,6 +9,13 @@ export const PROXIMAMENTE = {
   pedidos: true,
 } as const;
 
+/**
+ * Encargos de vino para llevar desde /vinos (Navidad 2026): se encarga, se recoge y se
+ * paga en el local. A false, la carta de vinos vuelve a ser solo de consulta.
+ * Encender solo con la migración 20261102140000_laofi_encargos_vino aplicada en Supabase.
+ */
+export const ENCARGOS_VINO = false;
+
 /** Lo que llega después, con el mismo texto en /reservar, /pedir y los vídeos. */
 export const LLEGA_PRONTO: { icono: "calendar" | "briefcase" | "bag" | "card"; titulo: string; texto: string }[] = [
   { icono: "calendar", titulo: "Reservar mesa", texto: "En el comedor, con el menú del día o de carta." },

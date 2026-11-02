@@ -266,3 +266,14 @@ export async function bajaAvisos(endpoint: string) {
 export async function avisoDePrueba() {
   return staff<boolean>("laofi_admin_push_prueba");
 }
+
+// --- Encargos de vino para llevar ------------------------------------------------------
+
+/** En curso (recibidos, confirmados y listos); con `todos`, también los entregados y anulados recientes. */
+export async function encargosVino<T>(todos = false) {
+  return staff<T[]>("laofi_admin_encargos_vino", { p_todos: todos });
+}
+
+export async function estadoEncargoVino<T>(id: string, estado: "PENDIENTE" | "CONFIRMADO" | "LISTO" | "ENTREGADO" | "CANCELADO") {
+  return staff<T>("laofi_admin_encargo_vino_estado", { p_id: id, p_estado: estado });
+}

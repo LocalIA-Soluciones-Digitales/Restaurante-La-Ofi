@@ -26,7 +26,8 @@ export function ReservarFlotante({ href, label }: { href: string; label: string 
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  if (/\/(reservar|pedir|pedido)(\/|$)/.test(pathname)) return null;
+  // En /vinos abajo va la barra del encargo de vinos.
+  if (/\/(reservar|pedir|pedido|vinos)(\/|$)/.test(pathname)) return null;
 
   return (
     <Link

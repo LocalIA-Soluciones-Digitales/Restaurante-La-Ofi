@@ -105,6 +105,24 @@ export const AYUDA: Record<string, AyudaSeccion> = {
       { color: "#56653A", texto: "Listo para recoger" },
     ],
   },
+  "/admin/encargos": {
+    resumen: "Los encargos de vino para llevar que entran desde la carta de vinos de la web. Sin fecha ni pago online: se preparan, se avisa al cliente y se cobran al recogerlos.",
+    pasos: [
+      "«Confirmar» en cuanto lo veas: el cliente ve en su enlace que lo estás preparando.",
+      "«Está listo» cuando tengas las botellas apartadas: sale el WhatsApp para avisarle, ya escrito y con el total.",
+      "Cuando venga a por él, cóbralo como cualquier venta y pulsa «Entregado».",
+    ],
+    consejos: [
+      "«Para pedir» suma las botellas de cada vino de los encargos sin preparar: lo que hay que sacar de la bodega o pedir al proveedor.",
+      "Si falta un vino, llama al cliente para cambiarlo; si no se puede servir, «Anular encargo» y avísale con el mensaje que sale.",
+      "El precio es el de la carta en el momento de encargar. Para cerrar los encargos de la web después de Navidad, avisa a quien mantiene la web.",
+    ],
+    leyenda: [
+      { color: "#96442B", texto: "Nuevo: falta confirmarlo" },
+      { color: "#D2AE78", texto: "Preparando" },
+      { color: "#56653A", texto: "Listo para recoger" },
+    ],
+  },
   "/admin/menu-del-dia": {
     resumen: "El menú del día en un minuto desde el móvil: fecha, precio, qué incluye y los platos. La web se actualiza al momento.",
     pasos: [
@@ -125,7 +143,7 @@ export const AYUDA: Record<string, AyudaSeccion> = {
     ],
   },
   "/admin/avisos": {
-    resumen: "Avisos en el móvil o la tablet cuando entra algo por la web: reservas (comedor, El Despacho, menús para recoger), pedidos para recoger, gente que se apunta a eventos y presupuestos.",
+    resumen: "Avisos en el móvil o la tablet cuando entra algo por la web: reservas (comedor, El Despacho, menús para recoger), pedidos para recoger, encargos de vino, gente que se apunta a eventos y presupuestos.",
     pasos: [
       "Abre esta página en el móvil que tiene que recibirlos y pulsa «Activar avisos en este dispositivo». Acepta el permiso.",
       "En iPhone, primero instala el panel: Safari → Compartir → «Añadir a pantalla de inicio», y ábrelo desde ese icono.",

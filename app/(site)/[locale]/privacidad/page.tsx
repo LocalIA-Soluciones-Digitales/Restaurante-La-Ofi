@@ -46,8 +46,13 @@ export default async function PrivacidadPage() {
             precontractuales que solicitas (art. 6.1.b RGPD). Los conservamos 12 meses desde la fecha indicada.
           </li>
           <li>
+            <strong>Encargos de vino para llevar.</strong> Nombre, teléfono, email si lo das, los vinos encargados y tus
+            comentarios, para preparar el encargo y avisarte cuando esté listo por WhatsApp, SMS o teléfono. Base legal: el
+            contrato que solicitas (art. 6.1.b RGPD). Los conservamos 12 meses desde el encargo.
+          </li>
+          <li>
             <strong>Prevención de abusos.</strong> Para frenar abusos guardamos durante 30 días un resumen cifrado (hash)
-            de la dirección IP desde la que se envía la reserva, nunca la IP. Base legal: interés legítimo (art. 6.1.f RGPD).
+            de la dirección IP desde la que se envía la reserva o el encargo, nunca la IP. Base legal: interés legítimo (art. 6.1.f RGPD).
           </li>
           <li>
             <strong>Alergias y otros datos de salud.</strong> Si los indicas en las notas de la reserva, los tratamos con

@@ -18,6 +18,7 @@ const TIPOS: { clave: string; titulo: string; texto: string; icon: IconName }[] 
   { clave: "pedidos_recoger", titulo: "Pedidos para recoger", texto: "Pedidos de «Pedir para llevar», con total y hora.", icon: "receipt" },
   { clave: "eventos", titulo: "Gente que se apunta a eventos", texto: "Cada vez que alguien reserva para un evento.", icon: "music" },
   { clave: "presupuestos", titulo: "Peticiones de presupuesto", texto: "Celebraciones y grupos grandes.", icon: "gift" },
+  { clave: "encargos_vino", titulo: "Encargos de vino", texto: "Botellas encargadas para llevar desde la carta de vinos.", icon: "wine" },
   { clave: "pedidos_mesa", titulo: "Pedidos en mesa (QR)", texto: "Cada pedido desde una mesa. Mejor apagado si ya lo veis en cocina.", icon: "qr" },
 ];
 

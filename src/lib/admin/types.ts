@@ -144,3 +144,19 @@ export function etiquetaPedido(p: Pick<PedidoKds, "tipo" | "mesa" | "nombre_clie
   if (p.tipo === "RECOGIDA") return `Recoger · ${p.grupo ? `${p.grupo} · ` : ""}${p.nombre_cliente ?? ""}`.trim();
   return p.nombre_cliente ? `Barra · ${p.nombre_cliente}` : "Barra";
 }
+
+/** Encargo de vino para llevar (/vinos), tal y como lo ve el panel. */
+export interface EncargoVinoAdmin {
+  id: string;
+  numero: number;
+  nombre: string;
+  telefono: string;
+  email: string | null;
+  notas: string | null;
+  lineas: { producto_id: string; nombre: string; detalle: string | null; precio_centimos: number; cantidad: number }[];
+  botellas: number;
+  total_centimos: number;
+  estado: "PENDIENTE" | "CONFIRMADO" | "LISTO" | "ENTREGADO" | "CANCELADO";
+  created_at: string;
+  updated_at: string;
+}

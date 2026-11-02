@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Photo } from "@/components/media/Photo";
 import { Icon } from "@/components/ui/Icon";
+import { Botellas, useEncargoVinos } from "@/components/vinos/EncargoVinos";
 import { formatCentimos } from "@/lib/format";
 import type { CartaItem, CartaSeccion } from "@/lib/restaurant/types";
 import { ordenar, TEXTO_BODEGA, tipo } from "@/lib/vinos";
@@ -57,13 +58,22 @@ const precio = (v: CartaItem) => (v.precioCentimos === null ? "—" : formatCent
 function Vino({ vino, conGrupo = false }: { vino: CartaItem; conGrupo?: boolean }) {
   const { grupo, detalle } = partes(vino.descripcion);
   const sub = conGrupo ? [grupo, detalle].filter(Boolean).join(" · ") : detalle;
+  const encargo = useEncargoVinos();
   return (
-    <li className="py-2.5">
-      <p className="flex items-baseline justify-between gap-6">
-        <span className="font-display text-[1.3rem] leading-tight text-carbon">{vino.nombre}</span>
-        <span className="shrink-0 font-display text-[1.2rem] tabular-nums text-carbon">{precio(vino)}</span>
-      </p>
-      {sub ? <p className="mt-0.5 font-display text-[0.95rem] italic leading-snug text-carbon-muted">{sub}</p> : null}
+    <li className="flex items-center gap-4 py-2.5">
+      <div className="min-w-0 flex-1">
+        <p className="flex items-baseline justify-between gap-6">
+          <span className="font-display text-[1.3rem] leading-tight text-carbon">{vino.nombre}</span>
+          <span className="shrink-0 font-display text-[1.2rem] tabular-nums text-carbon">{precio(vino)}</span>
+        </p>
+        {sub ? <p className="mt-0.5 font-display text-[0.95rem] italic leading-snug text-carbon-muted">{sub}</p> : null}
+      </div>
+      {/* En /vinos, cada botella se puede encargar para llevar. */}
+      {encargo ? (
+        <span className="flex w-24 shrink-0 justify-end">
+          <Botellas vino={vino} />
+        </span>
+      ) : null}
     </li>
   );
 }
