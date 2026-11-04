@@ -27,7 +27,7 @@ const pedir = (recogida_en: string | undefined, items: unknown[] = [{ producto_i
   t
     .one<{ r: { id: string; numero_dia: number } }>("select public.laofi_crear_pedido($1, $2) as r", [
       t.laOfi.site_key,
-      JSON.stringify({ tipo: "RECOGIDA", nombre: "Jon", recogida_en, items }),
+      JSON.stringify({ tipo: "RECOGIDA", nombre: "Jon", telefono: "600111222", recogida_en, items }),
     ])
     .then((x) => x.r);
 

@@ -265,6 +265,7 @@ export function PedidosRecogida({ inicial }: { inicial: PedidoKds[] }) {
             Número: p.numero_dia,
             Cliente: p.nombre_cliente ?? "",
             Teléfono: p.telefono ?? "",
+            Email: p.email ?? "",
             Estado: p.estado === "CANCELLED" ? "Anulado" : "Entregado",
             Pago: p.payment_method ?? "",
             Platos: p.items.map((i) => `${i.cantidad}× ${i.nombre}`).join(", "),
@@ -446,6 +447,11 @@ function FilaPedido({
             <span className="text-xs text-carbon-muted dark:text-crema/60">
               #{p.numero_dia} · {pagado ? "pagado" : "paga al recoger"}
             </span>
+            {p.email ? (
+              <a href={`mailto:${p.email}`} className="truncate text-xs text-carbon-muted underline underline-offset-2 dark:text-crema/60">
+                {p.email}
+              </a>
+            ) : null}
             {p.telefono ? (
               <a href={`tel:${p.telefono.replace(/\s/g, "")}`} className={`${botonSecundario} ml-auto min-h-9 px-3`}>
                 <Icon name="phone" className="h-4 w-4" />

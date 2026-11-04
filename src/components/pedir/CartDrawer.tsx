@@ -71,6 +71,9 @@ export function CartDrawer({
   // Al pulsar «Revisar pedido» con algo pendiente, se dice qué falta (y se va al campo).
   const [mostrarFalta, setMostrarFalta] = useState(false);
   const [telefono, setTelefono] = useState("");
+  const telefonoRef = useRef<HTMLInputElement>(null);
+  const [email, setEmail] = useState("");
+  const emailRef = useRef<HTMLInputElement>(null);
   const [notas, setNotas] = useState("");
   // Factura a nombre de empresa: va en las notas del pedido (barra la ve en la comanda y en caja).
   const [factura, setFactura] = useState({ activa: false, razon: "", cif: "" });
@@ -91,6 +94,10 @@ export function CartDrawer({
 
   const enMesa = contexto.tipo === "recogida" && destino === "mesa";
   const recogida = contexto.tipo !== "mesa" && !enMesa;
+  // Para recoger, el teléfono es obligatorio (en los de grupo lo tiene quien organiza).
+  const pideTelefono = contexto.tipo === "recogida" && !enMesa;
+  const telefonoOk = telefono.replace(/\D/g, "").length >= 9;
+  const emailOk = !email.trim() || /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim());
   // Sin ninguna hora libre (ni hoy ni los próximos días): la cesta se guarda, pero no se envía.
   const sinRecogida = contexto.tipo === "recogida" && !franjas.some((f) => f.libres > 0);
   // Hay horas otros días, pero el menú del día solo se recoge hoy.
@@ -106,7 +113,11 @@ export function CartDrawer({
           ? "Elige la hora de recogida."
           : recogida && !nombre.trim()
             ? "Escribe tu nombre para continuar."
-            : recogida && factura.activa && !notaFactura
+            : pideTelefono && !telefonoOk
+              ? "Escribe tu teléfono para continuar."
+              : recogida && !emailOk
+                ? "Revisa el email: no parece válido."
+                : recogida && factura.activa && !notaFactura
               ? "Para la factura, escribe la razón social y el CIF."
               : enMesa && !numeroMesa.trim()
                 ? "Escribe el número de tu mesa para continuar."
@@ -125,6 +136,8 @@ export function CartDrawer({
     setMostrarFalta(true);
     vibrar(30);
     if (recogida && !nombre.trim()) nombreRef.current?.focus();
+    else if (pideTelefono && !telefonoOk) telefonoRef.current?.focus();
+    else if (recogida && !emailOk) emailRef.current?.focus();
     else if (recogida && factura.activa && !notaFactura) facturaRef.current?.focus();
   };
 
@@ -195,6 +208,7 @@ export function CartDrawer({
       } else {
         pedido.nombre = nombre.trim();
         pedido.telefono = telefono.trim() || undefined;
+        pedido.email = email.trim().toLowerCase() || undefined;
         if (contexto.tipo === "grupo") pedido.grupo_token = contexto.grupo.token;
         else pedido.recogida_en = franja;
       }
@@ -283,6 +297,7 @@ export function CartDrawer({
                 contexto.tipo === "mesa" ? ["Mesa", `${mesa?.mesa.nombre ?? `Mesa ${mesa?.mesa.numero}`}${separado && mesa?.participante ? ` · ${mesa.participante.nombre}` : ""}`] : null,
                 recogida ? ["Nombre", nombre.trim()] : null,
                 recogida && telefono.trim() ? ["Teléfono", telefono.trim()] : null,
+                recogida && email.trim() ? ["Email", email.trim().toLowerCase()] : null,
                 notaFactura ? ["Factura", notaFactura.replace(/^FACTURA: /, "")] : null,
                 notas.trim() ? ["Notas", notas.trim()] : null,
                 separado
@@ -391,14 +406,37 @@ export function CartDrawer({
               </label>
               <label className="grid gap-1 text-sm">
                 <span className="font-semibold text-carbon">
-                  Teléfono <span className="font-normal text-carbon-muted">(opcional, por si hay que avisarte)</span>
+                  Teléfono{" "}
+                  {pideTelefono ? (
+                    <span className="font-normal text-carbon-muted">(por si hay que avisarte)</span>
+                  ) : (
+                    <span className="font-normal text-carbon-muted">(opcional, por si hay que avisarte)</span>
+                  )}
                 </span>
                 <input
+                  ref={telefonoRef}
+                  required={pideTelefono}
+                  type="tel"
                   value={telefono}
                   onChange={(e) => setTelefono(e.target.value.replace(/[^0-9+ ]/g, "").slice(0, 16))}
                   inputMode="tel"
                   autoComplete="tel"
                   className="h-12 rounded-2xl border border-carbon/15 bg-white px-4 text-base focus:border-marino focus:outline-none"
+                />
+              </label>
+              <label className="grid gap-1 text-sm">
+                <span className="font-semibold text-carbon">
+                  Email <span className="font-normal text-carbon-muted">(opcional)</span>
+                </span>
+                <input
+                  ref={emailRef}
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value.replace(/\s/g, "").slice(0, 254))}
+                  inputMode="email"
+                  autoComplete="email"
+                  aria-invalid={!emailOk || undefined}
+                  className="h-12 rounded-2xl border border-carbon/15 bg-white px-4 text-base focus:border-marino focus:outline-none aria-[invalid]:border-terracota"
                 />
               </label>
             </fieldset>

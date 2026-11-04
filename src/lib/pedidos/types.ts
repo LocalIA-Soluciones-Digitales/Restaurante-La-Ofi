@@ -136,6 +136,7 @@ export interface PedidoInput {
   grupo_token?: string;
   nombre?: string;
   telefono?: string;
+  email?: string;
   notas?: string;
   payment_method: PaymentMethod;
   total_esperado_centimos?: number;
