@@ -192,6 +192,17 @@ export function EncargosVino({ inicial }: { inicial: EncargoVinoAdmin[] }) {
         <HistorialDias
           cargar={historialEncargosVino<EncargoVinoAdmin>}
           dia={(e) => diaMadrid(e.updated_at)}
+          csv={(e) => ({
+            Día: diaMadrid(e.updated_at),
+            Número: e.numero,
+            Cliente: e.nombre,
+            Teléfono: e.telefono,
+            Email: e.email ?? "",
+            Estado: e.estado === "CANCELADO" ? "Anulado" : "Entregado",
+            Vinos: e.lineas.map((l) => `${l.cantidad}× ${l.nombre}`).join(", "),
+            Botellas: e.botellas,
+            Total: (e.total_centimos / 100).toFixed(2).replace(".", ","),
+          })}
           importe={(e) => e.total_centimos}
           anulado={(e) => e.estado === "CANCELADO"}
           clave={(e) => e.id}

@@ -258,6 +258,18 @@ export function PedidosRecogida({ inicial }: { inicial: PedidoKds[] }) {
         <HistorialDias
           cargar={historialPedidos<PedidoKds>}
           dia={(p) => diaMadrid(p.recogida_en ?? p.created_at)}
+          cerrado={(p) => diaMadrid(p.updated_at)}
+          csv={(p) => ({
+            Día: diaMadrid(p.recogida_en ?? p.created_at),
+            Hora: p.recogida_en ? new Date(p.recogida_en).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Madrid" }) : "",
+            Número: p.numero_dia,
+            Cliente: p.nombre_cliente ?? "",
+            Teléfono: p.telefono ?? "",
+            Estado: p.estado === "CANCELLED" ? "Anulado" : "Entregado",
+            Pago: p.payment_method ?? "",
+            Platos: p.items.map((i) => `${i.cantidad}× ${i.nombre}`).join(", "),
+            Total: (p.total_centimos / 100).toFixed(2).replace(".", ","),
+          })}
           importe={(p) => p.total_centimos}
           anulado={(p) => p.estado === "CANCELLED"}
           clave={(p) => p.id}
