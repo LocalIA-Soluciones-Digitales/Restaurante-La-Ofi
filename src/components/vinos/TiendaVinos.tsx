@@ -1,10 +1,12 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { filtrar, partes } from "@/components/carta/CartaBodega";
 import { Icon } from "@/components/ui/Icon";
 import { Botellas, botellasTexto, useEncargoVinos } from "@/components/vinos/EncargoVinos";
 import { formatCentimos } from "@/lib/format";
+import { IMAGES_REALES } from "@/lib/images";
 import type { CartaItem, CartaSeccion } from "@/lib/restaurant/types";
 import { SITE } from "@/lib/site";
 import { ordenar, tipo } from "@/lib/vinos";
@@ -209,6 +211,44 @@ export function TiendaVinos({ secciones, cartaHref }: { secciones: CartaSeccion[
         </div>
       </header>
 
+      {/* Cabecera con la vinoteca del salón de La Ofi. */}
+      <section className="relative isolate overflow-hidden bg-carbon text-crema">
+        <Image
+          src={IMAGES_REALES.comedorPanoramica.src}
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          placeholder="blur"
+          className="-z-10 object-cover object-[55%_80%] opacity-55"
+        />
+        <div aria-hidden="true" className="absolute inset-0 -z-10 bg-gradient-to-r from-carbon via-carbon/85 to-carbon/30" />
+        <div aria-hidden="true" className="absolute inset-x-0 bottom-0 -z-10 h-24 bg-gradient-to-t from-carbon/70 to-transparent" />
+        <div className="mx-auto max-w-[90rem] px-4 py-10 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
+          <p className="kicker text-[#E2B98A]">Navidad · Encargos para llevar</p>
+          <h1 className="mt-4 max-w-2xl font-display text-[clamp(2.5rem,5.5vw,4.5rem)] font-light leading-[0.98] tracking-tight">
+            Elige tus vinos <em className="text-[#E2B98A]">para llevar</em>
+          </h1>
+          <p className="mt-4 max-w-xl leading-relaxed text-crema/75 sm:mt-5 sm:text-lg">
+            Las botellas de nuestra carta para tus comidas y cenas de Navidad. Te las dejamos preparadas y pasas a recogerlas por La Ofi.
+          </p>
+          <ul className="mt-6 grid gap-2.5 text-sm text-crema/85 sm:mt-8 sm:flex sm:flex-wrap sm:gap-x-7">
+            <li className="flex items-center gap-2.5">
+              <Icon name="tag" className="h-4 w-4 text-[#E2B98A]" />
+              Al precio de la carta
+            </li>
+            <li className="flex items-center gap-2.5">
+              <Icon name="whatsapp" className="h-4 w-4 text-[#E2B98A]" />
+              Te avisamos cuando esté listo
+            </li>
+            <li className="flex items-center gap-2.5">
+              <Icon name="bag" className="h-4 w-4 text-[#E2B98A]" />
+              Pagas al recoger, sin pago online
+            </li>
+          </ul>
+        </div>
+      </section>
+
       <div className="mx-auto max-w-[90rem] px-4 sm:px-6 lg:grid lg:grid-cols-[12.5rem_minmax(0,1fr)_21rem] lg:gap-10 lg:px-8 xl:gap-14">
         {/* Tipos de vino (escritorio). */}
         <aside className="hidden lg:block">
@@ -237,14 +277,7 @@ export function TiendaVinos({ secciones, cartaHref }: { secciones: CartaSeccion[
         </aside>
 
         <div className="min-w-0 pb-32 lg:pb-20">
-          <div className="pt-8 lg:pt-10">
-            <p className="kicker text-madera-oscura">Navidad · Para llevar</p>
-            <h1 className="mt-2 font-display text-[clamp(2rem,4vw,2.75rem)] font-light leading-[1.05]">
-              Elige tus <em className="text-madera-oscura">vinos</em>
-            </h1>
-            <p className="mt-2 max-w-xl text-carbon-muted">Al precio de la carta. Te avisamos cuando esté listo y lo pagas al recogerlo en La Ofi.</p>
-            <div className="mt-5 lg:hidden">{buscador}</div>
-          </div>
+          <div className="pt-6 lg:hidden">{buscador}</div>
 
           {/* Tipos de vino (móvil), fijos bajo la barra. */}
           <nav aria-label="Tipos de vino" className="sticky top-16 z-10 -mx-4 mt-4 border-b border-tinta-line bg-[#F6F0E5]/95 px-4 backdrop-blur sm:-mx-6 sm:px-6 lg:hidden">
@@ -271,7 +304,7 @@ export function TiendaVinos({ secciones, cartaHref }: { secciones: CartaSeccion[
           ) : null}
 
           {visibles.map((s) => (
-            <section key={s.slug} data-slug={s.slug} aria-labelledby={`tienda-${s.slug}`} className="scroll-mt-32 pt-8 lg:scroll-mt-20 lg:pt-10">
+            <section key={s.slug} data-slug={s.slug} aria-labelledby={`tienda-${s.slug}`} className="scroll-mt-32 pt-8 first-of-type:pt-6 lg:scroll-mt-20 lg:pt-10 lg:first-of-type:pt-10">
               <div className="flex items-end justify-between gap-4 border-b-2 border-carbon pb-2.5">
                 <h2 id={`tienda-${s.slug}`} className="flex items-center gap-2.5 font-display text-2xl leading-none sm:text-[1.75rem]">
                   <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full" style={{ background: tipo(s).color }} />
