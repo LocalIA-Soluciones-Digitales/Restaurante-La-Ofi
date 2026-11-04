@@ -12,7 +12,8 @@ import { formatCentimos } from "@/lib/format";
 import { vibrar } from "@/lib/haptics";
 import { href } from "@/lib/i18n";
 import { cartaActual, crearPedido, mesaPorNumero } from "@/lib/pedidos/actions";
-import { etiquetaRecogida, fechaMadrid, franjasDisponibles, porDia } from "@/lib/pedidos/franjas";
+import { SelectorRecogida } from "@/components/pedir/SelectorRecogida";
+import { etiquetaRecogida, fechaMadrid, franjasDisponibles } from "@/lib/pedidos/franjas";
 import { guardarReciente } from "@/lib/pedidos/recientes";
 import { repartirLinea } from "@/lib/pedidos/reparto";
 import type { ConfigPedidos, GrupoPublico, PedidoInput } from "@/lib/pedidos/types";
@@ -62,10 +63,8 @@ export function CartDrawer({
   const hoy = fechaMadrid(new Date());
   const todas = franjasDisponibles(config);
   const franjas = conMenu ? todas.filter((f) => fechaMadrid(f.hora) === hoy && (!config.menu_hasta || HORA.format(new Date(f.hora)) <= config.menu_hasta)) : todas;
-  const dias = porDia(franjas);
   const [franjaElegida, setFranja] = useState("");
   const franja = franjas.some((f) => f.hora === franjaElegida && f.libres > 0) ? franjaElegida : (franjas.find((f) => f.libres > 0)?.hora ?? "");
-  const hoySinHoras = franjas.length > 0 && !franjas.some((f) => fechaMadrid(f.hora) === hoy && f.libres > 0);
   const [nombre, setNombre] = useState("");
   const nombreRef = useRef<HTMLInputElement>(null);
   const facturaRef = useRef<HTMLInputElement>(null);
@@ -378,34 +377,7 @@ export function CartDrawer({
           {recogida && !sinRecogida && cart.lineas.length > 0 ? (
             <fieldset className="grid gap-3">
               <legend className="mb-2 font-sans text-sm font-semibold uppercase tracking-eyebrow text-carbon">Recogida</legend>
-              {contexto.tipo === "recogida" ? (
-                <label className="grid gap-1 text-sm">
-                  <span className="font-semibold text-carbon">{dias.length > 1 ? "Día y hora de recogida" : "Hora de recogida"}</span>
-                  {hoySinHoras ? (
-                    <span className="flex gap-2 rounded-xl bg-arena px-3 py-2 text-carbon-muted">
-                      <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-marino" />
-                      Hoy ya no quedan horas de recogida: te lo dejamos encargado para el día y la hora que elijas.
-                    </span>
-                  ) : null}
-                  <select
-                    value={franja}
-                    onChange={(e) => setFranja(e.target.value)}
-                    className="h-12 rounded-2xl border border-carbon/15 bg-white px-4 text-base focus:border-marino focus:outline-none"
-                  >
-                    {dias.map((d) => (
-                      <optgroup key={d.fecha} label={d.nombre}>
-                        {d.franjas.map((f) => (
-                          <option key={f.hora} value={f.hora} disabled={f.libres === 0}>
-                            {dias.length > 1 ? `${d.nombre} · ` : ""}
-                            {HORA.format(new Date(f.hora))}
-                            {f.libres === 0 ? " · completa" : ""}
-                          </option>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </select>
-                </label>
-              ) : null}
+              {contexto.tipo === "recogida" ? <SelectorRecogida franjas={franjas} valor={franja} onCambio={setFranja} /> : null}
               <label className="grid gap-1 text-sm">
                 <span className="font-semibold text-carbon">Tu nombre</span>
                 <input
