@@ -114,8 +114,12 @@ export default async function PedirPage({ params, searchParams }: Props) {
     );
   }
 
+  // Para llevar: la cabecera va a todo el ancho y por detrás del menú; ParaLlevar
+  // mete el resto en el contenedor. Mesa y grupo, como siempre.
+  const aSangre = modoPedido.tipo === "recogida" && carta.status !== "empty";
+
   return (
-    <div className="container-page pt-20 sm:pt-24">
+    <div className={aSangre ? undefined : "container-page pt-20 sm:pt-24"}>
       {carta.status === "empty" ? (
         <EmptyState title="Carta en preparación" icon="utensils">
           Muy pronto podrás pedir desde aquí. Mientras tanto, llámanos al{" "}

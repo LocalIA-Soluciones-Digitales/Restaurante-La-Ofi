@@ -113,14 +113,17 @@ export function ParaLlevar({ secciones, config, menu }: { secciones: CartaSeccio
 
   return (
     <div className="pb-32">
-      {/* Cabecera: foto de la barra, titular y lo que hay que saber antes de pedir. */}
-      <header className="relative isolate -mx-4 mt-2 overflow-hidden bg-carbon text-crema sm:mx-0 sm:rounded-[2rem]">
+      {/* Cabecera: foto de la barra a todo el ancho y por detrás del menú (como Vinos y
+          Menú del día), titular y lo que hay que saber antes de pedir. */}
+      <header data-header="light" className="relative isolate overflow-hidden bg-carbon text-crema">
         <div aria-hidden="true" className="absolute inset-0 -z-10">
-          <Photo img="barra" sizes="(min-width: 1280px) 1200px, 100vw" priority decorative mobileBelow={640} imgClassName="motion-safe:animate-kenburns" />
-          <div className="absolute inset-0 bg-gradient-to-t from-carbon via-carbon/75 to-carbon/25 lg:bg-gradient-to-r lg:from-carbon lg:via-carbon/80 lg:to-carbon/10" />
+          <Photo img="barra" sizes="100vw" priority decorative mobileBelow={640} imgClassName="motion-safe:animate-kenburns" />
+          {/* Arriba oscuro para que el menú se lea; a la izquierda, para el titular. */}
+          <div className="absolute inset-0 bg-gradient-to-t from-carbon via-carbon/75 to-carbon/40 lg:bg-gradient-to-r lg:from-carbon lg:via-carbon/80 lg:to-carbon/20" />
+          <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-carbon/70 to-transparent" />
         </div>
 
-        <div className="grid gap-8 px-5 pb-5 pt-10 sm:gap-10 sm:px-10 sm:pb-8 sm:pt-24 lg:grid-cols-12 lg:items-end lg:px-14 lg:pb-12 lg:pt-32">
+        <div className="container-page grid gap-8 pb-8 pt-28 sm:gap-10 sm:pb-10 sm:pt-36 lg:grid-cols-12 lg:items-end lg:pb-14 lg:pt-44">
           <div className="lg:col-span-7">
             <p className="flex items-center gap-2 text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-crema/80">
               <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-brasa" />
@@ -149,9 +152,10 @@ export function ParaLlevar({ secciones, config, menu }: { secciones: CartaSeccio
           </dl>
         </div>
 
-        <ol className="grid grid-cols-3 border-t border-crema/10 bg-carbon/60 backdrop-blur-md">
+        <div className="border-t border-crema/10 bg-carbon/60 backdrop-blur-md">
+        <ol className="container-page grid grid-cols-3">
           {PASOS.map((p, n) => (
-            <li key={p.titulo} className="flex flex-col gap-1 px-4 py-4 sm:flex-row sm:items-center sm:gap-3 sm:px-10 lg:px-14">
+            <li key={p.titulo} className="flex flex-col gap-1 py-4 pr-2 sm:flex-row sm:items-center sm:gap-3 sm:py-5">
               <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-crema/10 text-crema">
                 <Icon name={p.icono} className="h-4 w-4" />
               </span>
@@ -164,8 +168,10 @@ export function ParaLlevar({ secciones, config, menu }: { secciones: CartaSeccio
             </li>
           ))}
         </ol>
+        </div>
       </header>
 
+      <div className="container-page">
       <div className="mt-6">
         <ActiveOrderBanner />
       </div>
@@ -263,6 +269,7 @@ export function ParaLlevar({ secciones, config, menu }: { secciones: CartaSeccio
           onNavigate={(index) => setDetalle((d) => (d ? { ...d, index } : d))}
         />
       ) : null}
+      </div>
     </div>
   );
 }
