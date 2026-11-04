@@ -19,6 +19,21 @@ export interface DiaHorarioBd {
 
 const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
+/** «lun–jue 07:30–16:30 · vie 07:30–00:00 · sáb 11:00–00:00»: días seguidos con la misma hora, juntos. */
+export function resumenHorario(dias: DiaHorarioBd[]): string {
+  const corto = (i: number) => DIAS[i]!.slice(0, 3).toLowerCase();
+  const tramos: { de: number; a: number; horas: string }[] = [];
+  dias.forEach((d, i) => {
+    if (d.estado !== "abierto" || !d.desde || !d.hasta) return;
+    const horas = `${d.desde.slice(0, 5)}–${d.hasta.slice(0, 5)}`;
+    const ultimo = tramos[tramos.length - 1];
+    if (ultimo && ultimo.a === i - 1 && ultimo.horas === horas) ultimo.a = i;
+    else tramos.push({ de: i, a: i, horas });
+  });
+  if (tramos.length === 0) return "ningún día abierto";
+  return tramos.map((t) => `${corto(t.de)}${t.a > t.de ? `–${corto(t.a)}` : ""} ${t.horas}`).join(" · ");
+}
+
 function Seccion({ titulo, texto, children }: { titulo: string; texto?: string; children: ReactNode }) {
   return (
     <section className={`${card} p-5`}>
@@ -44,10 +59,14 @@ export function ConfiguracionPanel({ ajustes, horario, ticketbai }: { ajustes: A
   };
 
   const rec = val("recogida");
+  const segunHorario = rec.segun_horario === true;
   const [recogida, setRecogida] = useState({
     activa: Boolean(rec.activa),
-    desde: (rec.desde as string) ?? "12:30",
-    hasta: (rec.hasta as string) ?? "15:00",
+    // «Mismo horario que el local»: se guarda 00:00–23:59 y la base de datos lo recorta
+    // al horario de cada día (laofi.franjas_recogida_hoy), así que sigue al horario de la web.
+    segun_horario: segunHorario,
+    desde: segunHorario ? "12:30" : ((rec.desde as string) ?? "12:30"),
+    hasta: segunHorario ? "15:00" : ((rec.hasta as string) ?? "15:00"),
     intervalo_min: Number(rec.intervalo_min ?? 15),
     capacidad: rec.capacidad == null ? "" : String(rec.capacidad),
     antelacion_min: Number(rec.antelacion_min ?? 20),
@@ -139,15 +158,26 @@ export function ConfiguracionPanel({ ajustes, horario, ticketbai }: { ajustes: A
           <input type="checkbox" checked={recogida.activa} onChange={(e) => setRecogida({ ...recogida, activa: e.target.checked })} className="h-5 w-5" />
           Aceptar pedidos para recoger
         </label>
+        <label className="flex items-center gap-2 text-sm font-semibold">
+          <input type="checkbox" checked={recogida.segun_horario} onChange={(e) => setRecogida({ ...recogida, segun_horario: e.target.checked })} className="h-5 w-5" />
+          Mismo horario que el local
+        </label>
+        {recogida.segun_horario ? (
+          <p className="text-sm opacity-80">Se puede recoger mientras está abierto, según el horario de arriba: {resumenHorario(dias)}.</p>
+        ) : null}
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          <label className="grid gap-1 text-xs">
-            Desde
-            <input type="time" value={recogida.desde} onChange={(e) => setRecogida({ ...recogida, desde: e.target.value })} className={input} />
-          </label>
-          <label className="grid gap-1 text-xs">
-            Hasta
-            <input type="time" value={recogida.hasta} onChange={(e) => setRecogida({ ...recogida, hasta: e.target.value })} className={input} />
-          </label>
+          {recogida.segun_horario ? null : (
+            <>
+              <label className="grid gap-1 text-xs">
+                Desde
+                <input type="time" value={recogida.desde} onChange={(e) => setRecogida({ ...recogida, desde: e.target.value })} className={input} />
+              </label>
+              <label className="grid gap-1 text-xs">
+                Hasta
+                <input type="time" value={recogida.hasta} onChange={(e) => setRecogida({ ...recogida, hasta: e.target.value })} className={input} />
+              </label>
+            </>
+          )}
           <label className="grid gap-1 text-xs">
             Cada (min)
             <select value={recogida.intervalo_min} onChange={(e) => setRecogida({ ...recogida, intervalo_min: Number(e.target.value) })} className={input}>
@@ -182,7 +212,17 @@ export function ConfiguracionPanel({ ajustes, horario, ticketbai }: { ajustes: A
           type="button"
           className={botonPrimario}
           disabled={recogida.activa && !recogida.capacidad}
-          onClick={() => void guardarAjuste("recogida", { ...recogida, capacidad: recogida.capacidad ? Number(recogida.capacidad) : null }, "Recogida guardada.")}
+          onClick={() =>
+            void guardarAjuste(
+              "recogida",
+              {
+                ...recogida,
+                ...(recogida.segun_horario ? { desde: "00:00", hasta: "23:59" } : {}),
+                capacidad: recogida.capacidad ? Number(recogida.capacidad) : null,
+              },
+              "Recogida guardada.",
+            )
+          }
         >
           Guardar recogida
         </button>
