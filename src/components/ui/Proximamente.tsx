@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Photo } from "@/components/media/Photo";
 import { Icon } from "@/components/ui/Icon";
 import type { ImageKey } from "@/lib/images";
-import { LLEGA_PRONTO } from "@/lib/lanzamiento";
+import { LLEGA_PRONTO, PROXIMAMENTE } from "@/lib/lanzamiento";
 
 /**
  * «Muy pronto»: lo que aún no se puede hacer desde la web (reservar, pedir para
@@ -22,7 +22,9 @@ export function Proximamente({
   primero?: (typeof LLEGA_PRONTO)[number]["titulo"];
   children?: ReactNode;
 }) {
-  const items = primero ? [...LLEGA_PRONTO.filter((x) => x.titulo === primero), ...LLEGA_PRONTO.filter((x) => x.titulo !== primero)] : LLEGA_PRONTO;
+  // Lo que ya está abierto no se anuncia como «pronto».
+  const pendientes = LLEGA_PRONTO.filter((x) => !(x.titulo === "Pedir para llevar" && !PROXIMAMENTE.pedidos));
+  const items = primero ? [...pendientes.filter((x) => x.titulo === primero), ...pendientes.filter((x) => x.titulo !== primero)] : pendientes;
   return (
     <section aria-labelledby="proximamente-title" className="overflow-hidden rounded-3xl bg-[#FFFDF8] shadow-card ring-1 ring-tinta-line">
       <div className="relative aspect-[16/7] overflow-hidden bg-papel-3">

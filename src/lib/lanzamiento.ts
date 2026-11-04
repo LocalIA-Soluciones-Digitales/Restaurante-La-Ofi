@@ -1,12 +1,13 @@
 /**
- * Hasta diciembre de 2026 la web enseña y anuncia (menú del día, carta, eventos,
- * dónde estamos) y deja apuntarse a los eventos. Reservar mesa y El Despacho y
- * pedir para llevar salen como «Próximamente»: se abren poniendo esto a false.
- * Los pedidos desde la mesa (QR) no dependen de esto.
+ * La web enseña y anuncia (menú del día, carta, eventos, dónde estamos), deja
+ * apuntarse a los eventos y, desde el 04/11/2026, pedir para llevar (comida y vino).
+ * Reservar mesa y El Despacho siguen como «Próximamente»: se abren poniendo esto a false.
+ * Los pedidos para llevar, además, necesitan «Pedidos para recoger» activado en
+ * /admin/configuracion. Los pedidos desde la mesa (QR) no dependen de esto.
  */
 export const PROXIMAMENTE = {
   reservas: true,
-  pedidos: true,
+  pedidos: false,
 } as const;
 
 /**
