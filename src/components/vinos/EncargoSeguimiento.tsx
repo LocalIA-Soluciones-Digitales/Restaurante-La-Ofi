@@ -51,7 +51,7 @@ export function EncargoSeguimiento({ inicial, vinosHref }: { inicial: EncargoPub
     : entregado
       ? "Entregado. ¡Que lo disfrutéis y felices fiestas!"
       : e.estado === "LISTO"
-        ? "Tu encargo está listo: pasa a recogerlo cuando quieras. Lo pagas aquí, en La Ofi."
+        ? "Tu encargo está listo: pasa a recogerlo cuando quieras mientras estemos abiertos. Lo pagas aquí, en La Ofi."
         : e.estado === "CONFIRMADO"
           ? "Confirmado: lo estamos preparando. Te avisamos cuando esté listo."
           : "Hemos recibido tu encargo. Lo revisamos y te avisamos cuando esté listo (esta página también se actualiza sola).";

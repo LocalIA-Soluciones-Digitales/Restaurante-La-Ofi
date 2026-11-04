@@ -230,7 +230,7 @@ export function TiendaVinos({ secciones, cartaHref }: { secciones: CartaSeccion[
             Elige tus vinos <em className="text-[#E2B98A]">para llevar</em>
           </h1>
           <p className="mt-4 max-w-xl leading-relaxed text-crema/75 sm:mt-5 sm:text-lg">
-            Las botellas de nuestra carta para tus comidas y cenas de Navidad. Te las dejamos preparadas y pasas a recogerlas por La Ofi.
+            Las botellas de nuestra carta para tus comidas y cenas de Navidad. Te las dejamos preparadas y pasas a recogerlas por La Ofi cuando quieras, en nuestro horario.
           </p>
           <ul className="mt-6 grid gap-2.5 text-sm text-crema/85 sm:mt-8 sm:flex sm:flex-wrap sm:gap-x-7">
             <li className="flex items-center gap-2.5">
