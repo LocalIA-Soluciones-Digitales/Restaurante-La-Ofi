@@ -3,9 +3,10 @@ import Link from "next/link";
 import { CartaBodega } from "@/components/carta/CartaBodega";
 import { Photo } from "@/components/media/Photo";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { PromoCava } from "@/components/vinos/PromoCava";
 import { Icon } from "@/components/ui/Icon";
 import { href, type Locale } from "@/lib/i18n";
-import { CAVA_DE_REGALO, ENCARGOS_VINO } from "@/lib/lanzamiento";
+import { ENCARGOS_VINO } from "@/lib/lanzamiento";
 import { getCartaContent } from "@/lib/restaurant/content";
 import { pageMetadata } from "@/lib/seo";
 import { esSeccionDeVino, TEXTO_BODEGA } from "@/lib/vinos";
@@ -71,6 +72,7 @@ export default async function VinosPage({ params }: Params) {
 
       {vinos.length ? (
         <>
+          {encargos ? <PromoCava href={href(locale, "/vinos/encargar")} /> : null}
           {encargos ? <ComoEncargar tiendaHref={href(locale, "/vinos/encargar")} /> : null}
           <CartaBodega secciones={vinos} cabecera={false} />
         </>
@@ -88,8 +90,6 @@ export default async function VinosPage({ params }: Params) {
     </>
   );
 }
-
-const euros = (c: number) => `${c / 100} €`;
 
 const PASOS = [
   { titulo: "Elige tus botellas", texto: "En nuestra tienda de encargos: tintos, blancos, cavas y champagnes de la carta." },
@@ -116,14 +116,6 @@ function ComoEncargar({ tiendaHref }: { tiendaHref: string }) {
               </li>
             ))}
           </ol>
-          {CAVA_DE_REGALO ? (
-            <p className="mt-4 flex items-center gap-3 rounded-xl border border-[#E2B98A]/40 px-3.5 py-3 text-sm text-crema">
-              <Icon name="gift" className="h-5 w-5 shrink-0 text-[#E2B98A]" />
-              <span>
-                Encargos de más de {euros(CAVA_DE_REGALO.masDeCentimos)}: <b className="text-[#E2B98A]">te regalamos un cava</b>
-              </span>
-            </p>
-          ) : null}
           <Link href={tiendaHref} className="btn mt-5 w-full bg-[#E2B98A] text-carbon hover:bg-crema">
             <Icon name="wine" className="h-4 w-4" />
             Hacer mi encargo
@@ -142,15 +134,7 @@ function ComoEncargar({ tiendaHref }: { tiendaHref: string }) {
             Encarga las botellas para tus comidas y cenas de Navidad, al mismo precio que en la carta. Te las dejamos preparadas y
             pasas a recogerlas por La Ofi.
           </p>
-          {CAVA_DE_REGALO ? (
-            <p className="mt-6 inline-flex items-center gap-2.5 rounded-full bg-carbon py-2 pl-2 pr-4 text-[0.95rem] text-crema">
-              <span className="grid h-7 w-7 place-items-center rounded-full bg-[#E2B98A] text-carbon">
-                <Icon name="gift" className="h-4 w-4" />
-              </span>
-              Encargos de más de {euros(CAVA_DE_REGALO.masDeCentimos)}: <b className="text-[#E2B98A]">un cava de regalo</b>
-            </p>
-          ) : null}
-          <Link href={tiendaHref} className="btn mt-7 flex w-fit bg-carbon px-6 text-crema hover:bg-[#1f1c18]">
+          <Link href={tiendaHref} className="btn mt-7 bg-carbon px-6 text-crema hover:bg-[#1f1c18]">
             <Icon name="wine" className="h-4 w-4" />
             Hacer mi encargo
             <Icon name="arrow" className="h-4 w-4" />

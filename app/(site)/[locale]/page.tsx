@@ -7,9 +7,11 @@ import { IntroOfi } from "@/components/home/IntroOfi";
 import { HoyEnLaOfi } from "@/components/home/HoyEnLaOfi";
 import { PlatosQueApetecen } from "@/components/home/PlatosQueApetecen";
 import { Ubicacion } from "@/components/home/Ubicacion";
+import { PromoCava } from "@/components/vinos/PromoCava";
 import { getDictionary } from "@/i18n/dictionaries";
 import { estadoAhora, resolverHorario } from "@/lib/horario";
 import { href, type Locale } from "@/lib/i18n";
+import { ENCARGOS_VINO } from "@/lib/lanzamiento";
 import { getCartaContent, getMenuDiaContent } from "@/lib/restaurant/content";
 import { getCierres, getHorario } from "@/lib/restaurant/queries";
 import { pageMetadata } from "@/lib/seo";
@@ -48,6 +50,7 @@ export default async function HomePage({ params }: Params) {
       <LetrasScroll />
       <EspaciosPaneles locale={locale} />
       <HoyEnLaOfi locale={locale} menu={menu} horario={resuelto} fundido />
+      {ENCARGOS_VINO ? <PromoCava href={href(locale, "/vinos/encargar")} /> : null}
       <PlatosQueApetecen locale={locale} carta={carta} />
       <EmpresasHome locale={locale} />
       <Ubicacion t={t} horario={resuelto} />
