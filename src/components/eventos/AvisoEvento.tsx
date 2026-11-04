@@ -58,12 +58,17 @@ export function AvisoEvento({
     } catch {
       // Sin almacenamiento (navegación privada estricta): se enseña igual.
     }
-    // Un instante tras pintar la página, para que se vea entrar y no tape la carga; mientras,
-    // se precarga el cartel para abrir ya con su forma (sin saltos ni hueco vacío).
-    const inicio = Date.now();
+    // Sale cuando la página ya se ha visto: si está la intro de «la ofi» (portada, primera
+    // visita de la sesión, escritorio), espera a que suba la cortina (1,35 s + 1 s en
+    // globals.css) y deja un respiro para ver la portada; si no, algo más de un segundo.
+    // Mientras, se precarga el cartel para abrir ya con su forma (sin saltos ni hueco vacío).
+    const intro = document.getElementById("intro-ofi");
+    const conIntro = !!intro && window.getComputedStyle(intro).display !== "none";
+    // performance.now() cuenta desde que empezó la navegación, como la animación CSS.
+    const abrirEn = conIntro ? 3300 : performance.now() + 1200;
     let t: number | undefined;
     const abrir = () => {
-      if (t === undefined) t = window.setTimeout(() => setAbierto(true), Math.max(0, 350 - (Date.now() - inicio)));
+      if (t === undefined) t = window.setTimeout(() => setAbierto(true), Math.max(0, abrirEn - performance.now()));
     };
     const primera = evento.media.find((m) => m.tipo === "imagen")?.url;
     if (primera) {
@@ -75,7 +80,7 @@ export function AvisoEvento({
       img.onerror = abrir;
       img.src = primera;
     } else abrir();
-    const tope = window.setTimeout(abrir, 2500);
+    const tope = window.setTimeout(abrir, Math.max(0, abrirEn - performance.now()) + 2500);
     return () => {
       window.clearTimeout(tope);
       if (t !== undefined) window.clearTimeout(t);
