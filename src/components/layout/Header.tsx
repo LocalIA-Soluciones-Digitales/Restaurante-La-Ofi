@@ -17,6 +17,8 @@ const MENU_FOTOS: ImageKey[] = ["comedorPanoramica", "comedorRatan", "despachoRo
 interface Props {
   homeHref: string;
   reservarHref: string;
+  /** Icono del botón principal en móvil (calendario para reservar, bolsa para pedir). */
+  ctaIcono?: "calendar" | "bag";
   /** Todas las páginas (menú desplegable). */
   items: NavItem[];
   /** Casillas de la cabecera de escritorio. */
@@ -32,7 +34,7 @@ interface Props {
  * iconos de carta, reservar y llamar). Sobre una foto oscura va transparente con
  * texto claro; al bajar, crema translúcida con un filete fino debajo.
  */
-export function Header({ homeHref, reservarHref, items, primary, phoneHref, phoneDisplay, labels }: Props) {
+export function Header({ homeHref, reservarHref, ctaIcono = "calendar", items, primary, phoneHref, phoneDisplay, labels }: Props) {
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
   const pathname = usePathname();
@@ -119,7 +121,7 @@ export function Header({ homeHref, reservarHref, items, primary, phoneHref, phon
               </Link>
             ) : null}
             <Link href={reservarHref} className="grid h-11 w-10 place-items-center rounded-full transition-opacity hover:opacity-70 sm:hidden">
-              <Icon name="calendar" className="h-5 w-5" />
+              <Icon name={ctaIcono} className="h-5 w-5" />
               <span className="sr-only">{labels.reservar}</span>
             </Link>
             <a href={phoneHref} className={`hidden items-center gap-2 text-[0.85rem] font-medium tabular-nums transition-colors xl:flex ${muted}`}>

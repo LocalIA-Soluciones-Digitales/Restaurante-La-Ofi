@@ -11,6 +11,7 @@ import { getDictionary } from "@/i18n/dictionaries";
 import { IS_DEMO, SITE_URL } from "@/lib/env";
 import { resolverHorario } from "@/lib/horario";
 import { ENABLED_LOCALES, HTML_LANG, href, isEnabledLocale } from "@/lib/i18n";
+import { PROXIMAMENTE } from "@/lib/lanzamiento";
 import { restaurantJsonLd } from "@/lib/restaurant/jsonld";
 import { getCierres, getEventos, getHorario } from "@/lib/restaurant/queries";
 import type { Evento } from "@/lib/restaurant/types";
@@ -76,6 +77,11 @@ export default async function LocaleLayout({
   const horario = IS_DEMO ? null : resolverHorario(horarioBd, cierres);
   const aviso = eventoParaAviso(eventos);
 
+  // Mientras reservar mesa es «Próximamente», el botón principal lleva a pedir para llevar.
+  const cta = PROXIMAMENTE.reservas
+    ? { href: href(locale, "/pedir"), corto: "Para llevar", largo: "Pedir para llevar", icono: "bag" as const }
+    : { href: href(locale, "/reservar"), corto: t.cta.reservar, largo: t.cta.reservarMesa, icono: "calendar" as const };
+
   return (
     // suppressHydrationWarning: el script de IntroOfi marca <html> con «intro-vista» antes de hidratar.
     <html lang={HTML_LANG[locale]} className={`${display.variable} ${sans.variable}`} suppressHydrationWarning>
@@ -89,13 +95,14 @@ export default async function LocaleLayout({
         {horario ? <JsonLd data={restaurantJsonLd(horario.semana, horario.cierres, titular?.email ?? null)} /> : null}
         <Header
           homeHref={href(locale)}
-          reservarHref={href(locale, "/reservar")}
+          reservarHref={cta.href}
+          ctaIcono={cta.icono}
           items={items}
           primary={primaryNav(locale, t)}
           phoneHref={SITE.phone.href}
           phoneDisplay={SITE.phone.display}
           labels={{
-            reservar: t.cta.reservar,
+            reservar: cta.corto,
             llamar: t.cta.llamar,
             abrirMenu: t.cta.abrirMenu,
             cerrarMenu: t.cta.cerrarMenu,
@@ -106,7 +113,7 @@ export default async function LocaleLayout({
           {children}
         </main>
         <Footer locale={locale} items={items} />
-        <ReservarFlotante href={href(locale, "/reservar")} label={t.cta.reservarMesa} />
+        <ReservarFlotante href={cta.href} label={cta.largo} />
         {aviso ? (
           <AvisoEvento
             evento={aviso}

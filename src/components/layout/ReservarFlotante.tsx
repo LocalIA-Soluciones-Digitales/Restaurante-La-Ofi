@@ -6,7 +6,8 @@ import { useEffect, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 
 /**
- * Píldora fija de "Reservar mesa" abajo a la derecha (solo escritorio: en móvil
+ * Píldora fija del botón principal («Reservar mesa», o «Pedir para llevar» mientras
+ * las reservas están en «Próximamente») abajo a la derecha (solo escritorio: en móvil
  * va en la cabecera). Aparece al dejar atrás la primera pantalla y se
  * oculta al llegar al pie y en las páginas de reservar y pedir. Entra y sale por el mismo camino.
  */
