@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { anularEncargo, obtenerEncargo, type EncargoPublico } from "@/lib/encargos/actions";
 import { formatCentimos } from "@/lib/format";
+import { conCavaDeRegalo } from "@/lib/lanzamiento";
 import { SITE } from "@/lib/site";
 
 const PASOS: { label: string; icon: IconName }[] = [
@@ -98,6 +99,18 @@ export function EncargoSeguimiento({ inicial, vinosHref }: { inicial: EncargoPub
             <span className="shrink-0 font-display text-lg tabular-nums">{formatCentimos(l.cantidad * l.precio_centimos)}</span>
           </li>
         ))}
+        {!anulado && conCavaDeRegalo(e.total_centimos) ? (
+          <li className="flex items-center gap-4 py-3">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#E2B98A] text-carbon">
+              <Icon name="gift" className="h-4 w-4" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block font-display text-xl leading-tight">Cava de regalo</span>
+              <span className="block font-display text-sm italic text-carbon-muted">Por tu encargo de Navidad de más de 50 €</span>
+            </span>
+            <span className="shrink-0 text-sm font-semibold uppercase tracking-[0.12em] text-oliva">Regalo</span>
+          </li>
+        ) : null}
       </ul>
       <dl className="mx-6 flex items-baseline justify-between border-t-2 border-carbon py-4 sm:mx-8">
         <dt className="text-sm text-carbon-muted">

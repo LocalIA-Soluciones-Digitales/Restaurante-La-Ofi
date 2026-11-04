@@ -7,6 +7,7 @@ import { useDialogA11y } from "@/hooks/useDialogA11y";
 import { encargarVinos } from "@/lib/encargos/actions";
 import { formatCentimos } from "@/lib/format";
 import { href, type Locale } from "@/lib/i18n";
+import { CAVA_DE_REGALO, conCavaDeRegalo } from "@/lib/lanzamiento";
 import type { CartaItem, CartaSeccion } from "@/lib/restaurant/types";
 import { SITE } from "@/lib/site";
 
@@ -160,6 +161,48 @@ export function Botellas({ vino, variante = "tienda" }: { vino: CartaItem; varia
   );
 }
 
+/**
+ * La promoción del cava (CAVA_DE_REGALO): cuánto falta para el regalo, con una barra que se
+ * llena, o «cava de regalo incluido» cuando el encargo pasa del importe.
+ */
+export function CavaDeRegalo({ total, oscuro = false, className = "" }: { total: number; oscuro?: boolean; className?: string }) {
+  if (!CAVA_DE_REGALO) return null;
+  const umbral = CAVA_DE_REGALO.masDeCentimos;
+  const euros = formatCentimos(umbral).replace(/,00(\s?€)$/, "$1");
+  if (conCavaDeRegalo(total)) {
+    return (
+      <p className={`flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-sm font-semibold ${oscuro ? "bg-[#E2B98A] text-carbon" : "bg-oliva-soft text-oliva"} ${className}`}>
+        <Icon name="gift" className="h-4 w-4 shrink-0" />
+        ¡Cava de regalo incluido en tu encargo!
+      </p>
+    );
+  }
+  const falta = umbral - total;
+  return (
+    <div className={`rounded-xl px-3.5 py-2.5 text-sm ${oscuro ? "bg-white/[0.08] text-crema/85" : "bg-[#F6F0E5] text-carbon-muted ring-1 ring-tinta-line"} ${className}`}>
+      <p className="flex items-center gap-2.5">
+        <Icon name="gift" className={`h-4 w-4 shrink-0 ${oscuro ? "text-[#E2B98A]" : "text-madera-oscura"}`} />
+        <span>
+          {total === 0 ? (
+            <>
+              Con más de {euros}, <b className={oscuro ? "text-crema" : "text-carbon"}>un cava de regalo</b>
+            </>
+          ) : falta > 0 ? (
+            <>
+              Te faltan <b className={`tabular-nums ${oscuro ? "text-crema" : "text-carbon"}`}>{formatCentimos(falta)}</b> para tu cava de regalo
+            </>
+          ) : (
+            <>Una botella más y te regalamos un cava</>
+          )}
+        </span>
+      </p>
+      <span aria-hidden="true" className={`mt-2 block h-1 overflow-hidden rounded-full ${oscuro ? "bg-white/15" : "bg-carbon/10"}`}>
+        <span className={`block h-full rounded-full transition-[width] duration-500 ${oscuro ? "bg-[#E2B98A]" : "bg-madera-oscura"}`} style={{ width: `${Math.min(100, (total / umbral) * 100)}%` }} />
+      </span>
+    </div>
+  );
+}
+
 export const botellasTexto = (n: number) => `${n} ${n === 1 ? "botella" : "botellas"}`;
 
 const campo =
@@ -233,6 +276,7 @@ function PanelEncargo({
               {botellasTexto(hecho.botellas)} · {formatCentimos(hecho.total)}. Lo preparamos y te avisamos por WhatsApp o por teléfono cuando esté listo. Pasas a
               recogerlo cuando quieras en nuestro horario y lo pagas en La Ofi.
             </p>
+            {conCavaDeRegalo(hecho.total) ? <CavaDeRegalo total={hecho.total} className="mt-5" /> : null}
             <div className="mt-8 grid gap-3 sm:grid-cols-2">
               <Link href={href(locale, `/encargo/${hecho.id}`)} className="btn bg-carbon text-crema hover:bg-[#1f1c18]">
                 Ver mi encargo
@@ -266,8 +310,21 @@ function PanelEncargo({
                       <span className="min-w-16 shrink-0 whitespace-nowrap text-right font-display text-lg tabular-nums">{formatCentimos(cantidad * (vino.precioCentimos ?? 0))}</span>
                     </li>
                   ))}
+                  {conCavaDeRegalo(total) ? (
+                    <li className="flex items-center gap-3 py-3">
+                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#E2B98A] text-carbon">
+                        <Icon name="gift" className="h-4 w-4" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-display text-[1.2rem] leading-tight">Cava de regalo</p>
+                        <p className="font-display text-sm italic text-carbon-muted">Por tu encargo de Navidad</p>
+                      </div>
+                      <span className="min-w-16 shrink-0 text-right text-sm font-semibold uppercase tracking-[0.12em] text-oliva">Regalo</span>
+                    </li>
+                  ) : null}
                 </ul>
               )}
+              {lineas.length > 0 && !conCavaDeRegalo(total) ? <CavaDeRegalo total={total} className="mt-3" /> : null}
 
               <dl className="mt-2 flex items-baseline justify-between border-t-2 border-carbon pt-4">
                 <dt className="text-sm text-carbon-muted">{botellasTexto(botellas)} · se paga al recoger</dt>

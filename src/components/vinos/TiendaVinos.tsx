@@ -4,9 +4,10 @@ import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { filtrar, partes } from "@/components/carta/CartaBodega";
 import { Icon } from "@/components/ui/Icon";
-import { Botellas, botellasTexto, useEncargoVinos } from "@/components/vinos/EncargoVinos";
+import { Botellas, botellasTexto, CavaDeRegalo, useEncargoVinos } from "@/components/vinos/EncargoVinos";
 import { formatCentimos } from "@/lib/format";
 import { IMAGES_REALES } from "@/lib/images";
+import { CAVA_DE_REGALO } from "@/lib/lanzamiento";
 import type { CartaItem, CartaSeccion } from "@/lib/restaurant/types";
 import { SITE } from "@/lib/site";
 import { ordenar, tipo } from "@/lib/vinos";
@@ -81,6 +82,7 @@ function Resumen() {
         </ul>
       )}
 
+      <CavaDeRegalo total={total} className="mb-4 mt-1" />
       <dl className="mt-1 flex items-baseline justify-between border-t-2 border-carbon pt-4">
         <dt className="text-sm text-carbon-muted">Total, se paga al recoger</dt>
         <dd className="font-display text-[1.75rem] leading-none tabular-nums">{formatCentimos(total)}</dd>
@@ -114,6 +116,7 @@ function BarraMovil() {
   if (!e || !e.hidratado || e.botellas === 0) return null;
   return (
     <div className="fixed inset-x-0 bottom-0 z-30 border-t border-tinta-line bg-[#F6F0E5]/95 px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 backdrop-blur lg:hidden">
+      <CavaDeRegalo total={e.total} className="mb-2 py-2" />
       <button type="button" onClick={e.abrir} className="flex h-14 w-full items-center gap-3 rounded-2xl bg-carbon pl-4 pr-3 text-crema animate-sheet-up hover:bg-[#1f1c18]">
         <span className="grid h-8 min-w-8 place-items-center rounded-full bg-[#E2B98A] px-2 text-sm font-semibold tabular-nums text-carbon">{e.botellas}</span>
         <span className="flex-1 text-left font-semibold">Ver mi encargo</span>
@@ -232,6 +235,14 @@ export function TiendaVinos({ secciones, cartaHref }: { secciones: CartaSeccion[
           <p className="mt-4 max-w-xl leading-relaxed text-crema/75 sm:mt-5 sm:text-lg">
             Las botellas de nuestra carta para tus comidas y cenas de Navidad. Te las dejamos preparadas y pasas a recogerlas por La Ofi cuando quieras, en nuestro horario.
           </p>
+          {CAVA_DE_REGALO ? (
+            <p className="mt-6 inline-flex items-center gap-2.5 rounded-full bg-[#E2B98A] py-2 pl-2 pr-4 text-sm font-semibold text-carbon shadow-[0_10px_30px_-12px_rgb(0_0_0/0.6)] sm:text-[0.95rem]">
+              <span className="grid h-7 w-7 place-items-center rounded-full bg-carbon text-[#E2B98A]">
+                <Icon name="gift" className="h-4 w-4" />
+              </span>
+              Encargos de más de {formatCentimos(CAVA_DE_REGALO.masDeCentimos).replace(/,00(\s?€)$/, "$1")}: te regalamos un cava
+            </p>
+          ) : null}
           <ul className="mt-6 grid gap-2.5 text-sm text-crema/85 sm:mt-8 sm:flex sm:flex-wrap sm:gap-x-7">
             <li className="flex items-center gap-2.5">
               <Icon name="tag" className="h-4 w-4 text-[#E2B98A]" />

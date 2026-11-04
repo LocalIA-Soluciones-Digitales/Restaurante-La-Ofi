@@ -9,6 +9,7 @@ import { borrarEncargoVino, editarEncargoVino, encargosVino, estadoEncargoVino, 
 import type { EncargoVinoAdmin } from "@/lib/admin/types";
 import { SITE_URL } from "@/lib/env";
 import { formatCentimos } from "@/lib/format";
+import { conCavaDeRegalo } from "@/lib/lanzamiento";
 import { activarSonido, sonarAviso } from "@/lib/notify-sound";
 import { enlaceSms, enlaceWhatsApp } from "@/lib/reservas/mensajes";
 import { SITE } from "@/lib/site";
@@ -41,7 +42,7 @@ function mensaje(tipo: "listo" | "anulado", e: EncargoVinoAdmin): string {
   if (tipo === "listo") {
     return [
       `¡Hola, ${pila(e.nombre)}!`,
-      `Tu encargo de vino nº ${e.numero} (${botellas(e.botellas)}) ya está preparado en La Ofi. Pásate a recogerlo cuando quieras: son ${formatCentimos(e.total_centimos)} y se paga al recoger.`,
+      `Tu encargo de vino nº ${e.numero} (${botellas(e.botellas)}) ya está preparado en La Ofi. Pásate a recogerlo cuando quieras: son ${formatCentimos(e.total_centimos)} y se paga al recoger.${conCavaDeRegalo(e.total_centimos) ? " ¡Y te llevas tu cava de regalo!" : ""}`,
       `Lo puedes ver aquí: ${enlaceEncargo(e.id)}`,
     ].join("\n\n");
   }
@@ -274,6 +275,12 @@ function FilaEncargo({
             <span className="shrink-0 text-sm font-semibold tabular-nums text-carbon-muted dark:text-crema/65">
               {botellas(e.botellas)} · {formatCentimos(e.total_centimos)}
             </span>
+            {conCavaDeRegalo(e.total_centimos) && e.estado !== "CANCELADO" ? (
+              <span title="Lleva un cava de regalo (encargo de más de 50 €)" className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#E2B98A] px-2 py-0.5 text-[0.7rem] font-semibold text-carbon">
+                <Icon name="gift" className="h-3 w-3" />
+                Cava
+              </span>
+            ) : null}
           </span>
           <span className="flex items-center gap-1.5 text-xs text-carbon-muted dark:text-crema/60">
             <span className={`shrink-0 font-semibold ${s?.texto ?? ""}`}>{s?.corto ?? (e.estado === "ENTREGADO" ? "Entregado" : "Anulado")}</span>

@@ -17,6 +17,16 @@ export const PROXIMAMENTE = {
  */
 export const ENCARGOS_VINO = true;
 
+/**
+ * Promoción de Navidad 2026: con un encargo de vino de más de 50 € (en botellas), un cava de
+ * regalo. Se anuncia en la tienda, el panel y el seguimiento, y en /admin/encargos sale el
+ * distintivo para prepararlo. A null, sin promoción.
+ */
+export const CAVA_DE_REGALO: { masDeCentimos: number } | null = { masDeCentimos: 5000 };
+
+/** Si un encargo con este total lleva el cava de regalo. */
+export const conCavaDeRegalo = (totalCentimos: number) => CAVA_DE_REGALO !== null && totalCentimos > CAVA_DE_REGALO.masDeCentimos;
+
 /** Lo que llega después, con el mismo texto en /reservar, /pedir y los vídeos. */
 export const LLEGA_PRONTO: { icono: "calendar" | "briefcase" | "bag" | "card"; titulo: string; texto: string }[] = [
   { icono: "calendar", titulo: "Reservar mesa", texto: "En el comedor, con el menú del día o de carta." },
