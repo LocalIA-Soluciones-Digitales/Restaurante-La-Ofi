@@ -1,9 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { botonPrimario, botonSecundario, card } from "@/components/admin/ui";
+import { HistorialDias, diaMadrid } from "@/components/admin/HistorialDias";
+import { Modal } from "@/components/admin/Modal";
+import { Campo, botonPrimario, botonSecundario, card, input } from "@/components/admin/ui";
 import { Icon } from "@/components/ui/Icon";
-import { avanzarPedido, cancelarPedido, cobrar, colaCocina } from "@/lib/admin/actions";
+import { avanzarPedido, borrarPedido, cancelarPedido, cobrar, colaCocina, editarPedido, historialPedidos } from "@/lib/admin/actions";
 import type { PedidoKds } from "@/lib/admin/types";
 import { formatCentimos } from "@/lib/format";
 import { activarSonido, sonarAviso } from "@/lib/notify-sound";
@@ -19,9 +21,11 @@ const PASOS = {
 } as const;
 
 type Paso = keyof typeof PASOS;
-type Filtro = "todos" | Paso;
+type Filtro = "todos" | Paso | "historial";
 
-function pasoDe(p: PedidoKds): Paso {
+/** null: ya cerrado (entregado o cancelado), solo sale en el historial. */
+function pasoDe(p: PedidoKds): Paso | null {
+  if (p.estado === "DELIVERED" || p.estado === "CANCELLED") return null;
   if (p.estado === "RECEIVED") return "nuevos";
   if (p.estado === "READY") return "listos";
   return "preparando";
@@ -100,7 +104,10 @@ export function PedidosRecogida({ inicial }: { inicial: PedidoKds[] }) {
 
   const cuenta = useMemo(() => {
     const c: Record<Paso, number> = { nuevos: 0, preparando: 0, listos: 0 };
-    for (const p of pedidos) c[pasoDe(p)]++;
+    for (const p of pedidos) {
+      const k = pasoDe(p);
+      if (k) c[k]++;
+    }
     return c;
   }, [pedidos]);
   const visibles = filtro === "todos" ? pedidos : pedidos.filter((p) => pasoDe(p) === filtro);
@@ -132,6 +139,35 @@ export function PedidosRecogida({ inicial }: { inicial: PedidoKds[] }) {
     if (!window.confirm(`¿Cancelar el pedido #${p.numero_dia} de ${p.nombre_cliente ?? "este cliente"}?`)) return;
     void hacer(p, () => cancelarPedido(p.id));
   };
+
+  const [version, setVersion] = useState(0);
+  const [editando, setEditando] = useState<PedidoKds | null>(null);
+  const borrar = (p: PedidoKds) => {
+    const cobrado = p.payment_status === "PAID" ? " Si está cobrado, el cobro también se borra de la caja." : "";
+    if (!window.confirm(`¿Eliminar para siempre el pedido #${p.numero_dia} de ${p.nombre_cliente ?? "este cliente"}?${cobrado} No se puede deshacer.`)) return;
+    void hacer(p, async () => {
+      const r = await borrarPedido(p.id);
+      if (r.ok) {
+        setAbierto(null);
+        setVersion((v) => v + 1);
+      }
+      return r;
+    });
+  };
+
+  const fila = (p: PedidoKds) => (
+    <FilaPedido
+      p={p}
+      abierto={abierto === p.id}
+      onAbrir={() => setAbierto(abierto === p.id ? null : p.id)}
+      ocupado={ocupado === p.id || aceptando}
+      onAvanzar={(e) => void avanzar(p, e)}
+      onCobrar={(m) => void cobrarYEntregar(p, m)}
+      onCancelar={() => cancelar(p)}
+      onEditar={() => setEditando(p)}
+      onBorrar={() => borrar(p)}
+    />
+  );
 
   // En plena hora punta: aceptar de un toque todos los que han entrado.
   const [aceptando, setAceptando] = useState(false);
@@ -180,6 +216,10 @@ export function PedidosRecogida({ inicial }: { inicial: PedidoKds[] }) {
             {aceptando ? "Aceptando…" : `Aceptar los ${cuenta.nuevos} nuevos`}
           </button>
         ) : null}
+        <button type="button" onClick={() => setFiltro(filtro === "historial" ? "todos" : "historial")} aria-pressed={filtro === "historial"} className={botonSecundario}>
+          <Icon name="clock" className="h-4 w-4" />
+          Historial
+        </button>
         <button type="button" onClick={() => setSonido(activarSonido())} aria-pressed={sonido} className={`${sonido ? botonSecundario : botonPrimario} ml-auto`}>
           <Icon name="sound" className="h-4 w-4" />
           {sonido ? "Sonido activo" : "Activar sonido"}
@@ -188,7 +228,20 @@ export function PedidosRecogida({ inicial }: { inicial: PedidoKds[] }) {
 
       {error ? <p role="alert" className="rounded-xl bg-terracota px-4 py-3 text-sm font-semibold text-crema">{error}</p> : null}
 
-      {visibles.length === 0 ? (
+      {filtro === "historial" ? (
+        <HistorialDias
+          cargar={historialPedidos<PedidoKds>}
+          dia={(p) => diaMadrid(p.recogida_en ?? p.created_at)}
+          importe={(p) => p.total_centimos}
+          anulado={(p) => p.estado === "CANCELLED"}
+          clave={(p) => p.id}
+          fila={fila}
+          version={version}
+          icono="bag"
+          nombres={["pedido", "pedidos"]}
+          etiquetaHecho="Entregados"
+        />
+      ) : visibles.length === 0 ? (
         <p className={`${card} grid place-items-center gap-2 px-4 py-12 text-center text-carbon-muted dark:text-crema/60`}>
           <Icon name="bag" className="h-8 w-8 opacity-50" />
           {pedidos.length ? "Ningún pedido en este paso." : "No hay pedidos para recoger ahora mismo."}
@@ -207,17 +260,7 @@ export function PedidosRecogida({ inicial }: { inicial: PedidoKds[] }) {
                 </div>
                 <ul className={`${card} divide-y divide-carbon/[0.07] overflow-hidden dark:divide-crema/10`}>
                   {h.pedidos.map((p) => (
-                    <li key={p.id}>
-                      <FilaPedido
-                        p={p}
-                        abierto={abierto === p.id}
-                        onAbrir={() => setAbierto(abierto === p.id ? null : p.id)}
-                        ocupado={ocupado === p.id || aceptando}
-                        onAvanzar={(e) => void avanzar(p, e)}
-                        onCobrar={(m) => void cobrarYEntregar(p, m)}
-                        onCancelar={() => cancelar(p)}
-                      />
-                    </li>
+                    <li key={p.id}>{fila(p)}</li>
                   ))}
                 </ul>
               </div>
@@ -225,6 +268,18 @@ export function PedidosRecogida({ inicial }: { inicial: PedidoKds[] }) {
           })}
         </div>
       )}
+
+      {editando ? (
+        <EditarPedido
+          p={editando}
+          onClose={() => setEditando(null)}
+          onGuardado={() => {
+            setEditando(null);
+            setVersion((v) => v + 1);
+            void recargar();
+          }}
+        />
+      ) : null}
     </div>
   );
 }
@@ -241,6 +296,8 @@ function FilaPedido({
   onAvanzar,
   onCobrar,
   onCancelar,
+  onEditar,
+  onBorrar,
 }: {
   p: PedidoKds;
   abierto: boolean;
@@ -249,9 +306,13 @@ function FilaPedido({
   onAvanzar: (e: "ACCEPTED" | "READY" | "DELIVERED") => void;
   onCobrar: (m: "EFECTIVO" | "TARJETA") => void;
   onCancelar: () => void;
+  onEditar: () => void;
+  onBorrar: () => void;
 }) {
   const paso = pasoDe(p);
-  const s = PASOS[paso];
+  const s = paso
+    ? PASOS[paso]
+    : { banda: "bg-carbon/20", texto: "", corto: `${p.estado === "CANCELLED" ? "Cancelado" : "Entregado"}${p.recogida_en ? ` · ${HORA.format(new Date(p.recogida_en))}` : ""}` };
   const pagado = p.payment_status === "PAID";
   const [cobrando, setCobrando] = useState(false);
   const boton = "min-h-9 shrink-0 rounded-lg px-3 text-sm font-semibold transition-transform active:scale-[0.98] disabled:opacity-50";
@@ -280,7 +341,7 @@ function FilaPedido({
           <button type="button" disabled={ocupado} onClick={() => onAvanzar("READY")} className={`${boton} ring-1 ring-carbon/15 dark:ring-crema/20`}>
             Listo
           </button>
-        ) : pagado ? (
+        ) : paso === null ? null : pagado ? (
           <button type="button" disabled={ocupado} onClick={() => onAvanzar("DELIVERED")} className={lleno}>
             Entregar
           </button>
@@ -329,12 +390,94 @@ function FilaPedido({
                 Llamar
               </a>
             ) : null}
-            <button type="button" disabled={ocupado} onClick={onCancelar} className={`${p.telefono ? "" : "ml-auto"} min-h-9 rounded-lg px-3 text-sm font-semibold text-terracota ring-1 ring-carbon/10 dark:ring-crema/15`}>
-              Cancelar pedido
+            <button type="button" disabled={ocupado} onClick={onEditar} className={`${botonSecundario} ${p.telefono ? "" : "ml-auto"} min-h-9 px-3`}>
+              <Icon name="edit" className="h-4 w-4" />
+              Editar
+            </button>
+            {paso ? (
+              <button type="button" disabled={ocupado} onClick={onCancelar} className="min-h-9 rounded-lg px-3 text-sm font-semibold text-terracota ring-1 ring-carbon/10 dark:ring-crema/15">
+                Cancelar pedido
+              </button>
+            ) : null}
+            <button type="button" disabled={ocupado} onClick={onBorrar} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold text-terracota ring-1 ring-carbon/10 dark:ring-crema/15">
+              <Icon name="trash" className="h-4 w-4" />
+              Eliminar
             </button>
           </div>
         </div>
       ) : null}
     </div>
+  );
+}
+
+const FECHA_HORA = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Madrid", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+const DESFASE = new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Madrid", timeZoneName: "longOffset" });
+
+/** «2026-11-04T13:30» en hora de Madrid, para el campo de fecha y hora. */
+const aCampo = (iso: string) => FECHA_HORA.format(new Date(iso)).replace(" ", "T");
+
+/** Del campo (hora de Madrid) a un instante con su desfase (+01:00 en invierno, +02:00 en verano). */
+function deCampo(valor: string): string {
+  const [d = "", h = ""] = valor.split("T");
+  const [a = 1970, m = 1, dia = 1] = d.split("-").map(Number);
+  const desfase = DESFASE.formatToParts(new Date(Date.UTC(a, m - 1, dia, 12))).find((x) => x.type === "timeZoneName")?.value.replace("GMT", "") || "+01:00";
+  return `${d}T${h}:00${desfase}`;
+}
+
+/** Corregir un pedido: cliente, teléfono, hora de recogida y notas. Platos e importes no (puede estar cobrado). */
+function EditarPedido({ p, onClose, onGuardado }: { p: PedidoKds; onClose: () => void; onGuardado: () => void }) {
+  const [nombre, setNombre] = useState(p.nombre_cliente ?? "");
+  const [telefono, setTelefono] = useState(p.telefono ?? "");
+  const [recogida, setRecogida] = useState(p.recogida_en ? aCampo(p.recogida_en) : "");
+  const [notas, setNotas] = useState(p.notas ?? "");
+  const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const guardar = async () => {
+    setGuardando(true);
+    setError(null);
+    const r = await editarPedido<PedidoKds>(p.id, { nombre_cliente: nombre, telefono, notas, recogida_en: recogida ? deCampo(recogida) : null });
+    setGuardando(false);
+    if (!r.ok) return setError(r.error);
+    onGuardado();
+  };
+
+  return (
+    <Modal titulo={`Pedido #${p.numero_dia}`} onClose={onClose}>
+      <form
+        className="grid gap-4"
+        onSubmit={(ev) => {
+          ev.preventDefault();
+          void guardar();
+        }}
+      >
+        <Campo label="Nombre del cliente">
+          <input className={input} value={nombre} onChange={(ev) => setNombre(ev.target.value)} maxLength={60} required />
+        </Campo>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Campo label="Teléfono">
+            <input className={input} type="tel" value={telefono} onChange={(ev) => setTelefono(ev.target.value)} />
+          </Campo>
+          <Campo label="Recogida">
+            <input className={input} type="datetime-local" value={recogida} onChange={(ev) => setRecogida(ev.target.value)} />
+          </Campo>
+        </div>
+        <Campo label="Notas">
+          <textarea className={`${input} h-auto min-h-20 py-2`} value={notas} onChange={(ev) => setNotas(ev.target.value)} maxLength={300} />
+        </Campo>
+        <p className="text-xs text-carbon-muted dark:text-crema/60">
+          Los platos y el importe ({formatCentimos(p.total_centimos)}) no se cambian aquí: el pedido puede estar ya cobrado o con ticket.
+        </p>
+        {error ? <p role="alert" className="rounded-xl bg-terracota px-4 py-3 text-sm font-semibold text-crema">{error}</p> : null}
+        <div className="flex justify-end gap-2">
+          <button type="button" onClick={onClose} className={botonSecundario}>
+            Cancelar
+          </button>
+          <button type="submit" disabled={guardando} className={botonPrimario}>
+            {guardando ? "Guardando…" : "Guardar cambios"}
+          </button>
+        </div>
+      </form>
+    </Modal>
   );
 }

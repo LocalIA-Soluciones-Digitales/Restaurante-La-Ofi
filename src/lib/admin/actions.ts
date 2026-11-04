@@ -274,6 +274,33 @@ export async function encargosVino<T>(todos = false) {
   return staff<T[]>("laofi_admin_encargos_vino", { p_todos: todos });
 }
 
+/** Entregados y anulados entre dos días (AAAA-MM-DD), buscando por nombre, teléfono o número. */
+export async function historialEncargosVino<T>(desde: string, hasta: string, buscar = "") {
+  return staff<T[]>("laofi_admin_encargos_vino_historial", { p_desde: desde, p_hasta: hasta, p_buscar: buscar });
+}
+
+export async function editarEncargoVino<T>(id: string, datos: Record<string, unknown>) {
+  return staff<T>("laofi_admin_encargo_vino_editar", { p_id: id, p: datos });
+}
+
+export async function borrarEncargoVino(id: string) {
+  return staff<null>("laofi_admin_encargo_vino_borrar", { p_id: id });
+}
+
+// --- Pedidos para recoger: historial, editar, borrar -------------------------------------
+
+export async function historialPedidos<T>(desde: string, hasta: string, buscar = "") {
+  return staff<T[]>("laofi_admin_pedidos_historial", { p_desde: desde, p_hasta: hasta, p_buscar: buscar });
+}
+
+export async function editarPedido<T>(id: string, datos: { nombre_cliente: string; telefono: string; notas: string; recogida_en: string | null }) {
+  return staff<T>("laofi_admin_pedido_editar", { p_id: id, p: datos });
+}
+
+export async function borrarPedido(id: string) {
+  return staff<null>("laofi_admin_pedido_borrar", { p_id: id });
+}
+
 export async function estadoEncargoVino<T>(id: string, estado: "PENDIENTE" | "CONFIRMADO" | "LISTO" | "ENTREGADO" | "CANCELADO") {
   return staff<T>("laofi_admin_encargo_vino_estado", { p_id: id, p_estado: estado });
 }

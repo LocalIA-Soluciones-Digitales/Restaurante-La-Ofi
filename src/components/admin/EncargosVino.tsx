@@ -1,9 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { botonPrimario, botonSecundario, card } from "@/components/admin/ui";
+import { HistorialDias, diaMadrid } from "@/components/admin/HistorialDias";
+import { Modal } from "@/components/admin/Modal";
+import { Campo, botonPrimario, botonSecundario, card, input } from "@/components/admin/ui";
 import { Icon } from "@/components/ui/Icon";
-import { encargosVino, estadoEncargoVino } from "@/lib/admin/actions";
+import { borrarEncargoVino, editarEncargoVino, encargosVino, estadoEncargoVino, historialEncargosVino } from "@/lib/admin/actions";
 import type { EncargoVinoAdmin } from "@/lib/admin/types";
 import { SITE_URL } from "@/lib/env";
 import { formatCentimos } from "@/lib/format";
@@ -71,7 +73,8 @@ function paraPedir(lista: EncargoVinoAdmin[]) {
  */
 export function EncargosVino({ inicial }: { inicial: EncargoVinoAdmin[] }) {
   const [encargos, setEncargos] = useState(inicial);
-  const [historial, setHistorial] = useState<EncargoVinoAdmin[] | null>(null);
+  const [version, setVersion] = useState(0);
+  const [editando, setEditando] = useState<EncargoVinoAdmin | null>(null);
   const [vista, setVista] = useState<Vista>("todos");
   const [abierto, setAbierto] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState<string | null>(null);
@@ -93,14 +96,6 @@ export function EncargosVino({ inicial }: { inicial: EncargoVinoAdmin[] }) {
     const t = window.setInterval(() => void recargar(), 20_000);
     return () => window.clearInterval(t);
   }, [recargar]);
-
-  useEffect(() => {
-    if (vista !== "historial") return;
-    void encargosVino<EncargoVinoAdmin>(true).then((r) => {
-      if (!r.ok) return setError(r.error);
-      setHistorial(r.data.filter((e) => e.estado === "ENTREGADO" || e.estado === "CANCELADO").reverse());
-    });
-  }, [vista]);
 
   const cuenta = useMemo(() => {
     const c: Record<Paso, number> = { nuevos: 0, confirmados: 0, listos: 0 };
@@ -124,7 +119,31 @@ export function EncargosVino({ inicial }: { inicial: EncargoVinoAdmin[] }) {
     void recargar();
   };
 
-  const visibles = vista === "todos" ? encargos : vista === "historial" ? (historial ?? []) : encargos.filter((e) => pasoDe(e) === vista);
+  const borrar = async (e: EncargoVinoAdmin) => {
+    if (!window.confirm(`¿Eliminar para siempre el encargo nº ${e.numero} de ${e.nombre}? No se puede deshacer.`)) return;
+    setOcupado(e.id);
+    setError(null);
+    const r = await borrarEncargoVino(e.id);
+    setOcupado(null);
+    if (!r.ok) return setError(r.error);
+    setAbierto(null);
+    setVersion((v) => v + 1);
+    void recargar();
+  };
+
+  const fila = (e: EncargoVinoAdmin) => (
+    <FilaEncargo
+      e={e}
+      abierto={abierto === e.id}
+      onAbrir={() => setAbierto(abierto === e.id ? null : e.id)}
+      ocupado={ocupado === e.id}
+      onCambiar={(s) => void cambiar(e, s)}
+      onEditar={() => setEditando(e)}
+      onBorrar={() => void borrar(e)}
+    />
+  );
+
+  const visibles = vista === "todos" ? encargos : encargos.filter((e) => pasoDe(e) === vista);
   const pestanas: { k: Vista; titulo: string; n?: number; contador?: string }[] = [
     { k: "todos", titulo: "En curso", n: encargos.length, contador: "bg-carbon text-crema dark:bg-crema dark:text-noche" },
     ...(Object.keys(PASOS) as Paso[]).map((k) => ({ k, titulo: PASOS[k].titulo, n: cuenta[k], contador: PASOS[k].contador })),
@@ -157,7 +176,7 @@ export function EncargosVino({ inicial }: { inicial: EncargoVinoAdmin[] }) {
         </div>
         <button type="button" onClick={() => setVista("historial")} aria-pressed={vista === "historial"} className={botonSecundario}>
           <Icon name="clock" className="h-4 w-4" />
-          Entregados
+          Historial
         </button>
         <button type="button" onClick={() => setSonido(activarSonido())} aria-pressed={sonido} className={`${sonido ? botonSecundario : botonPrimario} ml-auto`}>
           <Icon name="sound" className="h-4 w-4" />
@@ -169,21 +188,43 @@ export function EncargosVino({ inicial }: { inicial: EncargoVinoAdmin[] }) {
 
       {vista === "pedir" ? (
         <ParaPedir lineas={pedir} />
+      ) : vista === "historial" ? (
+        <HistorialDias
+          cargar={historialEncargosVino<EncargoVinoAdmin>}
+          dia={(e) => diaMadrid(e.updated_at)}
+          importe={(e) => e.total_centimos}
+          anulado={(e) => e.estado === "CANCELADO"}
+          clave={(e) => e.id}
+          fila={fila}
+          version={version}
+          icono="wine"
+          nombres={["encargo", "encargos"]}
+          etiquetaHecho="Entregados"
+        />
       ) : visibles.length === 0 ? (
         <p className={`${card} grid place-items-center gap-2 px-4 py-12 text-center text-carbon-muted dark:text-crema/60`}>
           <Icon name="wine" className="h-8 w-8 opacity-50" />
-          {vista === "historial" ? (historial ? "Aún no hay encargos entregados." : "Cargando…") : encargos.length ? "Ningún encargo en este paso." : "No hay encargos de vino ahora mismo."}
+          {encargos.length ? "Ningún encargo en este paso." : "No hay encargos de vino ahora mismo."}
         </p>
       ) : (
         <ul className={`${card} divide-y divide-carbon/[0.07] overflow-hidden dark:divide-crema/10`}>
           {visibles.map((e) => (
-            <li key={e.id}>
-              <FilaEncargo e={e} abierto={abierto === e.id} onAbrir={() => setAbierto(abierto === e.id ? null : e.id)} ocupado={ocupado === e.id} onCambiar={(s) => void cambiar(e, s)} />
-            </li>
+            <li key={e.id}>{fila(e)}</li>
           ))}
         </ul>
       )}
 
+      {editando ? (
+        <EditarEncargo
+          e={editando}
+          onClose={() => setEditando(null)}
+          onGuardado={() => {
+            setEditando(null);
+            setVersion((v) => v + 1);
+            void recargar();
+          }}
+        />
+      ) : null}
       {avisar ? <AvisarEncargo tipo={avisar.tipo} e={avisar.e} onCerrar={() => setAvisar(null)} /> : null}
     </div>
   );
@@ -195,12 +236,16 @@ function FilaEncargo({
   onAbrir,
   ocupado,
   onCambiar,
+  onEditar,
+  onBorrar,
 }: {
   e: EncargoVinoAdmin;
   abierto: boolean;
   onAbrir: () => void;
   ocupado: boolean;
   onCambiar: (estado: EncargoVinoAdmin["estado"]) => void;
+  onEditar: () => void;
+  onBorrar: () => void;
 }) {
   const paso = pasoDe(e);
   const s = paso ? PASOS[paso] : null;
@@ -275,11 +320,19 @@ function FilaEncargo({
                 Volver atrás
               </button>
             ) : null}
+            <button type="button" disabled={ocupado} onClick={onEditar} className={`${botonSecundario} ml-auto min-h-9 px-3`}>
+              <Icon name="edit" className="h-4 w-4" />
+              Editar
+            </button>
             {paso ? (
-              <button type="button" disabled={ocupado} onClick={() => onCambiar("CANCELADO")} className="ml-auto min-h-9 rounded-lg px-3 text-sm font-semibold text-terracota ring-1 ring-carbon/10 dark:ring-crema/15">
+              <button type="button" disabled={ocupado} onClick={() => onCambiar("CANCELADO")} className="min-h-9 rounded-lg px-3 text-sm font-semibold text-terracota ring-1 ring-carbon/10 dark:ring-crema/15">
                 Anular encargo
               </button>
             ) : null}
+            <button type="button" disabled={ocupado} onClick={onBorrar} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold text-terracota ring-1 ring-carbon/10 dark:ring-crema/15">
+              <Icon name="trash" className="h-4 w-4" />
+              Eliminar
+            </button>
           </div>
         </div>
       ) : null}
@@ -356,5 +409,114 @@ function AvisarEncargo({ tipo, e, onCerrar }: { tipo: "listo" | "anulado"; e: En
         </a>
       </div>
     </div>
+  );
+}
+
+const ESTADOS: { v: EncargoVinoAdmin["estado"]; t: string }[] = [
+  { v: "PENDIENTE", t: "Nuevo" },
+  { v: "CONFIRMADO", t: "Preparando" },
+  { v: "LISTO", t: "Listo para recoger" },
+  { v: "ENTREGADO", t: "Entregado" },
+  { v: "CANCELADO", t: "Anulado" },
+];
+
+/** Corregir un encargo: datos del cliente, notas, el paso y las botellas de cada vino (0 = quitarlo). */
+function EditarEncargo({ e, onClose, onGuardado }: { e: EncargoVinoAdmin; onClose: () => void; onGuardado: () => void }) {
+  const [nombre, setNombre] = useState(e.nombre);
+  const [telefono, setTelefono] = useState(e.telefono);
+  const [email, setEmail] = useState(e.email ?? "");
+  const [notas, setNotas] = useState(e.notas ?? "");
+  const [estado, setEstado] = useState(e.estado);
+  const [cantidades, setCantidades] = useState<Record<string, number>>(() => Object.fromEntries(e.lineas.map((l) => [l.producto_id, l.cantidad])));
+  const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const total = e.lineas.reduce((a, l) => a + (cantidades[l.producto_id] ?? 0) * l.precio_centimos, 0);
+  const poner = (id: string, n: number) => setCantidades((c) => ({ ...c, [id]: Math.max(0, Math.min(240, n)) }));
+
+  const guardar = async () => {
+    setGuardando(true);
+    setError(null);
+    const r = await editarEncargoVino<EncargoVinoAdmin>(e.id, {
+      nombre,
+      telefono,
+      email,
+      notas,
+      estado,
+      lineas: Object.entries(cantidades).map(([producto_id, cantidad]) => ({ producto_id, cantidad })),
+    });
+    setGuardando(false);
+    if (!r.ok) return setError(r.error);
+    onGuardado();
+  };
+
+  return (
+    <Modal titulo={`Encargo nº ${e.numero}`} onClose={onClose}>
+      <form
+        className="grid gap-4"
+        onSubmit={(ev) => {
+          ev.preventDefault();
+          void guardar();
+        }}
+      >
+        <Campo label="Nombre">
+          <input className={input} value={nombre} onChange={(ev) => setNombre(ev.target.value)} maxLength={60} required />
+        </Campo>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Campo label="Teléfono">
+            <input className={input} type="tel" value={telefono} onChange={(ev) => setTelefono(ev.target.value)} required />
+          </Campo>
+          <Campo label="Email">
+            <input className={input} type="email" value={email} onChange={(ev) => setEmail(ev.target.value)} />
+          </Campo>
+        </div>
+        <Campo label="Paso">
+          <select className={input} value={estado} onChange={(ev) => setEstado(ev.target.value as EncargoVinoAdmin["estado"])}>
+            {ESTADOS.map((x) => (
+              <option key={x.v} value={x.v}>
+                {x.t}
+              </option>
+            ))}
+          </select>
+        </Campo>
+        <div className="grid gap-2 text-sm">
+          <span className="font-semibold">Vinos</span>
+          <ul className="grid gap-2">
+            {e.lineas.map((l) => {
+              const n = cantidades[l.producto_id] ?? 0;
+              return (
+                <li key={l.producto_id} className={`flex items-center gap-3 rounded-xl bg-arena/60 px-3 py-2 dark:bg-noche-3/60 ${n === 0 ? "opacity-50" : ""}`}>
+                  <span className="min-w-0 flex-1">
+                    <span className={`font-semibold ${n === 0 ? "line-through" : ""}`}>{l.nombre}</span>
+                    <span className="block text-xs text-carbon-muted dark:text-crema/60">{formatCentimos(l.precio_centimos)} / botella</span>
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <button type="button" onClick={() => poner(l.producto_id, n - 1)} className="grid h-9 w-9 place-items-center rounded-lg ring-1 ring-carbon/15 dark:ring-crema/20" aria-label={`Una botella menos de ${l.nombre}`}>
+                      <Icon name="minus" className="h-4 w-4" />
+                    </button>
+                    <span className="w-8 text-center font-semibold tabular-nums">{n}</span>
+                    <button type="button" onClick={() => poner(l.producto_id, n + 1)} className="grid h-9 w-9 place-items-center rounded-lg ring-1 ring-carbon/15 dark:ring-crema/20" aria-label={`Una botella más de ${l.nombre}`}>
+                      <Icon name="plus" className="h-4 w-4" />
+                    </button>
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="text-right font-semibold tabular-nums">Total {formatCentimos(total)}</p>
+        </div>
+        <Campo label="Notas">
+          <textarea className={`${input} h-auto min-h-20 py-2`} value={notas} onChange={(ev) => setNotas(ev.target.value)} maxLength={300} />
+        </Campo>
+        {error ? <p role="alert" className="rounded-xl bg-terracota px-4 py-3 text-sm font-semibold text-crema">{error}</p> : null}
+        <div className="flex justify-end gap-2">
+          <button type="button" onClick={onClose} className={botonSecundario}>
+            Cancelar
+          </button>
+          <button type="submit" disabled={guardando} className={botonPrimario}>
+            {guardando ? "Guardando…" : "Guardar cambios"}
+          </button>
+        </div>
+      </form>
+    </Modal>
   );
 }
