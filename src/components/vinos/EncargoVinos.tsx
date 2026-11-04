@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { useDialogA11y } from "@/hooks/useDialogA11y";
 import { encargarVinos } from "@/lib/encargos/actions";
@@ -10,17 +10,27 @@ import { href, type Locale } from "@/lib/i18n";
 import type { CartaItem, CartaSeccion } from "@/lib/restaurant/types";
 import { SITE } from "@/lib/site";
 
-// El encargo de vinos para llevar (/vinos/encargar): se eligen botellas en las tarjetas de
-// la tienda, una barra abajo lleva la cuenta y el panel recoge los datos. Sin fecha ni pago
+// El encargo de vinos para llevar (/vinos/encargar): se eligen botellas en la lista de la
+// tienda, el resumen lleva la cuenta y el panel recoge los datos. Sin fecha ni pago
 // online: se recoge y se paga en el local. El borrador se guarda en este navegador.
 
 const CLAVE = "laofi:encargo-vinos";
 const MAX_BOTELLAS = 48;
 
+export interface LineaEncargo {
+  vino: CartaItem;
+  cantidad: number;
+}
+
 interface EncargoCtx {
   botellas: number;
+  total: number;
+  lineas: LineaEncargo[];
+  hidratado: boolean;
   cantidad: (id: string) => number;
   cambiar: (id: string, n: number) => void;
+  /** Abre el panel con los datos para dejarlo encargado. */
+  abrir: () => void;
 }
 
 const Ctx = createContext<EncargoCtx | null>(null);
@@ -71,12 +81,17 @@ export function EncargoVinos({ secciones, locale, privacidadHref, children }: { 
   });
   const botellas = lineas.reduce((a, l) => a + l.cantidad, 0);
   const total = lineas.reduce((a, l) => a + l.cantidad * (l.vino.precioCentimos ?? 0), 0);
-  const ctx = useMemo<EncargoCtx>(() => ({ botellas, cantidad: (id) => encargo[id] ?? 0, cambiar }), [botellas, encargo, cambiar]);
+  const abrir = useCallback(() => setAbierto(true), []);
+  const ctx = useMemo<EncargoCtx>(
+    () => ({ botellas, total, lineas, hidratado, cantidad: (id) => encargo[id] ?? 0, cambiar, abrir }),
+    // lineas sale de encargo y vinos: basta con depender de ellos.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [botellas, total, encargo, vinos, hidratado, cambiar, abrir],
+  );
 
   return (
     <Ctx.Provider value={ctx}>
       {children}
-      {hidratado && botellas > 0 && !abierto ? <BarraEncargo botellas={botellas} total={total} onAbrir={() => setAbierto(true)} /> : null}
       {abierto ? (
         <PanelEncargo
           lineas={lineas}
@@ -102,7 +117,7 @@ export function Botellas({ vino, variante = "tienda" }: { vino: CartaItem; varia
   const n = e.cantidad(vino.id);
   const panel = variante === "panel";
   const oscuro = variante === "oscuro";
-  const tam = panel ? "h-8 w-8" : "h-10 w-10";
+  const tam = panel ? "h-8 w-8" : "h-9 w-9";
   const redondo = `grid ${tam} shrink-0 place-items-center rounded-full transition-[background-color,color,box-shadow,transform] duration-150 active:scale-90`;
   if (n === 0) {
     return (
@@ -123,7 +138,7 @@ export function Botellas({ vino, variante = "tienda" }: { vino: CartaItem; varia
   const hover = panel ? "hover:bg-arena" : oscuro ? "hover:bg-black/10" : "hover:bg-white/10";
   return (
     <span
-      className={`inline-flex ${panel ? "h-8 w-[5.5rem]" : "h-10 w-[6.75rem] motion-safe:animate-[encargo-abre_220ms_cubic-bezier(0.22,1,0.36,1)]"} shrink-0 items-center overflow-hidden rounded-full font-sans ${relleno}`}
+      className={`inline-flex ${panel ? "h-8 w-[5.5rem]" : "h-9 w-[6.25rem] motion-safe:animate-[encargo-abre_220ms_cubic-bezier(0.22,1,0.36,1)]"} shrink-0 items-center overflow-hidden rounded-full font-sans ${relleno}`}
     >
       <button type="button" onClick={() => e.cambiar(vino.id, n - 1)} aria-label={`Una botella menos de ${vino.nombre}`} className={`${redondo} ${hover}`}>
         <Icon name={n === 1 ? "close" : "minus"} className="h-4 w-4" />
@@ -145,36 +160,7 @@ export function Botellas({ vino, variante = "tienda" }: { vino: CartaItem; varia
   );
 }
 
-const botellasTexto = (n: number) => `${n} ${n === 1 ? "botella" : "botellas"}`;
-
-function BarraEncargo({ botellas, total, onAbrir }: { botellas: number; total: number; onAbrir: () => void }) {
-  const [latido, setLatido] = useState(0);
-  const prev = useRef(botellas);
-  useEffect(() => {
-    if (botellas > prev.current) setLatido((n) => n + 1);
-    prev.current = botellas;
-  }, [botellas]);
-
-  return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] sm:px-6 sm:pb-6">
-      <button
-        type="button"
-        onClick={onAbrir}
-        className="pointer-events-auto mx-auto flex w-full max-w-xl items-center gap-3 rounded-full bg-carbon py-2 pl-2 pr-5 text-crema shadow-[0_24px_50px_-16px_rgb(43_39_34/0.75)] ring-1 ring-white/10 animate-sheet-up hover:bg-[#1f1c18]"
-      >
-        <span key={latido} className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#E2B98A] text-carbon motion-safe:animate-bump">
-          <Icon name="wine" className="h-5 w-5" />
-        </span>
-        <span className="min-w-0 flex-1 text-left leading-tight">
-          <span className="block text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-[#E2B98A]">Tu encargo</span>
-          <span className="block truncate font-semibold">{botellasTexto(botellas)}</span>
-        </span>
-        <span className="font-display text-xl tabular-nums">{formatCentimos(total)}</span>
-        <Icon name="chevronUp" className="h-5 w-5 shrink-0" />
-      </button>
-    </div>
-  );
-}
+export const botellasTexto = (n: number) => `${n} ${n === 1 ? "botella" : "botellas"}`;
 
 const campo =
   "h-12 w-full rounded-xl border border-carbon/15 bg-white px-4 text-base text-carbon placeholder:text-carbon-muted/70 focus:border-carbon focus:outline-none";

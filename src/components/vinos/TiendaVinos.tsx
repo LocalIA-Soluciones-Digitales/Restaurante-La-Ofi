@@ -1,200 +1,306 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { filtrar, partes } from "@/components/carta/CartaBodega";
 import { Icon } from "@/components/ui/Icon";
-import { Botellas, useEncargoVinos } from "@/components/vinos/EncargoVinos";
+import { Botellas, botellasTexto, useEncargoVinos } from "@/components/vinos/EncargoVinos";
 import { formatCentimos } from "@/lib/format";
 import type { CartaItem, CartaSeccion } from "@/lib/restaurant/types";
+import { SITE } from "@/lib/site";
 import { ordenar, tipo } from "@/lib/vinos";
 
-// La tienda de encargos de vino (/vinos/encargar), compuesta como la lista de precios de una
-// vinoteca: la selección de la casa en una banda oscura y, por tipo, fichas sombreadas con
-// nombre, D.O. y uva, precio y un «+» de contorno. Sin fotos. La carta de /vinos
-// se queda solo para consultar.
+// La tienda de encargos de vino (/vinos/encargar) es una pantalla aparte, como el paso de
+// pedido de una tienda: su propia barra con «Volver a la carta» y los pasos, tipos de vino
+// a la izquierda, la lista de vinos por filas en el centro y el encargo siempre a la vista a
+// la derecha (en el móvil, una barra abajo). La carta de /vinos se queda para consultar.
 
 const precio = (v: CartaItem) => (v.precioCentimos === null ? null : formatCentimos(v.precioCentimos).replace(/,00(\s?€)$/, "$1"));
 
-/** «D.O. RUEDA · Verdejo 100 %», la línea pequeña bajo el nombre. */
-function Origen({ vino, claro = false }: { vino: CartaItem; claro?: boolean }) {
-  const { grupo, detalle } = partes(vino.descripcion);
-  if (!grupo && !detalle) return null;
-  return (
-    <p className={`mt-1 text-[0.9rem] leading-snug ${claro ? "text-crema/60" : "text-carbon-muted"}`}>
-      {grupo ? <span className={`block text-[0.66rem] font-semibold sm:inline uppercase tracking-[0.16em] ${claro ? "text-[#E2B98A]" : "text-madera-oscura"}`}>{grupo}</span> : null}
-      {grupo && detalle ? (
-        <span aria-hidden="true" className="mx-2 hidden opacity-50 sm:inline">
-          ·
-        </span>
-      ) : null}
-      {detalle ? <span className="font-display italic">{detalle.replace(/ %/g, " %")}</span> : null}
-    </p>
-  );
-}
+const PASOS = ["Elige tus vinos", "Tus datos", "Recoges y pagas"] as const;
 
-/**
- * Una ficha por vino, sombreada sobre el fondo (sin bordes ni fotos): nombre, D.O. y uva y,
- * abajo, el precio y el «+». Al encargarlo, la ficha se oscurece un punto y se marca.
- */
-function Ficha({ vino, oscuro = false }: { vino: CartaItem; oscuro?: boolean }) {
+/** Una fila: nombre, D.O. y uva; el precio alineado y el «+» (o «− 2 +»). */
+function Fila({ vino }: { vino: CartaItem }) {
   const e = useEncargoVinos();
   const n = e?.cantidad(vino.id) ?? 0;
+  const { grupo, detalle } = partes(vino.descripcion);
   const p = precio(vino);
-  const fondo = oscuro
-    ? n
-      ? "bg-white/[0.11] ring-1 ring-[#E2B98A]/60"
-      : "bg-white/[0.05] hover:bg-white/[0.08]"
-    : n
-      ? "bg-[#EADFCB] ring-1 ring-madera-oscura/50"
-      : "bg-[#EFE6D6] hover:bg-[#EADFCB]";
   return (
-    <li className={`flex flex-col rounded-2xl p-5 transition-colors duration-200 sm:p-6 ${fondo}`}>
-      <h3 className="font-display text-[1.5rem] leading-tight">{vino.nombre}</h3>
-      <Origen vino={vino} claro={oscuro} />
-      <div className="mt-auto flex items-center justify-between gap-4 pt-4 sm:pt-6">
-        <p className="font-display text-[1.6rem] leading-none tabular-nums">
-          {p ?? <span className="font-sans text-sm opacity-70">Pregúntanos</span>}
-          {p ? <span className={`ml-2 font-sans text-[0.62rem] uppercase tracking-[0.16em] ${oscuro ? "text-crema/50" : "text-carbon-muted"}`}>la botella</span> : null}
-        </p>
-        <Botellas vino={vino} variante={oscuro ? "oscuro" : "tienda"} />
+    <li className={`-mx-3 flex items-center gap-3 rounded-xl px-3 py-3.5 transition-colors duration-150 sm:gap-5 ${n ? "bg-white shadow-card" : "hover:bg-white/60"}`}>
+      <div className="min-w-0 flex-1">
+        <p className="font-display text-[1.15rem] leading-snug text-carbon sm:text-[1.2rem]">{vino.nombre}</p>
+        {grupo || detalle ? (
+          <p className="mt-0.5 truncate text-[0.85rem] text-carbon-muted">
+            {grupo ? <span className="text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-madera-oscura">{grupo}</span> : null}
+            {grupo && detalle ? <span aria-hidden="true"> · </span> : null}
+            {detalle}
+          </p>
+        ) : null}
+      </div>
+      <p className="shrink-0 text-right font-display text-[1.15rem] tabular-nums sm:w-16 sm:text-[1.2rem]">
+        {p ?? <span className="font-sans text-xs text-carbon-muted">Pregúntanos</span>}
+      </p>
+      <div className="flex w-[6.25rem] shrink-0 justify-end">
+        <Botellas vino={vino} />
       </div>
     </li>
   );
 }
 
-/** La selección de la casa: una banda oscura, como la pizarra de recomendaciones de la barra. */
-function Seleccion({ vinos }: { vinos: CartaItem[] }) {
+/** El encargo a la vista (columna derecha en escritorio): líneas, total y «Continuar». */
+function Resumen() {
+  const e = useEncargoVinos();
+  if (!e) return null;
+  const { lineas, botellas, total, abrir } = e;
   return (
-    <section aria-labelledby="seleccion" className="bg-carbon text-crema">
-      <div className="container-wide py-16 sm:py-20">
-        <p className="kicker text-[#E2B98A]">Selección de la casa</p>
-        <h2 id="seleccion" className="mt-3 font-display text-[clamp(2rem,4vw,3rem)] font-light leading-none">
-          Los que <em className="text-[#E2B98A]">recomendamos</em>
-        </h2>
-        <p className="mt-4 max-w-md text-crema/60">Los que elegimos para acompañar nuestra carta y los que más nos piden para llevar.</p>
-        <ul className="mt-10 grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
-          {vinos.map((vino) => (
-            <Ficha key={vino.id} vino={vino} oscuro />
+    <div className="rounded-2xl bg-white p-5 shadow-card ring-1 ring-tinta-line">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="font-display text-2xl">Tu encargo</h2>
+        {botellas ? <span className="text-sm text-carbon-muted">{botellasTexto(botellas)}</span> : null}
+      </div>
+
+      {lineas.length === 0 ? (
+        <div className="py-8 text-center">
+          <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-[#F6F0E5] text-madera-oscura">
+            <Icon name="wine" className="h-5 w-5" />
+          </span>
+          <p className="mx-auto mt-3 max-w-[15rem] text-sm leading-relaxed text-carbon-muted">Pulsa «+» en los vinos que quieras llevarte y aparecerán aquí.</p>
+        </div>
+      ) : (
+        <ul className="-mx-1 mt-3 max-h-[44vh] divide-y divide-tinta-line overflow-y-auto overscroll-contain px-1">
+          {lineas.map(({ vino, cantidad }) => (
+            <li key={vino.id} className="flex items-center gap-3 py-3">
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-display text-[1.02rem] leading-tight">{vino.nombre}</p>
+                <p className="mt-0.5 text-xs tabular-nums text-carbon-muted">{formatCentimos(cantidad * (vino.precioCentimos ?? 0))}</p>
+              </div>
+              <Botellas vino={vino} variante="panel" />
+            </li>
           ))}
         </ul>
-      </div>
-    </section>
+      )}
+
+      <dl className="mt-1 flex items-baseline justify-between border-t-2 border-carbon pt-4">
+        <dt className="text-sm text-carbon-muted">Total, se paga al recoger</dt>
+        <dd className="font-display text-[1.75rem] leading-none tabular-nums">{formatCentimos(total)}</dd>
+      </dl>
+      <button type="button" onClick={abrir} disabled={botellas === 0} className="btn mt-5 w-full bg-carbon text-crema hover:bg-[#1f1c18] disabled:cursor-not-allowed disabled:opacity-40">
+        Continuar con mis datos
+        <Icon name="arrow" className="h-4 w-4" />
+      </button>
+
+      <ul className="mt-5 grid gap-2 text-[0.8rem] leading-snug text-carbon-muted">
+        <li className="flex gap-2.5">
+          <Icon name="check" className="mt-px h-4 w-4 shrink-0 text-oliva" />
+          Al precio de la carta. Sin pago online.
+        </li>
+        <li className="flex gap-2.5">
+          <Icon name="whatsapp" className="mt-px h-4 w-4 shrink-0 text-oliva" />
+          Te avisamos cuando esté listo.
+        </li>
+        <li className="flex gap-2.5">
+          <Icon name="pin" className="mt-px h-4 w-4 shrink-0 text-oliva" />
+          Recogida en {SITE.address.street}, {SITE.address.locality}.
+        </li>
+      </ul>
+    </div>
   );
 }
 
-const PASOS = [
-  { titulo: "Elige tus botellas", texto: "Pulsa «+» en los vinos que quieras llevarte." },
-  { titulo: "Te avisamos", texto: "Por WhatsApp o teléfono, cuando esté listo." },
-  { titulo: "Recoges y pagas", texto: "En La Ofi, al precio de la carta." },
-] as const;
+/** En el móvil, el encargo va en una barra abajo que abre el panel. */
+function BarraMovil() {
+  const e = useEncargoVinos();
+  if (!e || !e.hidratado || e.botellas === 0) return null;
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-30 border-t border-tinta-line bg-[#F6F0E5]/95 px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 backdrop-blur lg:hidden">
+      <button type="button" onClick={e.abrir} className="flex h-14 w-full items-center gap-3 rounded-2xl bg-carbon pl-4 pr-3 text-crema animate-sheet-up hover:bg-[#1f1c18]">
+        <span className="grid h-8 min-w-8 place-items-center rounded-full bg-[#E2B98A] px-2 text-sm font-semibold tabular-nums text-carbon">{e.botellas}</span>
+        <span className="flex-1 text-left font-semibold">Ver mi encargo</span>
+        <span className="font-display text-lg tabular-nums">{formatCentimos(e.total)}</span>
+        <Icon name="chevronRight" className="h-5 w-5" />
+      </button>
+    </div>
+  );
+}
 
 export function TiendaVinos({ secciones, cartaHref }: { secciones: CartaSeccion[]; cartaHref: string }) {
   const todos = useMemo(() => ordenar(secciones), [secciones]);
-  const [filtro, setFiltro] = useState<string>("todos");
   const [q, setQ] = useState("");
+  const visibles = useMemo(() => filtrar(todos, q), [todos, q]);
+  const [activa, setActiva] = useState(todos[0]?.slug ?? "");
+  const pantalla = useRef<HTMLDivElement>(null);
   const buscando = q.trim().length > 0;
-  const visibles = useMemo(() => filtrar(todos, q).filter((s) => filtro === "todos" || s.slug === filtro), [todos, q, filtro]);
-  const recomendados = filtro === "todos" && !buscando ? todos.flatMap((s) => s.items.filter((v) => v.destacado)) : [];
-  const total = todos.reduce((a, s) => a + s.items.length, 0);
   const encontrados = visibles.reduce((a, s) => a + s.items.length, 0);
 
+  // Es otra pantalla: la de la web queda debajo, sin desplazarse.
+  useEffect(() => {
+    const html = document.documentElement;
+    const antes = html.style.overflow;
+    html.style.overflow = "hidden";
+    return () => {
+      html.style.overflow = antes;
+    };
+  }, []);
+
+  // El tipo que se está viendo queda marcado en la navegación.
+  useEffect(() => {
+    const root = pantalla.current;
+    if (!root) return;
+    const io = new IntersectionObserver(
+      (es) => {
+        const v = es.filter((x) => x.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+        if (v) setActiva((v.target as HTMLElement).dataset.slug ?? "");
+      },
+      { root, rootMargin: "-140px 0px -55% 0px" },
+    );
+    root.querySelectorAll("[data-slug]").forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, [visibles]);
+
+  const ir = (slug: string) => {
+    setActiva(slug);
+    pantalla.current?.querySelector(`[data-slug="${slug}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const buscador = (
+    <label className="relative block">
+      <span className="sr-only">Buscar un vino</span>
+      <Icon name="search" className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-carbon-muted" />
+      <input
+        type="search"
+        value={q}
+        onChange={(e) => setQ(e.target.value.slice(0, 60))}
+        placeholder="Vino, uva o D.O."
+        className="h-11 w-full rounded-xl border border-carbon/15 bg-white pl-10 pr-3 text-[0.95rem] placeholder:text-carbon-muted/80 focus:border-carbon focus:outline-none"
+      />
+    </label>
+  );
+
   return (
-    <div className="bg-[#F6F0E5] pb-36 text-carbon">
-      <header className="container-wide pb-14 pt-28 sm:pt-32 lg:pb-16 lg:pt-40">
-        <a href={cartaHref} className="inline-flex items-center gap-2 text-sm text-carbon-muted transition-colors hover:text-carbon">
-          <Icon name="arrow" className="h-4 w-4 rotate-180" />
-          Carta de vinos
-        </a>
-        <div className="mt-8 grid gap-12 lg:grid-cols-12 lg:items-end lg:gap-16">
-          <div className="lg:col-span-6">
-            <p className="kicker text-madera-oscura">Navidad · Encargos para llevar</p>
-            <h1 className="mt-4 font-display text-[clamp(2.75rem,6vw,4.75rem)] font-light leading-[0.95] tracking-tight">
-              Encarga tus vinos <em className="text-madera-oscura">para llevar</em>
-            </h1>
-            <p className="mt-6 max-w-lg text-lg leading-relaxed text-carbon-muted">
-              Elige las botellas para tus comidas y cenas de Navidad. Te las dejamos preparadas y pasas a recogerlas por La Ofi. Sin pago online.
-            </p>
+    <div ref={pantalla} className="fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-[#F6F0E5] text-carbon">
+      {/* Barra propia de la pantalla: volver, título y en qué paso estás. */}
+      <header className="sticky top-0 z-20 border-b border-tinta-line bg-[#F6F0E5]/95 backdrop-blur">
+        <div className="mx-auto flex h-16 max-w-[90rem] items-center gap-3 px-4 sm:gap-5 sm:px-6 lg:px-8">
+          <a
+            href={cartaHref}
+            className="inline-flex h-10 shrink-0 items-center gap-1 rounded-full pl-2.5 pr-4 text-sm font-semibold ring-1 ring-carbon/15 transition-colors hover:bg-white"
+          >
+            <Icon name="chevronLeft" className="h-4 w-4" />
+            <span className="sm:hidden">Volver</span>
+            <span className="hidden sm:inline">Volver a la carta</span>
+          </a>
+          <div className="min-w-0 flex-1 border-l border-tinta-line pl-3 sm:pl-5">
+            <p className="truncate font-display text-lg leading-tight">Encargo de vinos</p>
+            <p className="truncate text-xs text-carbon-muted">Para llevar · {SITE.name}</p>
           </div>
-          <ol className="grid gap-6 sm:grid-cols-3 lg:col-span-6">
-            {PASOS.map((s, i) => (
-              <li key={s.titulo} className="border-t border-carbon/70 pt-4">
-                <span className="font-display text-sm text-madera-oscura">0{i + 1}</span>
-                <p className="mt-2 font-display text-xl leading-tight">{s.titulo}</p>
-                <p className="mt-1.5 text-[0.92rem] leading-relaxed text-carbon-muted">{s.texto}</p>
+          <ol aria-label="Pasos del encargo" className="hidden items-center gap-2 text-sm md:flex">
+            {PASOS.map((paso, i) => (
+              <li key={paso} className="flex items-center gap-2">
+                {i > 0 ? <span aria-hidden="true" className="h-px w-6 bg-carbon/20" /> : null}
+                <span
+                  aria-current={i === 0 ? "step" : undefined}
+                  className={`grid h-6 w-6 place-items-center rounded-full text-xs font-semibold ${i === 0 ? "bg-carbon text-crema" : "text-carbon-muted ring-1 ring-carbon/25"}`}
+                >
+                  {i + 1}
+                </span>
+                <span className={i === 0 ? "font-semibold" : "text-carbon-muted"}>{paso}</span>
               </li>
             ))}
           </ol>
         </div>
       </header>
 
-      {recomendados.length ? <Seleccion vinos={recomendados} /> : null}
-
-      {/* Tipos y buscador, fijos al bajar. */}
-      <nav aria-label="Filtrar vinos" className="sticky top-16 z-10 border-b border-tinta-line bg-[#F6F0E5]/95 backdrop-blur lg:top-[4.5rem]">
-        <div className="container-wide flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-8">
-          <div className="-mx-1 flex gap-6 overflow-x-auto px-1 [scrollbar-width:none] sm:gap-8">
-            {[{ slug: "todos", titulo: "Todos", n: total }, ...todos.map((s) => ({ slug: s.slug, titulo: tipo(s).titulo, n: s.items.length }))].map((c) => (
-              <button
-                key={c.slug}
-                type="button"
-                aria-pressed={filtro === c.slug}
-                onClick={() => setFiltro(c.slug)}
-                className="relative inline-flex h-14 shrink-0 items-center gap-1 text-[0.95rem] text-carbon-muted transition-colors after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:origin-left after:scale-x-0 after:bg-carbon after:transition-transform after:duration-200 hover:text-carbon aria-pressed:font-semibold aria-pressed:text-carbon aria-pressed:after:scale-x-100"
-              >
-                {c.titulo}
-                <sup className="text-[0.65rem] font-normal tabular-nums opacity-60">{c.n}</sup>
-              </button>
-            ))}
+      <div className="mx-auto max-w-[90rem] px-4 sm:px-6 lg:grid lg:grid-cols-[12.5rem_minmax(0,1fr)_21rem] lg:gap-10 lg:px-8 xl:gap-14">
+        {/* Tipos de vino (escritorio). */}
+        <aside className="hidden lg:block">
+          <div className="sticky top-16 pt-10">
+            {buscador}
+            <nav aria-label="Tipos de vino" className="mt-6">
+              <p className="px-3 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-carbon-muted">Tipos de vino</p>
+              <ul className="mt-2 grid gap-0.5">
+                {visibles.map((s) => (
+                  <li key={s.slug}>
+                    <button
+                      type="button"
+                      onClick={() => ir(s.slug)}
+                      aria-current={activa === s.slug ? "true" : undefined}
+                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[0.95rem] text-carbon-muted transition-colors hover:bg-white/70 hover:text-carbon aria-[current]:bg-white aria-[current]:font-semibold aria-[current]:text-carbon aria-[current]:shadow-card"
+                    >
+                      <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full" style={{ background: tipo(s).color }} />
+                      <span className="flex-1">{tipo(s).titulo}</span>
+                      <span className="text-xs font-normal tabular-nums text-carbon-muted">{s.items.length}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </nav>
           </div>
-          <label className="relative mb-3 block lg:mb-0 lg:ml-auto lg:w-72">
-            <span className="sr-only">Buscar un vino</span>
-            <Icon name="search" className="pointer-events-none absolute left-0 top-1/2 h-4 w-4 -translate-y-1/2 text-carbon-muted" />
-            <input
-              type="search"
-              value={q}
-              onChange={(e) => setQ(e.target.value.slice(0, 60))}
-              placeholder="Busca un vino, una uva o una D.O."
-              className="h-10 w-full rounded-none border-b border-carbon/20 bg-transparent pl-7 pr-2 text-[0.95rem] placeholder:text-carbon-muted/80 focus:border-carbon focus:outline-none"
-            />
-          </label>
-        </div>
-      </nav>
+        </aside>
 
-      <div className="container-wide">
-        {buscando ? (
-          <p role="status" className="pt-10 text-sm text-carbon-muted">
-            {encontrados ? `${encontrados} ${encontrados === 1 ? "vino" : "vinos"} para «${q.trim()}».` : `No encontramos «${q.trim()}»: pregúntanos, puede que lo tengamos en bodega.`}
-          </p>
-        ) : null}
+        <div className="min-w-0 pb-32 lg:pb-20">
+          <div className="pt-8 lg:pt-10">
+            <p className="kicker text-madera-oscura">Navidad · Para llevar</p>
+            <h1 className="mt-2 font-display text-[clamp(2rem,4vw,2.75rem)] font-light leading-[1.05]">
+              Elige tus <em className="text-madera-oscura">vinos</em>
+            </h1>
+            <p className="mt-2 max-w-xl text-carbon-muted">Al precio de la carta. Te avisamos cuando esté listo y lo pagas al recogerlo en La Ofi.</p>
+            <div className="mt-5 lg:hidden">{buscador}</div>
+          </div>
 
-        {visibles.map((s, i) => (
-          <section key={s.id} aria-labelledby={`tienda-${s.slug}`} className="pt-16 lg:pt-20">
-            <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-2">
-              <div>
-                <p className="font-display text-sm text-madera-oscura">0{i + 1}</p>
-                <h2 id={`tienda-${s.slug}`} className="mt-2 font-display text-[clamp(2.25rem,4vw,3.25rem)] font-light leading-none">
+          {/* Tipos de vino (móvil), fijos bajo la barra. */}
+          <nav aria-label="Tipos de vino" className="sticky top-16 z-10 -mx-4 mt-4 border-b border-tinta-line bg-[#F6F0E5]/95 px-4 backdrop-blur sm:-mx-6 sm:px-6 lg:hidden">
+            <div className="-mx-1 flex gap-2 overflow-x-auto px-1 py-3 [scrollbar-width:none]">
+              {visibles.map((s) => (
+                <button
+                  key={s.slug}
+                  type="button"
+                  onClick={() => ir(s.slug)}
+                  aria-current={activa === s.slug ? "true" : undefined}
+                  className="inline-flex h-9 shrink-0 items-center gap-2 rounded-full bg-white/70 px-3.5 text-sm ring-1 ring-carbon/10 aria-[current]:bg-carbon aria-[current]:text-crema aria-[current]:ring-carbon"
+                >
+                  {tipo(s).titulo}
+                  <span className="text-xs tabular-nums opacity-60">{s.items.length}</span>
+                </button>
+              ))}
+            </div>
+          </nav>
+
+          {buscando ? (
+            <p role="status" className="pt-6 text-sm text-carbon-muted">
+              {encontrados ? `${encontrados} ${encontrados === 1 ? "vino" : "vinos"} para «${q.trim()}».` : `No encontramos «${q.trim()}»: pregúntanos, puede que lo tengamos en bodega.`}
+            </p>
+          ) : null}
+
+          {visibles.map((s) => (
+            <section key={s.slug} data-slug={s.slug} aria-labelledby={`tienda-${s.slug}`} className="scroll-mt-32 pt-8 lg:scroll-mt-20 lg:pt-10">
+              <div className="flex items-end justify-between gap-4 border-b-2 border-carbon pb-2.5">
+                <h2 id={`tienda-${s.slug}`} className="flex items-center gap-2.5 font-display text-2xl leading-none sm:text-[1.75rem]">
+                  <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full" style={{ background: tipo(s).color }} />
                   {tipo(s).titulo}
                 </h2>
+                <p className="hidden truncate text-sm text-carbon-muted sm:block">{tipo(s).nota}</p>
               </div>
-              <p className="max-w-md text-carbon-muted sm:text-right">
-                {tipo(s).nota}
-                <span className="mt-1 block text-xs uppercase tracking-[0.16em]">
-                  {s.items.length} {s.items.length === 1 ? "referencia" : "referencias"}
-                </span>
-              </p>
-            </div>
-            <ul className="mt-8 grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
-              {s.items.map((vino) => (
-                <Ficha key={vino.id} vino={vino} />
-              ))}
-            </ul>
-          </section>
-        ))}
+              <ul className="mt-1.5 grid gap-0.5">
+                {s.items.map((vino) => (
+                  <Fila key={vino.id} vino={vino} />
+                ))}
+              </ul>
+            </section>
+          ))}
 
-        <p className="mx-auto mt-20 max-w-2xl text-center text-sm text-carbon-muted">
-          Precios por botella, IVA incluido: los mismos que en la carta. Si falta algún vino, te llamamos para buscar otro.
-        </p>
+          <p className="mt-12 text-sm text-carbon-muted">
+            Precios por botella, IVA incluido: los mismos que en la carta. Si falta algún vino, te llamamos para buscar otro.
+          </p>
+        </div>
+
+        {/* El encargo, siempre a la vista (escritorio). */}
+        <aside aria-label="Tu encargo" className="hidden lg:block">
+          <div className="sticky top-16 pt-10">
+            <Resumen />
+          </div>
+        </aside>
       </div>
+
+      <BarraMovil />
     </div>
   );
 }

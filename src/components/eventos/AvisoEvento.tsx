@@ -52,7 +52,7 @@ export function AvisoEvento({
   const pathname = usePathname();
 
   useEffect(() => {
-    if (pathname.includes(`/eventos/${evento.slug}`) || pathname.includes("/reservar")) return;
+    if (pathname.includes(`/eventos/${evento.slug}`) || pathname.includes("/reservar") || pathname.includes("/vinos/encargar")) return;
     try {
       if (sessionStorage.getItem(CLAVE) === evento.id) return;
     } catch {

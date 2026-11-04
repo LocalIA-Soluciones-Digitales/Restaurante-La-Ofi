@@ -678,7 +678,7 @@
 /* El «+» de la tienda de vinos se despliega en «− 2 +» al encargar la primera botella. */
 @keyframes encargo-abre {
   from {
-    width: 2.5rem;
+    width: 2.25rem;
   }
 }
 @keyframes intro-up {
