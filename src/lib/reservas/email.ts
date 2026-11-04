@@ -84,6 +84,8 @@ export async function enviarAvisoReserva(tipo: AvisoReserva, r: ReservaAvisable,
   try {
     await smtp().sendMail({
       from: { name: SITE.name, address: process.env.SMTP_USER! },
+      // Si el cliente contesta, que le llegue al correo que mira el local (no a la cuenta de envío).
+      ...(process.env.SMTP_REPLY_TO ? { replyTo: process.env.SMTP_REPLY_TO } : {}),
       to: email,
       subject: asunto(tipo, r),
       text: parrafos(tipo, r, enlace, SITE.phone.display).join("\n\n") + `\n\n${SITE.name} · ${SITE.address.street}, ${SITE.address.locality} · ${SITE.phone.display}`,
