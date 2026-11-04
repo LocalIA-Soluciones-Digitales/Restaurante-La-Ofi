@@ -10,18 +10,14 @@ import { href, type Locale } from "@/lib/i18n";
 import type { CartaItem, CartaSeccion } from "@/lib/restaurant/types";
 import { SITE } from "@/lib/site";
 
-// El encargo de vinos para llevar: se eligen botellas en la propia carta de /vinos, una
-// barra abajo lleva la cuenta y el panel recoge los datos. Sin fecha ni pago online: se
-// recoge y se paga en el local. El borrador se guarda en este navegador.
+// El encargo de vinos para llevar (/vinos/encargar): se eligen botellas en las tarjetas de
+// la tienda, una barra abajo lleva la cuenta y el panel recoge los datos. Sin fecha ni pago
+// online: se recoge y se paga en el local. El borrador se guarda en este navegador.
 
 const CLAVE = "laofi:encargo-vinos";
 const MAX_BOTELLAS = 48;
 
 interface EncargoCtx {
-  /** Modo encargo: solo entonces sale el «+» en la carta (quien mira la carta para pedir en mesa no lo ve). */
-  activo: boolean;
-  activar: () => void;
-  salir: () => void;
   botellas: number;
   cantidad: (id: string) => number;
   cambiar: (id: string, n: number) => void;
@@ -29,7 +25,7 @@ interface EncargoCtx {
 
 const Ctx = createContext<EncargoCtx | null>(null);
 
-/** null fuera de /vinos (la carta de vinos al final de /carta es solo de consulta). */
+/** null fuera de la tienda de encargos (las cartas de vinos son solo de consulta). */
 export const useEncargoVinos = () => useContext(Ctx);
 
 const leerBorrador = (): Record<string, number> => {
@@ -46,31 +42,12 @@ export function EncargoVinos({ secciones, locale, privacidadHref, children }: { 
   const [encargo, setEncargo] = useState<Record<string, number>>({});
   const [hidratado, setHidratado] = useState(false);
   const [abierto, setAbierto] = useState(false);
-  const [activo, setActivo] = useState(false);
 
-  // Solo los vinos que siguen en la carta. Con un encargo a medias, se vuelve al modo encargo.
+  // Solo los vinos que siguen en la carta.
   useEffect(() => {
-    const b = Object.fromEntries(Object.entries(leerBorrador()).filter(([id, n]) => vinos.has(id) && Number.isInteger(n) && n > 0));
-    setEncargo(b);
-    if (Object.keys(b).length) setActivo(true);
+    setEncargo(Object.fromEntries(Object.entries(leerBorrador()).filter(([id, n]) => vinos.has(id) && Number.isInteger(n) && n > 0)));
     setHidratado(true);
   }, [vinos]);
-
-  // «Encargar para llevar» (la cabecera, servidor) enlaza a #encargo: entra en modo encargo y baja a la carta.
-  const activar = useCallback(() => {
-    setActivo(true);
-    window.requestAnimationFrame(() => document.getElementById("la-bodega")?.scrollIntoView({ behavior: "smooth" }));
-  }, []);
-  useEffect(() => {
-    const mirar = () => {
-      if (window.location.hash !== "#encargo") return;
-      window.history.replaceState(null, "", window.location.pathname + window.location.search);
-      activar();
-    };
-    mirar();
-    window.addEventListener("hashchange", mirar);
-    return () => window.removeEventListener("hashchange", mirar);
-  }, [activar]);
 
   useEffect(() => {
     if (!hidratado) return;
@@ -94,10 +71,7 @@ export function EncargoVinos({ secciones, locale, privacidadHref, children }: { 
   });
   const botellas = lineas.reduce((a, l) => a + l.cantidad, 0);
   const total = lineas.reduce((a, l) => a + l.cantidad * (l.vino.precioCentimos ?? 0), 0);
-  const ctx = useMemo<EncargoCtx>(
-    () => ({ activo, activar, salir: () => setActivo(false), botellas, cantidad: (id) => encargo[id] ?? 0, cambiar }),
-    [activo, activar, botellas, encargo, cambiar],
-  );
+  const ctx = useMemo<EncargoCtx>(() => ({ botellas, cantidad: (id) => encargo[id] ?? 0, cambiar }), [botellas, encargo, cambiar]);
 
   return (
     <Ctx.Provider value={ctx}>
@@ -119,36 +93,40 @@ export function EncargoVinos({ secciones, locale, privacidadHref, children }: { 
 }
 
 /**
- * Un «+» redondo que, con botellas, se despliega en «− 2 +» (el precio se aparta: así se
- * ve qué vinos llevas). En la carta solo sale en modo encargo y se alinea con la primera
- * línea del nombre (los nombres largos ocupan dos); en el panel, centrado en su fila.
+ * «+» y, con botellas, «− 2 +». En las fichas de la tienda, grande y relleno (se ve de
+ * lejos que se puede añadir); en el panel del encargo, discreto.
  */
-export function Botellas({ vino, claro = false }: { vino: CartaItem; claro?: boolean }) {
+export function Botellas({ vino, variante = "tienda" }: { vino: CartaItem; variante?: "tienda" | "oscuro" | "panel" }) {
   const e = useEncargoVinos();
-  // 26px de línea del nombre y 32px de botón: 3px arriba para centrarlo en la primera línea.
-  const fila = claro ? "" : "-mt-[3px] self-start";
-  if (!e) return null;
-  if (vino.precioCentimos === null) return claro ? null : <span aria-hidden="true" className={`h-8 w-8 shrink-0 ${fila}`} />;
+  if (!e || vino.precioCentimos === null) return null;
   const n = e.cantidad(vino.id);
-  const caja = `inline-flex h-8 shrink-0 items-center overflow-hidden rounded-full font-sans transition-[width,background-color,color,box-shadow] duration-200 ease-out ${fila}`;
-  const redondo = "grid h-8 w-8 shrink-0 place-items-center rounded-full transition-[background-color,transform] duration-150 active:scale-90";
+  const panel = variante === "panel";
+  const oscuro = variante === "oscuro";
+  const tam = panel ? "h-8 w-8" : "h-10 w-10";
+  const redondo = `grid ${tam} shrink-0 place-items-center rounded-full transition-[background-color,color,box-shadow,transform] duration-150 active:scale-90`;
   if (n === 0) {
     return (
       <button
         type="button"
         onClick={() => e.cambiar(vino.id, 1)}
-        aria-label={`Encargar ${vino.nombre}`}
+        aria-label={`Añadir ${vino.nombre} al encargo`}
         title="Añadir al encargo"
-        className={`${caja} w-8 justify-center text-carbon ring-1 ring-inset ring-carbon/25 hover:bg-carbon hover:text-crema hover:ring-carbon active:scale-90`}
+        className={`${redondo} ring-1 ${
+          oscuro ? "text-crema ring-crema/35 hover:bg-[#E2B98A] hover:text-carbon hover:ring-[#E2B98A]" : "text-carbon ring-carbon/30 hover:bg-carbon hover:text-crema hover:ring-carbon"
+        }`}
       >
-        <Icon name="plus" className="h-4 w-4" />
+        <Icon name="plus" className="h-[1.1rem] w-[1.1rem]" />
       </button>
     );
   }
+  const relleno = panel ? "bg-white ring-1 ring-carbon/15" : oscuro ? "bg-[#E2B98A] text-carbon" : "bg-carbon text-crema";
+  const hover = panel ? "hover:bg-arena" : oscuro ? "hover:bg-black/10" : "hover:bg-white/10";
   return (
-    <span className={`${caja} w-[5.5rem] ${claro ? "bg-white ring-1 ring-carbon/15" : "bg-carbon text-crema motion-safe:animate-[encargo-abre_220ms_cubic-bezier(0.22,1,0.36,1)]"}`}>
-      <button type="button" onClick={() => e.cambiar(vino.id, n - 1)} aria-label={`Una botella menos de ${vino.nombre}`} className={`${redondo} ${claro ? "hover:bg-arena" : "hover:bg-white/10"}`}>
-        <Icon name={n === 1 ? "close" : "minus"} className="h-3.5 w-3.5" />
+    <span
+      className={`inline-flex ${panel ? "h-8 w-[5.5rem]" : "h-10 w-[6.75rem] motion-safe:animate-[encargo-abre_220ms_cubic-bezier(0.22,1,0.36,1)]"} shrink-0 items-center overflow-hidden rounded-full font-sans ${relleno}`}
+    >
+      <button type="button" onClick={() => e.cambiar(vino.id, n - 1)} aria-label={`Una botella menos de ${vino.nombre}`} className={`${redondo} ${hover}`}>
+        <Icon name={n === 1 ? "close" : "minus"} className="h-4 w-4" />
       </button>
       <span aria-live="polite" className="flex-1 text-center text-sm font-semibold tabular-nums">
         {n}
@@ -159,24 +137,11 @@ export function Botellas({ vino, claro = false }: { vino: CartaItem; claro?: boo
         onClick={() => e.cambiar(vino.id, n + 1)}
         disabled={n >= MAX_BOTELLAS}
         aria-label={`Una botella más de ${vino.nombre}`}
-        className={`${redondo} disabled:opacity-40 ${claro ? "hover:bg-arena" : "hover:bg-white/10"}`}
+        className={`${redondo} disabled:opacity-40 ${hover}`}
       >
-        <Icon name="plus" className="h-3.5 w-3.5" />
+        <Icon name="plus" className="h-4 w-4" />
       </button>
     </span>
-  );
-}
-
-/** «Empezar mi encargo»: entra en modo encargo y baja a la carta. */
-export function EmpezarEncargo({ className = "" }: { className?: string }) {
-  const e = useEncargoVinos();
-  if (!e) return null;
-  return (
-    <button type="button" onClick={e.activar} className={className}>
-      <Icon name="wine" className="h-4 w-4" />
-      {e.botellas ? "Seguir con mi encargo" : "Empezar mi encargo"}
-      <Icon name="arrow" className="h-4 w-4" />
-    </button>
   );
 }
 
@@ -311,7 +276,7 @@ function PanelEncargo({
                         <p className="truncate font-display text-[1.2rem] leading-tight">{vino.nombre}</p>
                         {vino.descripcion ? <p className="truncate font-display text-sm italic text-carbon-muted">{vino.descripcion}</p> : null}
                       </div>
-                      <Botellas vino={vino} claro />
+                      <Botellas vino={vino} variante="panel" />
                       <span className="min-w-16 shrink-0 whitespace-nowrap text-right font-display text-lg tabular-nums">{formatCentimos(cantidad * (vino.precioCentimos ?? 0))}</span>
                     </li>
                   ))}

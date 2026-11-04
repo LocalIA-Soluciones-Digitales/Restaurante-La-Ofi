@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Photo } from "@/components/media/Photo";
 import { Icon } from "@/components/ui/Icon";
-import { Botellas, useEncargoVinos } from "@/components/vinos/EncargoVinos";
 import { formatCentimos } from "@/lib/format";
 import type { CartaItem, CartaSeccion } from "@/lib/restaurant/types";
 import { ordenar, TEXTO_BODEGA, tipo } from "@/lib/vinos";
@@ -13,7 +12,7 @@ import { ordenar, TEXTO_BODEGA, tipo } from "@/lib/vinos";
  * «D.O. Rueda · Verdejo 100 %» → { grupo: "D.O. Rueda", detalle: "Verdejo 100 %" }.
  * Si solo trae la denominación («D.O. Rioja»), es el grupo; si no, todo es detalle.
  */
-function partes(descripcion: string | null): { grupo: string | null; detalle: string | null } {
+export function partes(descripcion: string | null): { grupo: string | null; detalle: string | null } {
   if (!descripcion) return { grupo: null, detalle: null };
   const i = descripcion.indexOf(" · ");
   if (i >= 0) return { grupo: descripcion.slice(0, i), detalle: descripcion.slice(i + 3) };
@@ -39,7 +38,7 @@ const normal = (t: string) =>
     .replace(/[\u0300-\u036f]/g, "");
 
 /** Los tipos con solo los vinos que casan con la búsqueda (nombre, uva o denominación). */
-function filtrar(tipos: CartaSeccion[], q: string): CartaSeccion[] {
+export function filtrar(tipos: CartaSeccion[], q: string): CartaSeccion[] {
   const palabras = normal(q).split(/\s+/).filter(Boolean);
   if (palabras.length === 0) return tipos;
   return tipos
@@ -58,14 +57,11 @@ const precio = (v: CartaItem) => (v.precioCentimos === null ? "—" : formatCent
 function Vino({ vino, conGrupo = false }: { vino: CartaItem; conGrupo?: boolean }) {
   const { grupo, detalle } = partes(vino.descripcion);
   const sub = conGrupo ? [grupo, detalle].filter(Boolean).join(" · ") : detalle;
-  const encargo = useEncargoVinos()?.activo;
   return (
     <li className="py-2.5">
-      {/* Nombre, precio y (en /vinos) el botón de encargar en la misma línea base, como en la carta impresa. */}
-      <p className="flex items-baseline gap-4">
-        <span className="min-w-0 flex-1 font-display text-[1.3rem] leading-tight text-carbon">{vino.nombre}</span>
+      <p className="flex items-baseline justify-between gap-6">
+        <span className="font-display text-[1.3rem] leading-tight text-carbon">{vino.nombre}</span>
         <span className="shrink-0 font-display text-[1.2rem] tabular-nums text-carbon">{precio(vino)}</span>
-        {encargo ? <Botellas vino={vino} /> : null}
       </p>
       {sub ? <p className="mt-0.5 font-display text-[0.95rem] italic leading-snug text-carbon-muted">{sub}</p> : null}
     </li>
@@ -81,7 +77,6 @@ function Vino({ vino, conGrupo = false }: { vino: CartaItem; conGrupo?: boolean 
 export function CartaBodega({ secciones, cabecera = true }: { secciones: CartaSeccion[]; cabecera?: boolean }) {
   const todos = useMemo(() => ordenar(secciones), [secciones]);
   const [q, setQ] = useState("");
-  const encargo = useEncargoVinos();
   const buscando = q.trim().length > 0;
   const tipos = useMemo(() => filtrar(todos, q), [todos, q]);
   if (todos.length === 0) return null;
@@ -114,23 +109,6 @@ export function CartaBodega({ secciones, cabecera = true }: { secciones: CartaSe
           ))}
         </div>
         </div>
-        {/* Modo encargo: la carta se puede encargar para llevar; fuera de él, solo se consulta. */}
-        {encargo?.activo ? (
-          <div className="border-t border-tinta-line bg-carbon text-crema">
-            <div className="container-wide flex items-center gap-3 py-2.5">
-              <Icon name="wine" className="h-4 w-4 shrink-0 text-[#E2B98A]" />
-              <p className="min-w-0 flex-1 text-sm leading-snug">
-                <span className="font-semibold">Encargo para llevar.</span>{" "}
-                <span className="text-crema/75">
-                  Pulsa <span className="inline-grid h-5 w-5 translate-y-[-1px] place-items-center rounded-full align-middle ring-1 ring-crema/40">+</span> en los vinos que quieras llevarte.
-                </span>
-              </p>
-              <button type="button" onClick={encargo.salir} className="shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold text-[#E2B98A] hover:bg-white/10">
-                Terminar
-              </button>
-            </div>
-          </div>
-        ) : null}
       </nav>
 
       {buscando ? (

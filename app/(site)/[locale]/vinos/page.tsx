@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { CartaBodega } from "@/components/carta/CartaBodega";
 import { Photo } from "@/components/media/Photo";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Icon } from "@/components/ui/Icon";
-import { EmpezarEncargo, EncargoVinos } from "@/components/vinos/EncargoVinos";
 import { href, type Locale } from "@/lib/i18n";
 import { ENCARGOS_VINO } from "@/lib/lanzamiento";
 import { getCartaContent } from "@/lib/restaurant/content";
@@ -31,8 +31,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
  * La carta de vinos en su propia página (antes iba al final de la carta y
  * pasaba desapercibida): la vinoteca a todo el ancho con el título y debajo la carta
  * por tipos y denominaciones, con los vinos de la casa arriba. Con los encargos abiertos
- * (ENCARGOS_VINO), la carta tiene un modo encargo: solo entonces sale el «+» en cada vino
- * (quien la mira para pedir en mesa la ve limpia).
+ * (ENCARGOS_VINO), un bloque lleva a la tienda de encargos (/vinos/encargar): la carta se
+ * queda solo para consultar (quien la mira para pedir en mesa no ve botones de encargo).
  */
 export default async function VinosPage({ params }: Params) {
   const { locale } = await params;
@@ -55,10 +55,10 @@ export default async function VinosPage({ params }: Params) {
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-crema/85">{TEXTO_BODEGA}</p>
           <div className="mt-9 flex flex-wrap justify-center gap-3">
             {encargos ? (
-              <a href="#encargo" className="btn bg-[#E2B98A] px-6 text-carbon hover:bg-crema">
+              <Link href={href(locale, "/vinos/encargar")} className="btn bg-[#E2B98A] px-6 text-carbon hover:bg-crema">
                 <Icon name="wine" className="h-4 w-4" />
                 Encargar para llevar
-              </a>
+              </Link>
             ) : null}
             <a href="#la-bodega" className={`btn px-6 ${encargos ? "border border-crema/40 text-crema hover:bg-crema hover:text-carbon" : "bg-[#E2B98A] text-carbon hover:bg-crema"}`}>
               Ver los vinos
@@ -68,13 +68,11 @@ export default async function VinosPage({ params }: Params) {
         </div>
       </section>
 
-      {encargos ? (
-        <EncargoVinos secciones={vinos} locale={locale} privacidadHref={href(locale, "/privacidad")}>
-          <ComoEncargar />
+      {vinos.length ? (
+        <>
+          {encargos ? <ComoEncargar tiendaHref={href(locale, "/vinos/encargar")} /> : null}
           <CartaBodega secciones={vinos} cabecera={false} />
-        </EncargoVinos>
-      ) : vinos.length ? (
-        <CartaBodega secciones={vinos} cabecera={false} />
+        </>
       ) : (
         <div className="container-page max-w-2xl py-20">
           <EmptyState title="Carta de vinos en preparación" icon="wine">
@@ -91,13 +89,13 @@ export default async function VinosPage({ params }: Params) {
 }
 
 const PASOS = [
-  { titulo: "Elige tus botellas", texto: "Pulsa «+» en los vinos de la carta que quieras llevarte: tintos, blancos, cavas y champagnes." },
+  { titulo: "Elige tus botellas", texto: "En nuestra tienda de encargos: tintos, blancos, cavas y champagnes de la carta." },
   { titulo: "Lo preparamos", texto: "Te avisamos por WhatsApp o por teléfono en cuanto tu encargo esté listo." },
   { titulo: "Recoges y pagas", texto: "Pasa por La Ofi cuando te venga bien y paga allí. Sin pago online." },
 ];
 
 /** Cómo funciona el encargo, entre la vinoteca y la carta: tres pasos, como una nota impresa. */
-function ComoEncargar() {
+function ComoEncargar({ tiendaHref }: { tiendaHref: string }) {
   return (
     <section id="encargar" aria-labelledby="encargar-title" className="scroll-mt-20 bg-[#F6F0E5] pb-16 text-carbon sm:pb-20">
       <div className="container-wide grid gap-10 border-b border-tinta-line py-12 lg:grid-cols-12 lg:gap-14 lg:py-14">
@@ -110,7 +108,11 @@ function ComoEncargar() {
             Encarga las botellas para tus comidas y cenas de Navidad, al mismo precio que en la carta. Te las dejamos preparadas y
             pasas a recogerlas por La Ofi.
           </p>
-          <EmpezarEncargo className="btn mt-7 bg-carbon px-6 text-crema hover:bg-[#1f1c18]" />
+          <Link href={tiendaHref} className="btn mt-7 bg-carbon px-6 text-crema hover:bg-[#1f1c18]">
+            <Icon name="wine" className="h-4 w-4" />
+            Hacer mi encargo
+            <Icon name="arrow" className="h-4 w-4" />
+          </Link>
         </div>
         <ol className="grid gap-8 sm:grid-cols-3 sm:gap-6 lg:col-span-7 lg:self-end">
           {PASOS.map((p, i) => (
