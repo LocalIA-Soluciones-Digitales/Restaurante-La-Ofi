@@ -23,6 +23,11 @@ async function staff<T>(fn: string, args: Record<string, unknown> = {}): Promise
     if (r.error.code === "P0001" || r.error.code === "23514" || r.error.code === "23505") {
       return { ok: false, error: mensajeLegible(r.error.message), codigo: "ERROR" };
     }
+    // La función aún no existe en la base de datos: falta aplicar su migración.
+    if (r.error.code === "PGRST202" || r.error.code === "42883") {
+      console.error("[admin] falta la migración de", fn);
+      return { ok: false, error: "Esta función aún no está activada en la base de datos (falta aplicar su migración).", codigo: "ERROR" };
+    }
     console.error("[admin]", fn, r.error.code, r.error.message);
     return { ok: false, error: "No se ha podido guardar. Inténtalo de nuevo.", codigo: "ERROR" };
   }

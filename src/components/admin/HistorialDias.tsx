@@ -26,7 +26,7 @@ function tituloDia(dia: string, hoy: string): string {
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
-type Rango = "hoy" | "ayer" | "7" | "30" | "mes" | "otro";
+type Rango = "hoy" | "ayer" | "7" | "30" | "mes" | "dia" | "otro";
 type Estado = "todos" | "hechos" | "anulados";
 
 /**
@@ -102,6 +102,7 @@ export function HistorialDias<T>({
       "7": [sumarDias(hoy, -6), hoy],
       "30": [sumarDias(hoy, -29), hoy],
       mes: [`${hoy.slice(0, 8)}01`, hoy],
+      dia: [hasta, hasta],
     };
     const f = fechas[r];
     if (f) {
@@ -126,85 +127,64 @@ export function HistorialDias<T>({
   const total = hechos.reduce((a, x) => a + importe(x), 0);
   const n = (k: number) => `${k} ${k === 1 ? nombres[0] : nombres[1]}`;
 
-  const chip = "min-h-9 rounded-lg px-3 text-sm font-semibold aria-pressed:bg-white aria-pressed:shadow-card dark:aria-pressed:bg-noche-3";
+  const control = `${input} h-10 w-auto text-sm font-semibold`;
+  const fecha = `${input} h-10 w-[9.5rem] px-2 text-sm`;
   const rangos: { k: Rango; t: string }[] = [
     { k: "hoy", t: "Hoy" },
     { k: "ayer", t: "Ayer" },
-    { k: "7", t: "7 días" },
-    { k: "30", t: "30 días" },
+    { k: "7", t: "Últimos 7 días" },
+    { k: "30", t: "Últimos 30 días" },
     { k: "mes", t: "Este mes" },
-    { k: "otro", t: "Fechas" },
+    { k: "dia", t: "Un día…" },
+    { k: "otro", t: "Entre fechas…" },
   ];
 
   return (
     <div className="grid gap-3">
-      <div className={`${card} grid gap-3 p-3 sm:p-4`}>
-        <label className="relative block">
+      {/* Una sola fila: buscar · fechas · estado · total. En el móvil se reparte en dos. */}
+      <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap">
+        <label className="relative min-w-0 basis-full sm:basis-auto sm:flex-1">
           <span className="sr-only">Buscar por cliente</span>
           <Icon name="search" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 opacity-50" />
-          <input
-            type="search"
-            value={texto}
-            onChange={(e) => setTexto(e.target.value)}
-            placeholder="Buscar cliente: nombre, teléfono o nº"
-            className={`${input} pl-9`}
-          />
+          <input type="search" value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Buscar cliente, teléfono o nº" className={`${input} h-10 pl-9 text-sm`} />
         </label>
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex flex-wrap gap-1 rounded-xl bg-arena p-1 dark:bg-noche-3/60">
-            {rangos.map((r) => (
-              <button key={r.k} type="button" aria-pressed={rango === r.k} onClick={() => elegir(r.k)} className={chip}>
-                {r.t}
-              </button>
-            ))}
-          </div>
-          <label className="flex items-center gap-2 text-sm font-semibold">
-            <Icon name="calendar" className="h-4 w-4 opacity-60" />
-            <span className="sr-only">Ir a un día</span>
-            <input
-              type="date"
-              max={hoy}
-              value={rango !== "otro" && desde === hasta ? desde : ""}
-              onChange={(e) => {
-                if (!e.target.value) return;
-                setRango("otro");
-                setDesde(e.target.value);
-                setHasta(e.target.value);
-              }}
-              className={`${input} h-9 w-auto py-0 text-sm`}
-              aria-label="Ir a un día"
-              title="Ir a un día"
-            />
-          </label>
-        </div>
-        {rango === "otro" ? (
-          <div className="flex flex-wrap items-center gap-2 text-sm">
-            <span className="font-semibold">Del</span>
-            <input type="date" value={desde} max={hasta} onChange={(e) => e.target.value && setDesde(e.target.value)} className={`${input} h-9 w-auto py-0 text-sm`} aria-label="Desde" />
-            <span className="font-semibold">al</span>
-            <input type="date" value={hasta} min={desde} max={hoy} onChange={(e) => e.target.value && setHasta(e.target.value)} className={`${input} h-9 w-auto py-0 text-sm`} aria-label="Hasta" />
-          </div>
+        <select value={rango} onChange={(e) => elegir(e.target.value as Rango)} className={control} aria-label="Fechas">
+          {rangos.map((r) => (
+            <option key={r.k} value={r.k}>
+              {r.t}
+            </option>
+          ))}
+        </select>
+        {rango === "dia" ? (
+          <input
+            type="date"
+            max={hoy}
+            value={desde}
+            onChange={(e) => {
+              if (!e.target.value) return;
+              setDesde(e.target.value);
+              setHasta(e.target.value);
+            }}
+            className={fecha}
+            aria-label="Día"
+          />
+        ) : rango === "otro" ? (
+          <>
+            <input type="date" value={desde} max={hasta} onChange={(e) => e.target.value && setDesde(e.target.value)} className={fecha} aria-label="Desde" />
+            <span className="text-sm text-carbon-muted dark:text-crema/60">a</span>
+            <input type="date" value={hasta} min={desde} max={hoy} onChange={(e) => e.target.value && setHasta(e.target.value)} className={fecha} aria-label="Hasta" />
+          </>
         ) : null}
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex gap-1 rounded-xl bg-arena p-1 dark:bg-noche-3/60">
-            {(
-              [
-                ["todos", "Todos"],
-                ["hechos", etiquetaHecho],
-                ["anulados", "Anulados"],
-              ] as [Estado, string][]
-            ).map(([k, t]) => (
-              <button key={k} type="button" aria-pressed={estado === k} onClick={() => setEstado(k)} className={chip}>
-                {t}
-              </button>
-            ))}
-          </div>
-          {lista ? (
-            <p className="ml-auto text-sm text-carbon-muted dark:text-crema/65">
-              {n(hechos.length)} · <span className="font-semibold tabular-nums text-carbon dark:text-crema">{formatCentimos(total)}</span>
-            </p>
-          ) : null}
-        </div>
+        <select value={estado} onChange={(e) => setEstado(e.target.value as Estado)} className={control} aria-label="Estado">
+          <option value="todos">Todos</option>
+          <option value="hechos">{etiquetaHecho}</option>
+          <option value="anulados">Anulados</option>
+        </select>
+        {lista ? (
+          <p className="ml-auto whitespace-nowrap pl-2 text-sm text-carbon-muted dark:text-crema/65">
+            {n(hechos.length)} · <span className="font-semibold tabular-nums text-carbon dark:text-crema">{formatCentimos(total)}</span>
+          </p>
+        ) : null}
       </div>
 
       {error ? <p role="alert" className="rounded-xl bg-terracota px-4 py-3 text-sm font-semibold text-crema">{error}</p> : null}
