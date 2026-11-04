@@ -5,9 +5,10 @@ import { HistorialDias, diaMadrid } from "@/components/admin/HistorialDias";
 import { Modal } from "@/components/admin/Modal";
 import { Campo, botonPrimario, botonSecundario, card, input } from "@/components/admin/ui";
 import { Icon } from "@/components/ui/Icon";
-import { avanzarPedido, borrarPedido, cancelarPedido, cobrar, colaCocina, editarPedido, historialPedidos } from "@/lib/admin/actions";
+import { avanzarPedido, borrarPedido, cancelarPedido, cobrar, colaCocina, editarPedido, historialPedidos, pedidosProximos } from "@/lib/admin/actions";
 import type { PedidoKds } from "@/lib/admin/types";
 import { formatCentimos } from "@/lib/format";
+import { fechaMadrid, nombreDia } from "@/lib/pedidos/franjas";
 import { activarSonido, sonarAviso } from "@/lib/notify-sound";
 import { escucharLaofi } from "@/lib/supabase/browser";
 
@@ -56,6 +57,19 @@ function porHora(lista: PedidoKds[]): { hora: string; recogida: string | null; p
   return out;
 }
 
+/** Encargos de otros días, por día de recogida («Mañana», «Viernes, 6 de noviembre»). */
+function porDiaRecogida(lista: PedidoKds[]): { fecha: string; nombre: string; pedidos: PedidoKds[] }[] {
+  const out: { fecha: string; nombre: string; pedidos: PedidoKds[] }[] = [];
+  for (const p of lista) {
+    const iso = p.recogida_en ?? p.created_at;
+    const fecha = fechaMadrid(iso);
+    const ultimo = out[out.length - 1];
+    if (ultimo?.fecha === fecha) ultimo.pedidos.push(p);
+    else out.push({ fecha, nombre: nombreDia(iso), pedidos: [p] });
+  }
+  return out;
+}
+
 /** «2 menús, Ibérico, 2× Burrata»: lo que lleva, en una línea. */
 function queLleva(p: PedidoKds): string {
   const productos = p.items.filter((i) => i.estado !== "CANCELLED");
@@ -80,16 +94,28 @@ export function PedidosRecogida({ inicial }: { inicial: PedidoKds[] }) {
   const [filtro, setFiltro] = useState<Filtro>("todos");
   const [abierto, setAbierto] = useState<string | null>(null);
   const conocidos = useRef(new Set(inicial.map((p) => p.id)));
+  // Encargados para otros días: aparte, y pasan a la lista de arriba el día de su recogida.
+  const [proximos, setProximos] = useState<PedidoKds[]>([]);
+  const proximosCargados = useRef(false);
 
   const recargar = useCallback(async () => {
-    const r = await colaCocina<PedidoKds>();
+    const [r, prox] = await Promise.all([colaCocina<PedidoKds>(), pedidosProximos<PedidoKds>()]);
     if (!r.ok) return setError(r.error);
     const lista = r.data.filter((p) => p.tipo === "RECOGIDA");
-    if (lista.some((p) => !conocidos.current.has(p.id))) sonarAviso("nuevo");
-    for (const p of lista) conocidos.current.add(p.id);
+    // Sin la migración de «otros días» no hay próximos: la lista de hoy sigue igual.
+    const otros = prox.ok ? prox.data : [];
+    const nuevos = [...lista, ...(proximosCargados.current ? otros : [])].some((p) => !conocidos.current.has(p.id));
+    if (nuevos) sonarAviso("nuevo");
+    for (const p of [...lista, ...otros]) conocidos.current.add(p.id);
+    proximosCargados.current = true;
     setError(null);
     setPedidos(lista);
+    setProximos(otros);
   }, []);
+
+  useEffect(() => {
+    void recargar();
+  }, [recargar]);
 
   useEffect(() => {
     const baja = escucharLaofi(["pedidos", "pedido_items"], () => void recargar());
@@ -268,6 +294,30 @@ export function PedidosRecogida({ inicial }: { inicial: PedidoKds[] }) {
           })}
         </div>
       )}
+
+      {filtro !== "historial" && proximos.length > 0 ? (
+        <section aria-labelledby="pedidos-proximos" className="mt-2 grid gap-3">
+          <div>
+            <h2 id="pedidos-proximos" className="font-display text-2xl">
+              Encargados para otros días
+            </h2>
+            <p className="text-sm text-carbon-muted dark:text-crema/60">Pasan a la lista de arriba (y a cocina) el día de su recogida.</p>
+          </div>
+          {porDiaRecogida(proximos).map((d) => (
+            <div key={d.fecha} className="grid gap-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-carbon-muted dark:text-crema/55">{d.nombre}</p>
+              <ul className={`${card} divide-y divide-carbon/[0.07] overflow-hidden dark:divide-crema/10`}>
+                {d.pedidos.map((p) => (
+                  <li key={p.id} className="grid grid-cols-[3.4rem_minmax(0,1fr)] items-start sm:grid-cols-[4.5rem_minmax(0,1fr)]">
+                    <span className="pt-3 text-center font-display text-lg tabular-nums">{p.recogida_en ? HORA.format(new Date(p.recogida_en)) : "—"}</span>
+                    {fila(p)}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </section>
+      ) : null}
 
       {editando ? (
         <EditarPedido

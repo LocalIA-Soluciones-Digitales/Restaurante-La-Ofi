@@ -7,6 +7,7 @@ import { formatCentimos } from "@/lib/format";
 import { SITE } from "@/lib/site";
 import { vibrar } from "@/lib/haptics";
 import { obtenerPedido } from "@/lib/pedidos/actions";
+import { cuandoRecogida, fechaMadrid } from "@/lib/pedidos/franjas";
 import type { PedidoPublico } from "@/lib/pedidos/types";
 import type { EstadoPedido } from "@/lib/restaurant/types";
 
@@ -73,7 +74,9 @@ export function PedidoStatus({ inicial, pago }: { inicial: PedidoPublico; pago: 
                   ? "¡Listo! Te lo llevamos enseguida."
                   : "¡Listo! Pasa a recogerlo por la barra."
                 : p.recogida_en
-                  ? `Lo tendremos para las ${HORA.format(new Date(p.recogida_en))}.`
+                  ? fechaMadrid(p.recogida_en) === fechaMadrid(new Date())
+                    ? `Lo tendremos para las ${HORA.format(new Date(p.recogida_en))}.`
+                    : `Encargado para ${cuandoRecogida(p.recogida_en)}.`
                   : "Estamos con ello."}
         </p>
       </header>

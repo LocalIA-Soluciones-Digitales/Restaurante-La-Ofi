@@ -298,6 +298,11 @@ export async function historialPedidos<T>(desde: string, hasta: string, buscar =
   return staff<T[]>("laofi_admin_pedidos_historial", { p_desde: desde, p_hasta: hasta, p_buscar: buscar });
 }
 
+/** Pedidos para recoger encargados para los próximos días (aún no salen en cocina). */
+export async function pedidosProximos<T>() {
+  return staff<T[]>("laofi_admin_pedidos_proximos");
+}
+
 export async function editarPedido<T>(id: string, datos: { nombre_cliente: string; telefono: string; notas: string; recogida_en: string | null }) {
   return staff<T>("laofi_admin_pedido_editar", { p_id: id, p: datos });
 }

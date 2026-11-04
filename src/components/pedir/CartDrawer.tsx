@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { MiniaturaPlato } from "@/components/carta/MiniaturaPlato";
 import { useCart, type CambioCarta, type CartLinea } from "@/components/pedir/cart-context";
 import { useTableSession } from "@/components/pedir/table-session-context";
@@ -12,6 +12,7 @@ import { formatCentimos } from "@/lib/format";
 import { vibrar } from "@/lib/haptics";
 import { href } from "@/lib/i18n";
 import { cartaActual, crearPedido, mesaPorNumero } from "@/lib/pedidos/actions";
+import { etiquetaRecogida, fechaMadrid, franjasDisponibles, porDia } from "@/lib/pedidos/franjas";
 import { guardarReciente } from "@/lib/pedidos/recientes";
 import { repartirLinea } from "@/lib/pedidos/reparto";
 import type { ConfigPedidos, GrupoPublico, PedidoInput } from "@/lib/pedidos/types";
@@ -55,12 +56,21 @@ export function CartDrawer({
   const puedeLocal = config.pagos.en_local || separado;
 
   const [pago, setPago] = useState<"ONLINE" | "LOCAL">(puedeLocal ? "LOCAL" : "ONLINE");
-  // Con menú del día en la cesta, solo las horas hasta que termina el menú.
+  // Horas de hoy y de los próximos días: si hoy ya no quedan, se deja encargado para otra.
+  // Con menú del día en la cesta, solo hoy y hasta que termina el menú.
   const conMenu = cart.lineas.some((l) => l.menuPlatos);
-  const franjas = conMenu && config.menu_hasta ? config.franjas.filter((f) => HORA.format(new Date(f.hora)) <= config.menu_hasta!) : config.franjas;
+  const hoy = fechaMadrid(new Date());
+  const todas = franjasDisponibles(config);
+  const franjas = conMenu ? todas.filter((f) => fechaMadrid(f.hora) === hoy && (!config.menu_hasta || HORA.format(new Date(f.hora)) <= config.menu_hasta)) : todas;
+  const dias = porDia(franjas);
   const [franjaElegida, setFranja] = useState("");
   const franja = franjas.some((f) => f.hora === franjaElegida && f.libres > 0) ? franjaElegida : (franjas.find((f) => f.libres > 0)?.hora ?? "");
+  const hoySinHoras = franjas.length > 0 && !franjas.some((f) => fechaMadrid(f.hora) === hoy && f.libres > 0);
   const [nombre, setNombre] = useState("");
+  const nombreRef = useRef<HTMLInputElement>(null);
+  const facturaRef = useRef<HTMLInputElement>(null);
+  // Al pulsar «Revisar pedido» con algo pendiente, se dice qué falta (y se va al campo).
+  const [mostrarFalta, setMostrarFalta] = useState(false);
   const [telefono, setTelefono] = useState("");
   const [notas, setNotas] = useState("");
   // Factura a nombre de empresa: va en las notas del pedido (barra la ve en la comanda y en caja).
@@ -82,16 +92,42 @@ export function CartDrawer({
 
   const enMesa = contexto.tipo === "recogida" && destino === "mesa";
   const recogida = contexto.tipo !== "mesa" && !enMesa;
-  // Recogida sin franjas hoy (fuera de horario o desactivada): la cesta se guarda, pero no se envía.
-  const sinRecogida = contexto.tipo === "recogida" && !config.recogida_activa;
-  const faltaDato =
-    (sinRecogida && !enMesa) ||
-    cart.lineas.length === 0 ||
-    (recogida && !nombre.trim()) ||
-    (recogida && factura.activa && !notaFactura) ||
-    (contexto.tipo === "recogida" && !enMesa && !franja) ||
-    (enMesa && !numeroMesa.trim()) ||
-    (separado && !mesa?.participante);
+  // Sin ninguna hora libre (ni hoy ni los próximos días): la cesta se guarda, pero no se envía.
+  const sinRecogida = contexto.tipo === "recogida" && !franjas.some((f) => f.libres > 0);
+  // Hay horas otros días, pero el menú del día solo se recoge hoy.
+  const menuSoloHoy = sinRecogida && conMenu && todas.some((f) => f.libres > 0);
+  const motivo: string | null =
+    cart.lineas.length === 0
+      ? "Tu cesta está vacía."
+      : sinRecogida && !enMesa
+        ? menuSoloHoy
+          ? "El menú del día solo se recoge hoy y ya no quedan horas para hoy. Quita el menú para encargar el resto para otro día, o llámanos."
+          : `Ahora mismo no hay horas de recogida disponibles. Llámanos al ${SITE.phone.display}.`
+        : contexto.tipo === "recogida" && !enMesa && !franja
+          ? "Elige la hora de recogida."
+          : recogida && !nombre.trim()
+            ? "Escribe tu nombre para continuar."
+            : recogida && factura.activa && !notaFactura
+              ? "Para la factura, escribe la razón social y el CIF."
+              : enMesa && !numeroMesa.trim()
+                ? "Escribe el número de tu mesa para continuar."
+                : separado && !mesa?.participante
+                  ? "Elige quién eres en la mesa antes de pedir."
+                  : null;
+  const faltaDato = motivo !== null;
+
+  /** «Revisar pedido»: si falta algo, lo dice bien visible y lleva al campo; si no, sigue. */
+  const intentarRevisar = () => {
+    if (!motivo) {
+      setMostrarFalta(false);
+      void revisar();
+      return;
+    }
+    setMostrarFalta(true);
+    vibrar(30);
+    if (recogida && !nombre.trim()) nombreRef.current?.focus();
+    else if (recogida && factura.activa && !notaFactura) facturaRef.current?.focus();
+  };
 
   const revisar = async () => {
     setError(null);
@@ -243,7 +279,7 @@ export function CartDrawer({
               fotos={fotos}
               datos={[
                 enMesa && mesaDestino ? ["Mesa", `${mesaDestino.etiqueta} · te lo llevamos`] : null,
-                contexto.tipo === "recogida" && !enMesa && franja ? ["Recogida", `Hoy a las ${HORA.format(new Date(franja))}`] : null,
+                contexto.tipo === "recogida" && !enMesa && franja ? ["Recogida", etiquetaRecogida(franja)] : null,
                 contexto.tipo === "grupo" ? ["Recogida", `Grupo «${contexto.grupo.nombre}» · ${HORA.format(new Date(contexto.grupo.recogida_en))}`] : null,
                 contexto.tipo === "mesa" ? ["Mesa", `${mesa?.mesa.nombre ?? `Mesa ${mesa?.mesa.numero}`}${separado && mesa?.participante ? ` · ${mesa.participante.nombre}` : ""}`] : null,
                 recogida ? ["Nombre", nombre.trim()] : null,
@@ -333,8 +369,9 @@ export function CartDrawer({
           {sinRecogida && !enMesa && cart.lineas.length > 0 ? (
             <p className="flex gap-2 rounded-2xl bg-arena p-4 text-sm text-carbon-muted">
               <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-marino" />
-              Ahora mismo no hay horas de recogida disponibles. Guardamos tu pedido en este dispositivo unas horas: vuelve en horario de
-              recogida para enviarlo, o llámanos.
+              {menuSoloHoy
+                ? "El menú del día solo se recoge hoy y ya no quedan horas para hoy. Quita el menú de la cesta para dejar el resto encargado para otro día, o llámanos."
+                : "Ahora mismo no hay horas de recogida disponibles. Guardamos tu pedido en este dispositivo unas horas: vuelve en horario de recogida para enviarlo, o llámanos."}
             </p>
           ) : null}
 
@@ -343,17 +380,28 @@ export function CartDrawer({
               <legend className="mb-2 font-sans text-sm font-semibold uppercase tracking-eyebrow text-carbon">Recogida</legend>
               {contexto.tipo === "recogida" ? (
                 <label className="grid gap-1 text-sm">
-                  <span className="font-semibold text-carbon">Hora de recogida</span>
+                  <span className="font-semibold text-carbon">{dias.length > 1 ? "Día y hora de recogida" : "Hora de recogida"}</span>
+                  {hoySinHoras ? (
+                    <span className="flex gap-2 rounded-xl bg-arena px-3 py-2 text-carbon-muted">
+                      <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-marino" />
+                      Hoy ya no quedan horas de recogida: te lo dejamos encargado para el día y la hora que elijas.
+                    </span>
+                  ) : null}
                   <select
                     value={franja}
                     onChange={(e) => setFranja(e.target.value)}
                     className="h-12 rounded-2xl border border-carbon/15 bg-white px-4 text-base focus:border-marino focus:outline-none"
                   >
-                    {franjas.map((f) => (
-                      <option key={f.hora} value={f.hora} disabled={f.libres === 0}>
-                        {HORA.format(new Date(f.hora))}
-                        {f.libres === 0 ? " · completa" : ""}
-                      </option>
+                    {dias.map((d) => (
+                      <optgroup key={d.fecha} label={d.nombre}>
+                        {d.franjas.map((f) => (
+                          <option key={f.hora} value={f.hora} disabled={f.libres === 0}>
+                            {dias.length > 1 ? `${d.nombre} · ` : ""}
+                            {HORA.format(new Date(f.hora))}
+                            {f.libres === 0 ? " · completa" : ""}
+                          </option>
+                        ))}
+                      </optgroup>
                     ))}
                   </select>
                 </label>
@@ -361,6 +409,7 @@ export function CartDrawer({
               <label className="grid gap-1 text-sm">
                 <span className="font-semibold text-carbon">Tu nombre</span>
                 <input
+                  ref={nombreRef}
                   value={nombre}
                   onChange={(e) => setNombre(e.target.value.slice(0, 60))}
                   autoComplete="name"
@@ -404,6 +453,7 @@ export function CartDrawer({
                   {factura.activa ? (
                     <div className="grid gap-2 sm:grid-cols-[1fr_10rem]">
                       <input
+                        ref={facturaRef}
                         aria-label="Razón social"
                         placeholder="Razón social"
                         autoComplete="organization"
@@ -496,18 +546,30 @@ export function CartDrawer({
             </>
           ) : (
             <>
-              {!error && recogida && !sinRecogida && cart.lineas.length > 0 && !nombre.trim() ? (
-                <p className="mb-2 text-center text-sm text-carbon-muted">Escribe tu nombre para continuar.</p>
-              ) : null}
-              {!error && enMesa && cart.lineas.length > 0 && !numeroMesa.trim() ? (
-                <p className="mb-2 text-center text-sm text-carbon-muted">Escribe el número de tu mesa para continuar.</p>
+              {/* Lo que falta: en gris mientras rellena; al pulsar el botón, bien visible. */}
+              {!error && motivo && cart.lineas.length > 0 ? (
+                mostrarFalta ? (
+                  <p role="alert" className="mb-3 flex items-start gap-2 rounded-2xl bg-terracota/10 px-4 py-3 text-sm font-semibold text-terracota">
+                    <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0" />
+                    {motivo}
+                  </p>
+                ) : (
+                  <p className="mb-2 text-center text-sm text-carbon-muted">{motivo}</p>
+                )
               ) : null}
               {error ? (
                 <p role="alert" className="mb-2 text-center text-sm font-semibold text-terracota">
                   {error}
                 </p>
               ) : null}
-              <button type="button" onClick={() => void revisar()} disabled={faltaDato || comprobando} className="btn-primary w-full disabled:opacity-50">
+              {/* Siempre se puede pulsar: si falta algo, se explica en vez de no hacer nada. */}
+              <button
+                type="button"
+                onClick={intentarRevisar}
+                disabled={comprobando}
+                aria-disabled={faltaDato}
+                className={`btn-primary w-full disabled:opacity-50 ${faltaDato ? "opacity-60" : ""}`}
+              >
                 {comprobando ? "Comprobando la mesa…" : "Revisar pedido"}
               </button>
             </>

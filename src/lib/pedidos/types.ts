@@ -65,7 +65,10 @@ export interface Franja {
 export interface ConfigPedidos {
   pagos: { online: boolean; en_local: boolean };
   recogida_activa: boolean;
+  /** Horas de recogida de HOY. */
   franjas: Franja[];
+  /** Horas de hoy y de los 6 días siguientes (migración 20261104200000; sin ella no llega). */
+  proximas?: Franja[];
   /** Hasta qué hora se recoge el menú del día (HH:MM, franja del menú). */
   menu_hasta?: string;
   /** Vendedor que figura en las condiciones del pedido (ajuste «fiscal» del panel). */

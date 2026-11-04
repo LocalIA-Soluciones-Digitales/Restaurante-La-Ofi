@@ -11,6 +11,7 @@ import { Icon } from "@/components/ui/Icon";
 import { normalizarNombre } from "@/lib/carta-fotos";
 import { vibrar } from "@/lib/haptics";
 import { formatCentimos } from "@/lib/format";
+import { cuandoRecogida, franjasDisponibles } from "@/lib/pedidos/franjas";
 import type { ConfigPedidos } from "@/lib/pedidos/types";
 import type { CartaSeccion, MenuDiaPlato } from "@/lib/restaurant/types";
 import { SITE } from "@/lib/site";
@@ -64,6 +65,15 @@ export function ParaLlevar({ secciones, config, menu }: { secciones: CartaSeccio
   const franjas = config?.franjas ?? [];
   const primera = franjas[0] ? HORA.format(new Date(franjas[0].hora)) : null;
   const ultima = franjas.length ? HORA.format(new Date(franjas[franjas.length - 1]!.hora)) : null;
+  // Hoy sin horas: la primera hora libre de los próximos días, para dejarlo encargado.
+  const siguiente = primera ? null : franjasDisponibles(config).find((f) => f.libres > 0);
+  const textoRecogida = !config
+    ? "Los pedidos online aún no están activos: llámanos."
+    : primera
+      ? `Hoy, de ${primera} a ${ultima}`
+      : siguiente
+        ? `Hoy ya no quedan horas. Puedes dejarlo encargado para ${cuandoRecogida(siguiente.hora)} o más tarde.`
+        : "Hoy ya no hay horas de recogida. Puedes preparar el pedido o llamarnos.";
 
   return (
     <div className="pb-32">
@@ -81,7 +91,7 @@ export function ParaLlevar({ secciones, config, menu }: { secciones: CartaSeccio
             <div>
               <dt className="font-semibold text-carbon">Recogida</dt>
               <dd className="text-carbon-muted">
-                {!config ? "Los pedidos online aún no están activos: llámanos." : primera ? `Hoy, de ${primera} a ${ultima}` : "Hoy ya no hay horas de recogida. Puedes preparar el pedido o llamarnos."}
+                {textoRecogida}
               </dd>
             </div>
           </div>

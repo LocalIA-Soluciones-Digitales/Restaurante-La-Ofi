@@ -15,6 +15,7 @@ import { TableEntry } from "@/components/pedir/TableEntry";
 import { TableSessionProvider, useTableSession } from "@/components/pedir/table-session-context";
 import { Icon } from "@/components/ui/Icon";
 import { avisarMesa } from "@/lib/pedidos/actions";
+import { hayRecogida } from "@/lib/pedidos/franjas";
 import type { ConfigPedidos, GrupoPublico, MesaPublica } from "@/lib/pedidos/types";
 import type { CartaSeccion } from "@/lib/restaurant/types";
 
@@ -69,8 +70,8 @@ function Interior({ secciones, config, modo, menu }: { secciones: CartaSeccion[]
   // ¿Se puede pedir ahora en este modo?
   const motivoNoPedir = !config
     ? "Los pedidos online aún no están activos: puedes consultar la carta y pedir en barra."
-    : modo.tipo === "recogida" && !config.recogida_activa
-      ? "Hoy no hay franjas de recogida disponibles. Puedes consultar la carta y llamarnos."
+    : modo.tipo === "recogida" && !hayRecogida(config)
+      ? "Ahora no hay horas de recogida disponibles. Puedes consultar la carta y llamarnos."
       : modo.tipo === "grupo" && !modo.grupo.abierto
         ? "Este pedido de grupo ya está cerrado."
         : null;
