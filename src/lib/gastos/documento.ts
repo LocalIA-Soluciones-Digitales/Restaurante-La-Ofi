@@ -127,8 +127,6 @@ let worker: Worker | null = null;
 let listo = false;
 let siguienteId = 1;
 
-export const lectorCargado = () => listo;
-
 async function ocr(canvas: HTMLCanvasElement): Promise<{ cajas: OcrCaja[]; ms: number }> {
   worker ??= new Worker(new URL("../../workers/ocrGasto.worker.ts", import.meta.url), { type: "module" });
   const w = worker;

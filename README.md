@@ -11,7 +11,7 @@ multi-tenant compartido con **todos sus datos en el schema propio `laofi`**.
 
 Documentación: [`ARCHITECTURE.md`](./ARCHITECTURE.md) · [`RESEARCH.md`](./RESEARCH.md) ·
 [`IMAGES_SOURCES.md`](./IMAGES_SOURCES.md) · [`CONTENT_NEEDED.md`](./CONTENT_NEEDED.md) ·
-[`PLAN_REDISENO.md`](./PLAN_REDISENO.md) · [`print-bridge/`](./print-bridge/README.md) ·
+[`print-bridge/`](./print-bridge/README.md) ·
 [`src/lib/ticketbai/`](./src/lib/ticketbai/README.md)
 
 ## Stack

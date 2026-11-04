@@ -1,8 +1,6 @@
-import type { StaticImageData } from "next/image";
 import type { IconName } from "@/components/ui/Icon";
 import { IMAGES, type ImageKey } from "@/lib/images";
 import type { VideoAsset } from "@/lib/media";
-import { VIDEOS } from "@/lib/media";
 import type { Fuente } from "@/lib/restaurant/types";
 
 // Contenido editorial de la home y de /espacios y /empresas. SOLO datos
@@ -11,84 +9,6 @@ import type { Fuente } from "@/lib/restaurant/types";
 // servicios inventados: lo no confirmado se formula como pregunta ("pregúntanos").
 
 const img = (key: ImageKey) => ({ src: IMAGES[key].src, alt: IMAGES[key].alt, credit: IMAGES[key].credit, kind: IMAGES[key].kind });
-
-/** Marquesina de confianza: solo datos verificados (RESEARCH.md §5–7). */
-export const CONFIANZA: { icon: IconName; texto: string }[] = [
-  { icon: "star", texto: "4,4 en Google" },
-  { icon: "car", texto: "Parking para 220 coches" },
-  { icon: "sunset", texto: "Terraza cubierta" },
-  { icon: "accessible", texto: "Local accesible" },
-  { icon: "coffee", texto: "Abrimos a las 7:30 entre semana" },
-  { icon: "flame", texto: "Cocina a la brasa" },
-  { icon: "leaf", texto: "Producto de temporada de baserris cercanos" },
-];
-
-export interface Especialidad {
-  id: string;
-  nombre: string;
-  texto: string;
-  imagen: ReturnType<typeof img> | null;
-  icon: IconName;
-  /** Clip corto real del plato (4–6 s) para el hover. null hasta grabarlo. */
-  video: VideoAsset | null;
-  fuente: Fuente;
-  /** Ancla de la carta donde está el plato. */
-  carta: string;
-}
-
-/** Especialidades citadas por Deia (13/09/2025). Sin precios: según mercado/carta. */
-export const ESPECIALIDADES: Especialidad[] = [
-  {
-    id: "pulpo",
-    nombre: "Pulpo a la brasa",
-    texto: "Uno de los clásicos de la parrilla de La Ofi.",
-    imagen: img("pulpoBrasa"),
-    icon: "flame",
-    video: null,
-    fuente: "prensa",
-    carta: "#entrantes-brasa",
-  },
-  {
-    id: "puerros",
-    nombre: "Puerros con salsa de hongos",
-    texto: "Sobre una salsa de hongos. Verdura de temporada pasada por la brasa.",
-    imagen: null,
-    icon: "leaf",
-    video: null,
-    fuente: "prensa",
-    carta: "#entrantes-brasa",
-  },
-  {
-    id: "carrilleras",
-    nombre: "Carrilleras de ternera al PX",
-    texto: "Guiso casero de los de cuchara y pan.",
-    imagen: null,
-    icon: "utensils",
-    video: null,
-    fuente: "prensa",
-    carta: "#carnes",
-  },
-  {
-    id: "morcilla",
-    nombre: "Morcilla de puerro de Zamudio",
-    texto: "Producto del pueblo de al lado, a la brasa.",
-    imagen: null,
-    icon: "flame",
-    video: null,
-    fuente: "prensa",
-    carta: "#entrantes-brasa",
-  },
-  {
-    id: "pescado",
-    nombre: "Pescado de temporada a la brasa",
-    texto: "Por encargo. Según mercado: lenguado, rodaballo, lubina, bonito, chicharro…",
-    imagen: null,
-    icon: "flame",
-    video: null,
-    fuente: "prensa",
-    carta: "#pescados",
-  },
-];
 
 export interface Espacio {
   id: string;
@@ -151,12 +71,6 @@ export const ESPACIOS: Espacio[] = [
   },
 ];
 
-export const VINOS = {
-  referencias: 98,
-  texto: "Tintos de distintas denominaciones de origen, alguno chileno y argentino, y txakoli Magalarte para el aperitivo.",
-  fuente: "prensa" as Fuente,
-};
-
 export interface ServicioEmpresa {
   icon: IconName;
   titulo: string;
@@ -184,62 +98,5 @@ export const EMPRESAS: ServicioEmpresa[] = [
     icon: "coffee",
     titulo: "Desayunos para reuniones",
     texto: "¿Café y tostadas para una formación o una visita? Pregúntanos qué podemos preparar.",
-  },
-];
-
-export type ImagenEditorial = { src: StaticImageData; alt: string; credit: string };
-
-// --- Hero: "un día en La Ofi" -------------------------------------------------
-// Cada momento cambia solo la foto y una línea de contexto: la identidad (titular,
-// colores, botones) es la misma todo el día. Todo lo que se afirma es verificable:
-// tostadas 9:00–11:30 (carta publicada), plato del día L–V (Deia), viernes hasta
-// medianoche (horario publicado).
-
-export interface MomentoHero {
-  franja: "manana" | "mediodia" | "noche";
-  label: string;
-  /** Detalle corto del momento en el selector del hero (solo datos publicados). */
-  sub: string;
-  /** Línea de contexto bajo el titular. */
-  nota: string;
-  principal: ImageKey;
-  /** Foto secundaria (espacio) que acompaña al plato. */
-  detalle: ImageKey;
-  /** Pie de la foto principal. */
-  pie: string;
-  /** Vídeo del momento (aparece sobre la foto cuando arranca). */
-  video: VideoAsset | null;
-}
-
-export const MOMENTOS_HERO: MomentoHero[] = [
-  {
-    franja: "manana",
-    label: "Mañana",
-    sub: "Desde las 7:30",
-    nota: "Café desde las 7:30 y tostadas de pan de masa madre de 9:00 a 11:30.",
-    principal: "tostadaBurrata",
-    detalle: "rotuloNeon",
-    pie: "Tostada de burrata, melocotón a la plancha y jamón ibérico",
-    video: VIDEOS.heroManana,
-  },
-  {
-    franja: "mediodia",
-    label: "Mediodía",
-    sub: "Plato del día y brasa",
-    nota: "Plato del día de lunes a viernes y cocina a la brasa.",
-    principal: "pulpoBrasa",
-    detalle: "comedorRatan",
-    pie: "Pulpo a la parrilla con patata y pimentón",
-    video: VIDEOS.heroMediodia,
-  },
-  {
-    franja: "noche",
-    label: "Tarde",
-    sub: "Viernes hasta las 00:00",
-    nota: "Terraza cubierta, tardeos y, los viernes, abierto hasta medianoche.",
-    principal: "salonNoche",
-    detalle: "terrazaNoche",
-    pie: "El salón de La Ofi, de noche",
-    video: VIDEOS.heroNoche,
   },
 ];

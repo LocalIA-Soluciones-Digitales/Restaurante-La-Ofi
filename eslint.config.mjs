@@ -5,7 +5,7 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = [
-  { ignores: [".next/**", "node_modules/**", "next-env.d.ts", "coverage/**", "print-bridge/node_modules/**", "lighthouse-reports/**", "public/ocr/**"] },
+  { ignores: [".next/**", "node_modules/**", "next-env.d.ts", "coverage/**", "print-bridge/node_modules/**", "lighthouse-reports/**", "brag-output*/**", ".playwright-mcp/**", "public/ocr/**"] },
   ...compat.extends("next/core-web-vitals", "next/typescript"),
 ];
 

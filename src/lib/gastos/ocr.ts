@@ -123,10 +123,6 @@ function preparar(cajas: OcrCaja[]): Caja[] {
     .filter((c) => c.text);
 }
 
-export function agruparLineas(cajas: OcrCaja[]): string[] {
-  return agruparFilas(preparar(cajas)).map(textoFila);
-}
-
 // El último separador es siempre el decimal (11,600 kg son once kilos y
 // seiscientos gramos, no 11.600); los anteriores son de miles (1.520,62).
 export function aNumero(s: string): number {

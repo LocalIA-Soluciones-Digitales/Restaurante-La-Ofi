@@ -28,14 +28,7 @@ FOTOS: dict[str, dict] = {
     "pintxos/tostada-bonita": dict(wb=0.25, warm=10, gamma=0.96, contrast=1.1, sat=1.1, bright=1.02, crop=(110, 300, 1010, 1080), m45=(0.5, 0.55)),
     "pintxos/tostada-revuelta": dict(wb=0.2, warm=6, gamma=0.97, contrast=1.08, sat=1.06, bright=1.02, crop=(200, 260, 1080, 1080), m45=(0.55, 0.5), sharpen=90),
     "pintxos/tostada-salmon": dict(wb=0.3, warm=8, gamma=0.95, contrast=1.12, sat=1.1, bright=1.0, crop=(120, 20, 900, 960), m45=(0.5, 0.5)),
-    "carta/pulpo-brasa-deia": dict(wb=0.1, warm=4, gamma=1.0, contrast=1.05, sat=1.06, bright=1.02, scale=1.6, m45=(0.48, 0.5)),
     "carta/carta-tostadas-desayuno": dict(wb=0.2, warm=6, gamma=1.0, contrast=1.04, sat=1.0, bright=1.0),
-    "hero/comedor-ratan-avdg": dict(wb=0.2, warm=6, gamma=0.94, contrast=1.08, sat=1.06, bright=1.03, scale=1.6, m45=(0.6, 0.5)),
-    "eventos/salon-celebracion-noche": dict(wb=0.55, warm=10, gamma=0.88, contrast=1.06, sat=0.95, bright=1.04, scale=1.3, m45=(0.55, 0.45)),
-    "local/barra-deia": dict(wb=0.35, warm=8, gamma=0.92, contrast=1.06, sat=0.98, bright=1.04, scale=1.5, m45=(0.45, 0.5)),
-    "local/rotulo-neon-rg": dict(wb=0.3, warm=6, gamma=0.95, contrast=1.06, sat=1.0, bright=1.02, scale=1.5, m45=(0.3, 0.5)),
-    "local/terraza-noche-deia": dict(wb=0.2, warm=4, gamma=0.82, contrast=1.04, sat=1.0, bright=1.06, scale=1.5, m45=(0.55, 0.55)),
-    "local/terraza-carpa-rg": dict(wb=0.15, warm=0, gamma=0.85, contrast=1.04, sat=1.0, bright=1.05, scale=1.5),
 }
 
 

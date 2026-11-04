@@ -1,6 +1,6 @@
 import { cartaItem } from "@/lib/carta";
 import { IMAGES } from "@/lib/images";
-import type { CartaItem, CartaSeccion, Etiqueta, EventoView, MenuDiaView } from "@/lib/restaurant/types";
+import type { CartaItem, CartaSeccion, Etiqueta, MenuDiaView } from "@/lib/restaurant/types";
 
 // Contenido para la DEMO cuando Supabase todavía no tiene datos de La Ofi.
 // Solo se usa con NEXT_PUBLIC_SHOW_DEMO_CONTENT=true y SIEMPRE se marca en
@@ -200,51 +200,3 @@ export const DEMO_MENU_DIA: MenuDiaView = {
   postres: [],
   fuente: "opiniones",
 };
-
-export const DEMO_EVENTOS: EventoView[] = [
-  {
-    id: "demo-tardeo",
-    slug: null,
-    titulo: "Tardeo en La Ofi",
-    tipo: "Tardeo",
-    descripcion: "Una tarde al mes la terraza se convierte en punto de encuentro: música, algo de picar y buen rollo. Fecha del próximo, por anunciar.",
-    imagen: img("terrazaCarpa"),
-    fecha: null,
-    hora: null,
-    precioCentimos: null,
-    aforo: null,
-    estado: "proximo",
-    enlaceReserva: null,
-    fuente: "ejemplo",
-  },
-  {
-    id: "demo-partidos",
-    slug: null,
-    titulo: "Partidos en pantalla grande",
-    tipo: "Deporte",
-    descripcion: "Retransmitimos partidos con servicio audiovisual en el local. Consulta qué partido toca esta semana.",
-    imagen: img("barra"),
-    fecha: null,
-    hora: null,
-    precioCentimos: null,
-    aforo: null,
-    estado: "proximo",
-    enlaceReserva: null,
-    fuente: "ejemplo",
-  },
-  {
-    id: "demo-celebraciones",
-    slug: null,
-    titulo: "Celebraciones y eventos de empresa",
-    tipo: "Privado",
-    descripcion: "Menús concertados para bautizos, comuniones, postbodas o reuniones de empresa en el comedor privado o en la terraza cubierta.",
-    imagen: img("salonNoche"),
-    fecha: null,
-    hora: null,
-    precioCentimos: null,
-    aforo: null,
-    estado: "proximo",
-    enlaceReserva: null,
-    fuente: "ejemplo",
-  },
-];

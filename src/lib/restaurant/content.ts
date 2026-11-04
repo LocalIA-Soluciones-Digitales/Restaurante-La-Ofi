@@ -4,7 +4,7 @@ import { conFichas } from "@/lib/carta-fichas";
 import { conFotosDePlato } from "@/lib/carta-fotos";
 import { IS_DEMO, SHOW_DEMO_CONTENT } from "@/lib/env";
 import { hoyEnMadrid } from "@/lib/format";
-import { DEMO_CARTA, DEMO_EVENTOS, DEMO_MENU_DIA } from "@/lib/restaurant/demo-content";
+import { DEMO_CARTA, DEMO_MENU_DIA } from "@/lib/restaurant/demo-content";
 import { getCarta, getEvento, getEventos, getMenuDia } from "@/lib/restaurant/queries";
 import type {
   CartaSeccion,
@@ -104,12 +104,6 @@ export async function getAgendaEventos(): Promise<{ proximos: EventoView[]; pasa
     proximos: vistas.filter((e) => (e.fecha ?? "") >= hoy && e.estado !== "finalizado"),
     pasados: vistas.filter((e) => ((e.fecha ?? "") < hoy || e.estado === "finalizado") && (e.fecha ?? "").startsWith(anio)).reverse(),
   };
-}
-
-export async function getEventosContent(): Promise<ContentState<EventoView[]>> {
-  const eventos = await getEventos();
-  if (eventos && eventos.length > 0) return { status: "real", data: eventos.map(eventoView) };
-  return fallback(DEMO_EVENTOS);
 }
 
 export async function getEventoContent(slug: string): Promise<EventoView | null> {

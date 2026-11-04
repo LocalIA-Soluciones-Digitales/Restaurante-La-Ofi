@@ -3,6 +3,13 @@
 Consulta y descarga: **2026-10-01**. Todas las imágenes están en `public/images/`, recortadas y
 exportadas a WebP (q86). `next/image` sirve automáticamente AVIF/WebP en varios tamaños.
 
+> **Limpieza 2026-11-04:** se retiraron del repositorio los archivos que la web ya no usaba: los
+> originales de terceros ya procesados (`hero/`, `eventos/`, `local/*-deia`, `local/*-rg`,
+> `carta/pulpo-brasa-deia`), las versiones IA sustituidas por las fotos profesionales
+> (`ia/comedor*`, `ia/barra-neon*`, `ia/despacho*`), `plantilla/terraza-cena*` y **todos los vídeos
+> de `public/videos/ia/`** (ninguno se mostraba). Las tablas de abajo se conservan como registro de
+> procedencia; los archivos siguen en el historial de git si hiciera falta recuperarlos.
+
 **Autorización (2026-10-01):** LocalIA confirma autorización del restaurante para usar sus fotos
 (las publicadas por La Ofi en Instagram y Google Business). Conviene archivarla por escrito.
 Las fotos de **terceros** (prensa y clientes) no son del restaurante: esa autorización no cubre sus

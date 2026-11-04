@@ -1,9 +1,10 @@
 import Image, { type StaticImageData } from "next/image";
 import type { ReactNode } from "react";
 import { Photo } from "@/components/media/Photo";
-import type { Momento } from "@/components/ui/SectionHeader";
 import { imageKeyBySrc } from "@/lib/images";
 import type { VideoAsset } from "@/lib/media";
+
+type Momento = "manana" | "mediodia" | "tarde" | "noche";
 
 const MOMENTO_LABEL: Record<Momento, string> = { manana: "Mañana", mediodia: "Mediodía", tarde: "Tarde", noche: "Noche" };
 

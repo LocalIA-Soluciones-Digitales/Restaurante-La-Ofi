@@ -213,13 +213,6 @@ export type ImageKey = keyof typeof IMAGES_REALES;
 /** Fotos que pinta la web: las reales o, con FOTOS_PLANTILLA, las de plantilla donde las hay. */
 export const IMAGES: Record<ImageKey, SiteImage> = FOTOS_PLANTILLA ? { ...IMAGES_REALES, ...PLANTILLA } : IMAGES_REALES;
 
-/** true si la foto de un plato (por URL) es de plantilla, no del restaurante. */
-export function esIlustrativa(src: string): boolean {
-  // Fotos de plato recreadas con IA (src/lib/carta-fichas.ts).
-  if (src.startsWith("/images/platos/")) return true;
-  return Object.values(IMAGES).some((v) => v.src.src === src && v.kind === "ilustrativa");
-}
-
 /** Pie de foto: solo la autoría de fotos de terceros. Las de IA o plantilla ya no llevan pie. */
 export function creditoFoto(img: SiteImage): string | null {
   if (img.pie) return img.pie;
