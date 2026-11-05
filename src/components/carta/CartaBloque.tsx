@@ -69,7 +69,7 @@ export function CartaBloque({
               {pedirHref ? (
                 <a href={pedirHref} className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-full bg-carbon px-5 text-sm font-semibold text-crema hover:bg-carbon/85">
                   <Icon name="bag" className="h-4 w-4" />
-                  ¿Para llevar? Pídelo y recógelo
+                  ¿Para llevar? Encarga el menú del día
                 </a>
               ) : null}
             </div>

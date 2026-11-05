@@ -49,12 +49,12 @@ beforeAll(async () => {
 }, 60_000);
 
 describe("recogida otros días", () => {
-  it("la config ofrece las franjas de hoy y de los 6 días siguientes", async () => {
+  it("la config ofrece las franjas de hoy y de los 60 días siguientes (20261105100000)", async () => {
     const c = await config();
     const dias = new Set(c.proximas.map((f) => enMadrid(f.hora)));
     expect(dias.has(dia(1))).toBe(true);
-    expect(dias.has(dia(6))).toBe(true);
-    expect(dias.has(dia(7))).toBe(false);
+    expect(dias.has(dia(60))).toBe(true);
+    expect(dias.has(dia(61))).toBe(false);
     // «franjas» sigue siendo solo de hoy.
     expect(c.franjas.every((f) => enMadrid(f.hora) === dia(0))).toBe(true);
   });
@@ -81,8 +81,8 @@ describe("recogida otros días", () => {
     expect(await proximos()).not.toContain(r.id);
   });
 
-  it("no acepta horas de dentro de una semana ni horas que no son franja", async () => {
-    await expect(pedir(`${dia(7)}T11:00:00Z`)).rejects.toThrow(/Franja de recogida no disponible/);
+  it("no acepta horas de más de 60 días vista ni horas que no son franja", async () => {
+    await expect(pedir(`${dia(61)}T11:00:00Z`)).rejects.toThrow(/Franja de recogida no disponible/);
     await expect(pedir(`${dia(1)}T11:07:00Z`)).rejects.toThrow(/Franja de recogida no disponible/);
   });
 

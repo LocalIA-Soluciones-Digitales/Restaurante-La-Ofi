@@ -183,7 +183,8 @@ describe("recogida y grupos", () => {
     expect(c).toMatchObject({ recogida_activa: false, franjas: [] });
     await expect(
       crearPedido({ tipo: "RECOGIDA", nombre: "Iker", recogida_en: new Date(Date.now() + 3600_000).toISOString(), items: [{ producto_id: precios["Ibérico"]!.id }] }),
-    ).rejects.toThrow(/Franja de recogida no disponible/);
+      // Con «solo menú del día» (20261105200000) lo para antes la hora de encargar o la carta.
+    ).rejects.toThrow(/Franja de recogida no disponible|Los encargos de comida|solo se puede encargar el menú/);
   });
 
   it("respeta la capacidad de cada franja y el grupo ocupa una plaza", async () => {

@@ -86,14 +86,19 @@ function escribir(contexto: string, lineas: CartLinea[]) {
   }
 }
 
-export function CartProvider({ contexto, children }: { contexto: string; children: ReactNode }) {
+/**
+ * `soloMenu`: la cesta solo admite menús del día (para llevar y grupos): al leerla se
+ * quitan los platos de la carta que hubieran quedado guardados de antes.
+ */
+export function CartProvider({ contexto, soloMenu = false, children }: { contexto: string; soloMenu?: boolean; children: ReactNode }) {
   const [lineas, setLineas] = useState<CartLinea[]>([]);
   const [hidratado, setHidratado] = useState(false);
 
   useEffect(() => {
-    setLineas(leer(contexto));
+    const guardadas = leer(contexto);
+    setLineas(soloMenu ? guardadas.filter((l) => l.menuPlatos) : guardadas);
     setHidratado(true);
-  }, [contexto]);
+  }, [contexto, soloMenu]);
 
   useEffect(() => {
     if (hidratado) escribir(contexto, lineas);

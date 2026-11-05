@@ -67,8 +67,16 @@ export interface ConfigPedidos {
   recogida_activa: boolean;
   /** Horas de recogida de HOY. */
   franjas: Franja[];
-  /** Horas de hoy y de los 6 días siguientes (migración 20261104200000; sin ella no llega). */
+  /** Horas que se pueden elegir: hoy y los próximos días (con «solo menú», solo hoy). */
   proximas?: Franja[];
+  /** Para llevar solo el menú del día (migración 20261105200000): nada de la carta. */
+  solo_menu_dia?: boolean;
+  /** Cuándo se puede encargar (HH:MM), con «solo menú». Fuera de esa hora no llegan franjas. */
+  pedir_desde?: string;
+  pedir_hasta?: string;
+  /** Entre qué horas se recoge (HH:MM, ajuste «recogida»). */
+  recogida_desde?: string;
+  recogida_hasta?: string;
   /** Hasta qué hora se recoge el menú del día (HH:MM, franja del menú). */
   menu_hasta?: string;
   /** Vendedor que figura en las condiciones del pedido (ajuste «fiscal» del panel). */

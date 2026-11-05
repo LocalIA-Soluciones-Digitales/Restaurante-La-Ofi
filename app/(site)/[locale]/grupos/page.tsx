@@ -29,8 +29,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 }
 
 const PASOS = [
-  { titulo: "Crea el pedido", texto: "Elige la hora de recogida y comparte el enlace con tu equipo." },
-  { titulo: "Cada uno lo suyo", texto: "Cada persona añade sus platos desde su móvil, sin apuntar nada a mano." },
+  { titulo: "Crea el pedido", texto: "De 9:00 a 12:00, elige la hora de recogida (de 13:00 a 15:00) y comparte el enlace con tu equipo." },
+  { titulo: "Cada uno su menú", texto: "Cada persona elige su menú del día desde su móvil, sin apuntar nada a mano." },
   { titulo: "Recoged juntos", texto: "Lo preparamos todo a la vez y os avisamos cuando esté listo." },
 ];
 

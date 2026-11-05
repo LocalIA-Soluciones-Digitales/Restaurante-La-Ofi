@@ -85,11 +85,14 @@ export function SelectorRecogida({ franjas, valor, onCambio }: { franjas: Franja
     setAbierto(null);
   };
 
+  // Solo hay horas de hoy (para llevar, solo el menú del día): sin calendario, solo la hora.
+  const soloHoy = franjas.every((f) => fechaMadrid(f.hora) === hoy);
+
   return (
     <div className="grid gap-2">
-      <div ref={caja} className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] gap-2">
+      <div ref={caja} className={soloHoy ? "grid" : "grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] gap-2"}>
         {/* Día */}
-        <div className="relative grid gap-1 text-sm">
+        <div className={soloHoy ? "hidden" : "relative grid gap-1 text-sm"}>
           <span id="recogida-dia" className="font-semibold text-carbon">
             Día
           </span>
@@ -164,7 +167,7 @@ export function SelectorRecogida({ franjas, valor, onCambio }: { franjas: Franja
         {/* Hora */}
         <div className="relative grid gap-1 text-sm">
           <span id="recogida-hora" className="font-semibold text-carbon">
-            Hora
+            {soloHoy ? "Hora (hoy)" : "Hora"}
           </span>
           <button
             type="button"
@@ -180,7 +183,7 @@ export function SelectorRecogida({ franjas, valor, onCambio }: { franjas: Franja
           </button>
 
           {abierto === "hora" ? (
-            <div role="listbox" aria-label="Hora de recogida" className={`${panel} right-0 w-[16.5rem] max-w-[calc(100vw-3rem)]`}>
+            <div role="listbox" aria-label="Hora de recogida" className={`${panel} ${soloHoy ? "left-0" : "right-0"} w-[16.5rem] max-w-[calc(100vw-3rem)]`}>
               <p className="mb-2 px-1 text-sm font-semibold text-carbon">{dia === hoy ? "Hoy" : primeraMayuscula(DIA_LARGO.format(comoFecha(dia)))}</p>
               <div className="grid max-h-64 grid-cols-3 gap-1.5 overflow-y-auto">
                 {horas.map((f) => (

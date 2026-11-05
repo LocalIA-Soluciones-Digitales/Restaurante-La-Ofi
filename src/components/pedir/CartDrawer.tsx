@@ -12,6 +12,7 @@ import { formatCentimos } from "@/lib/format";
 import { vibrar } from "@/lib/haptics";
 import { href } from "@/lib/i18n";
 import { cartaActual, crearPedido, mesaPorNumero } from "@/lib/pedidos/actions";
+import { motivoSinEncargo } from "@/components/pedir/ParaLlevar";
 import { SelectorRecogida } from "@/components/pedir/SelectorRecogida";
 import { etiquetaRecogida, fechaMadrid, franjasDisponibles } from "@/lib/pedidos/franjas";
 import { guardarReciente } from "@/lib/pedidos/recientes";
@@ -110,7 +111,7 @@ export function CartDrawer({
       : sinRecogida && !enMesa
         ? menuSoloHoy
           ? "El menú del día solo se recoge hoy y ya no quedan horas para hoy. Quita el menú para encargar el resto para otro día, o llámanos."
-          : `Ahora mismo no hay horas de recogida disponibles. Llámanos al ${SITE.phone.display}.`
+          : (config.solo_menu_dia ? motivoSinEncargo(config) : null) ?? `Ahora mismo no hay horas de recogida disponibles. Llámanos al ${SITE.phone.display}.`
         : contexto.tipo === "recogida" && !enMesa && !franja
           ? "Elige la hora de recogida."
           : recogida && !nombre.trim()
@@ -390,7 +391,9 @@ export function CartDrawer({
               <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-marino" />
               {menuSoloHoy
                 ? "El menú del día solo se recoge hoy y ya no quedan horas para hoy. Quita el menú de la cesta para dejar el resto encargado para otro día, o llámanos."
-                : "Ahora mismo no hay horas de recogida disponibles. Guardamos tu pedido en este dispositivo unas horas: vuelve en horario de recogida para enviarlo, o llámanos."}
+                : config.solo_menu_dia
+                  ? motivoSinEncargo(config)
+                  : "Ahora mismo no hay horas de recogida disponibles. Guardamos tu pedido en este dispositivo unas horas: vuelve en horario de recogida para enviarlo, o llámanos."}
             </p>
           ) : null}
 

@@ -9,7 +9,7 @@ import { CartDrawer, type PedirContexto } from "@/components/pedir/CartDrawer";
 import { CartProvider, useCart } from "@/components/pedir/cart-context";
 import { CuentaMesaDrawer } from "@/components/pedir/CuentaMesaDrawer";
 import { CrearGrupo } from "@/components/pedir/CrearGrupo";
-import { ParaLlevar, type MenuParaLlevar } from "@/components/pedir/ParaLlevar";
+import { AvisoEncargo, ComponerMenu, ParaLlevar, menuListo, motivoSinEncargo, useFotosMenu, type MenuParaLlevar } from "@/components/pedir/ParaLlevar";
 import { SessionNotifications } from "@/components/pedir/SessionNotifications";
 import { TableEntry } from "@/components/pedir/TableEntry";
 import { TableSessionProvider, useTableSession } from "@/components/pedir/table-session-context";
@@ -38,17 +38,21 @@ export function PedirExperience({
   config,
   modo,
   menu = null,
+  vinosHref,
 }: {
   secciones: CartaSeccion[];
   config: ConfigPedidos | null;
   modo: PedirModo;
   /** Menú del día de hoy (solo dentro de su franja), para el pedido para llevar. */
   menu?: MenuParaLlevar | null;
+  /** Tienda de encargos de vino (el vino no va en el pedido para llevar). */
+  vinosHref?: string;
 }) {
   const contexto = modo.tipo === "mesa" ? `mesa:${modo.token}` : modo.tipo === "grupo" ? `grupo:${modo.grupo.token}` : "recogida";
   const contenido = (
-    <CartProvider contexto={contexto}>
-      <Interior secciones={secciones} config={config} modo={modo} menu={menu} />
+    // Para llevar y grupos: solo el menú del día (20261105200000). En la mesa, la carta.
+    <CartProvider contexto={contexto} soloMenu={modo.tipo !== "mesa"}>
+      <Interior secciones={secciones} config={config} modo={modo} menu={menu} vinosHref={vinosHref} />
     </CartProvider>
   );
   return modo.tipo === "mesa" ? (
@@ -60,12 +64,25 @@ export function PedirExperience({
   );
 }
 
-function Interior({ secciones, config, modo, menu }: { secciones: CartaSeccion[]; config: ConfigPedidos | null; modo: PedirModo; menu: MenuParaLlevar | null }) {
+function Interior({
+  secciones,
+  config,
+  modo,
+  menu,
+  vinosHref,
+}: {
+  secciones: CartaSeccion[];
+  config: ConfigPedidos | null;
+  modo: PedirModo;
+  menu: MenuParaLlevar | null;
+  vinosHref?: string;
+}) {
   const cart = useCart();
   const mesa = useTableSession();
   const [cesta, setCesta] = useState(false);
   const [cuenta, setCuenta] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
+  const fotoPorNombre = useFotosMenu(secciones);
 
   // ¿Se puede pedir ahora en este modo?
   const motivoNoPedir = !config
@@ -74,7 +91,11 @@ function Interior({ secciones, config, modo, menu }: { secciones: CartaSeccion[]
       ? "Ahora no hay horas de recogida disponibles. Puedes consultar la carta y llamarnos."
       : modo.tipo === "grupo" && !modo.grupo.abierto
         ? "Este pedido de grupo ya está cerrado."
-        : null;
+        : modo.tipo === "grupo" && !menuListo(menu)
+          ? "Ahora mismo no está el menú del día: para llevar solo preparamos el menú del día."
+          : modo.tipo === "grupo"
+            ? motivoSinEncargo(config)
+            : null;
   const listoParaPedir = !motivoNoPedir && (modo.tipo !== "mesa" || (mesa?.haySesion && (mesa.modo !== "SEPARADO" || mesa.participante)));
 
   const controles = useMemo<CartaCartControls | undefined>(
@@ -94,11 +115,11 @@ function Interior({ secciones, config, modo, menu }: { secciones: CartaSeccion[]
     return <CrearGrupo config={config} />;
   }
 
-  // Para llevar: página propia (menú del día + carta en lista), sin nada de mesas.
+  // Para llevar: página propia, solo con el menú del día (nada de la carta ni de mesas).
   if (modo.tipo === "recogida") {
     return (
       <>
-        <ParaLlevar secciones={secciones} config={config} menu={menu} />
+        <ParaLlevar secciones={secciones} config={config} menu={menu} vinosHref={vinosHref} />
         {config ? <CartBar onOpen={() => setCesta(true)} /> : null}
         {cesta && config ? <CartDrawer contexto={{ tipo: "recogida" }} config={config} secciones={secciones} onClose={() => setCesta(false)} /> : null}
       </>
@@ -169,13 +190,20 @@ function Interior({ secciones, config, modo, menu }: { secciones: CartaSeccion[]
         ) : null}
       </div>
 
-      {entrada && modo.tipo === "mesa" && !listoParaPedir && !motivoNoPedir ? (
+      {modo.tipo === "grupo" ? (
+        // Pedido de grupo: cada uno compone su menú del día (nada de la carta).
+        menuListo(menu) ? (
+          <ComponerMenu menu={menu} puedeAnadir={Boolean(listoParaPedir)} fotoPorNombre={fotoPorNombre} />
+        ) : (
+          <AvisoEncargo>Cuando publiquemos el menú del día, podrás elegir aquí el tuyo.</AvisoEncargo>
+        )
+      ) : entrada && modo.tipo === "mesa" && !listoParaPedir && !motivoNoPedir ? (
         <div className="py-6">{entrada}</div>
       ) : (
         <CartaInteractiva secciones={secciones} cart={controles} />
       )}
 
-      {controles ? <CartBar onOpen={() => setCesta(true)} /> : null}
+      {listoParaPedir ? <CartBar onOpen={() => setCesta(true)} /> : null}
       {cesta && config ? <CartDrawer contexto={contextoCesta} config={config} secciones={secciones} onClose={() => setCesta(false)} /> : null}
       {cuenta ? <CuentaMesaDrawer pagoOnline={Boolean(config?.pagos.online)} onClose={() => setCuenta(false)} /> : null}
     </div>

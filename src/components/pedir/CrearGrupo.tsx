@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { motivoSinEncargo } from "@/components/pedir/ParaLlevar";
 import { Icon } from "@/components/ui/Icon";
 import { crearGrupo } from "@/lib/pedidos/actions";
 import type { ConfigPedidos } from "@/lib/pedidos/types";
@@ -22,7 +23,7 @@ export function CrearGrupo({ config }: { config: ConfigPedidos | null }) {
     return (
       <section className="mx-auto my-10 max-w-xl rounded-[2rem] border border-carbon/10 bg-white p-8 shadow-card">
         <h1 className="text-3xl text-carbon">Pedido de grupo</h1>
-        <p className="mt-3 text-carbon-muted">Hoy no hay franjas de recogida disponibles. Llámanos y lo organizamos por teléfono.</p>
+        <p className="mt-3 text-carbon-muted">{motivoSinEncargo(config) ?? "Hoy no hay horas de recogida disponibles. Llámanos y lo organizamos por teléfono."}</p>
       </section>
     );
   }
@@ -39,7 +40,7 @@ export function CrearGrupo({ config }: { config: ConfigPedidos | null }) {
 
   const compartir = async () => {
     if (!enlace) return;
-    const texto = `Pedido de grupo en La Ofi («${nombre}»), recogida a las ${HORA.format(new Date(franja))}. Añade lo tuyo aquí:`;
+    const texto = `Pedido de grupo en La Ofi («${nombre}»), recogida a las ${HORA.format(new Date(franja))}. Elige tu menú del día aquí:`;
     if (navigator.share) {
       await navigator.share({ title: "Pedido de grupo · La Ofi", text: texto, url: enlace }).catch(() => undefined);
     } else {
@@ -55,7 +56,7 @@ export function CrearGrupo({ config }: { config: ConfigPedidos | null }) {
       {enlace ? (
         <div className="mt-6 space-y-4">
           <p className="text-carbon-muted">
-            ¡Listo! Comparte este enlace con tu equipo. Cada uno añade lo suyo hasta la hora de cierre y lo recogéis juntos a las{" "}
+            ¡Listo! Comparte este enlace con tu equipo. Cada uno elige su menú del día hasta la hora de cierre y lo recogéis juntos a las{" "}
             <strong className="text-carbon">{HORA.format(new Date(franja))}</strong>.
           </p>
           <p className="break-all rounded-2xl bg-arena p-4 font-mono text-sm text-carbon">{enlace}</p>
