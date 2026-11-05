@@ -155,12 +155,12 @@ export function ParaLlevar({ secciones, config, menu }: { secciones: CartaSeccio
         <div className="border-t border-crema/10 bg-carbon/60 backdrop-blur-md">
         <ol className="container-page grid grid-cols-3">
           {PASOS.map((p, n) => (
-            <li key={p.titulo} className="flex flex-col gap-1 py-4 pr-2 sm:flex-row sm:items-center sm:gap-3 sm:py-5">
+            <li key={p.titulo} className="flex flex-col items-center gap-2 px-1 py-4 text-center sm:flex-row sm:gap-3 sm:px-0 sm:py-5 sm:pr-2 sm:text-left">
               <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-crema/10 text-crema">
                 <Icon name={p.icono} className="h-4 w-4" />
               </span>
               <span className="min-w-0">
-                <span className="block text-[0.8rem] font-semibold leading-tight sm:text-sm">
+                <span className="block text-balance text-[0.8rem] font-semibold leading-tight sm:text-sm">
                   <span className="text-crema/50 tabular-nums">{n + 1}.</span> {p.titulo}
                 </span>
                 <span className="hidden text-xs text-crema/60 sm:block">{p.texto}</span>
