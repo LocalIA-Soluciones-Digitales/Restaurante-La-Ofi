@@ -41,14 +41,14 @@ export function CartaBloque({
       <section id="la-carta" aria-labelledby="carta-title" className={`scroll-mt-4 bg-crema ${Heading === "h1" ? "pt-12 sm:pt-16" : "pt-16 sm:pt-24"}`}>
         <div className="container-wide">
           {/* Qué es esto, dicho sin rodeos: "La carta", cuántos platos y cuándo. */}
-          <div className="grid gap-6 lg:grid-cols-12 lg:items-end lg:gap-14">
+          <div className="grid gap-6 lg:grid-cols-12 lg:items-center lg:gap-14">
             <div className="lg:col-span-7">
               <p className="kicker text-brasa">Lunes a viernes · Desayuno y mediodía</p>
               <Heading id="carta-title" className="mt-3 font-display text-[clamp(3.25rem,9vw,7.5rem)] font-light leading-[0.95] tracking-tight text-carbon">
                 La carta
               </Heading>
             </div>
-            <div className="lg:col-span-5 lg:pb-3">
+            <div className="lg:col-span-5">
               <p className="lead">
                 {platos > 0 ? `${platos} platos en ${secciones.length} secciones: ` : ""}tostadas de masa madre por la mañana y, a mediodía, entrantes, brasa, carnes,
                 pescados y postres.
