@@ -5,8 +5,12 @@ import { useCart } from "@/components/pedir/cart-context";
 import { Icon } from "@/components/ui/Icon";
 import { formatCentimos } from "@/lib/format";
 
-/** Barra flotante de la cesta (portada de CartBar de Palomita): aparece al añadir y "late" con cada cambio. */
-export function CartBar({ onOpen, etiqueta = "Ver pedido" }: { onOpen: () => void; etiqueta?: string }) {
+/**
+ * Botón flotante de la cesta, abajo a la derecha: una cesta con el número de artículos.
+ * Aparece al añadir el primero y «late» con cada artículo nuevo. `elevado` lo sube en
+ * escritorio para no pisar la píldora de «Reservar» (ReservarFlotante).
+ */
+export function CartBar({ onOpen, etiqueta = "Ver pedido", elevado = false }: { onOpen: () => void; etiqueta?: string; elevado?: boolean }) {
   const { totalItems, totalCentimos, hidratado } = useCart();
   const [latido, setLatido] = useState(0);
   const prev = useRef(totalItems);
@@ -18,20 +22,27 @@ export function CartBar({ onOpen, etiqueta = "Ver pedido" }: { onOpen: () => voi
 
   if (!hidratado || totalItems === 0) return null;
 
+  const articulos = `${totalItems} ${totalItems === 1 ? "artículo" : "artículos"}`;
+
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] sm:px-6">
-      <button
-        type="button"
-        onClick={onOpen}
-        className="pointer-events-auto mx-auto flex w-full max-w-xl items-center gap-3 rounded-full bg-marino py-2 pl-2 pr-5 text-crema shadow-[0_18px_40px_-12px_rgb(17_30_51/0.6)] animate-sheet-up hover:bg-marino-700"
+    <button
+      type="button"
+      onClick={onOpen}
+      aria-label={`${etiqueta}: ${articulos}, ${formatCentimos(totalCentimos)}`}
+      className={`group fixed right-4 z-40 bottom-[calc(env(safe-area-inset-bottom)+1rem)] sm:right-6 sm:bottom-6 ${elevado ? "lg:bottom-24" : ""} motion-safe:animate-pop-in`}
+    >
+      <span
+        key={latido}
+        className="relative grid h-16 w-16 place-items-center rounded-full bg-marino text-crema shadow-[0_16px_36px_-10px_rgb(17_30_51/0.65)] ring-1 ring-white/10 transition-[transform,background-color] duration-200 ease-out group-hover:bg-marino-700 group-active:scale-95 motion-safe:animate-bump"
       >
-        <span key={latido} className="grid h-11 w-11 place-items-center rounded-full bg-neon text-noche motion-safe:animate-bump">
-          <span className="font-semibold tabular-nums">{totalItems}</span>
+        <Icon name="bag" className="h-7 w-7" />
+        <span
+          aria-hidden="true"
+          className="absolute -right-1 -top-1 grid h-7 min-w-7 place-items-center rounded-full bg-neon px-1.5 text-sm font-bold tabular-nums text-noche ring-[3px] ring-crema"
+        >
+          {totalItems > 99 ? "99+" : totalItems}
         </span>
-        <span className="flex-1 text-left font-semibold">{etiqueta}</span>
-        <span className="font-display text-xl tabular-nums">{formatCentimos(totalCentimos)}</span>
-        <Icon name="chevronUp" className="h-5 w-5" />
-      </button>
-    </div>
+      </span>
+    </button>
   );
 }

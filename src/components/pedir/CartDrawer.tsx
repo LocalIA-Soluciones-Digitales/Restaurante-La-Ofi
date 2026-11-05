@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useRef, useState } from "react";
+import { type ReactNode, useMemo, useRef, useState } from "react";
 import { MiniaturaPlato } from "@/components/carta/MiniaturaPlato";
 import { useCart, type CambioCarta, type CartLinea } from "@/components/pedir/cart-context";
 import { useTableSession } from "@/components/pedir/table-session-context";
@@ -266,12 +266,14 @@ export function CartDrawer({
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div className="flex max-h-[94svh] w-full max-w-xl flex-col rounded-t-[2rem] bg-crema shadow-lift animate-sheet-up sm:rounded-[2rem]">
-        <header className="flex items-center justify-between gap-4 border-b border-carbon/10 px-6 py-5">
+        <div aria-hidden="true" className="mx-auto mt-2.5 h-1 w-10 rounded-full bg-carbon/15 sm:hidden" />
+        <header className="flex items-center justify-between gap-4 border-b border-carbon/10 px-5 pb-4 pt-3 sm:px-6 sm:pt-5">
           <div>
-            <h2 id="cesta-titulo" className="text-3xl text-carbon">
-              Tu pedido
+            <h2 id="cesta-titulo" className="text-2xl text-carbon sm:text-3xl">
+              {revisando ? "Revisa tu pedido" : "Tu pedido"}
             </h2>
             <p className="text-sm text-carbon-muted">
+              {cart.totalItems > 0 ? `${cart.totalItems} ${cart.totalItems === 1 ? "artículo" : "artículos"} · ` : ""}
               {contexto.tipo === "mesa"
                 ? `${mesa?.mesa.nombre ?? `Mesa ${mesa?.mesa.numero}`}${separado && mesa?.participante ? ` · ${mesa.participante.nombre}` : ""}`
                 : contexto.tipo === "grupo"
@@ -281,14 +283,14 @@ export function CartDrawer({
                     : "Para recoger"}
             </p>
           </div>
-          <button type="button" onClick={onClose} className="grid h-11 w-11 place-items-center rounded-full border border-carbon/15">
-            <Icon name="close" />
+          <button type="button" onClick={onClose} className="grid h-10 w-10 place-items-center rounded-full bg-arena text-carbon transition-colors hover:bg-carbon/10">
+            <Icon name="close" className="h-4 w-4" />
             <span className="sr-only">Cerrar</span>
           </button>
         </header>
 
         {revisando ? (
-          <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-5">
+          <div className="min-h-0 flex-1 space-y-7 overflow-y-auto px-5 py-5 sm:px-6">
             <ResumenPedido
               lineas={cart.lineas}
               fotos={fotos}
@@ -315,7 +317,7 @@ export function CartDrawer({
             ) : null}
           </div>
         ) : (
-        <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-5">
+        <div className="min-h-0 flex-1 space-y-7 overflow-y-auto px-5 py-5 sm:px-6">
           {cambios && cambios.length > 0 ? (
             <div role="alert" className="rounded-2xl border border-terracota/30 bg-terracota-soft/60 p-4 text-sm text-terracota">
               <p className="font-semibold">La carta ha cambiado desde que añadiste estos platos:</p>
@@ -334,31 +336,31 @@ export function CartDrawer({
           {cart.lineas.length === 0 ? (
             <p className="py-10 text-center text-carbon-muted">Tu cesta está vacía.</p>
           ) : (
-            <ul className="divide-y divide-carbon/10">
+            <ul className="divide-y divide-carbon/10 rounded-2xl bg-white px-3 ring-1 ring-carbon/10">
               {cart.lineas.map((l) => (
-                <li key={l.key} className="py-4">
-                  <div className="flex items-start gap-3">
-                    <Miniatura nombre={l.nombre} src={fotos.get(l.productoId)} seccion={seccionDe.get(l.productoId)} className="h-16 w-16" />
+                <li key={l.key} className="py-3">
+                  <div className="flex items-center gap-3">
+                    <Miniatura nombre={l.nombre} src={fotos.get(l.productoId)} seccion={seccionDe.get(l.productoId)} className="h-14 w-14 shrink-0" />
                     <div className="min-w-0 flex-1">
-                      <p className="font-display text-lg leading-tight text-carbon">{l.nombre}</p>
-                      {l.resumen ? <p className="text-sm text-carbon-muted">{l.resumen}</p> : null}
-                      {l.notas ? <p className="text-sm italic text-carbon-muted">«{l.notas}»</p> : null}
+                      <p className="truncate font-display text-[1.05rem] leading-tight text-carbon">{l.nombre}</p>
+                      {l.resumen ? <p className="line-clamp-2 text-xs text-carbon-muted">{l.resumen}</p> : null}
+                      {l.notas ? <p className="truncate text-xs italic text-carbon-muted">«{l.notas}»</p> : null}
+                      <p className="mt-0.5 text-xs tabular-nums text-carbon-muted">{formatCentimos(l.precioUnitario)} / ud.</p>
                     </div>
-                    <p className="font-semibold tabular-nums text-marino">{formatCentimos(l.precioUnitario * l.cantidad)}</p>
-                  </div>
-                  <div className="mt-2 flex items-center gap-2">
-                    <div className="flex items-center rounded-full border border-carbon/15 bg-white">
-                      <button type="button" onClick={() => cart.cambiarCantidad(l.key, -1)} className="grid h-10 w-10 place-items-center">
-                        <Icon name={l.cantidad === 1 ? "trash" : "minus"} className="h-4 w-4" />
-                        <span className="sr-only">{l.cantidad === 1 ? `Quitar ${l.nombre}` : `Uno menos de ${l.nombre}`}</span>
-                      </button>
-                      <span className="min-w-6 text-center text-sm font-semibold tabular-nums">{l.cantidad}</span>
-                      <button type="button" onClick={() => cart.cambiarCantidad(l.key, 1)} className="grid h-10 w-10 place-items-center">
-                        <Icon name="plus" className="h-4 w-4" />
-                        <span className="sr-only">Uno más de {l.nombre}</span>
-                      </button>
+                    <div className="flex shrink-0 flex-col items-end gap-1.5">
+                      <p className="text-sm font-semibold tabular-nums text-carbon">{formatCentimos(l.precioUnitario * l.cantidad)}</p>
+                      <div className="flex items-center rounded-full bg-arena">
+                        <button type="button" onClick={() => cart.cambiarCantidad(l.key, -1)} className="grid h-8 w-8 place-items-center rounded-full text-carbon transition-colors hover:bg-carbon/10">
+                          <Icon name={l.cantidad === 1 ? "trash" : "minus"} className="h-3.5 w-3.5" />
+                          <span className="sr-only">{l.cantidad === 1 ? `Quitar ${l.nombre}` : `Uno menos de ${l.nombre}`}</span>
+                        </button>
+                        <span className="min-w-5 text-center text-sm font-semibold tabular-nums">{l.cantidad}</span>
+                        <button type="button" onClick={() => cart.cambiarCantidad(l.key, 1)} className="grid h-8 w-8 place-items-center rounded-full text-carbon transition-colors hover:bg-carbon/10">
+                          <Icon name="plus" className="h-3.5 w-3.5" />
+                          <span className="sr-only">Uno más de {l.nombre}</span>
+                        </button>
+                      </div>
                     </div>
-                    <span className="text-xs text-carbon-muted">{formatCentimos(l.precioUnitario)} / ud.</span>
                   </div>
                   {separado && otros.length > 0 ? (
                     <fieldset className="mt-3">
@@ -393,9 +395,15 @@ export function CartDrawer({
           ) : null}
 
           {recogida && !sinRecogida && cart.lineas.length > 0 ? (
+            <>
+            {contexto.tipo === "recogida" ? (
+              <fieldset>
+                <Titulo icono="calendar">¿Cuándo pasas a recogerlo?</Titulo>
+                <SelectorRecogida franjas={franjas} valor={franja} onCambio={setFranja} />
+              </fieldset>
+            ) : null}
             <fieldset className="grid gap-3">
-              <legend className="mb-2 font-sans text-sm font-semibold uppercase tracking-eyebrow text-carbon">Recogida</legend>
-              {contexto.tipo === "recogida" ? <SelectorRecogida franjas={franjas} valor={franja} onCambio={setFranja} /> : null}
+              <Titulo icono="users">Tus datos</Titulo>
               <label className="grid gap-1 text-sm">
                 <span className="font-semibold text-carbon">Tu nombre</span>
                 <input
@@ -443,6 +451,7 @@ export function CartDrawer({
                 />
               </label>
             </fieldset>
+            </>
           ) : null}
 
           {cart.lineas.length > 0 ? (
@@ -494,7 +503,7 @@ export function CartDrawer({
                 </p>
               ) : (
                 <fieldset>
-                  <legend className="mb-2 font-sans text-sm font-semibold uppercase tracking-eyebrow text-carbon">Pago</legend>
+                  <Titulo icono="card">Pago</Titulo>
                   <div className="grid gap-2 sm:grid-cols-2">
                     {puedeOnline ? (
                       <PagoOpcion activo={pago === "ONLINE"} onClick={() => setPago("ONLINE")} icon="card" titulo="Pagar ahora" texto="Con tarjeta, de forma segura con Stripe." />
@@ -526,15 +535,15 @@ export function CartDrawer({
         </div>
         )}
 
-        <footer className="border-t border-carbon/10 px-6 py-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
-          <div className="mb-3 flex items-baseline justify-between">
-            <span className="text-carbon-muted">
-              Total <span className="text-xs">(IVA incluido)</span>
-            </span>
-            <span className="font-display text-3xl tabular-nums text-carbon">{formatCentimos(cart.totalCentimos)}</span>
-          </div>
+        <footer className="border-t border-carbon/10 bg-crema/95 px-5 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.875rem)] sm:rounded-b-[2rem] sm:px-6">
           {revisando ? (
             <>
+            <div className="mb-2 flex items-baseline justify-between">
+              <span className="text-sm text-carbon-muted">
+                Total <span className="text-xs">(IVA incluido)</span>
+              </span>
+              <span className="font-display text-2xl tabular-nums text-carbon">{formatCentimos(cart.totalCentimos)}</span>
+            </div>
             {/* Información previa a la compra (TRLGDCU arts. 60 y 97, LSSI art. 27). */}
             <p className="mb-3 text-xs leading-relaxed text-carbon-muted">
               Vende {(config.titular?.razonSocial ?? TITULAR.razonSocial) || SITE.name}
@@ -575,16 +584,23 @@ export function CartDrawer({
                   {error}
                 </p>
               ) : null}
-              {/* Siempre se puede pulsar: si falta algo, se explica en vez de no hacer nada. */}
-              <button
-                type="button"
-                onClick={intentarRevisar}
-                disabled={comprobando}
-                aria-disabled={faltaDato}
-                className={`btn-primary w-full disabled:opacity-50 ${faltaDato ? "opacity-60" : ""}`}
-              >
-                {comprobando ? "Comprobando la mesa…" : "Revisar pedido"}
-              </button>
+              <div className="flex items-center gap-4">
+                <div className="shrink-0">
+                  <p className="text-xs text-carbon-muted">Total · IVA incl.</p>
+                  <p className="font-display text-2xl leading-tight tabular-nums text-carbon">{formatCentimos(cart.totalCentimos)}</p>
+                </div>
+                {/* Siempre se puede pulsar: si falta algo, se explica en vez de no hacer nada. */}
+                <button
+                  type="button"
+                  onClick={intentarRevisar}
+                  disabled={comprobando}
+                  aria-disabled={faltaDato}
+                  className={`btn-primary flex-1 justify-center gap-2 disabled:opacity-50 ${faltaDato ? "opacity-60" : ""}`}
+                >
+                  {comprobando ? "Comprobando la mesa…" : "Revisar pedido"}
+                  {!comprobando ? <Icon name="arrow" className="h-4 w-4" /> : null}
+                </button>
+              </div>
             </>
           )}
         </footer>
@@ -596,6 +612,18 @@ export function CartDrawer({
 /** Como en la carta: la foto del plato si la hay; si no, su tipo ilustrado. */
 function Miniatura({ nombre, src, seccion, className }: { nombre: string; src?: string; seccion?: string; className: string }) {
   return <MiniaturaPlato nombre={nombre} foto={src} seccion={seccion} className={className} />;
+}
+
+/** Título de cada bloque de la cesta (recogida, datos, pago…). */
+function Titulo({ icono, children }: { icono: IconName; children: ReactNode }) {
+  return (
+    <legend className="mb-3 flex items-center gap-2 text-base font-semibold text-carbon">
+      <span className="grid h-7 w-7 place-items-center rounded-full bg-marino/10 text-marino">
+        <Icon name={icono} className="h-3.5 w-3.5" />
+      </span>
+      {children}
+    </legend>
+  );
 }
 
 /** Resumen de solo lectura del pedido: lo que se va a enviar, tal cual. */

@@ -39,7 +39,7 @@ function Interior({ secciones, config }: { secciones: CartaSeccion[]; config: Co
   return (
     <div className="pb-24">
       <CartaInteractiva secciones={secciones} cart={controles} layout="editorial" />
-      <CartBar onOpen={() => setCesta(true)} etiqueta="Ver pedido para recoger" />
+      <CartBar onOpen={() => setCesta(true)} etiqueta="Ver pedido para recoger" elevado />
       {cesta ? <CartDrawer contexto={{ tipo: "recogida" }} config={config} secciones={secciones} onClose={() => setCesta(false)} /> : null}
     </div>
   );

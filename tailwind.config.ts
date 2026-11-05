@@ -105,6 +105,11 @@ const config: Config = {
           "0%": { transform: "translateY(100%)" },
           "100%": { transform: "translateY(0)" },
         },
+        // Botón flotante de la cesta al aparecer.
+        "pop-in": {
+          "0%": { opacity: "0", transform: "scale(0.6) translateY(12px)" },
+          "100%": { opacity: "1", transform: "scale(1) translateY(0)" },
+        },
       },
       animation: {
         kenburns: "kenburns 30s ease-out both",
@@ -117,6 +122,7 @@ const config: Config = {
         bump: "bump 0.35s cubic-bezier(0.22,1,0.36,1)",
         "fade-in": "fade-in 0.3s ease-out both",
         "sheet-up": "sheet-up 0.42s cubic-bezier(0.32,0.72,0,1) both",
+        "pop-in": "pop-in 0.38s cubic-bezier(0.22,1,0.36,1) both",
       },
       transitionTimingFunction: {
         "out-expo": "cubic-bezier(0.16,1,0.3,1)",
