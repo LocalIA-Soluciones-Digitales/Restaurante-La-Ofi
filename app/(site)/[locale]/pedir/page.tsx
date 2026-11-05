@@ -7,6 +7,7 @@ import { Proximamente } from "@/components/ui/Proximamente";
 import { href, type Locale } from "@/lib/i18n";
 import { ENCARGOS_VINO, PROXIMAMENTE } from "@/lib/lanzamiento";
 import { obtenerConfigPedidos, obtenerGrupo, validarMesa } from "@/lib/pedidos/actions";
+import { precioPlatoDia } from "@/lib/pedidos/types";
 import { getCartaContent, getMenuDiaContent } from "@/lib/restaurant/content";
 import { pageMetadata } from "@/lib/seo";
 import { SITE } from "@/lib/site";
@@ -26,7 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     locale,
     path: "/pedir",
     title: "Pedir para llevar",
-    description: "Encarga el menú del día de La Ofi de 9:00 a 12:00 y recógelo en barra de 13:00 a 15:00. Edificio 502 del Parque Tecnológico de Bizkaia.",
+    description: "Encarga el plato del día de La Ofi de 9:00 a 12:00 y recógelo en barra de 13:00 a 15:00. Edificio 502 del Parque Tecnológico de Bizkaia.",
     noindex: true,
   });
 }
@@ -82,7 +83,7 @@ export default async function PedirPage({ params, searchParams }: Props) {
           <div className="lg:col-span-4">
             <p className="kicker text-brasa">Para llevar</p>
             <h1 className="t-display mt-4 text-carbon">Pide y recoge</h1>
-            <p className="lead mt-5">El menú del día, listo en barra a tu hora. Muy pronto, desde aquí.</p>
+            <p className="lead mt-5">El plato del día, listo en barra a tu hora. Muy pronto, desde aquí.</p>
             <div className="mt-8 border-y border-tinta-line py-6">
               <p className="text-sm text-carbon-muted">Mientras tanto, encárgalo por teléfono</p>
               <a href={SITE.phone.href} className="mt-1 inline-flex items-center gap-3 font-display text-4xl tabular-nums text-carbon hover:text-brasa">
@@ -94,7 +95,7 @@ export default async function PedirPage({ params, searchParams }: Props) {
           <div className="min-w-0 lg:col-span-8">
             <Proximamente
               titulo="Pide desde el móvil y recoge a tu hora"
-              texto="Estamos terminando los encargos para llevar: el menú del día, encargado por la mañana y recogido a mediodía."
+              texto="Estamos terminando los encargos para llevar: el plato del día, encargado por la mañana y recogido a mediodía."
               foto="barra"
               primero="Pedir para llevar"
             >
@@ -136,7 +137,8 @@ export default async function PedirPage({ params, searchParams }: Props) {
           vinosHref={ENCARGOS_VINO ? href(locale, "/vinos/encargar") : undefined}
           menu={
             menu.status === "real"
-              ? { precio_centimos: menu.data.precioCentimos, incluye: menu.data.incluye, platos: [...menu.data.platos, ...menu.data.primeros, ...menu.data.segundos, ...menu.data.postres] }
+              ? // Para llevar, el plato del día: un plato del menú de hoy al precio del plato (sin bebida ni postre).
+                { precio_centimos: precioPlatoDia(config.ok ? config.data : null), incluye: [], platos: [...menu.data.platos, ...menu.data.primeros, ...menu.data.segundos, ...menu.data.postres] }
               : null
           }
         />

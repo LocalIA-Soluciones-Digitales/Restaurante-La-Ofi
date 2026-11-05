@@ -92,7 +92,7 @@ function Interior({
       : modo.tipo === "grupo" && !modo.grupo.abierto
         ? "Este pedido de grupo ya está cerrado."
         : modo.tipo === "grupo" && !menuListo(menu)
-          ? "Ahora mismo no está el menú del día: para llevar solo preparamos el menú del día."
+          ? "Ahora mismo no está el menú del día: para llevar preparamos el plato del día, uno de los platos del menú."
           : modo.tipo === "grupo"
             ? motivoSinEncargo(config)
             : null;
@@ -191,11 +191,11 @@ function Interior({
       </div>
 
       {modo.tipo === "grupo" ? (
-        // Pedido de grupo: cada uno compone su menú del día (nada de la carta).
+        // Pedido de grupo: cada uno elige su plato del día (nada de la carta).
         menuListo(menu) ? (
           <ComponerMenu menu={menu} puedeAnadir={Boolean(listoParaPedir)} fotoPorNombre={fotoPorNombre} />
         ) : (
-          <AvisoEncargo>Cuando publiquemos el menú del día, podrás elegir aquí el tuyo.</AvisoEncargo>
+          <AvisoEncargo>Cuando publiquemos el menú del día, podrás elegir aquí tu plato.</AvisoEncargo>
         )
       ) : entrada && modo.tipo === "mesa" && !listoParaPedir && !motivoNoPedir ? (
         <div className="py-6">{entrada}</div>

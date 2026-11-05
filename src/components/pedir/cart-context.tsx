@@ -20,7 +20,7 @@ export interface CartLinea {
   notas?: string;
   /** Comensales con los que se comparte (modo "cada uno lo suyo"). */
   compartidoCon: string[];
-  /** Solo en el menú del día: los platos elegidos (uno de cada grupo). productoId es MENU_DIA. */
+  /** Solo en el plato del día: el plato elegido del menú de hoy. productoId es MENU_DIA. */
   menuPlatos?: string[];
 }
 
@@ -40,7 +40,7 @@ interface CartValue {
   totalCentimos: number;
   totalItems: number;
   anadir: (item: CartaItem, o?: { seleccion?: SeleccionModificador[]; notas?: string; cantidad?: number }) => void;
-  /** Añade un menú del día con sus platos (los mismos platos suman a la misma línea). */
+  /** Añade un plato del día (el mismo plato suma a la misma línea). */
   anadirMenu: (platos: { id: string; nombre: string }[], precio: number, cantidad?: number) => void;
   cambiarCantidad: (key: string, delta: number) => void;
   quitarUno: (productoId: string) => void;
@@ -138,7 +138,7 @@ export function CartProvider({ contexto, soloMenu = false, children }: { context
       if (existe) return prev.map((l) => (l.key === key ? { ...l, cantidad: Math.min(50, l.cantidad + cantidad) } : l));
       return [
         ...prev,
-        { key, productoId: MENU_DIA, nombre: "Menú del día", precioUnitario: precio, cantidad, seleccion: [], resumen: platos.map((p) => p.nombre).join(" · "), compartidoCon: [], menuPlatos: ids },
+        { key, productoId: MENU_DIA, nombre: "Plato del día", precioUnitario: precio, cantidad, seleccion: [], resumen: platos.map((p) => p.nombre).join(" · "), compartidoCon: [], menuPlatos: ids },
       ];
     });
   }, []);

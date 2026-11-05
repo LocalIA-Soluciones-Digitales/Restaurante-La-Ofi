@@ -81,7 +81,13 @@ export interface ConfigPedidos {
   menu_hasta?: string;
   /** Vendedor que figura en las condiciones del pedido (ajuste «fiscal» del panel). */
   titular?: { razonSocial: string | null; nif: string | null };
+  /** Precio del plato del día para llevar (migración 20261105500000; por defecto 790). */
+  precio_plato_centimos?: number;
 }
+
+/** Para llevar se pide el plato del día: un plato del menú de hoy, sin bebida ni postre. */
+export const PRECIO_PLATO_DIA_CENTIMOS = 790;
+export const precioPlatoDia = (config: Pick<ConfigPedidos, "precio_plato_centimos"> | null) => config?.precio_plato_centimos ?? PRECIO_PLATO_DIA_CENTIMOS;
 
 export interface GrupoPublico {
   token: string;
@@ -119,7 +125,7 @@ export interface PedidoPublico {
   items: PedidoItemPublico[];
 }
 
-/** Línea de menú del día (pedido para llevar): un plato de cada grupo del menú de hoy. */
+/** Línea de plato del día (pedido para llevar): un plato del menú de hoy (el servidor la cobra a precio de plato del día). */
 export interface LineaMenuDiaInput {
   menu_dia: true;
   platos: string[];

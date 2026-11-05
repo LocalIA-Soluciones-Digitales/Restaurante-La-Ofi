@@ -61,7 +61,7 @@ export function CartDrawer({
 
   const [pago, setPago] = useState<"ONLINE" | "LOCAL">(puedeLocal ? "LOCAL" : "ONLINE");
   // Horas de hoy y de los próximos días: si hoy ya no quedan, se deja encargado para otra.
-  // Con menú del día en la cesta, solo hoy y hasta que termina el menú.
+  // Con plato del día en la cesta, solo hoy y hasta que termina el menú.
   const conMenu = cart.lineas.some((l) => l.menuPlatos);
   const hoy = fechaMadrid(new Date());
   const todas = franjasDisponibles(config);
@@ -104,14 +104,14 @@ export function CartDrawer({
   const emailOk = !email.trim() || /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim());
   // Sin ninguna hora libre (ni hoy ni los próximos días): la cesta se guarda, pero no se envía.
   const sinRecogida = contexto.tipo === "recogida" && !franjas.some((f) => f.libres > 0);
-  // Hay horas otros días, pero el menú del día solo se recoge hoy.
+  // Hay horas otros días, pero el plato del día solo se recoge hoy.
   const menuSoloHoy = sinRecogida && conMenu && todas.some((f) => f.libres > 0);
   const motivo: string | null =
     cart.lineas.length === 0
       ? "Tu cesta está vacía."
       : sinRecogida && !enMesa
         ? menuSoloHoy
-          ? "El menú del día solo se recoge hoy y ya no quedan horas para hoy. Quita el menú para encargar el resto para otro día, o llámanos."
+          ? "El plato del día solo se recoge hoy y ya no quedan horas para hoy. Vuelve mañana por la mañana o llámanos."
           : (config.solo_menu_dia ? motivoSinEncargo(config) : null) ?? `Ahora mismo no hay horas de recogida disponibles. Llámanos al ${SITE.phone.display}.`
         : contexto.tipo === "recogida" && !enMesa && !franja
           ? "Elige la hora de recogida."
@@ -391,7 +391,7 @@ export function CartDrawer({
             <p className="flex gap-2 rounded-2xl bg-arena p-4 text-sm text-carbon-muted">
               <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-marino" />
               {menuSoloHoy
-                ? "El menú del día solo se recoge hoy y ya no quedan horas para hoy. Quita el menú de la cesta para dejar el resto encargado para otro día, o llámanos."
+                ? "El plato del día solo se recoge hoy y ya no quedan horas para hoy. Quita el plato de la cesta para dejar el resto encargado para otro día, o llámanos."
                 : config.solo_menu_dia
                   ? motivoSinEncargo(config)
                   : "Ahora mismo no hay horas de recogida disponibles. Guardamos tu pedido en este dispositivo unas horas: vuelve en horario de recogida para enviarlo, o llámanos."}

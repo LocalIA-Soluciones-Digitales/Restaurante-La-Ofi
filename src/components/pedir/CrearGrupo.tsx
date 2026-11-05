@@ -40,7 +40,7 @@ export function CrearGrupo({ config }: { config: ConfigPedidos | null }) {
 
   const compartir = async () => {
     if (!enlace) return;
-    const texto = `Pedido de grupo en La Ofi («${nombre}»), recogida a las ${HORA.format(new Date(franja))}. Elige tu menú del día aquí:`;
+    const texto = `Pedido de grupo en La Ofi («${nombre}»), recogida a las ${HORA.format(new Date(franja))}. Elige tu plato del día aquí:`;
     if (navigator.share) {
       await navigator.share({ title: "Pedido de grupo · La Ofi", text: texto, url: enlace }).catch(() => undefined);
     } else {
@@ -56,7 +56,7 @@ export function CrearGrupo({ config }: { config: ConfigPedidos | null }) {
       {enlace ? (
         <div className="mt-6 space-y-4">
           <p className="text-carbon-muted">
-            ¡Listo! Comparte este enlace con tu equipo. Cada uno elige su menú del día hasta la hora de cierre y lo recogéis juntos a las{" "}
+            ¡Listo! Comparte este enlace con tu equipo. Cada uno elige su plato del día hasta la hora de cierre y lo recogéis juntos a las{" "}
             <strong className="text-carbon">{HORA.format(new Date(franja))}</strong>.
           </p>
           <p className="break-all rounded-2xl bg-arena p-4 font-mono text-sm text-carbon">{enlace}</p>

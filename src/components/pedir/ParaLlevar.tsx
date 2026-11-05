@@ -32,7 +32,7 @@ const GRUPOS: { tipo: MenuDiaPlato["tipo"]; label: string }[] = [
 
 const hhmm = (v: string | undefined, porDefecto: string) => (v ?? porDefecto).slice(0, 5);
 
-/** El menú del día con sus platos y precio: ¿se puede componer? */
+/** El menú de hoy con sus platos y el precio del plato del día: ¿se puede pedir? */
 export const menuListo = (menu: MenuParaLlevar | null): menu is MenuParaLlevar & { precio_centimos: number } =>
   Boolean(menu && menu.platos.length > 0 && menu.precio_centimos !== null);
 
@@ -52,8 +52,8 @@ export function motivoSinEncargo(config: ConfigPedidos | null, ahora = new Date(
   if (hayRecogida(config)) return null;
   const { pedirDesde, pedirHasta } = horarioEncargos(config);
   const hora = HORA.format(ahora);
-  if (hora < pedirDesde) return `Los encargos del menú se abren a las ${pedirDesde}. Vuelve entonces y elige tu menú.`;
-  if (hora >= pedirHasta) return `Hoy ya no se aceptan encargos: el menú se encarga de ${pedirDesde} a ${pedirHasta}. Puedes venir a comer o llamarnos al ${SITE.phone.display}.`;
+  if (hora < pedirDesde) return `Los encargos del plato del día se abren a las ${pedirDesde}. Vuelve entonces y elige el tuyo.`;
+  if (hora >= pedirHasta) return `Hoy ya no se aceptan encargos: el plato del día se encarga de ${pedirDesde} a ${pedirHasta}. Puedes venir a comer o llamarnos al ${SITE.phone.display}.`;
   return `Hoy ya no quedan horas de recogida libres. Llámanos al ${SITE.phone.display} y lo vemos.`;
 }
 
@@ -71,7 +71,8 @@ function estadoEncargos(config: ConfigPedidos | null, ahora = new Date()): { abi
 }
 
 /**
- * «Pedir para recoger» (desde el 05/11/2026): para llevar solo el menú del día de hoy.
+ * «Pedir para recoger» (desde el 05/11/2026): para llevar solo el plato del día, un plato del
+ * menú de hoy (sin bebida ni postre) a precio de plato (20261105500000).
  * Se encarga de 9:00 a 12:00 y se recoge ese mismo día de 13:00 a 15:00 (ajuste
  * «recogida»). Nada de la carta; el vino se encarga aparte, en /vinos/encargar.
  */
@@ -98,7 +99,7 @@ export function ParaLlevar({
   const antesDeCerrar = HORA.format(new Date()) < pedirHasta;
 
   const pasos: { titulo: string; detalle: string; hora?: string }[] = [
-    { titulo: "Elige tu menú", detalle: "Un plato de cada grupo, desde el móvil", hora: `${pedirDesde}–${pedirHasta}` },
+    { titulo: "Elige tu plato", detalle: "Un plato del menú de hoy, desde el móvil", hora: `${pedirDesde}–${pedirHasta}` },
     { titulo: "Pon la hora de recogida", detalle: "Hoy mismo, a mediodía", hora: `${recogerDesde}–${recogerHasta}` },
     { titulo: "Recógelo en barra", detalle: `Te lo tenemos listo. Pago ${pago}` },
   ];
@@ -118,10 +119,10 @@ export function ParaLlevar({
           <div className="lg:col-span-7">
             <p className="kicker flex items-center gap-3 text-crema/75">
               <span aria-hidden="true" className="h-px w-8 bg-brasa" />
-              Para llevar · Menú del día
+              Para llevar · Plato del día
             </p>
             <h1 className="mt-5 text-balance font-display text-[clamp(2.9rem,8vw,5.75rem)] font-light leading-[0.92] tracking-[-0.025em]">
-              El menú del día, <em className="font-normal italic text-brasa-soft">para llevar</em>
+              El plato del día, <em className="font-normal italic text-brasa-soft">para llevar</em>
             </h1>
             <p className="mt-6 max-w-[34rem] text-base leading-relaxed text-crema/75 sm:text-lg">
               Encárgalo por la mañana y pásate a mediodía: te lo tenemos listo en barra, recién hecho y sin esperas.
@@ -130,7 +131,7 @@ export function ParaLlevar({
             <div className="mt-8 flex flex-wrap items-center gap-3">
               {menuListo(menu) && estado.abierto ? (
                 <a href="#menu" className="btn-primary px-6">
-                  Elegir mi menú
+                  Elegir mi plato
                   <Icon name="arrow" className="h-4 w-4 rotate-90" />
                 </a>
               ) : null}
@@ -181,12 +182,12 @@ export function ParaLlevar({
           <section id="menu" aria-labelledby="menu-titulo" className="scroll-mt-28 pt-8 sm:pt-12">
             <div className="flex flex-wrap items-end justify-between gap-4 border-b border-tinta-line pb-6">
               <div>
-                <p className="kicker text-brasa">Menú del día · {formatCentimos(menu.precio_centimos)}</p>
+                <p className="kicker text-brasa">Plato del día · {formatCentimos(menu.precio_centimos)}</p>
                 <h2 id="menu-titulo" className="t-h2 mt-3 text-carbon">
-                  Compón tu menú
+                  Elige tu plato
                 </h2>
               </div>
-              <p className="max-w-xs text-sm text-carbon-muted">Elige un plato de cada grupo. Puedes añadir varios menús, cada uno a tu gusto.</p>
+              <p className="max-w-xs text-sm text-carbon-muted">Un plato del menú de hoy, solo el plato: sin bebida ni postre. Puedes añadir varios.</p>
             </div>
             {sinEncargo ? <AvisoEncargo>{sinEncargo}</AvisoEncargo> : null}
             <ComponerMenu menu={menu} puedeAnadir={!sinEncargo} fotoPorNombre={fotoPorNombre} onAbrirCesta={onAbrirCesta} />
@@ -194,13 +195,13 @@ export function ParaLlevar({
         ) : (
           <section className="mt-8 grid overflow-hidden rounded-3xl border border-tinta-line bg-[#FFFDF8] sm:mt-12 md:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
             <div className="p-7 sm:p-10 lg:p-12">
-              <p className="kicker text-brasa">Menú del día</p>
-              <h2 className="t-h3 mt-3 text-carbon sm:text-[2rem]">{antesDeCerrar ? "El menú de hoy aún no está publicado" : "Por hoy ya no hay menú para llevar"}</h2>
+              <p className="kicker text-brasa">Plato del día</p>
+              <h2 className="t-h3 mt-3 text-carbon sm:text-[2rem]">{antesDeCerrar ? "El menú de hoy aún no está publicado" : "Por hoy ya no hay plato del día para llevar"}</h2>
               <p className="mt-3 max-w-md leading-relaxed text-carbon-muted">
                 {antesDeCerrar
                   ? "Lo publicamos cada día laborable por la mañana. En cuanto esté, podrás elegirlo aquí."
                   : "Lo publicamos cada día laborable por la mañana: vuelve el próximo y encárgalo a primera hora."}{" "}
-                Para llevar solo preparamos el menú del día.
+                Para llevar preparamos el plato del día: uno de los platos del menú.
               </p>
               <dl className="mt-7 grid max-w-sm grid-cols-2 gap-px overflow-hidden rounded-xl border border-tinta-line bg-tinta-line text-sm">
                 <div className="bg-[#FFFDF8] px-4 py-3">
@@ -263,7 +264,10 @@ export function AvisoEncargo({ children }: { children: ReactNode }) {
   );
 }
 
-/** El menú como se compone en barra: un plato de cada grupo y cuántos menús así. */
+/**
+ * El plato del día para llevar: un plato del menú de hoy (sin bebida, pan ni postre) al
+ * precio del plato del día, y cuántos iguales. Se puede añadir otro plato distinto después.
+ */
 export function ComponerMenu({
   menu,
   puedeAnadir,
@@ -276,121 +280,105 @@ export function ComponerMenu({
   onAbrirCesta?: () => void;
 }) {
   const cart = useCart();
-  const grupos = GRUPOS.map((g) => ({ ...g, platos: menu.platos.filter((p) => p.tipo === g.tipo).sort((a, b) => a.orden - b.orden) })).filter((g) => g.platos.length > 0);
-  const [eleccion, setEleccion] = useState<Record<string, string>>(() =>
-    Object.fromEntries(grupos.filter((g) => g.platos.length === 1).map((g) => [g.tipo, g.platos[0]!.id])),
-  );
+  // Todos los platos del menú de hoy, en el orden de la hoja (plato, primeros, segundos, postres).
+  const platos = GRUPOS.flatMap((g) => menu.platos.filter((p) => p.tipo === g.tipo).sort((a, b) => a.orden - b.orden));
+  const [eleccion, setEleccion] = useState<string | null>(() => (platos.length === 1 ? platos[0]!.id : null));
   const [cantidad, setCantidad] = useState(1);
   const [anadido, setAnadido] = useState(false);
-  const completo = grupos.every((g) => eleccion[g.tipo]);
+  const elegido = platos.find((p) => p.id === eleccion) ?? null;
   const precio = menu.precio_centimos!;
-  const menusEnCesta = cart.hidratado ? cart.lineas.filter((l) => l.menuPlatos).reduce((a, l) => a + l.cantidad, 0) : 0;
+  const platosEnCesta = cart.hidratado ? cart.lineas.filter((l) => l.menuPlatos).reduce((a, l) => a + l.cantidad, 0) : 0;
 
   const anadir = () => {
-    const platos = grupos.map((g) => g.platos.find((p) => p.id === eleccion[g.tipo])!).map((p) => ({ id: p.id, nombre: p.nombre }));
-    cart.anadirMenu(platos, precio, cantidad);
+    if (!elegido) return;
+    cart.anadirMenu([{ id: elegido.id, nombre: elegido.nombre }], precio, cantidad);
     vibrar(12);
     setAnadido(true);
     setCantidad(1);
-    setEleccion(Object.fromEntries(grupos.filter((g) => g.platos.length === 1).map((g) => [g.tipo, g.platos[0]!.id])));
+    setEleccion(platos.length === 1 ? platos[0]!.id : null);
     window.setTimeout(() => setAnadido(false), 2500);
   };
 
   return (
     <div className="mt-8 grid gap-10 lg:grid-cols-12 lg:gap-12">
-      <div className="grid gap-10 lg:col-span-8">
-        {grupos.map((g, n) => (
-          <fieldset key={g.tipo}>
-            <legend className="flex w-full items-baseline gap-3">
-              <span className="font-display text-sm tabular-nums text-brasa">{String(n + 1).padStart(2, "0")}</span>
-              <span className="font-display text-2xl text-carbon">{g.label}</span>
-              <span className="ml-auto text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-carbon-muted">
-                {g.platos.length > 1 ? `Elige uno · ${g.platos.length} opciones` : "Incluido"}
-              </span>
-            </legend>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              {g.platos.map((p) => {
-                const elegido = eleccion[g.tipo] === p.id;
-                return (
-                  <button
-                    key={p.id}
-                    type="button"
-                    aria-pressed={elegido}
-                    onClick={() => setEleccion((e) => ({ ...e, [g.tipo]: p.id }))}
-                    className={`group flex min-h-20 items-center gap-4 rounded-2xl border bg-[#FFFDF8] p-2.5 pr-4 text-left transition-[border-color,box-shadow] duration-200 ${
-                      elegido ? "border-brasa shadow-[0_0_0_1px_#9A4527,0_12px_30px_-20px_rgb(43_39_34/0.5)]" : "border-carbon/10 hover:border-carbon/30"
-                    }`}
-                  >
-                    <MiniaturaPlato nombre={p.nombre} foto={fotoPorNombre.get(normalizarNombre(p.nombre))} seccion={p.tipo} className="h-16 w-16" />
-                    <span className="min-w-0 flex-1">
-                      <span className="block font-semibold leading-snug text-carbon">{p.nombre}</span>
-                      {p.descripcion ? <span className="mt-0.5 block text-xs leading-snug text-carbon-muted">{p.descripcion}</span> : null}
-                    </span>
-                    <span
-                      aria-hidden="true"
-                      className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border transition-colors ${
-                        elegido ? "border-brasa bg-brasa text-crema" : "border-carbon/25 text-transparent group-hover:border-carbon/50"
-                      }`}
-                    >
-                      <Icon name="check" className="h-3.5 w-3.5" />
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </fieldset>
-        ))}
-      </div>
+      <fieldset className="lg:col-span-8">
+        <legend className="flex w-full items-baseline gap-3">
+          <span className="font-display text-2xl text-carbon">Plato del día</span>
+          <span className="ml-auto text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-carbon-muted">
+            {platos.length > 1 ? `Elige uno · ${platos.length} opciones` : "Hoy, este plato"}
+          </span>
+        </legend>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {platos.map((p) => {
+            const si = eleccion === p.id;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                aria-pressed={si}
+                onClick={() => setEleccion(p.id)}
+                className={`group flex min-h-20 items-center gap-4 rounded-2xl border bg-[#FFFDF8] p-2.5 pr-4 text-left transition-[border-color,box-shadow] duration-200 ${
+                  si ? "border-brasa shadow-[0_0_0_1px_#9A4527,0_12px_30px_-20px_rgb(43_39_34/0.5)]" : "border-carbon/10 hover:border-carbon/30"
+                }`}
+              >
+                <MiniaturaPlato nombre={p.nombre} foto={fotoPorNombre.get(normalizarNombre(p.nombre))} seccion={p.tipo} className="h-16 w-16" />
+                <span className="min-w-0 flex-1">
+                  <span className="block font-semibold leading-snug text-carbon">{p.nombre}</span>
+                  {p.descripcion ? <span className="mt-0.5 block text-xs leading-snug text-carbon-muted">{p.descripcion}</span> : null}
+                </span>
+                <span
+                  aria-hidden="true"
+                  className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border transition-colors ${
+                    si ? "border-brasa bg-brasa text-crema" : "border-carbon/25 text-transparent group-hover:border-carbon/50"
+                  }`}
+                >
+                  <Icon name="check" className="h-3.5 w-3.5" />
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </fieldset>
 
       <aside className="lg:col-span-4">
         <div className="rounded-3xl bg-carbon p-6 text-crema sm:p-7 lg:sticky lg:top-28">
           <div className="flex items-baseline justify-between gap-3">
-            <p className="kicker text-crema/55">Tu menú</p>
+            <p className="kicker text-crema/55">Tu plato</p>
             <p className="font-display text-3xl tabular-nums">{formatCentimos(precio)}</p>
           </div>
-          {menu.incluye.length ? <p className="mt-1 text-right text-xs text-crema/55">Incluye {menu.incluye.join(", ").toLowerCase()}</p> : null}
-          <ul className="mt-5 grid gap-3 border-t border-crema/10 pt-5 text-sm">
-            {grupos.map((g) => {
-              const plato = g.platos.find((p) => p.id === eleccion[g.tipo])?.nombre;
-              return (
-                <li key={g.tipo} className="grid grid-cols-[6.5rem_minmax(0,1fr)] gap-3">
-                  <span className="text-crema/50">{g.label}</span>
-                  <span className={plato ? "font-semibold" : "italic text-crema/40"}>{plato ?? "Sin elegir"}</span>
-                </li>
-              );
-            })}
-          </ul>
+          <p className="mt-1 text-right text-xs text-crema/55">Solo el plato: sin bebida ni postre</p>
+          <p className={`mt-5 border-t border-crema/10 pt-5 text-sm ${elegido ? "font-semibold" : "italic text-crema/40"}`}>{elegido?.nombre ?? "Sin elegir"}</p>
           <div className="mt-6 flex items-center justify-between gap-3 border-t border-crema/10 pt-5">
-            <span className="text-sm font-semibold">Menús así</span>
+            <span className="text-sm font-semibold">Cuántos</span>
             <span className="flex items-center rounded-full border border-crema/20">
               <button
                 type="button"
                 onClick={() => setCantidad((c) => Math.max(1, c - 1))}
                 disabled={cantidad <= 1}
                 className="grid h-10 w-10 place-items-center disabled:opacity-35"
-                aria-label="Un menú menos"
+                aria-label="Un plato menos"
               >
                 <Icon name="minus" className="h-4 w-4" />
               </button>
               <span aria-live="polite" className="w-7 text-center font-semibold tabular-nums">
                 {cantidad}
               </span>
-              <button type="button" onClick={() => setCantidad((c) => Math.min(30, c + 1))} className="grid h-10 w-10 place-items-center" aria-label="Un menú más">
+              <button type="button" onClick={() => setCantidad((c) => Math.min(30, c + 1))} className="grid h-10 w-10 place-items-center" aria-label="Un plato más">
                 <Icon name="plus" className="h-4 w-4" />
               </button>
             </span>
           </div>
-          <button type="button" onClick={anadir} disabled={!completo || !puedeAnadir} className="btn-primary mt-6 w-full justify-center disabled:cursor-not-allowed disabled:opacity-45">
+          <button type="button" onClick={anadir} disabled={!elegido || !puedeAnadir} className="btn-primary mt-6 w-full justify-center disabled:cursor-not-allowed disabled:opacity-45">
             <Icon name={anadido ? "check" : "bag"} className="h-4 w-4" />
             {anadido ? "Añadido a la cesta" : `Añadir · ${formatCentimos(precio * cantidad)}`}
           </button>
           <p role="status" className="mt-3 min-h-5 text-center text-xs text-crema/55">
-            {!completo ? (menusEnCesta ? "¿Otro menú? Elige un plato de cada grupo." : "Elige un plato de cada grupo.") : "Puedes añadir otros menús con platos distintos."}
+            {!elegido ? (platosEnCesta ? "¿Otro plato? Elige cuál." : "Elige tu plato del día.") : "Puedes añadir otros platos distintos."}
           </p>
           {/* Con algo en la cesta, el siguiente paso a la vista (no solo la cesta flotante). */}
-          {menusEnCesta && onAbrirCesta ? (
+          {platosEnCesta && onAbrirCesta ? (
             <button type="button" onClick={onAbrirCesta} className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-crema px-5 text-sm font-semibold text-carbon transition-colors hover:bg-white">
-              Ver cesta y encargar · {menusEnCesta} {menusEnCesta === 1 ? "menú" : "menús"}
+              Ver cesta y encargar · {platosEnCesta} {platosEnCesta === 1 ? "plato" : "platos"}
               <Icon name="arrow" className="h-4 w-4" />
             </button>
           ) : null}
