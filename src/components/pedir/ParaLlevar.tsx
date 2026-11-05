@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useMemo, useState } from "react";
+import { type ReactNode, type RefObject, useEffect, useMemo, useRef, useState } from "react";
 import { AnadirControl } from "@/components/carta/AnadirControl";
 import { MiniaturaPlato } from "@/components/carta/MiniaturaPlato";
 import { ProductoDetalle } from "@/components/carta/ProductoDetalle";
@@ -40,6 +40,9 @@ const nombreCorto = (nombre: string) => {
   const s = nombre.replace(/^vinos?\s+/i, "");
   return s.charAt(0).toUpperCase() + s.slice(1);
 };
+
+/** Minúsculas y sin tildes, para buscar «jamon» y encontrar «Jamón». */
+const plano = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
 const PASOS: { icono: IconName; titulo: string; texto: string }[] = [
   { icono: "utensils", titulo: "Elige", texto: "Menú del día, carta o vino" },
@@ -104,9 +107,69 @@ export function ParaLlevar({ secciones, config, menu }: { secciones: CartaSeccio
     ...(vinos.length ? ([["vinos", "Vinos", String(nVinos)]] as [Vista, string, string][]) : []),
   ];
 
-  const irA = (v: Vista) => {
+  const barra = useRef<HTMLDivElement>(null);
+  const [texto, setTexto] = useState("");
+  const q = plano(texto.trim());
+  const buscando = q.length >= 2;
+  // Busca a la vez en la carta y en los vinos, por nombre y descripción.
+  const resultados = useMemo(
+    () =>
+      !buscando
+        ? []
+        : [...comida, ...vinos]
+            .map((s) => ({ s, items: s.items.map((it, i) => ({ it, i })).filter(({ it }) => plano(`${it.nombre} ${it.descripcion ?? ""} ${s.nombre}`).includes(q)) }))
+            .filter((r) => r.items.length > 0),
+    [buscando, q, comida, vinos],
+  );
+
+  const seccionesVista = buscando ? [] : vista === "carta" ? comida : vista === "vinos" ? vinos : [];
+  const prefijo = vista === "vinos" ? "vinos" : "llevar";
+  const activa = useSeccionActiva(
+    seccionesVista.map((s) => `${prefijo}-${s.slug}`),
+    barra,
+  );
+
+  /** Lleva a la sección y la deja justo debajo de la barra fija. */
+  const irASeccion = (id: string, intentos = 3) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const tope = barra.current?.getBoundingClientRect().bottom ?? 0;
+    const destino = Math.min(el.getBoundingClientRect().top + window.scrollY - tope - 12, document.documentElement.scrollHeight - window.innerHeight);
+    if (Math.abs(destino - window.scrollY) < 4) return;
+    window.scrollTo({ top: destino, behavior: "smooth" });
+    // Las fotos que se cargan por el camino mueven la sección: al parar, se corrige.
+    if (intentos > 1) {
+      let hecho = false;
+      const corregir = () => {
+        if (hecho) return;
+        hecho = true;
+        window.removeEventListener("scrollend", corregir);
+        irASeccion(id, intentos - 1);
+      };
+      window.addEventListener("scrollend", corregir, { once: true });
+      window.setTimeout(corregir, 1200);
+    }
+  };
+
+  const cambiarVista = (v: Vista) => {
     setVista(v);
-    document.getElementById("llevar-pestanas")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setTexto("");
+  };
+
+  const alPrincipio = (behavior: ScrollBehavior) => {
+    const ancla = document.getElementById("llevar-ancla");
+    // Solo si ya se ha bajado más allá: si la barra aún no está fija, no se mueve nada.
+    if (ancla && ancla.getBoundingClientRect().top < 0) ancla.scrollIntoView({ behavior, block: "start" });
+  };
+
+  // Al empezar a buscar, los resultados se ven desde arriba (no a mitad de página).
+  useEffect(() => {
+    if (buscando) alPrincipio("auto");
+  }, [buscando]);
+
+  const irA = (v: Vista) => {
+    cambiarVista(v);
+    alPrincipio("smooth");
   };
 
   const abrir = (seccion: CartaSeccion, index: number) => setDetalle({ seccion, index });
@@ -176,26 +239,88 @@ export function ParaLlevar({ secciones, config, menu }: { secciones: CartaSeccio
         <ActiveOrderBanner />
       </div>
 
-      {/* Pestañas: siempre a mano al bajar por la carta. */}
-      <div id="llevar-pestanas" className="sticky top-16 z-20 -mx-4 scroll-mt-16 bg-crema/95 px-4 py-3 backdrop-blur sm:top-20 sm:scroll-mt-20">
-        <div role="tablist" aria-label="Qué quieres pedir" className={`grid gap-1 rounded-full bg-papel-2 p-1 sm:inline-grid sm:w-auto ${pestanas.length === 3 ? "grid-cols-3" : "grid-cols-2"}`}>
-          {pestanas.map(([k, label, extra]) => (
-            <button
-              key={k}
-              type="button"
-              role="tab"
-              aria-selected={vista === k}
-              onClick={() => setVista(k)}
-              className="min-h-11 whitespace-nowrap rounded-full px-4 text-sm font-semibold text-carbon-muted transition-colors aria-selected:bg-carbon aria-selected:text-crema sm:px-6"
-            >
-              {label}
-              {extra ? <span className="ml-1.5 hidden font-normal opacity-70 sm:inline">· {extra}</span> : null}
-            </button>
-          ))}
+      {/* Dónde empieza la barra fija: para volver aquí al cambiar de pestaña o al buscar. */}
+      <div id="llevar-ancla" aria-hidden="true" className="scroll-mt-16 sm:scroll-mt-20" />
+      {/* Barra fija: pestañas, buscador y secciones, siempre a mano al bajar por la carta. */}
+      <div ref={barra} id="llevar-pestanas" className="sticky top-16 z-20 -mx-4 scroll-mt-16 border-b border-carbon/10 bg-crema/95 px-4 py-3 backdrop-blur sm:top-20 sm:scroll-mt-20">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+          <div role="tablist" aria-label="Qué quieres pedir" className={`grid gap-1 rounded-full bg-papel-2 p-1 sm:inline-grid sm:w-auto ${pestanas.length === 3 ? "grid-cols-3" : "grid-cols-2"}`}>
+            {pestanas.map(([k, label, extra]) => (
+              <button
+                key={k}
+                type="button"
+                role="tab"
+                aria-selected={vista === k && !buscando}
+                onClick={() => cambiarVista(k)}
+                className="min-h-10 whitespace-nowrap rounded-full px-4 text-sm font-semibold text-carbon-muted transition-colors aria-selected:bg-carbon aria-selected:text-crema sm:px-6"
+              >
+                {label}
+                {extra ? <span className="ml-1.5 hidden font-normal opacity-70 sm:inline">· {extra}</span> : null}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex min-w-0 flex-1 gap-2 sm:justify-end">
+            <label className="relative min-w-0 flex-1 sm:max-w-sm">
+              <span className="sr-only">Buscar en la carta y los vinos</span>
+              <Icon name="search" className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-carbon-muted" />
+              <input
+                type="text"
+                inputMode="search"
+                enterKeyHint="search"
+                value={texto}
+                onChange={(e) => setTexto(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") setTexto("");
+                }}
+                placeholder="Buscar plato o vino"
+                className="h-11 w-full rounded-full border border-carbon/15 bg-[#FFFDF8] pl-10 pr-10 text-base text-carbon placeholder:text-carbon-muted focus:border-carbon focus:outline-none sm:h-10 sm:text-sm"
+              />
+              {texto ? (
+                <button
+                  type="button"
+                  onClick={() => setTexto("")}
+                  aria-label="Borrar búsqueda"
+                  className="absolute right-1.5 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full text-carbon-muted hover:bg-carbon/10"
+                >
+                  <Icon name="close" className="h-4 w-4" />
+                </button>
+              ) : null}
+            </label>
+
+            {/* En el móvil, las secciones en un desplegable junto al buscador. */}
+            {seccionesVista.length > 1 ? (
+              <label className="relative shrink-0 sm:hidden">
+                <span className="sr-only">Ir a una sección</span>
+                <select
+                  value={activa ?? ""}
+                  onChange={(e) => {
+                    if (e.target.value) irASeccion(e.target.value);
+                  }}
+                  className="h-11 w-[9.5rem] appearance-none truncate rounded-full border border-carbon/15 bg-[#FFFDF8] pl-4 pr-9 text-sm font-semibold text-carbon focus:border-carbon focus:outline-none"
+                >
+                  <option value="" disabled>
+                    Secciones
+                  </option>
+                  {seccionesVista.map((s) => (
+                    <option key={s.id} value={`${prefijo}-${s.slug}`}>
+                      {vista === "vinos" ? nombreCorto(s.nombre) : s.nombre}
+                    </option>
+                  ))}
+                </select>
+                <Icon name="chevronDown" className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-carbon-muted" />
+              </label>
+            ) : null}
+          </div>
         </div>
+
+        {/* En escritorio, las secciones en chips dentro de la barra; se marca en la que estás. */}
+        <IndiceSecciones secciones={seccionesVista} prefijo={prefijo} corto={vista === "vinos"} activa={activa} onIr={irASeccion} />
       </div>
 
-      {vista === "menu" ? (
+      {buscando ? (
+        <Resultados texto={texto.trim()} resultados={resultados} controles={controles} onAbrir={abrir} onLimpiar={() => setTexto("")} />
+      ) : vista === "menu" ? (
         hayMenu ? (
           <ComponerMenu menu={menu!} puedeAnadir={Boolean(config)} fotoPorNombre={fotoPorNombre} />
         ) : (
@@ -211,26 +336,14 @@ export function ParaLlevar({ secciones, config, menu }: { secciones: CartaSeccio
           </div>
         )
       ) : vista === "carta" ? (
-        <div className="mt-2">
-          <IndiceSecciones secciones={comida} prefijo="llevar" />
-          <div className="mt-6 grid gap-12">
+        <div className="mt-6">
+          <div className="grid gap-12">
             {comida.map((s) => (
-              <section key={s.id} id={`llevar-${s.slug}`} aria-labelledby={`llevar-${s.slug}-t`} className="scroll-mt-40">
+              <section key={s.id} id={`llevar-${s.slug}`} aria-labelledby={`llevar-${s.slug}-t`} className="scroll-mt-56">
                 <CabeceraSeccion id={`llevar-${s.slug}-t`} nombre={s.nombre} n={s.items.length} nota={s.nota} unidad="platos" />
                 <ul className="divide-y divide-carbon/10">
                   {s.items.map((it, i) => (
-                    <li key={it.id} className="flex items-center gap-4 py-4">
-                      {/* Como en /carta: la foto del plato si la hay; si no, su tipo ilustrado. */}
-                      <button type="button" tabIndex={-1} aria-hidden="true" onClick={() => abrir(s, i)} className="shrink-0">
-                        <MiniaturaPlato nombre={it.nombre} foto={it.imagen?.src} seccion={s.slug} className="h-16 w-16" />
-                      </button>
-                      <button type="button" onClick={() => abrir(s, i)} className="min-w-0 flex-1 text-left">
-                        <span className="block font-display text-lg leading-snug text-carbon">{it.nombre}</span>
-                        {it.descripcion ? <span className="mt-0.5 line-clamp-2 block text-sm text-carbon-muted">{it.descripcion}</span> : null}
-                        <Precio item={it} />
-                      </button>
-                      {controles && controles.sePuedePedir(it) ? <AnadirControl item={it} cart={controles} onRequiereFicha={() => abrir(s, i)} compacto /> : null}
-                    </li>
+                    <FilaPlato key={it.id} item={it} seccion={s} onAbrir={() => abrir(s, i)} controles={controles} />
                   ))}
                 </ul>
               </section>
@@ -286,20 +399,169 @@ function Dato({ icono, titulo, children }: { icono: IconName; titulo: string; ch
   );
 }
 
-function IndiceSecciones({ secciones, prefijo, corto = false }: { secciones: CartaSeccion[]; prefijo: string; corto?: boolean }) {
+/**
+ * La sección que se está viendo: la última cuyo título ya ha pasado por debajo de la
+ * barra fija. Se recalcula al hacer scroll (con requestAnimationFrame, sin tirones).
+ */
+function useSeccionActiva(ids: string[], barra: RefObject<HTMLDivElement | null>): string | null {
+  const [activa, setActiva] = useState<string | null>(null);
+  const clave = ids.join("|");
+  useEffect(() => {
+    if (!ids.length) {
+      setActiva(null);
+      return;
+    }
+    let frame = 0;
+    const medir = () => {
+      frame = 0;
+      const tope = (barra.current?.getBoundingClientRect().bottom ?? 0) + 24;
+      let actual: string | null = null;
+      for (const id of ids) {
+        const el = document.getElementById(id);
+        if (el && el.getBoundingClientRect().top <= tope) actual = id;
+      }
+      // Al final de la página la última sección no llega arriba: si se ve entera, es esa.
+      const ultima = document.getElementById(ids[ids.length - 1]!);
+      if (ultima && window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 160 && ultima.getBoundingClientRect().top < window.innerHeight) {
+        actual = ultima.id;
+      }
+      setActiva(actual);
+    };
+    const alMover = () => {
+      if (!frame) frame = window.requestAnimationFrame(medir);
+    };
+    medir();
+    window.addEventListener("scroll", alMover, { passive: true });
+    window.addEventListener("resize", alMover);
+    return () => {
+      window.removeEventListener("scroll", alMover);
+      window.removeEventListener("resize", alMover);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+    // `ids` cambia de referencia en cada render: se vigila por su contenido.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clave, barra]);
+  return activa;
+}
+
+function IndiceSecciones({
+  secciones,
+  prefijo,
+  corto = false,
+  activa,
+  onIr,
+}: {
+  secciones: CartaSeccion[];
+  prefijo: string;
+  corto?: boolean;
+  activa: string | null;
+  onIr: (id: string) => void;
+}) {
+  const nav = useRef<HTMLElement>(null);
+  // Que el chip de la sección activa se vea siempre (sin mover la página).
+  useEffect(() => {
+    const cont = nav.current;
+    const chip = activa ? cont?.querySelector<HTMLElement>(`[data-id="${activa}"]`) : null;
+    if (!cont || !chip) return;
+    const izq = chip.offsetLeft - cont.offsetLeft;
+    if (izq < cont.scrollLeft || izq + chip.offsetWidth > cont.scrollLeft + cont.clientWidth) {
+      cont.scrollTo({ left: izq - 16, behavior: "smooth" });
+    }
+  }, [activa]);
+
   if (secciones.length < 2) return null;
   return (
-    <nav aria-label="Secciones" className="-mx-4 flex gap-2 overflow-x-auto px-4 py-1 [scrollbar-width:none]">
-      {secciones.map((s) => (
-        <a
-          key={s.id}
-          href={`#${prefijo}-${s.slug}`}
-          className="shrink-0 rounded-full border border-carbon/15 px-4 py-2 text-sm font-semibold text-carbon transition-colors hover:border-carbon/50"
-        >
-          {corto ? nombreCorto(s.nombre) : s.nombre}
-        </a>
-      ))}
+    <nav ref={nav} aria-label="Secciones" className="-mx-4 mt-3 hidden gap-2 overflow-x-auto px-4 pb-0.5 [scrollbar-width:none] sm:flex">
+      {secciones.map((s) => {
+        const id = `${prefijo}-${s.slug}`;
+        const esta = activa === id;
+        return (
+          <a
+            key={s.id}
+            href={`#${id}`}
+            data-id={id}
+            aria-current={esta ? "location" : undefined}
+            onClick={(e) => {
+              e.preventDefault();
+              onIr(id);
+            }}
+            className={`shrink-0 rounded-full border px-4 py-1.5 text-sm font-semibold transition-colors ${
+              esta ? "border-carbon bg-carbon text-crema" : "border-carbon/15 text-carbon hover:border-carbon/50"
+            }`}
+          >
+            {corto ? nombreCorto(s.nombre) : s.nombre}
+          </a>
+        );
+      })}
     </nav>
+  );
+}
+
+function FilaPlato({ item, seccion, onAbrir, controles }: { item: CartaItem; seccion: CartaSeccion; onAbrir: () => void; controles: CartaCartControls | undefined }) {
+  return (
+    <li className="flex items-center gap-4 py-4">
+      {/* Como en /carta: la foto del plato si la hay; si no, su tipo ilustrado. */}
+      <button type="button" tabIndex={-1} aria-hidden="true" onClick={onAbrir} className="shrink-0">
+        <MiniaturaPlato nombre={item.nombre} foto={item.imagen?.src} seccion={seccion.slug} className="h-16 w-16" />
+      </button>
+      <button type="button" onClick={onAbrir} className="min-w-0 flex-1 text-left">
+        <span className="block font-display text-lg leading-snug text-carbon">{item.nombre}</span>
+        {item.descripcion ? <span className="mt-0.5 line-clamp-2 block text-sm text-carbon-muted">{item.descripcion}</span> : null}
+        <Precio item={item} />
+      </button>
+      {controles && controles.sePuedePedir(item) ? <AnadirControl item={item} cart={controles} onRequiereFicha={onAbrir} compacto /> : null}
+    </li>
+  );
+}
+
+/** Lo encontrado en la carta y en los vinos, agrupado por sección. */
+function Resultados({
+  texto,
+  resultados,
+  controles,
+  onAbrir,
+  onLimpiar,
+}: {
+  texto: string;
+  resultados: { s: CartaSeccion; items: { it: CartaItem; i: number }[] }[];
+  controles: CartaCartControls | undefined;
+  onAbrir: (s: CartaSeccion, i: number) => void;
+  onLimpiar: () => void;
+}) {
+  const n = resultados.reduce((a, r) => a + r.items.length, 0);
+  return (
+    <div className="mt-6">
+      <p role="status" className="text-sm text-carbon-muted">
+        {n ? (
+          <>
+            {n} {n === 1 ? "resultado" : "resultados"} para <b className="text-carbon">«{texto}»</b>
+          </>
+        ) : null}
+      </p>
+      {n === 0 ? (
+        <div className="mt-2 grid place-items-center gap-3 rounded-3xl border border-tinta-line bg-[#FFFDF8] px-6 py-12 text-center">
+          <Icon name="search" className="h-7 w-7 text-carbon-muted" />
+          <p className="font-display text-2xl text-carbon">Nada con «{texto}»</p>
+          <p className="max-w-sm text-sm text-carbon-muted">Prueba con otra palabra, o llámanos y te decimos si lo tenemos.</p>
+          <button type="button" onClick={onLimpiar} className="btn-secondary mt-2">
+            Ver toda la carta
+          </button>
+        </div>
+      ) : (
+        <div className="mt-4 grid gap-10">
+          {resultados.map(({ s, items }) => (
+            <section key={s.id} aria-label={s.nombre}>
+              <CabeceraSeccion id={`buscar-${s.slug}`} nombre={s.nombre} n={items.length} unidad={esVino(s) ? "vinos" : "platos"} />
+              <ul className="divide-y divide-carbon/10">
+                {items.map(({ it, i }) => (
+                  <FilaPlato key={it.id} item={it} seccion={s} onAbrir={() => onAbrir(s, i)} controles={controles} />
+                ))}
+              </ul>
+            </section>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -311,7 +573,7 @@ function CabeceraSeccion({ id, nombre, n, nota, unidad }: { id: string; nombre: 
           {nombre}
         </h2>
         <span className="text-xs text-carbon-muted">
-          {n} {unidad}
+          {n} {n === 1 ? unidad.replace(/s$/, "") : unidad}
         </span>
       </div>
       {nota ? <p className="mt-2 text-sm text-carbon-muted">{nota}</p> : null}
@@ -346,12 +608,9 @@ function CartaVinos({
       <p className="max-w-2xl text-carbon-muted">
         Nuestra bodega para llevar a casa o a la oficina, al mismo pedido que la comida. Solo para mayores de 18 años.
       </p>
-      <div className="mt-4">
-        <IndiceSecciones secciones={secciones} prefijo="vinos" corto />
-      </div>
-      <div className="mt-6 grid gap-12">
+      <div className="mt-8 grid gap-12">
         {secciones.map((s) => (
-          <section key={s.id} id={`vinos-${s.slug}`} aria-labelledby={`vinos-${s.slug}-t`} className="scroll-mt-40">
+          <section key={s.id} id={`vinos-${s.slug}`} aria-labelledby={`vinos-${s.slug}-t`} className="scroll-mt-56">
             <CabeceraSeccion id={`vinos-${s.slug}-t`} nombre={s.nombre} n={s.items.length} nota={s.nota} unidad="vinos" />
             <ul className="grid lg:grid-cols-2 lg:gap-x-12">
               {s.items.map((it, i) => (
