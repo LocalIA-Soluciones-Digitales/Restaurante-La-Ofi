@@ -119,7 +119,7 @@ function Interior({
   if (modo.tipo === "recogida") {
     return (
       <>
-        <ParaLlevar secciones={secciones} config={config} menu={menu} vinosHref={vinosHref} />
+        <ParaLlevar secciones={secciones} config={config} menu={menu} vinosHref={vinosHref} onAbrirCesta={config ? () => setCesta(true) : undefined} />
         {config ? <CartBar onOpen={() => setCesta(true)} /> : null}
         {cesta && config ? <CartDrawer contexto={{ tipo: "recogida" }} config={config} secciones={secciones} onClose={() => setCesta(false)} /> : null}
       </>

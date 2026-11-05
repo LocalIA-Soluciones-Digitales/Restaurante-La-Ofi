@@ -7,8 +7,11 @@ import { Campo, botonPrimario, botonSecundario, card, input } from "@/components
 import { Icon } from "@/components/ui/Icon";
 import { avanzarPedido, borrarPedido, cancelarPedido, cobrar, colaCocina, editarPedido, historialPedidos, pedidosProximos } from "@/lib/admin/actions";
 import type { PedidoKds } from "@/lib/admin/types";
+import { SITE_URL } from "@/lib/env";
 import { formatCentimos } from "@/lib/format";
-import { fechaMadrid, nombreDia } from "@/lib/pedidos/franjas";
+import { cuandoRecogida, fechaMadrid, nombreDia } from "@/lib/pedidos/franjas";
+import { enlaceSms, enlaceWhatsApp } from "@/lib/reservas/mensajes";
+import { SITE } from "@/lib/site";
 import { activarSonido, sonarAviso } from "@/lib/notify-sound";
 import { escucharLaofi } from "@/lib/supabase/browser";
 
@@ -70,6 +73,21 @@ function porDiaRecogida(lista: PedidoKds[]): { fecha: string; nombre: string; pe
   return out;
 }
 
+type AvisoPedido = "listo" | "cancelado";
+
+/** Lo que se le dice al cliente por WhatsApp o SMS: «está listo» (con el total) o «lo hemos cancelado». */
+function mensajePedido(tipo: AvisoPedido, p: PedidoKds): string {
+  const hola = `¡Hola${p.nombre_cliente ? `, ${p.nombre_cliente.trim().split(/\s+/)[0]}` : ""}!`;
+  if (tipo === "listo") {
+    const pago = p.payment_status === "PAID" ? "Ya está pagado." : `Son ${formatCentimos(p.total_centimos)} y se paga al recoger.`;
+    return [hola, `Tu pedido #${p.numero_dia} de La Ofi ya está listo: pasa a recogerlo por la barra. ${pago}`, `Lo puedes ver aquí: ${SITE_URL}/es/pedido/${p.id}`].join("\n\n");
+  }
+  return [
+    hola,
+    `Sentimos decirte que hemos tenido que cancelar tu pedido #${p.numero_dia}${p.recogida_en ? ` para ${cuandoRecogida(p.recogida_en)}` : ""} en La Ofi. Llámanos al ${SITE.phone.display} y te buscamos una alternativa.`,
+  ].join("\n\n");
+}
+
 /** «2 menús, Ibérico, 2× Burrata»: lo que lleva, en una línea. */
 function queLleva(p: PedidoKds): string {
   const productos = p.items.filter((i) => i.estado !== "CANCELLED");
@@ -93,6 +111,7 @@ export function PedidosRecogida({ inicial }: { inicial: PedidoKds[] }) {
   const [ocupado, setOcupado] = useState<string | null>(null);
   const [filtro, setFiltro] = useState<Filtro>("todos");
   const [abierto, setAbierto] = useState<string | null>(null);
+  const [avisar, setAvisar] = useState<{ tipo: AvisoPedido; p: PedidoKds } | null>(null);
   const conocidos = useRef(new Set(inicial.map((p) => p.id)));
   // Encargados para otros días: aparte, y pasan a la lista de arriba el día de su recogida.
   const [proximos, setProximos] = useState<PedidoKds[]>([]);
@@ -150,7 +169,10 @@ export function PedidosRecogida({ inicial }: { inicial: PedidoKds[] }) {
   const avanzar = (p: PedidoKds, estado: "ACCEPTED" | "READY" | "DELIVERED") =>
     hacer(p, async () => {
       const r = await avanzarPedido<PedidoKds>(p.id, estado, null, p.estado);
-      if (r.ok && estado === "READY") sonarAviso("listo");
+      if (r.ok && estado === "READY") {
+        sonarAviso("listo");
+        if (p.telefono || p.email) setAvisar({ tipo: "listo", p: { ...p, ...r.data } });
+      }
       return r;
     });
 
@@ -163,7 +185,11 @@ export function PedidosRecogida({ inicial }: { inicial: PedidoKds[] }) {
 
   const cancelar = (p: PedidoKds) => {
     if (!window.confirm(`¿Cancelar el pedido #${p.numero_dia} de ${p.nombre_cliente ?? "este cliente"}?`)) return;
-    void hacer(p, () => cancelarPedido(p.id));
+    void hacer(p, async () => {
+      const r = await cancelarPedido(p.id);
+      if (r.ok && (p.telefono || p.email)) setAvisar({ tipo: "cancelado", p });
+      return r;
+    });
   };
 
   const [version, setVersion] = useState(0);
@@ -335,6 +361,8 @@ export function PedidosRecogida({ inicial }: { inicial: PedidoKds[] }) {
         </section>
       ) : null}
 
+      {avisar ? <AvisarPedido tipo={avisar.tipo} p={avisar.p} onCerrar={() => setAvisar(null)} /> : null}
+
       {editando ? (
         <EditarPedido
           p={editando}
@@ -475,6 +503,12 @@ function FilaPedido({
                 Llamar
               </a>
             ) : null}
+            {p.telefono && paso === "listos" && !encargo ? (
+              <a href={enlaceWhatsApp(p.telefono, mensajePedido("listo", p))} target="_blank" rel="noopener noreferrer" className={`${botonSecundario} min-h-9 px-3`}>
+                <Icon name="whatsapp" className="h-4 w-4" />
+                Avisar
+              </a>
+            ) : null}
             <button type="button" disabled={ocupado} onClick={onEditar} className={`${botonSecundario} ${p.telefono ? "" : "ml-auto"} min-h-9 px-3`}>
               <Icon name="edit" className="h-4 w-4" />
               Editar
@@ -489,6 +523,56 @@ function FilaPedido({
               Eliminar
             </button>
           </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/** Tras marcarlo listo o cancelarlo: email si lo dejó y, si no (o además), WhatsApp o SMS con el texto escrito. */
+function AvisarPedido({ tipo, p, onCerrar }: { tipo: AvisoPedido; p: PedidoKds; onCerrar: () => void }) {
+  const texto = mensajePedido(tipo, p);
+  const listo = tipo === "listo";
+  const quien = p.nombre_cliente ?? `Pedido #${p.numero_dia}`;
+  return (
+    <div role="status" className="fixed inset-x-3 bottom-3 z-50 mx-auto max-w-md rounded-2xl bg-white p-4 shadow-2xl ring-1 ring-carbon/10 motion-safe:animate-[intro-up_220ms_cubic-bezier(0.2,0.8,0.2,1)] dark:bg-noche-2 dark:ring-crema/15 sm:bottom-6">
+      <div className="flex items-start gap-3">
+        <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-full text-crema ${listo ? "bg-ok" : "bg-terracota"}`}>
+          <Icon name={listo ? "check" : "close"} className="h-5 w-5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold">
+            {quien}: {listo ? "pedido listo" : "pedido cancelado"}
+          </p>
+          <p className="text-sm text-carbon-muted dark:text-crema/65">
+            {p.email ? (
+              <>
+                Le llega un email a <span className="break-all">{p.email}</span>.{p.telefono ? " Si no suele mirarlo, mándale también un WhatsApp." : ""}
+              </>
+            ) : (
+              "No dejó email, así que aún no lo sabe: avísale con un toque (el mensaje va ya escrito)."
+            )}
+          </p>
+        </div>
+        <button type="button" onClick={onCerrar} className="-m-1 grid h-9 w-9 shrink-0 place-items-center rounded-lg hover:bg-arena dark:hover:bg-noche-3" aria-label="Cerrar">
+          <Icon name="close" className="h-4 w-4" />
+        </button>
+      </div>
+      {p.telefono ? (
+        <div className="mt-3 grid grid-cols-[1fr_auto] gap-2">
+          <a
+            href={enlaceWhatsApp(p.telefono, texto)}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => window.setTimeout(onCerrar, 300)}
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#1F7A4D] px-4 text-sm font-semibold text-white hover:brightness-110"
+          >
+            <Icon name="whatsapp" className="h-4 w-4" />
+            Avisar por WhatsApp
+          </a>
+          <a href={enlaceSms(p.telefono, texto)} onClick={() => window.setTimeout(onCerrar, 300)} className={botonSecundario}>
+            SMS
+          </a>
         </div>
       ) : null}
     </div>

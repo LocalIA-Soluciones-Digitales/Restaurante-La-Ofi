@@ -5,7 +5,7 @@ import { HistorialDias, diaMadrid } from "@/components/admin/HistorialDias";
 import { Modal } from "@/components/admin/Modal";
 import { Campo, botonPrimario, botonSecundario, card, input } from "@/components/admin/ui";
 import { Icon } from "@/components/ui/Icon";
-import { borrarEncargoVino, editarEncargoVino, encargosVino, estadoEncargoVino, historialEncargosVino } from "@/lib/admin/actions";
+import { borrarEncargoVino, cobrarEncargoVino, editarEncargoVino, encargosVino, estadoEncargoVino, historialEncargosVino } from "@/lib/admin/actions";
 import type { EncargoVinoAdmin } from "@/lib/admin/types";
 import { SITE_URL } from "@/lib/env";
 import { recogeHoy, recogidaCorta, recogidaEnFrase } from "@/lib/encargos/recogida";
@@ -38,8 +38,17 @@ const pila = (nombre: string) => nombre.trim().split(/\s+/)[0] ?? "";
 const enlaceEncargo = (id: string) => `${SITE_URL}/es/encargo/${id}`;
 const botellas = (n: number) => `${n} ${n === 1 ? "botella" : "botellas"}`;
 
-/** Lo que se le dice al cliente: «está listo» (con el total a pagar) o «no podemos servirlo». */
-function mensaje(tipo: "listo" | "anulado", e: EncargoVinoAdmin): string {
+type Aviso = "confirmado" | "listo" | "anulado";
+
+/** Lo que se le dice al cliente: «confirmado», «está listo» (con el total a pagar) o «no podemos servirlo». */
+function mensaje(tipo: Aviso, e: EncargoVinoAdmin): string {
+  if (tipo === "confirmado") {
+    return [
+      `¡Hola, ${pila(e.nombre)}!`,
+      `Te confirmamos tu encargo de vino nº ${e.numero} (${botellas(e.botellas)}) en La Ofi. ${e.recogida_en ? `Te lo dejamos preparado para ${recogidaEnFrase(e.recogida_en)}` : "Te avisamos cuando esté preparado"}: son ${formatCentimos(e.total_centimos)} y se paga al recoger.${conCavaDeRegalo(e.total_centimos) ? " ¡Y te llevas tu cava de regalo!" : ""}`,
+      `Lo puedes ver aquí: ${enlaceEncargo(e.id)}`,
+    ].join("\n\n");
+  }
   if (tipo === "listo") {
     return [
       `¡Hola, ${pila(e.nombre)}!`,
@@ -82,7 +91,7 @@ export function EncargosVino({ inicial }: { inicial: EncargoVinoAdmin[] }) {
   const [ocupado, setOcupado] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [sonido, setSonido] = useState(false);
-  const [avisar, setAvisar] = useState<{ tipo: "listo" | "anulado"; e: EncargoVinoAdmin } | null>(null);
+  const [avisar, setAvisar] = useState<{ tipo: Aviso; e: EncargoVinoAdmin } | null>(null);
   const conocidos = useRef(new Set(inicial.map((e) => e.id)));
 
   const recargar = useCallback(async () => {
@@ -113,12 +122,24 @@ export function EncargosVino({ inicial }: { inicial: EncargoVinoAdmin[] }) {
     if (estado === "CANCELADO" && !window.confirm(`¿Anular el encargo nº ${e.numero} de ${e.nombre}?`)) return;
     setOcupado(e.id);
     setError(null);
-    const r = await estadoEncargoVino<EncargoVinoAdmin>(e.id, estado);
+    const r = await estadoEncargoVino<EncargoVinoAdmin>(e.id, estado, e.estado);
     setOcupado(null);
     if (!r.ok) return setError(r.error);
-    if (estado === "LISTO") setAvisar({ tipo: "listo", e: r.data });
+    // Al avanzar (no al volver atrás) el cliente aún no lo sabe: email si lo dejó y WhatsApp a mano.
+    if (estado === "CONFIRMADO" && e.estado === "PENDIENTE") setAvisar({ tipo: "confirmado", e: r.data });
+    else if (estado === "LISTO" && e.estado !== "LISTO") setAvisar({ tipo: "listo", e: r.data });
     else if (estado === "CANCELADO") setAvisar({ tipo: "anulado", e: r.data });
     void recargar();
+  };
+
+  const cobrarYEntregar = async (e: EncargoVinoAdmin, metodo: "EFECTIVO" | "TARJETA") => {
+    setOcupado(e.id);
+    setError(null);
+    const r = await cobrarEncargoVino<EncargoVinoAdmin>(e.id, metodo);
+    setOcupado(null);
+    if (r.ok) setAbierto(null);
+    await recargar();
+    if (!r.ok) setError(r.error);
   };
 
   const borrar = async (e: EncargoVinoAdmin) => {
@@ -140,6 +161,7 @@ export function EncargosVino({ inicial }: { inicial: EncargoVinoAdmin[] }) {
       onAbrir={() => setAbierto(abierto === e.id ? null : e.id)}
       ocupado={ocupado === e.id}
       onCambiar={(s) => void cambiar(e, s)}
+      onCobrar={(m) => void cobrarYEntregar(e, m)}
       onEditar={() => setEditando(e)}
       onBorrar={() => void borrar(e)}
     />
@@ -205,6 +227,7 @@ export function EncargosVino({ inicial }: { inicial: EncargoVinoAdmin[] }) {
             Email: e.email ?? "",
             Recogida: e.recogida_en ? recogidaCorta(e.recogida_en) : "",
             Estado: e.estado === "CANCELADO" ? "Anulado" : "Entregado",
+            Cobro: e.cobrado_metodo === "EFECTIVO" ? "Efectivo" : e.cobrado_metodo === "TARJETA" ? "Tarjeta" : "",
             Vinos: e.lineas.map((l) => `${l.cantidad}× ${l.nombre}`).join(", "),
             Botellas: e.botellas,
             Total: (e.total_centimos / 100).toFixed(2).replace(".", ","),
@@ -253,6 +276,7 @@ function FilaEncargo({
   onAbrir,
   ocupado,
   onCambiar,
+  onCobrar,
   onEditar,
   onBorrar,
 }: {
@@ -261,6 +285,7 @@ function FilaEncargo({
   onAbrir: () => void;
   ocupado: boolean;
   onCambiar: (estado: EncargoVinoAdmin["estado"]) => void;
+  onCobrar: (metodo: "EFECTIVO" | "TARJETA") => void;
   onEditar: () => void;
   onBorrar: () => void;
 }) {
@@ -269,37 +294,46 @@ function FilaEncargo({
   const boton = "min-h-9 shrink-0 rounded-lg px-3 text-sm font-semibold transition-transform active:scale-[0.98] disabled:opacity-50";
   const lleno = `${boton} bg-marino text-crema dark:bg-neon dark:text-noche`;
   const resumen = e.lineas.map((l) => (l.cantidad > 1 ? `${l.cantidad}× ${l.nombre}` : l.nombre)).join(", ");
+  const [cobrando, setCobrando] = useState(false);
+  const cava = conCavaDeRegalo(e.total_centimos) && e.estado !== "CANCELADO";
 
   return (
     <div className="relative">
       <span aria-hidden="true" className={`absolute inset-y-0 left-0 w-1 ${s?.banda ?? "bg-carbon/20"}`} />
       <div className="flex items-center gap-2.5 py-2.5 pl-3.5 pr-2.5">
         <button type="button" onClick={onAbrir} aria-expanded={abierto} className="min-w-0 flex-1 text-left">
+          {/* Arriba quién y cuánto (el nombre siempre a la vista); debajo cuándo pasa y si lleva cava. */}
           <span className="flex items-baseline gap-2">
-            <span className="truncate font-semibold">{e.nombre}</span>
+            <span className="min-w-0 truncate font-semibold">{e.nombre}</span>
             <span className="shrink-0 text-sm font-semibold tabular-nums text-carbon-muted dark:text-crema/65">
               {botellas(e.botellas)} · {formatCentimos(e.total_centimos)}
             </span>
-            {e.recogida_en ? (
-              <span
-                title={`Pasa a recogerlo ${recogidaEnFrase(e.recogida_en)}`}
-                className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[0.7rem] font-semibold tabular-nums ${
-                  recogeHoy(e.recogida_en) && paso ? "bg-terracota text-crema" : "bg-carbon/10 text-carbon dark:bg-crema/10 dark:text-crema"
-                }`}
-              >
-                <Icon name="clock" className="h-3 w-3" />
-                {recogidaCorta(e.recogida_en)}
-              </span>
-            ) : null}
-            {conCavaDeRegalo(e.total_centimos) && e.estado !== "CANCELADO" ? (
-              <span title="Lleva un cava de regalo (encargo de más de 50 €)" className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#E2B98A] px-2 py-0.5 text-[0.7rem] font-semibold text-carbon">
-                <Icon name="gift" className="h-3 w-3" />
-                Cava
-              </span>
-            ) : null}
           </span>
+          {e.recogida_en || cava ? (
+            <span className="mt-1 flex flex-wrap items-center gap-1.5">
+              {e.recogida_en ? (
+                <span
+                  title={`Pasa a recogerlo ${recogidaEnFrase(e.recogida_en)}`}
+                  className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[0.7rem] font-semibold tabular-nums ${
+                    recogeHoy(e.recogida_en) && paso ? "bg-terracota text-crema" : "bg-carbon/10 text-carbon dark:bg-crema/10 dark:text-crema"
+                  }`}
+                >
+                  <Icon name="clock" className="h-3 w-3" />
+                  {recogidaCorta(e.recogida_en)}
+                </span>
+              ) : null}
+              {cava ? (
+                <span title="Lleva un cava de regalo (encargo de más de 50 €)" className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#E2B98A] px-2 py-0.5 text-[0.7rem] font-semibold text-carbon">
+                  <Icon name="gift" className="h-3 w-3" />
+                  Cava de regalo
+                </span>
+              ) : null}
+            </span>
+          ) : null}
           <span className="flex items-center gap-1.5 text-xs text-carbon-muted dark:text-crema/60">
-            <span className={`shrink-0 font-semibold ${s?.texto ?? ""}`}>{s?.corto ?? (e.estado === "ENTREGADO" ? "Entregado" : "Anulado")}</span>
+            <span className={`shrink-0 font-semibold ${s?.texto ?? ""}`}>
+              {s?.corto ?? (e.estado === "ENTREGADO" ? `Entregado${e.cobrado_metodo ? ` · ${e.cobrado_metodo === "EFECTIVO" ? "efectivo" : "tarjeta"}` : ""}` : "Anulado")}
+            </span>
             <span className="truncate">· nº {e.numero} · {resumen}</span>
             {e.notas ? <Icon name="edit" className="h-3 w-3 shrink-0" /> : null}
           </span>
@@ -313,11 +347,23 @@ function FilaEncargo({
             Está listo
           </button>
         ) : paso === "listos" ? (
-          <button type="button" disabled={ocupado} onClick={() => onCambiar("ENTREGADO")} className={lleno}>
-            Entregado
+          <button type="button" disabled={ocupado} onClick={() => setCobrando(!cobrando)} aria-expanded={cobrando} className={lleno}>
+            Cobrar
           </button>
         ) : null}
       </div>
+
+      {cobrando && paso === "listos" ? (
+        <div className="grid grid-cols-2 gap-2 px-3.5 pb-3 sm:flex sm:items-center">
+          <span className="col-span-2 text-sm font-semibold sm:mr-auto">Cobrar {formatCentimos(e.total_centimos)} y entregar:</span>
+          <button type="button" disabled={ocupado} onClick={() => onCobrar("EFECTIVO")} className={lleno}>
+            Efectivo
+          </button>
+          <button type="button" disabled={ocupado} onClick={() => onCobrar("TARJETA")} className={lleno}>
+            Tarjeta
+          </button>
+        </div>
+      ) : null}
 
       {abierto ? (
         <div className="grid gap-2 border-t border-carbon/[0.07] bg-arena/40 px-3.5 py-3 text-sm dark:border-crema/10 dark:bg-noche-3/50">
@@ -352,6 +398,18 @@ function FilaEncargo({
                 <Icon name="whatsapp" className="h-4 w-4" />
                 Avisar de nuevo
               </a>
+            ) : null}
+            {paso === "listos" ? (
+              <button
+                type="button"
+                disabled={ocupado}
+                onClick={() => {
+                  if (window.confirm("¿Entregarlo sin cobrar aquí? Úsalo solo si ya lo has cobrado en el TPV.")) onCambiar("ENTREGADO");
+                }}
+                className={`${botonSecundario} min-h-9 px-3`}
+              >
+                Entregar (cobrado en el TPV)
+              </button>
             ) : null}
             {paso === "listos" || paso === "confirmados" ? (
               <button type="button" disabled={ocupado} onClick={() => onCambiar(paso === "listos" ? "CONFIRMADO" : "PENDIENTE")} className={`${botonSecundario} min-h-9 px-3`}>
@@ -411,10 +469,10 @@ function ParaPedir({ lineas }: { lineas: ReturnType<typeof paraPedir> }) {
   );
 }
 
-/** Tras marcarlo listo (o anularlo): el cliente aún no lo sabe. WhatsApp o SMS con el texto escrito. */
-function AvisarEncargo({ tipo, e, onCerrar }: { tipo: "listo" | "anulado"; e: EncargoVinoAdmin; onCerrar: () => void }) {
+/** Tras confirmarlo, marcarlo listo o anularlo: email si lo dejó y, si no, WhatsApp o SMS con el texto escrito. */
+function AvisarEncargo({ tipo, e, onCerrar }: { tipo: Aviso; e: EncargoVinoAdmin; onCerrar: () => void }) {
   const texto = mensaje(tipo, e);
-  const listo = tipo === "listo";
+  const listo = tipo !== "anulado";
   return (
     <div role="status" className="fixed inset-x-3 bottom-3 z-50 mx-auto max-w-md rounded-2xl bg-white p-4 shadow-2xl ring-1 ring-carbon/10 motion-safe:animate-[intro-up_220ms_cubic-bezier(0.2,0.8,0.2,1)] dark:bg-noche-2 dark:ring-crema/15 sm:bottom-6">
       <div className="flex items-start gap-3">
@@ -423,9 +481,17 @@ function AvisarEncargo({ tipo, e, onCerrar }: { tipo: "listo" | "anulado"; e: En
         </span>
         <div className="min-w-0 flex-1">
           <p className="font-semibold">
-            {e.nombre}: {listo ? "encargo listo" : "encargo anulado"}
+            {e.nombre}: {tipo === "confirmado" ? "encargo confirmado" : tipo === "listo" ? "encargo listo" : "encargo anulado"}
           </p>
-          <p className="text-sm text-carbon-muted dark:text-crema/65">Aún no lo sabe: avísale con un toque (el mensaje va ya escrito).</p>
+          <p className="text-sm text-carbon-muted dark:text-crema/65">
+            {e.email ? (
+              <>
+                Le llega un email a <span className="break-all">{e.email}</span>. Si no suele mirarlo, mándale también un WhatsApp.
+              </>
+            ) : (
+              "No dejó email, así que aún no lo sabe: avísale con un toque (el mensaje va ya escrito)."
+            )}
+          </p>
         </div>
         <button type="button" onClick={onCerrar} className="-m-1 grid h-9 w-9 shrink-0 place-items-center rounded-lg hover:bg-arena dark:hover:bg-noche-3" aria-label="Cerrar">
           <Icon name="close" className="h-4 w-4" />

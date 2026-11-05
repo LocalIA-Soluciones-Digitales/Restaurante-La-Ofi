@@ -178,7 +178,11 @@ export function SelectorRecogida({ franjas, valor, onCambio }: { franjas: Franja
             onClick={() => alternar("hora")}
             className={campo}
           >
-            <span className="truncate font-semibold tabular-nums">{valor && horas.some((f) => f.hora === valor) ? horaMadrid(valor) : "—"}</span>
+            {valor && horas.some((f) => f.hora === valor) ? (
+              <span className="truncate font-semibold tabular-nums">{horaMadrid(valor)}</span>
+            ) : (
+              <span className="truncate text-carbon-muted/70">Elegir</span>
+            )}
             <Icon name="clock" className="h-4 w-4 shrink-0 text-carbon-muted" />
           </button>
 

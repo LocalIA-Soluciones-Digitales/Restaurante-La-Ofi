@@ -160,6 +160,8 @@ export interface EncargoVinoAdmin {
   estado: "PENDIENTE" | "CONFIRMADO" | "LISTO" | "ENTREGADO" | "CANCELADO";
   /** Cuándo pasa a recogerlo (null en los de antes del 05/11/2026 o sin la migración 20261105300000). */
   recogida_en?: string | null;
+  /** Cómo se cobró al entregarlo desde el panel (null: sin cobrar aquí, p. ej. en el TPV). */
+  cobrado_metodo?: "EFECTIVO" | "TARJETA" | null;
   created_at: string;
   updated_at: string;
 }

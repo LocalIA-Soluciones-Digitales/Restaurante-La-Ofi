@@ -39,4 +39,10 @@ describe("avisoDePedido", () => {
     expect(avisoDePedido({ ...base, estado: "READY", recogida_en: hoy }, undefined, ahora)).toBeNull();
     expect(avisoDePedido({ ...base, tipo: "MESA", estado: "READY", recogida_en: hoy }, "ACCEPTED", ahora)).toBeNull();
   });
+
+  it("avisa de la cancelación salvo si ya estaba entregado", () => {
+    expect(avisoDePedido({ ...base, estado: "CANCELLED", recogida_en: hoy }, "ACCEPTED", ahora)).toBe("cancelado");
+    expect(avisoDePedido({ ...base, estado: "CANCELLED", recogida_en: manana }, "RECEIVED", ahora)).toBe("cancelado");
+    expect(avisoDePedido({ ...base, estado: "CANCELLED", recogida_en: hoy }, "DELIVERED", ahora)).toBeNull();
+  });
 });

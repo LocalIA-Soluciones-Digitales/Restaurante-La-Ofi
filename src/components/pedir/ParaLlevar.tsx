@@ -80,12 +80,15 @@ export function ParaLlevar({
   config,
   menu,
   vinosHref,
+  onAbrirCesta,
 }: {
   secciones: CartaSeccion[];
   config: ConfigPedidos | null;
   menu: MenuParaLlevar | null;
   /** Tienda de encargos de vino; sin ella no se anuncia. */
   vinosHref?: string;
+  /** Abre la cesta para terminar el encargo. */
+  onAbrirCesta?: () => void;
 }) {
   const { pedirDesde, pedirHasta, recogerDesde, recogerHasta } = horarioEncargos(config);
   const sinEncargo = motivoSinEncargo(config);
@@ -186,7 +189,7 @@ export function ParaLlevar({
               <p className="max-w-xs text-sm text-carbon-muted">Elige un plato de cada grupo. Puedes añadir varios menús, cada uno a tu gusto.</p>
             </div>
             {sinEncargo ? <AvisoEncargo>{sinEncargo}</AvisoEncargo> : null}
-            <ComponerMenu menu={menu} puedeAnadir={!sinEncargo} fotoPorNombre={fotoPorNombre} />
+            <ComponerMenu menu={menu} puedeAnadir={!sinEncargo} fotoPorNombre={fotoPorNombre} onAbrirCesta={onAbrirCesta} />
           </section>
         ) : (
           <section className="mt-8 grid overflow-hidden rounded-3xl border border-tinta-line bg-[#FFFDF8] sm:mt-12 md:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
@@ -261,7 +264,17 @@ export function AvisoEncargo({ children }: { children: ReactNode }) {
 }
 
 /** El menú como se compone en barra: un plato de cada grupo y cuántos menús así. */
-export function ComponerMenu({ menu, puedeAnadir, fotoPorNombre }: { menu: MenuParaLlevar; puedeAnadir: boolean; fotoPorNombre: Map<string, string> }) {
+export function ComponerMenu({
+  menu,
+  puedeAnadir,
+  fotoPorNombre,
+  onAbrirCesta,
+}: {
+  menu: MenuParaLlevar;
+  puedeAnadir: boolean;
+  fotoPorNombre: Map<string, string>;
+  onAbrirCesta?: () => void;
+}) {
   const cart = useCart();
   const grupos = GRUPOS.map((g) => ({ ...g, platos: menu.platos.filter((p) => p.tipo === g.tipo).sort((a, b) => a.orden - b.orden) })).filter((g) => g.platos.length > 0);
   const [eleccion, setEleccion] = useState<Record<string, string>>(() =>
@@ -271,6 +284,7 @@ export function ComponerMenu({ menu, puedeAnadir, fotoPorNombre }: { menu: MenuP
   const [anadido, setAnadido] = useState(false);
   const completo = grupos.every((g) => eleccion[g.tipo]);
   const precio = menu.precio_centimos!;
+  const menusEnCesta = cart.hidratado ? cart.lineas.filter((l) => l.menuPlatos).reduce((a, l) => a + l.cantidad, 0) : 0;
 
   const anadir = () => {
     const platos = grupos.map((g) => g.platos.find((p) => p.id === eleccion[g.tipo])!).map((p) => ({ id: p.id, nombre: p.nombre }));
@@ -371,8 +385,15 @@ export function ComponerMenu({ menu, puedeAnadir, fotoPorNombre }: { menu: MenuP
             {anadido ? "Añadido a la cesta" : `Añadir · ${formatCentimos(precio * cantidad)}`}
           </button>
           <p role="status" className="mt-3 min-h-5 text-center text-xs text-crema/55">
-            {!completo ? "Elige un plato de cada grupo." : "Puedes añadir otros menús con platos distintos."}
+            {!completo ? (menusEnCesta ? "¿Otro menú? Elige un plato de cada grupo." : "Elige un plato de cada grupo.") : "Puedes añadir otros menús con platos distintos."}
           </p>
+          {/* Con algo en la cesta, el siguiente paso a la vista (no solo la cesta flotante). */}
+          {menusEnCesta && onAbrirCesta ? (
+            <button type="button" onClick={onAbrirCesta} className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-crema px-5 text-sm font-semibold text-carbon transition-colors hover:bg-white">
+              Ver cesta y encargar · {menusEnCesta} {menusEnCesta === 1 ? "menú" : "menús"}
+              <Icon name="arrow" className="h-4 w-4" />
+            </button>
+          ) : null}
         </div>
       </aside>
     </div>

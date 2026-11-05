@@ -322,7 +322,7 @@ function PanelEncargo({
             <p className="mt-5 font-display text-3xl leading-tight">Encargo nº {hecho.numero} recibido</p>
             <p className="mt-3 text-lg leading-relaxed text-carbon-muted">
               {botellasTexto(hecho.botellas)} · {formatCentimos(hecho.total)}. Te esperamos <b className="font-semibold text-carbon">{hecho.cuando}</b>: lo tendremos
-              preparado y lo pagas en La Ofi. Si algo cambia, te avisamos por WhatsApp o por teléfono.
+              preparado y lo pagas en La Ofi. Te avisamos cuando esté listo (por email, WhatsApp o teléfono).
             </p>
             {conCavaDeRegalo(hecho.total) ? <CavaDeRegalo total={hecho.total} className="mt-5" /> : null}
             <div className="mt-8 grid gap-3 sm:grid-cols-2">
@@ -420,7 +420,7 @@ function PanelEncargo({
                 </label>
                 <label className="grid gap-1 text-sm sm:col-span-2">
                   <span className="font-semibold">
-                    Email <span className="font-normal text-carbon-muted">(opcional)</span>
+                    Email <span className="font-normal text-carbon-muted">(opcional, te confirmamos el encargo y te avisamos cuando esté listo)</span>
                   </span>
                   <input type="email" autoComplete="email" value={f.email} onChange={(e) => set({ email: e.target.value.slice(0, 120) })} className={campo} />
                 </label>

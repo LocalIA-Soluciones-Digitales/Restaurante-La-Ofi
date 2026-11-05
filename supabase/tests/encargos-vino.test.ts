@@ -197,6 +197,27 @@ describe("privacidad", () => {
   });
 });
 
+describe("cobrar", () => {
+  it("cobra el encargo, lo da por entregado y entra en la caja", async () => {
+    const { id } = await crear();
+    const antes = await comoStaff(() => t.one<{ c: { ventas_centimos: number; efectivo_centimos: number } }>("select public.laofi_admin_caja() as c", []));
+    const { r } = await comoStaff(() => t.one<{ r: { estado: string; cobrado_metodo: string; total_centimos: number } }>("select public.laofi_admin_encargo_vino_cobrar($1, 'EFECTIVO') as r", [id]));
+    expect(r).toMatchObject({ estado: "ENTREGADO", cobrado_metodo: "EFECTIVO", total_centimos: 6 * 3200 + 2 * 2500 });
+    const despues = await comoStaff(() => t.one<{ c: { ventas_centimos: number; efectivo_centimos: number } }>("select public.laofi_admin_caja() as c", []));
+    expect(despues.c.efectivo_centimos - antes.c.efectivo_centimos).toBe(r.total_centimos);
+    expect(despues.c.ventas_centimos - antes.c.ventas_centimos).toBe(r.total_centimos);
+    // No se cobra dos veces, ni uno anulado.
+    await expect(comoStaff(() => t.one("select public.laofi_admin_encargo_vino_cobrar($1, 'TARJETA')", [id]))).rejects.toThrow(/ya está cobrado/);
+    const otro = await crear();
+    await anular(otro.id);
+    await expect(comoStaff(() => t.one("select public.laofi_admin_encargo_vino_cobrar($1, 'TARJETA')", [otro.id]))).rejects.toThrow(/anulado/);
+    // Al borrarlo (sin cierre de caja de por medio), su cobro sale de la caja.
+    await comoStaff(() => t.one("select public.laofi_admin_encargo_vino_borrar($1)", [id]));
+    const { n } = await t.one<{ n: number }>("select count(*)::int as n from laofi.pagos where encargo_vino_id = $1", [id]);
+    expect(n).toBe(0);
+  });
+});
+
 describe("reversión", () => {
   it("quita la tabla, las funciones y el tipo de aviso", async () => {
     await revertirHasta(t.db, "20261102140000");

@@ -66,7 +66,7 @@ export function PedidoStatus({ inicial, pago }: { inicial: PedidoPublico; pago: 
         <h1 className="mt-2 font-display text-5xl">Pedido #{p.numero_dia}</h1>
         <p aria-live="polite" className="mt-3 text-lg text-crema/85">
           {p.estado === "CANCELLED"
-            ? "Este pedido se ha cancelado. Si tienes dudas, pregunta en barra."
+            ? "Este pedido se ha cancelado. Si tienes dudas, llámanos."
             : p.estado === "DELIVERED"
               ? "Entregado. ¡Que aproveche!"
               : p.recogida_en && fechaMadrid(p.recogida_en) > fechaMadrid(new Date())
@@ -127,6 +127,38 @@ export function PedidoStatus({ inicial, pago }: { inicial: PedidoPublico; pago: 
         </p>
       ) : null}
 
+      {/* Para recoger: qué pasa ahora, cómo se paga, cómo le avisamos y dónde está La Ofi. */}
+      {p.tipo !== "MESA" && p.estado !== "DELIVERED" ? (
+        <ul className="mx-6 mb-6 grid gap-2.5 rounded-2xl bg-arena/70 p-4 text-sm text-carbon sm:mx-8">
+          {p.estado !== "CANCELLED" && p.payment_status !== "PAID" && p.payment_method !== "ONLINE" ? (
+            <li className="flex gap-2.5">
+              <Icon name="card" className="mt-0.5 h-4 w-4 shrink-0 text-carbon-muted" />
+              <span>
+                Pagas <strong className="tabular-nums">{formatCentimos(p.total_centimos)}</strong> al recogerlo, en barra (efectivo o tarjeta).
+              </span>
+            </li>
+          ) : null}
+          {p.estado !== "CANCELLED" && p.estado !== "READY" ? (
+            <li className="flex gap-2.5">
+              <Icon name="bell" className="mt-0.5 h-4 w-4 shrink-0 text-carbon-muted" />
+              <span>Si nos dejaste tu email, te escribimos cuando esté listo. Esta página también se actualiza sola.</span>
+            </li>
+          ) : null}
+          <li className="flex gap-2.5">
+            <Icon name="pin" className="mt-0.5 h-4 w-4 shrink-0 text-carbon-muted" />
+            <span>
+              {SITE.address.street}, {SITE.address.locality} · {SITE.address.context}
+            </span>
+          </li>
+          <li>
+            <a href={SITE.phone.href} className="inline-flex min-h-10 items-center gap-2 font-semibold underline decoration-carbon/30 underline-offset-4 hover:decoration-carbon">
+              <Icon name="phone" className="h-4 w-4" />
+              {p.estado === "CANCELLED" ? "¿Dudas? Llámanos al" : "¿Algún cambio? Llámanos al"} <span className="whitespace-nowrap">{SITE.phone.display}</span>
+            </a>
+          </li>
+        </ul>
+      ) : null}
+
       <ul className="divide-y divide-carbon/10 border-t border-carbon/10 px-6 sm:px-8">
         {p.items.map((it, i) => (
           <li key={i} className="flex justify-between gap-4 py-3 text-sm">
@@ -136,12 +168,12 @@ export function PedidoStatus({ inicial, pago }: { inicial: PedidoPublico; pago: 
               </span>
               {it.modificadores.length > 0 ? (
                 <span className="block text-carbon-muted">
-                  {it.modificadores.map((m) => `${m.modificador}: ${m.opciones.map((o) => o.nombre).join(", ").toLowerCase()}`).join(" · ")}
+                  {it.modificadores.map((m) => `${m.modificador}: ${m.opciones.map((o) => o.nombre).join(", ")}`).join(" · ")}
                 </span>
               ) : null}
               {it.notas ? <span className="block italic text-carbon-muted">«{it.notas}»</span> : null}
             </span>
-            <span className="tabular-nums text-carbon">{formatCentimos(it.cantidad * it.precio_unitario_centimos)}</span>
+            <span className="shrink-0 whitespace-nowrap tabular-nums text-carbon">{formatCentimos(it.cantidad * it.precio_unitario_centimos)}</span>
           </li>
         ))}
       </ul>

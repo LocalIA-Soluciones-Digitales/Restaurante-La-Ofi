@@ -1,3 +1,7 @@
+-- Las de 20261104100000 (historial, editar y borrar) no tienen reversión propia: se quitan aquí con la tabla.
+drop function if exists public.laofi_admin_encargos_vino_historial(date, date, text);
+drop function if exists public.laofi_admin_encargo_vino_editar(uuid, jsonb);
+drop function if exists public.laofi_admin_encargo_vino_borrar(uuid);
 drop function if exists public.laofi_admin_encargo_vino_estado(uuid, text);
 drop function if exists public.laofi_admin_encargos_vino(boolean);
 drop function if exists public.laofi_cancelar_encargo_vino(uuid, uuid);

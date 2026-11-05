@@ -5,7 +5,8 @@ import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { inicioDe } from "@/lib/admin/roles";
 import { obtenerSesionAdmin, supabaseStaff } from "@/lib/admin/session";
-import type { PedidoKds } from "@/lib/admin/types";
+import type { EncargoVinoAdmin, PedidoKds } from "@/lib/admin/types";
+import { avisoDeEncargo, enviarAvisoEncargo } from "@/lib/encargos/email";
 import { avisoDePedido, enviarAvisoPedido } from "@/lib/pedidos/email";
 import type { ResultadoAccion } from "@/lib/pedidos/types";
 import { emailActivo, enviarAvisoReserva } from "@/lib/reservas/email";
@@ -185,8 +186,23 @@ export async function avanzarPedido<T>(pedidoId: string, estado: string, estacio
   return r;
 }
 
+/**
+ * Cancela un pedido. Si es para recoger y el cliente dejó email, se le avisa (sin hacer
+ * esperar al panel): se busca antes entre los de hoy y los encargados para otros días.
+ */
 export async function cancelarPedido(pedidoId: string) {
-  return staff<null>("laofi_admin_cancelar_pedido", { p_pedido: pedidoId });
+  let antes: PedidoKds | undefined;
+  if (emailActivo()) {
+    const [hoy, prox] = await Promise.all([staff<PedidoKds[]>("laofi_admin_cocina", { p_historial: false }), staff<PedidoKds[]>("laofi_admin_pedidos_proximos")]);
+    antes = [...(hoy.ok ? hoy.data : []), ...(prox.ok ? prox.data : [])].find((p) => p.id === pedidoId);
+  }
+  const r = await staff<null>("laofi_admin_cancelar_pedido", { p_pedido: pedidoId });
+  if (r.ok && antes) {
+    const cancelado = { ...antes, estado: "CANCELLED" as PedidoKds["estado"] };
+    const aviso = avisoDePedido(cancelado, antes.estado);
+    if (aviso) after(() => enviarAvisoPedido(aviso, cancelado).then(() => undefined));
+  }
+  return r;
 }
 
 export async function crearComanda<T>(pedido: Record<string, unknown>) {
@@ -324,6 +340,28 @@ export async function borrarPedido(id: string) {
   return staff<null>("laofi_admin_pedido_borrar", { p_id: id });
 }
 
-export async function estadoEncargoVino<T>(id: string, estado: "PENDIENTE" | "CONFIRMADO" | "LISTO" | "ENTREGADO" | "CANCELADO") {
-  return staff<T>("laofi_admin_encargo_vino_estado", { p_id: id, p_estado: estado });
+/**
+ * Pasa un encargo de vino a otro paso. Con `anterior` (el paso que veía el panel), si el
+ * cliente dejó email se le avisa sin hacer esperar al panel: confirmado, listo o anulado.
+ */
+export async function estadoEncargoVino<T>(id: string, estado: EncargoVinoAdmin["estado"], anterior?: EncargoVinoAdmin["estado"]) {
+  const r = await staff<T>("laofi_admin_encargo_vino_estado", { p_id: id, p_estado: estado });
+  if (r.ok && anterior && emailActivo()) {
+    const e = r.data as unknown as EncargoVinoAdmin;
+    const aviso = avisoDeEncargo(e, anterior);
+    if (aviso) after(() => enviarAvisoEncargo(aviso, e).then(() => undefined));
+  }
+  return r;
+}
+
+/** Cobra el encargo de vino (entra en la caja como cualquier cobro) y lo da por entregado. */
+export async function cobrarEncargoVino<T>(id: string, metodo: "EFECTIVO" | "TARJETA"): Promise<ResultadoAccion<T>> {
+  const r = await staff<T>("laofi_admin_encargo_vino_cobrar", { p_id: id, p_metodo: metodo });
+  // Sin la migración 20261105400000 aún: se entrega igual y se avisa de cobrarlo en el TPV.
+  if (!r.ok && /falta aplicar su migración/.test(r.error)) {
+    const e = await staff<T>("laofi_admin_encargo_vino_estado", { p_id: id, p_estado: "ENTREGADO" });
+    if (!e.ok) return e;
+    return { ok: false, error: "Entregado, pero el cobro aún no se apunta desde aquí: cóbralo en el TPV.", codigo: "ERROR" };
+  }
+  return r;
 }

@@ -12,7 +12,7 @@ export default async function EncargosPage() {
   if (!r.ok) return <Aviso>{r.error}</Aviso>;
   return (
     <>
-      <Cabecera titulo="Encargos de vino" texto="Las botellas que encargan desde la carta de vinos para llevar. Se pagan al recogerlas: cóbralas como cualquier venta." />
+      <Cabecera titulo="Encargos de vino" texto="Las botellas que encargan desde la carta de vinos para llevar. Confírmalas (al cliente le llega un email si lo dejó), avisa cuando estén listas y cóbralas aquí al entregarlas: entran en la caja." />
       <EncargosVino inicial={r.data} />
     </>
   );

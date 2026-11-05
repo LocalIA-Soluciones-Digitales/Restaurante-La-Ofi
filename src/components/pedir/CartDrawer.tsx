@@ -67,7 +67,8 @@ export function CartDrawer({
   const todas = franjasDisponibles(config);
   const franjas = conMenu ? todas.filter((f) => fechaMadrid(f.hora) === hoy && (!config.menu_hasta || HORA.format(new Date(f.hora)) <= config.menu_hasta)) : todas;
   const [franjaElegida, setFranja] = useState("");
-  const franja = franjas.some((f) => f.hora === franjaElegida && f.libres > 0) ? franjaElegida : (franjas.find((f) => f.libres > 0)?.hora ?? "");
+  // Sin hora puesta de antemano: que el cliente elija a qué hora pasa (y no se encuentre una que no ha mirado).
+  const franja = franjas.some((f) => f.hora === franjaElegida && f.libres > 0) ? franjaElegida : "";
   const [nombre, setNombre] = useState("");
   const nombreRef = useRef<HTMLInputElement>(null);
   const facturaRef = useRef<HTMLInputElement>(null);
@@ -440,7 +441,7 @@ export function CartDrawer({
               </label>
               <label className="grid gap-1 text-sm">
                 <span className="font-semibold text-carbon">
-                  Email <span className="font-normal text-carbon-muted">(opcional)</span>
+                  Email <span className="font-normal text-carbon-muted">(opcional, te avisamos cuando esté listo)</span>
                 </span>
                 <input
                   ref={emailRef}

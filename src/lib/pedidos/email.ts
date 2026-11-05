@@ -7,10 +7,11 @@ import { emailActivo, escapar, smtp } from "@/lib/reservas/email";
 import { SITE } from "@/lib/site";
 
 // Emails al cliente sobre su pedido para recoger: «encargo confirmado» (cuando el local
-// acepta un encargo de otro día) y «listo» (cuando está para recoger). Mismo SMTP que las
+// acepta un encargo de otro día), «listo» (cuando está para recoger) y «cancelado» (si el
+// local lo cancela). Mismo SMTP que las
 // reservas: sin SMTP_USER/SMTP_PASS no se manda nada y el pedido sigue igual.
 
-export type AvisoPedido = "confirmado" | "listo";
+export type AvisoPedido = "confirmado" | "listo" | "cancelado";
 
 type PedidoAvisable = Pick<PedidoKds, "id" | "numero_dia" | "tipo" | "estado" | "nombre_cliente" | "email" | "recogida_en" | "created_at" | "total_centimos" | "payment_status" | "items">;
 
@@ -21,6 +22,7 @@ export const esDeOtroDia = (p: Pick<PedidoKds, "recogida_en">, ahora = new Date(
 /** Qué aviso toca al pasar el pedido de `anterior` a su estado actual (null: ninguno). */
 export function avisoDePedido(p: PedidoAvisable, anterior: string | null | undefined, ahora = new Date()): AvisoPedido | null {
   if (p.tipo !== "RECOGIDA" || !p.email || !anterior || p.estado === anterior) return null;
+  if (p.estado === "CANCELLED") return anterior === "DELIVERED" ? null : "cancelado";
   if (p.estado === "ACCEPTED" && anterior === "RECEIVED" && esDeOtroDia(p, ahora)) return "confirmado";
   if (p.estado === "READY" && !esDeOtroDia(p, ahora)) return "listo";
   return null;
@@ -49,6 +51,19 @@ function textos(tipo: AvisoPedido, p: PedidoAvisable) {
       ],
     };
   }
+  if (tipo === "cancelado") {
+    return {
+      asunto: `Tu pedido #${p.numero_dia} se ha cancelado · ${SITE.shortName}`,
+      sello: "Cancelado",
+      color: "#9A4527",
+      parrafos: [
+        hola,
+        `Sentimos decirte que hemos tenido que cancelar tu pedido #${p.numero_dia}${cuando ? ` para ${cuando}` : ""}.`,
+        p.payment_status === "PAID" ? "Te devolvemos el importe; si tienes cualquier duda, llámanos." : "No tienes que pagar nada.",
+        `Llámanos al ${SITE.phone.display} y te buscamos una alternativa.`,
+      ],
+    };
+  }
   return {
     asunto: `Tu pedido #${p.numero_dia} está listo · ${SITE.shortName}`,
     sello: "¡Listo!",
@@ -57,12 +72,10 @@ function textos(tipo: AvisoPedido, p: PedidoAvisable) {
   };
 }
 
-function html(tipo: AvisoPedido, p: PedidoAvisable, enlace: string): string {
-  const t = textos(tipo, p);
+/** Plantilla del email al cliente (pedidos y encargos de vino): sello, párrafos, lo que lleva y un botón. */
+export function htmlAvisoCliente(t: { sello: string; color: string; parrafos: string[] }, lista: string[], enlace: string, boton: string): string {
   const [hola, ...resto] = t.parrafos;
-  const lista = lineas(p)
-    .map((l) => `<tr><td style="padding:2px 0;font-size:15px">${escapar(l)}</td></tr>`)
-    .join("");
+  const filas = lista.map((l) => `<tr><td style="padding:2px 0;font-size:15px">${escapar(l)}</td></tr>`).join("");
   return `<!doctype html><html lang="es"><body style="margin:0;background:#F1E8D8;font-family:Helvetica,Arial,sans-serif;color:#2B2722">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F1E8D8;padding:24px 12px"><tr><td align="center">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#fffdf8;border-radius:20px;overflow:hidden">
@@ -70,8 +83,8 @@ function html(tipo: AvisoPedido, p: PedidoAvisable, enlace: string): string {
 <tr><td style="padding:0 28px"><span style="display:inline-block;background:${t.color};color:#fffdf8;border-radius:999px;padding:4px 12px;font-size:13px;font-weight:bold">${t.sello}</span></td></tr>
 <tr><td style="padding:20px 28px 0;font-size:18px;font-weight:bold">${escapar(hola ?? "")}</td></tr>
 ${resto.map((x) => `<tr><td style="padding:12px 28px 0;font-size:16px;line-height:1.5">${escapar(x)}</td></tr>`).join("")}
-<tr><td style="padding:16px 28px 0"><table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-top:1px solid #E6D8BF;padding-top:10px">${lista}</table></td></tr>
-<tr><td style="padding:24px 28px"><a href="${enlace}" style="display:inline-block;background:#1E3557;color:#fffdf8;text-decoration:none;border-radius:12px;padding:12px 20px;font-weight:bold">Ver mi pedido</a></td></tr>
+<tr><td style="padding:16px 28px 0"><table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-top:1px solid #E6D8BF;padding-top:10px">${filas}</table></td></tr>
+<tr><td style="padding:24px 28px"><a href="${enlace}" style="display:inline-block;background:#1E3557;color:#fffdf8;text-decoration:none;border-radius:12px;padding:12px 20px;font-weight:bold">${escapar(boton)}</a></td></tr>
 <tr><td style="padding:16px 28px 24px;border-top:1px solid #E6D8BF;font-size:13px;color:#5E554B;line-height:1.5">
 ${SITE.name} · ${SITE.address.street}, ${SITE.address.postalCode} ${SITE.address.locality}<br>${SITE.address.context} · ${SITE.phone.display}</td></tr>
 </table></td></tr></table></body></html>`;
@@ -89,7 +102,7 @@ export async function enviarAvisoPedido(tipo: AvisoPedido, p: PedidoAvisable): P
       to: p.email,
       subject: t.asunto,
       text: [...t.parrafos, lineas(p).join("\n"), `Ver mi pedido: ${enlace}`].join("\n\n") + `\n\n${SITE.name} · ${SITE.address.street}, ${SITE.address.locality} · ${SITE.phone.display}`,
-      html: html(tipo, p, enlace),
+      html: htmlAvisoCliente(t, lineas(p), enlace, "Ver mi pedido"),
     });
     return true;
   } catch (e) {
