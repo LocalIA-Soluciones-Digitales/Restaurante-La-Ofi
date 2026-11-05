@@ -188,7 +188,7 @@ export function CartaInteractiva({
   return (
     <div>
       {editorial ? (
-        <div data-header-fixed className={`sticky ${stickyTop} z-20 -mx-4 border-b border-tinta-line bg-crema/90 px-4 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-10 lg:px-10`}>
+        <div data-header-fixed className={`sticky ${stickyTop} z-20 -mx-4 border-b border-tinta-line bg-crema/90 px-4 backdrop-blur sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0`}>
           <div className="flex min-h-[3.75rem] items-center gap-4">
             {/* Una sola navegación: la sección en la que estás; al tocarla, el índice completo. */}
             <button
