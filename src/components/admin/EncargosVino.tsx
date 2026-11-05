@@ -8,6 +8,7 @@ import { Icon } from "@/components/ui/Icon";
 import { borrarEncargoVino, editarEncargoVino, encargosVino, estadoEncargoVino, historialEncargosVino } from "@/lib/admin/actions";
 import type { EncargoVinoAdmin } from "@/lib/admin/types";
 import { SITE_URL } from "@/lib/env";
+import { recogeHoy, recogidaCorta, recogidaEnFrase } from "@/lib/encargos/recogida";
 import { formatCentimos } from "@/lib/format";
 import { conCavaDeRegalo } from "@/lib/lanzamiento";
 import { activarSonido, sonarAviso } from "@/lib/notify-sound";
@@ -42,7 +43,7 @@ function mensaje(tipo: "listo" | "anulado", e: EncargoVinoAdmin): string {
   if (tipo === "listo") {
     return [
       `¡Hola, ${pila(e.nombre)}!`,
-      `Tu encargo de vino nº ${e.numero} (${botellas(e.botellas)}) ya está preparado en La Ofi. Pásate a recogerlo cuando quieras: son ${formatCentimos(e.total_centimos)} y se paga al recoger.${conCavaDeRegalo(e.total_centimos) ? " ¡Y te llevas tu cava de regalo!" : ""}`,
+      `Tu encargo de vino nº ${e.numero} (${botellas(e.botellas)}) ya está preparado en La Ofi. ${e.recogida_en ? `Te esperamos ${recogidaEnFrase(e.recogida_en)}` : "Pásate a recogerlo cuando quieras"}: son ${formatCentimos(e.total_centimos)} y se paga al recoger.${conCavaDeRegalo(e.total_centimos) ? " ¡Y te llevas tu cava de regalo!" : ""}`,
       `Lo puedes ver aquí: ${enlaceEncargo(e.id)}`,
     ].join("\n\n");
   }
@@ -144,7 +145,10 @@ export function EncargosVino({ inicial }: { inicial: EncargoVinoAdmin[] }) {
     />
   );
 
-  const visibles = vista === "todos" ? encargos : encargos.filter((e) => pasoDe(e) === vista);
+  // Por hora de recogida: arriba lo que pasan a buscar antes (los de antes, sin hora, al final).
+  const visibles = (vista === "todos" ? encargos : encargos.filter((e) => pasoDe(e) === vista))
+    .slice()
+    .sort((a, b) => (a.recogida_en ?? "9999").localeCompare(b.recogida_en ?? "9999") || a.created_at.localeCompare(b.created_at));
   const pestanas: { k: Vista; titulo: string; n?: number; contador?: string }[] = [
     { k: "todos", titulo: "En curso", n: encargos.length, contador: "bg-carbon text-crema dark:bg-crema dark:text-noche" },
     ...(Object.keys(PASOS) as Paso[]).map((k) => ({ k, titulo: PASOS[k].titulo, n: cuenta[k], contador: PASOS[k].contador })),
@@ -199,6 +203,7 @@ export function EncargosVino({ inicial }: { inicial: EncargoVinoAdmin[] }) {
             Cliente: e.nombre,
             Teléfono: e.telefono,
             Email: e.email ?? "",
+            Recogida: e.recogida_en ? recogidaCorta(e.recogida_en) : "",
             Estado: e.estado === "CANCELADO" ? "Anulado" : "Entregado",
             Vinos: e.lineas.map((l) => `${l.cantidad}× ${l.nombre}`).join(", "),
             Botellas: e.botellas,
@@ -275,6 +280,17 @@ function FilaEncargo({
             <span className="shrink-0 text-sm font-semibold tabular-nums text-carbon-muted dark:text-crema/65">
               {botellas(e.botellas)} · {formatCentimos(e.total_centimos)}
             </span>
+            {e.recogida_en ? (
+              <span
+                title={`Pasa a recogerlo ${recogidaEnFrase(e.recogida_en)}`}
+                className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[0.7rem] font-semibold tabular-nums ${
+                  recogeHoy(e.recogida_en) && paso ? "bg-terracota text-crema" : "bg-carbon/10 text-carbon dark:bg-crema/10 dark:text-crema"
+                }`}
+              >
+                <Icon name="clock" className="h-3 w-3" />
+                {recogidaCorta(e.recogida_en)}
+              </span>
+            ) : null}
             {conCavaDeRegalo(e.total_centimos) && e.estado !== "CANCELADO" ? (
               <span title="Lleva un cava de regalo (encargo de más de 50 €)" className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#E2B98A] px-2 py-0.5 text-[0.7rem] font-semibold text-carbon">
                 <Icon name="gift" className="h-3 w-3" />
@@ -318,6 +334,10 @@ function FilaEncargo({
             ))}
           </ul>
           {e.notas ? <p className="rounded-lg bg-ratan/20 px-2.5 py-1.5 font-semibold">{e.notas}</p> : null}
+          <p className="flex items-center gap-2 font-semibold">
+            <Icon name="clock" className="h-4 w-4 shrink-0" />
+            {e.recogida_en ? `Pasa a recogerlo ${recogidaEnFrase(e.recogida_en)}` : "Sin día de recogida (encargo de antes)"}
+          </p>
           <p className="text-xs text-carbon-muted dark:text-crema/60">
             Encargado el {FECHA.format(new Date(e.created_at))} · {e.telefono}
             {e.email ? ` · ${e.email}` : ""} · se paga al recoger

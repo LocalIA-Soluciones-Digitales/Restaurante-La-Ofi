@@ -6,8 +6,9 @@ import { ENCARGOS_VINO } from "@/lib/lanzamiento";
 import type { ResultadoAccion } from "@/lib/pedidos/types";
 import { rpcPublica } from "@/lib/supabase/rpc";
 
-// Encargos de vino para llevar desde /vinos: sin fecha ni pago online. Se encarga, el
-// local lo prepara y avisa, y se paga al recogerlo. Precios y nombres los pone Postgres.
+// Encargos de vino para llevar desde /vinos: sin pago online. Se encarga con el día y la
+// hora a la que se pasará a recogerlo, el local lo prepara y avisa, y se paga al recogerlo.
+// Precios y nombres los pone Postgres, que también valida el día y la hora con el horario.
 
 export interface EncargoVinoWeb {
   nombre: string;
@@ -15,6 +16,9 @@ export interface EncargoVinoWeb {
   email?: string;
   notas?: string;
   lineas: { id: string; cantidad: number }[];
+  /** Cuándo pasa a recogerlo, en Madrid: AAAA-MM-DD y HH:MM. */
+  recogida_fecha: string;
+  recogida_hora: string;
   /** El cliente declara ser mayor de edad (venta de alcohol). */
   mayor_edad: boolean;
   /** Campo trampa: los humanos no lo ven; si llega relleno, es un bot. */
@@ -33,6 +37,8 @@ export interface EncargoPublico {
   total_centimos: number;
   estado: EstadoEncargo;
   creado: string;
+  /** Cuándo pasa a recogerlo (null en los encargos de antes del 05/11/2026). */
+  recogida_en?: string | null;
   cancelable: boolean;
 }
 
@@ -47,12 +53,17 @@ export async function encargarVinos(e: EncargoVinoWeb): Promise<ResultadoAccion<
     .filter((l) => UUID.test(String(l.id)) && Number.isInteger(l.cantidad) && l.cantidad > 0)
     .slice(0, 40);
   if (lineas.length === 0) return { ok: false, error: "Elige al menos un vino.", codigo: "ERROR" };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(e.recogida_fecha)) || !/^\d{2}:\d{2}$/.test(String(e.recogida_hora))) {
+    return { ok: false, error: "Elige el día y la hora a la que pasarás a recogerlo.", codigo: "ERROR" };
+  }
   const p = {
     nombre: String(e.nombre ?? "").trim().slice(0, 60),
     telefono: String(e.telefono ?? "").slice(0, 16),
     email: String(e.email ?? "").trim().slice(0, 120),
     notas: String(e.notas ?? "").trim().slice(0, 300),
     lineas,
+    recogida_fecha: e.recogida_fecha,
+    recogida_hora: e.recogida_hora,
     mayor_edad: true,
     web: e.web,
     ip_hash: await hashIp(),

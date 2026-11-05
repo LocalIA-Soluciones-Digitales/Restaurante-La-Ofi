@@ -225,3 +225,51 @@ export function primerDiaReservable(semana: Semana, cierres: readonly Cierre[], 
   }
   return null;
 }
+
+/**
+ * Cuándo se puede pasar a recoger un encargo un día (YYYY-MM-DD): de la apertura al cierre
+ * y, si es hoy, con media hora de margen. Un día «Consultar» usa el horario más amplio de
+ * la semana; un día cerrado o de cierre puntual, null. Minutos desde las 00:00.
+ */
+export function rangoRecogida(semana: Semana, cierres: readonly Cierre[], fecha: string, ahora: Date = new Date()): { desde: number; hasta: number } | null {
+  if (cierreDe(cierres, fecha)) return null;
+  const dia = semana[(new Date(`${fecha}T12:00:00Z`).getUTCDay() + 6) % 7];
+  const abiertos = dia === null || dia === undefined ? semana.filter((d): d is DiaHorario => Boolean(d?.abierto)) : dia.abierto ? [dia] : [];
+  if (abiertos.length === 0) return null;
+  const apertura = Math.min(...abiertos.map((d) => aMinutos(d.desde)));
+  const cierre = Math.max(...abiertos.map((d) => (d.hasta === "00:00" ? 23 * 60 + 59 : aMinutos(d.hasta))));
+  // Hoy, con media hora de margen y redondeado al cuarto de hora siguiente (22:00, no 21:53).
+  const minimo = fecha === hoyEnMadrid(ahora) ? Math.ceil((ahoraEnMadrid(ahora).minutos + 30) / PASO_RESERVA) * PASO_RESERVA : 0;
+  const desde = Math.max(apertura, minimo);
+  return desde <= cierre ? { desde, hasta: cierre } : null;
+}
+
+/** Las horas sugeridas para recoger ese día, cada 15 minutos (hasta un cuarto antes de cerrar). */
+export function horasRecogida(semana: Semana, cierres: readonly Cierre[], fecha: string, ahora: Date = new Date()): string[] {
+  const r = rangoRecogida(semana, cierres, fecha, ahora);
+  if (!r) return [];
+  const horas: string[] = [];
+  for (let m = Math.ceil(r.desde / PASO_RESERVA) * PASO_RESERVA; m <= r.hasta - PASO_RESERVA; m += PASO_RESERVA) horas.push(aHora(m));
+  return horas;
+}
+
+/** «1830», «18.30», «18:3», «18h» o «9» → «18:30» / «09:00»; null si no es una hora. */
+export function normalizarHora(texto: string): string | null {
+  const t = texto.trim().toLowerCase().replace(/h$/, "").replace(/[.,h\s]/g, ":");
+  let h: number;
+  let min: number;
+  if (t.includes(":")) {
+    const [a = "", b = ""] = t.split(":");
+    if (!/^\d{1,2}$/.test(a) || !/^\d{0,2}$/.test(b)) return null;
+    h = Number(a);
+    min = b === "" ? 0 : b.length === 1 ? Number(b) * 10 : Number(b);
+  } else {
+    if (!/^\d{1,4}$/.test(t)) return null;
+    h = Number(t.length <= 2 ? t : t.slice(0, -2));
+    min = t.length <= 2 ? 0 : Number(t.slice(-2));
+  }
+  return h < 24 && min < 60 ? aHora(h * 60 + min) : null;
+}
+
+export const minutosDe = (hora: string) => aMinutos(hora);
+export const horaDeMinutos = (min: number) => aHora(min);

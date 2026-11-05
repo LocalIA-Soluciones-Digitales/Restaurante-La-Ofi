@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { HORARIO_INTERNET, agruparHorario, cierresSchemaOrg, estadoAhora, horasReservables, primerDiaReservable, horarioDeHoy, horarioSchemaOrg, resolverHorario, type HorarioDiaBd } from "@/lib/horario";
+import { HORARIO_INTERNET, horasRecogida, normalizarHora, rangoRecogida, agruparHorario, cierresSchemaOrg, estadoAhora, horasReservables, primerDiaReservable, horarioDeHoy, horarioSchemaOrg, resolverHorario, type HorarioDiaBd } from "@/lib/horario";
 
 const filas: HorarioDiaBd[] = [
   ...[1, 2, 3, 4].map((dia) => ({ dia, estado: "abierto" as const, desde: "07:30", hasta: "17:00" })),
@@ -124,5 +124,33 @@ describe("horas reservables", () => {
   it("«Reservar para hoy» a las 20:55 de un miércoles salta al jueves", () => {
     expect(primerDiaReservable(semana, [], new Date("2026-10-28T19:55:00Z"))).toBe("2026-10-29");
     expect(primerDiaReservable(semana, [{ fecha: "2026-10-29", motivo: null }], new Date("2026-10-28T19:55:00Z"))).toBe("2026-10-30");
+  });
+});
+
+describe("recogida de encargos", () => {
+  const semana = HORARIO_INTERNET;
+  // Jueves 05/11/2026 a las 10:00 en Madrid.
+  const ahora = new Date("2026-11-05T09:00:00Z");
+
+  it("hoy, de ahora + 30 min al cierre; las sugeridas, hasta un cuarto antes de cerrar", () => {
+    expect(rangoRecogida(semana, [], "2026-11-05", ahora)).toEqual({ desde: 10 * 60 + 30, hasta: 16 * 60 + 30 });
+    const horas = horasRecogida(semana, [], "2026-11-05", ahora);
+    expect(horas[0]).toBe("10:30");
+    expect(horas.at(-1)).toBe("16:15");
+  });
+
+  it("el domingo y los cierres puntuales, nada", () => {
+    expect(rangoRecogida(semana, [], "2026-11-08", ahora)).toBeNull();
+    expect(horasRecogida(semana, [{ fecha: "2026-11-06", motivo: null }], "2026-11-06", ahora)).toEqual([]);
+  });
+
+  it("entiende la hora escrita a mano", () => {
+    expect(normalizarHora("1830")).toBe("18:30");
+    expect(normalizarHora("18.30")).toBe("18:30");
+    expect(normalizarHora("18:3")).toBe("18:30");
+    expect(normalizarHora("9")).toBe("09:00");
+    expect(normalizarHora("18h")).toBe("18:00");
+    expect(normalizarHora("25:00")).toBeNull();
+    expect(normalizarHora("abc")).toBeNull();
   });
 });

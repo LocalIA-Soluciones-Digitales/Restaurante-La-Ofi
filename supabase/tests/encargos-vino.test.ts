@@ -16,6 +16,15 @@ interface EncargoPublico {
 }
 
 const vinos: Record<string, string> = {};
+
+/** AAAA-MM-DD en Madrid, `n` días después de hoy. */
+const dia = (n: number) => {
+  const hoy = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Madrid" }).format(new Date());
+  const d = new Date(`${hoy}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+};
+const MANANA = dia(1);
 let tel = 655500000;
 
 const anon = <T>(sql: string, params: unknown[]) => t.como("anon", "", "", () => t.one<T>(sql, params));
@@ -29,6 +38,8 @@ const crear = async (extra: Record<string, unknown> = {}) =>
         email: "ane@example.com",
         notas: "Para regalo",
         mayor_edad: true,
+        recogida_fecha: MANANA,
+        recogida_hora: "12:00",
         lineas: [
           { id: vinos.rioja, cantidad: 6 },
           { id: vinos.cava, cantidad: 2 },
@@ -44,6 +55,8 @@ const comoStaff = <T>(fn: () => Promise<T>) => t.como("authenticated", STAFF_LAO
 
 beforeAll(async () => {
   t = await crearBd();
+  // Abierto todos los días de 10:00 a 20:00 (las recogidas se validan contra el horario).
+  await t.db.exec(`update laofi.horario set estado = 'abierto', desde = '10:00', hasta = '20:00'`);
   await t.db.query("insert into public.settings (cliente_id, key, value) values ($1, 'push_notify_url', '\"https://push.test/notify\"')", [t.laOfi.id]);
   await t.db.exec(`
     insert into laofi.categorias (slug, nombre, tipo, orden) values ('vinos-tintos', 'Vinos tintos', 'bebida', 20), ('cavas-champagnes', 'Cavas', 'bebida', 21)
@@ -73,7 +86,31 @@ describe("encargar", () => {
     expect(e!.lineas[0]).toEqual({ nombre: "Viña Ardanza", detalle: "D.O. Rioja · Tempranillo", cantidad: 6, precio_centimos: 3200 });
     expect(JSON.stringify(e)).not.toMatch(/655|example\.com|regalo/);
     const { body } = await t.one<{ body: { titulo: string; cuerpo: string; url: string } }>("select body from net.peticiones_test");
-    expect(body).toMatchObject({ titulo: `Encargo de vino nº ${numero}`, cuerpo: "Ane Etxeberria · 8 botellas · 242,00 €", url: "/admin/encargos" });
+    expect(body).toMatchObject({ titulo: `Encargo de vino nº ${numero}`, cuerpo: `Ane Etxeberria · 8 botellas · 242,00 € · recoge ${MANANA.slice(8, 10)}/${MANANA.slice(5, 7)} 12:00`, url: "/admin/encargos" });
+  });
+
+  it("guarda el día y la hora de recogida y el cliente los ve", async () => {
+    const { id } = await crear({ recogida_fecha: MANANA, recogida_hora: "18:30" });
+    const e = (await ver(id)) as EncargoPublico & { recogida_en: string };
+    const madrid = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Madrid", dateStyle: "short", timeStyle: "short" }).format(new Date(e.recogida_en));
+    expect(madrid).toBe(`${MANANA} 18:30`);
+  });
+
+  it("la recogida, un día y una hora con el local abierto", async () => {
+    await expect(crear({ recogida_fecha: undefined, recogida_hora: undefined })).rejects.toThrow(/Elige el día y la hora/);
+    await expect(crear({ recogida_hora: "21:30" })).rejects.toThrow(/A esa hora estamos cerrados: ese día abrimos de 10:00 a 20:00/);
+    await expect(crear({ recogida_hora: "09:00" })).rejects.toThrow(/A esa hora estamos cerrados/);
+    await expect(crear({ recogida_fecha: dia(-1) })).rejects.toThrow(/media hora de margen/);
+    await expect(crear({ recogida_fecha: dia(61) })).rejects.toThrow(/dos meses/);
+    await expect(crear({ recogida_fecha: "2026-02-31" })).rejects.toThrow(/Revisa el día/);
+    // Cierre puntual y día cerrado en el horario.
+    await t.db.exec(`update laofi.ajustes set valor = jsonb_build_object('fechas', jsonb_build_array(jsonb_build_object('fecha', '${dia(2)}', 'motivo', 'Fiesta'))) where clave = 'cierres'`);
+    await t.db.exec(`insert into laofi.ajustes (clave, valor) select 'cierres', jsonb_build_object('fechas', jsonb_build_array(jsonb_build_object('fecha', '${dia(2)}'))) where not exists (select 1 from laofi.ajustes where clave = 'cierres')`);
+    await expect(crear({ recogida_fecha: dia(2) })).rejects.toThrow(/Ese día estamos cerrados/);
+    const isodow = ((new Date(`${dia(3)}T12:00:00Z`).getUTCDay() + 6) % 7) + 1;
+    await t.db.exec(`update laofi.horario set estado = 'cerrado' where dia = ${isodow}`);
+    await expect(crear({ recogida_fecha: dia(3) })).rejects.toThrow(/Ese día estamos cerrados/);
+    await t.db.exec(`update laofi.horario set estado = 'abierto', desde = '10:00', hasta = '20:00'; update laofi.ajustes set valor = '{"fechas": []}' where clave = 'cierres'`);
   });
 
   it("solo vinos de la carta, disponibles y con precio", async () => {

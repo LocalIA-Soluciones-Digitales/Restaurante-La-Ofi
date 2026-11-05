@@ -158,6 +158,8 @@ export interface EncargoVinoAdmin {
   botellas: number;
   total_centimos: number;
   estado: "PENDIENTE" | "CONFIRMADO" | "LISTO" | "ENTREGADO" | "CANCELADO";
+  /** Cuándo pasa a recogerlo (null en los de antes del 05/11/2026 o sin la migración 20261105300000). */
+  recogida_en?: string | null;
   created_at: string;
   updated_at: string;
 }

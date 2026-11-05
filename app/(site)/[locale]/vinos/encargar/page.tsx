@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { EncargoVinos } from "@/components/vinos/EncargoVinos";
 import { TiendaVinos } from "@/components/vinos/TiendaVinos";
+import { resolverHorario } from "@/lib/horario";
 import { href, type Locale } from "@/lib/i18n";
 import { ENCARGOS_VINO } from "@/lib/lanzamiento";
 import { getCartaContent } from "@/lib/restaurant/content";
+import { getCierres, getHorario } from "@/lib/restaurant/queries";
 import { pageMetadata } from "@/lib/seo";
 import { esSeccionDeVino } from "@/lib/vinos";
 
@@ -26,11 +28,13 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 export default async function EncargarVinosPage({ params }: Params) {
   const { locale } = await params;
   if (!ENCARGOS_VINO) redirect(href(locale, "/vinos"));
-  const carta = await getCartaContent();
+  // El horario y los cierres, para elegir cuándo se pasa a recogerlo.
+  const [carta, horarioBd, cierres] = await Promise.all([getCartaContent(), getHorario(), getCierres()]);
+  const horario = resolverHorario(horarioBd, cierres);
   const vinos = carta.status === "empty" ? [] : carta.data.filter((s) => s.items.length > 0 && esSeccionDeVino(s));
   if (vinos.length === 0) redirect(href(locale, "/vinos"));
   return (
-    <EncargoVinos secciones={vinos} locale={locale} privacidadHref={href(locale, "/privacidad")}>
+    <EncargoVinos secciones={vinos} locale={locale} privacidadHref={href(locale, "/privacidad")} semana={horario.semana} cierres={horario.cierres}>
       <TiendaVinos secciones={vinos} cartaHref={href(locale, "/vinos")} />
     </EncargoVinos>
   );

@@ -1,19 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Icon } from "@/components/ui/Icon";
+import { SelectorFechaHora, primerDiaRecogida } from "@/components/ui/SelectorFechaHora";
 import { useDialogA11y } from "@/hooks/useDialogA11y";
 import { encargarVinos } from "@/lib/encargos/actions";
 import { formatCentimos } from "@/lib/format";
+import type { Cierre, Semana } from "@/lib/horario";
 import { href, type Locale } from "@/lib/i18n";
 import { CAVA_DE_REGALO, conCavaDeRegalo } from "@/lib/lanzamiento";
 import type { CartaItem, CartaSeccion } from "@/lib/restaurant/types";
 import { SITE } from "@/lib/site";
 
 // El encargo de vinos para llevar (/vinos/encargar): se eligen botellas en la lista de la
-// tienda, el resumen lleva la cuenta y el panel recoge los datos. Sin fecha ni pago
-// online: se recoge y se paga en el local. El borrador se guarda en este navegador.
+// tienda, el resumen lleva la cuenta y el panel recoge los datos y el día y la hora a la
+// que se pasará a recogerlo (con el local abierto). Sin pago online: se paga al recogerlo.
+// El borrador se guarda en este navegador.
 
 const CLAVE = "laofi:encargo-vinos";
 const MAX_BOTELLAS = 48;
@@ -48,7 +51,22 @@ const leerBorrador = (): Record<string, number> => {
   }
 };
 
-export function EncargoVinos({ secciones, locale, privacidadHref, children }: { secciones: CartaSeccion[]; locale: Locale; privacidadHref: string; children: ReactNode }) {
+export function EncargoVinos({
+  secciones,
+  locale,
+  privacidadHref,
+  semana,
+  cierres,
+  children,
+}: {
+  secciones: CartaSeccion[];
+  locale: Locale;
+  privacidadHref: string;
+  /** Horario y cierres del local: los días y horas en que se puede pasar a recogerlo. */
+  semana: Semana;
+  cierres: readonly Cierre[];
+  children: ReactNode;
+}) {
   const vinos = useMemo(() => new Map(secciones.flatMap((s) => s.items).filter((v) => v.precioCentimos !== null).map((v) => [v.id, v])), [secciones]);
   const [encargo, setEncargo] = useState<Record<string, number>>({});
   const [hidratado, setHidratado] = useState(false);
@@ -100,6 +118,8 @@ export function EncargoVinos({ secciones, locale, privacidadHref, children }: { 
           total={total}
           locale={locale}
           privacidadHref={privacidadHref}
+          semana={semana}
+          cierres={cierres}
           onVaciar={() => setEncargo({})}
           onCerrar={() => setAbierto(false)}
         />
@@ -205,6 +225,17 @@ export function CavaDeRegalo({ total, oscuro = false, className = "" }: { total:
 
 export const botellasTexto = (n: number) => `${n} ${n === 1 ? "botella" : "botellas"}`;
 
+const DIA_RECOGE = new Intl.DateTimeFormat("es-ES", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
+
+/** «hoy a las 18:30», «mañana a las 12:00», «el viernes, 6 de noviembre a las 18:30». */
+export function cuandoRecoge(fecha: string, hora: string, hoy = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Madrid" }).format(new Date())): string {
+  const manana = new Date(`${hoy}T12:00:00Z`);
+  manana.setUTCDate(manana.getUTCDate() + 1);
+  if (fecha === hoy) return `hoy a las ${hora}`;
+  if (fecha === manana.toISOString().slice(0, 10)) return `mañana a las ${hora}`;
+  return `el ${DIA_RECOGE.format(new Date(`${fecha}T12:00:00Z`))} a las ${hora}`;
+}
+
 const campo =
   "h-12 w-full rounded-xl border border-carbon/15 bg-white px-4 text-base text-carbon placeholder:text-carbon-muted/70 focus:border-carbon focus:outline-none";
 
@@ -214,6 +245,8 @@ function PanelEncargo({
   total,
   locale,
   privacidadHref,
+  semana,
+  cierres,
   onVaciar,
   onCerrar,
 }: {
@@ -222,6 +255,8 @@ function PanelEncargo({
   total: number;
   locale: Locale;
   privacidadHref: string;
+  semana: Semana;
+  cierres: readonly Cierre[];
   onVaciar: () => void;
   onCerrar: () => void;
 }) {
@@ -230,15 +265,28 @@ function PanelEncargo({
   const set = (p: Partial<typeof f>) => setF((x) => ({ ...x, ...p }));
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hecho, setHecho] = useState<{ id: string; numero: number; botellas: number; total: number } | null>(null);
+  const [hecho, setHecho] = useState<{ id: string; numero: number; botellas: number; total: number; cuando: string } | null>(null);
+  // Cuándo pasa a recogerlo: de salida, hoy (o el primer día que abrimos) y la hora por elegir.
+  const [recogida, setRecogida] = useState(() => ({ fecha: primerDiaRecogida(semana, cierres), hora: "" }));
+  const recogidaRef = useRef<HTMLFieldSetElement>(null);
 
   const enviar = async () => {
+    if (!recogida.hora) {
+      setError("Elige a qué hora pasarás a recogerlo.");
+      recogidaRef.current?.querySelector<HTMLInputElement>("input")?.focus();
+      return;
+    }
     setEnviando(true);
     setError(null);
-    const r = await encargarVinos({ ...f, lineas: lineas.map((l) => ({ id: l.vino.id, cantidad: l.cantidad })) });
+    const r = await encargarVinos({
+      ...f,
+      recogida_fecha: recogida.fecha,
+      recogida_hora: recogida.hora,
+      lineas: lineas.map((l) => ({ id: l.vino.id, cantidad: l.cantidad })),
+    });
     setEnviando(false);
     if (!r.ok) return setError(r.error);
-    setHecho({ ...r.data, botellas, total });
+    setHecho({ ...r.data, botellas, total, cuando: cuandoRecoge(recogida.fecha, recogida.hora) });
     onVaciar();
   };
 
@@ -273,8 +321,8 @@ function PanelEncargo({
             </span>
             <p className="mt-5 font-display text-3xl leading-tight">Encargo nº {hecho.numero} recibido</p>
             <p className="mt-3 text-lg leading-relaxed text-carbon-muted">
-              {botellasTexto(hecho.botellas)} · {formatCentimos(hecho.total)}. Lo preparamos y te avisamos por WhatsApp o por teléfono cuando esté listo. Pasas a
-              recogerlo cuando quieras en nuestro horario y lo pagas en La Ofi.
+              {botellasTexto(hecho.botellas)} · {formatCentimos(hecho.total)}. Te esperamos <b className="font-semibold text-carbon">{hecho.cuando}</b>: lo tendremos
+              preparado y lo pagas en La Ofi. Si algo cambia, te avisamos por WhatsApp o por teléfono.
             </p>
             {conCavaDeRegalo(hecho.total) ? <CavaDeRegalo total={hecho.total} className="mt-5" /> : null}
             <div className="mt-8 grid gap-3 sm:grid-cols-2">
@@ -338,13 +386,18 @@ function PanelEncargo({
                 </li>
                 <li className="flex gap-3">
                   <Icon name="whatsapp" className="mt-0.5 h-4 w-4 shrink-0 text-oliva" />
-                  Te avisamos cuando esté preparado para pasar a por él.
+                  Lo tenemos preparado para el día y la hora que elijas, y te avisamos cuando esté listo.
                 </li>
                 <li className="flex gap-3">
                   <Icon name="pin" className="mt-0.5 h-4 w-4 shrink-0 text-oliva" />
                   Recogida en {SITE.address.street}, {SITE.address.locality}.
                 </li>
               </ul>
+
+              <fieldset ref={recogidaRef} className="mt-6">
+                <legend className="mb-3 text-sm font-semibold">¿Cuándo pasas a recogerlo?</legend>
+                <SelectorFechaHora semana={semana} cierres={cierres} fecha={recogida.fecha} hora={recogida.hora} onCambio={setRecogida} />
+              </fieldset>
 
               <fieldset className="mt-6 grid gap-4 sm:grid-cols-2">
                 <legend className="mb-3 text-sm font-semibold">Tus datos</legend>
@@ -373,7 +426,7 @@ function PanelEncargo({
                 </label>
                 <label className="grid gap-1 text-sm sm:col-span-2">
                   <span className="font-semibold">
-                    Comentarios <span className="font-normal text-carbon-muted">(para regalo, cuándo te viene bien pasar…)</span>
+                    Comentarios <span className="font-normal text-carbon-muted">(para regalo, alguna petición…)</span>
                   </span>
                   <textarea value={f.notas} onChange={(e) => set({ notas: e.target.value.slice(0, 300) })} rows={2} className={`${campo} h-auto py-3`} />
                 </label>

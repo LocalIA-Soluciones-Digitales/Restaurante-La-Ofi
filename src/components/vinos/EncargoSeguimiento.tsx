@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { anularEncargo, obtenerEncargo, type EncargoPublico } from "@/lib/encargos/actions";
+import { recogidaEnFrase } from "@/lib/encargos/recogida";
 import { formatCentimos } from "@/lib/format";
 import { conCavaDeRegalo } from "@/lib/lanzamiento";
 import { SITE } from "@/lib/site";
@@ -52,7 +53,9 @@ export function EncargoSeguimiento({ inicial, vinosHref }: { inicial: EncargoPub
     : entregado
       ? "Entregado. ¡Que lo disfrutéis y felices fiestas!"
       : e.estado === "LISTO"
-        ? "Tu encargo está listo: pasa a recogerlo cuando quieras mientras estemos abiertos. Lo pagas aquí, en La Ofi."
+        ? e.recogida_en
+          ? `Tu encargo está listo: te esperamos ${recogidaEnFrase(e.recogida_en)}. Lo pagas aquí, en La Ofi.`
+          : "Tu encargo está listo: pasa a recogerlo cuando quieras mientras estemos abiertos. Lo pagas aquí, en La Ofi."
         : e.estado === "CONFIRMADO"
           ? "Confirmado: lo estamos preparando. Te avisamos cuando esté listo."
           : "Hemos recibido tu encargo. Lo revisamos y te avisamos cuando esté listo (esta página también se actualiza sola).";
@@ -65,6 +68,12 @@ export function EncargoSeguimiento({ inicial, vinosHref }: { inicial: EncargoPub
         <p aria-live="polite" className="mt-3 text-lg text-crema/85">
           {mensaje}
         </p>
+        {e.recogida_en && !anulado && !entregado ? (
+          <p className="mt-5 inline-flex items-center gap-2 rounded-full bg-crema/10 px-4 py-2 text-sm font-semibold text-crema">
+            <Icon name="clock" className="h-4 w-4 text-[#E2B98A]" />
+            Recogida {recogidaEnFrase(e.recogida_en)}
+          </p>
+        ) : null}
       </header>
 
       {!anulado && !entregado ? (
