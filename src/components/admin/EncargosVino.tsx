@@ -72,6 +72,13 @@ function paraPedir(lista: EncargoVinoAdmin[]) {
       v.encargos += 1;
       m.set(l.producto_id, v);
     }
+    // El cava de regalo también hay que sacarlo de la bodega: uno por encargo de más de 50 €.
+    if (conCavaDeRegalo(e.total_centimos)) {
+      const v = m.get("cava-de-regalo") ?? { nombre: "Cava de regalo", detalle: "Uno por cada encargo de más de 50 €", cantidad: 0, encargos: 0 };
+      v.cantidad += 1;
+      v.encargos += 1;
+      m.set("cava-de-regalo", v);
+    }
   }
   return [...m.values()].sort((a, b) => b.cantidad - a.cantidad || a.nombre.localeCompare(b.nombre));
 }
@@ -334,7 +341,7 @@ function FilaEncargo({
             <span className={`shrink-0 font-semibold ${s?.texto ?? ""}`}>
               {s?.corto ?? (e.estado === "ENTREGADO" ? `Entregado${e.cobrado_metodo ? ` · ${e.cobrado_metodo === "EFECTIVO" ? "efectivo" : "tarjeta"}` : ""}` : "Anulado")}
             </span>
-            <span className="truncate">· nº {e.numero} · {resumen}</span>
+            <span className="truncate">· nº {e.numero} · {resumen}{cava ? " + cava de regalo" : ""}</span>
             {e.notas ? <Icon name="edit" className="h-3 w-3 shrink-0" /> : null}
           </span>
         </button>
@@ -378,6 +385,19 @@ function FilaEncargo({
                 <span className="tabular-nums text-carbon-muted dark:text-crema/60">{formatCentimos(l.cantidad * l.precio_centimos)}</span>
               </li>
             ))}
+            {cava ? (
+              <li className="flex items-baseline gap-2">
+                <span className="font-semibold tabular-nums">1×</span>
+                <span className="min-w-0 flex-1">
+                  <span className="inline-flex items-center gap-1.5">
+                    <Icon name="gift" className="h-3.5 w-3.5 text-madera-oscura dark:text-[#E2B98A]" />
+                    Cava de regalo
+                  </span>
+                  <span className="block text-xs text-carbon-muted dark:text-crema/60">Por su encargo de más de 50 €: hay que prepararlo con las botellas</span>
+                </span>
+                <span className="font-semibold text-madera-oscura dark:text-[#E2B98A]">Regalo</span>
+              </li>
+            ) : null}
           </ul>
           {e.notas ? <p className="rounded-lg bg-ratan/20 px-2.5 py-1.5 font-semibold">{e.notas}</p> : null}
           <p className="flex items-center gap-2 font-semibold">
