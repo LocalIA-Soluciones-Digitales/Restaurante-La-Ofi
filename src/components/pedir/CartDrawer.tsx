@@ -46,6 +46,8 @@ export function CartDrawer({
     () => new Map(secciones.flatMap((s) => s.items).flatMap((i) => (i.imagen ? [[i.id, i.imagen.src] as const] : []))),
     [secciones],
   );
+  // La sección de cada producto: sin foto, un vino enseña la copa y no los cubiertos.
+  const seccionDe = useMemo(() => new Map(secciones.flatMap((s) => s.items.map((i) => [i.id, s.nombre] as const))), [secciones]);
   const cart = useCart();
   const mesa = useTableSession();
   const router = useRouter();
@@ -290,6 +292,7 @@ export function CartDrawer({
             <ResumenPedido
               lineas={cart.lineas}
               fotos={fotos}
+              seccionDe={seccionDe}
               datos={[
                 enMesa && mesaDestino ? ["Mesa", `${mesaDestino.etiqueta} · te lo llevamos`] : null,
                 contexto.tipo === "recogida" && !enMesa && franja ? ["Recogida", etiquetaRecogida(franja)] : null,
@@ -335,7 +338,7 @@ export function CartDrawer({
               {cart.lineas.map((l) => (
                 <li key={l.key} className="py-4">
                   <div className="flex items-start gap-3">
-                    <Miniatura nombre={l.nombre} src={fotos.get(l.productoId)} className="h-16 w-16" />
+                    <Miniatura nombre={l.nombre} src={fotos.get(l.productoId)} seccion={seccionDe.get(l.productoId)} className="h-16 w-16" />
                     <div className="min-w-0 flex-1">
                       <p className="font-display text-lg leading-tight text-carbon">{l.nombre}</p>
                       {l.resumen ? <p className="text-sm text-carbon-muted">{l.resumen}</p> : null}
@@ -590,14 +593,13 @@ export function CartDrawer({
   );
 }
 
-/** Foto pequeña del plato; sin foto, un hueco con el icono de la carta. */
 /** Como en la carta: la foto del plato si la hay; si no, su tipo ilustrado. */
-function Miniatura({ nombre, src, className }: { nombre: string; src?: string; className: string }) {
-  return <MiniaturaPlato nombre={nombre} foto={src} className={className} />;
+function Miniatura({ nombre, src, seccion, className }: { nombre: string; src?: string; seccion?: string; className: string }) {
+  return <MiniaturaPlato nombre={nombre} foto={src} seccion={seccion} className={className} />;
 }
 
 /** Resumen de solo lectura del pedido: lo que se va a enviar, tal cual. */
-function ResumenPedido({ lineas, fotos, datos }: { lineas: CartLinea[]; fotos: Map<string, string>; datos: ([string, string] | null)[] }) {
+function ResumenPedido({ lineas, fotos, seccionDe, datos }: { lineas: CartLinea[]; fotos: Map<string, string>; seccionDe: Map<string, string>; datos: ([string, string] | null)[] }) {
   return (
     <section aria-labelledby="resumen-titulo" className="grid gap-5">
       <div>
@@ -609,7 +611,7 @@ function ResumenPedido({ lineas, fotos, datos }: { lineas: CartLinea[]; fotos: M
       <ul className="divide-y divide-carbon/10 rounded-2xl border border-carbon/10 bg-white px-4">
         {lineas.map((l) => (
           <li key={l.key} className="flex items-center gap-3 py-3">
-            <Miniatura nombre={l.nombre} src={fotos.get(l.productoId)} className="h-12 w-12" />
+            <Miniatura nombre={l.nombre} src={fotos.get(l.productoId)} seccion={seccionDe.get(l.productoId)} className="h-12 w-12" />
             <span className="min-w-8 font-semibold tabular-nums text-marino">{l.cantidad} ×</span>
             <div className="min-w-0 flex-1">
               <p className="font-display text-lg leading-tight text-carbon">{l.nombre}</p>
