@@ -142,9 +142,7 @@ function ComoEncargar({ tiendaHref }: { tiendaHref: string }) {
             <Icon name="arrow" className="h-4 w-4" />
           </Link>
         </div>
-        <div className="flex flex-col gap-8 lg:col-span-7 lg:gap-10">
-          {/* El cava de regalo en el hueco sobre los pasos, fundido con el papel. */}
-          <PromoCava variante="integrado" />
+        <div className="flex flex-col gap-10 lg:col-span-7 lg:gap-12">
           <ol className="grid gap-8 sm:grid-cols-3 sm:gap-6">
           {PASOS.map((p, i) => (
             <li key={p.titulo} className="border-t border-carbon/80 pt-4">
@@ -154,6 +152,8 @@ function ComoEncargar({ tiendaHref }: { tiendaHref: string }) {
             </li>
           ))}
           </ol>
+          {/* Debajo de los pasos, el cava de regalo fundido con el papel. */}
+          <PromoCava variante="integrado" />
         </div>
       </div>
     </section>

@@ -19,7 +19,7 @@ export function PromoCava({ href, variante = "banda" }: { href?: string; variant
   if (!CAVA_DE_REGALO) return null;
   const umbral = euros(CAVA_DE_REGALO.masDeCentimos);
 
-  // «integrado»: en /vinos, en el hueco sobre los pasos de «cómo encargar». Sin tarjeta: el
+  // «integrado»: en /vinos, bajo los pasos de «cómo encargar». Sin tarjeta: el
   // texto va sobre el papel y la foto se funde con él por los cuatro bordes (dos máscaras cruzadas).
   if (variante === "integrado") {
     const mascara = "linear-gradient(90deg, transparent, #000 38%, #000 88%, transparent), linear-gradient(180deg, transparent, #000 24%, #000 76%, transparent)";
