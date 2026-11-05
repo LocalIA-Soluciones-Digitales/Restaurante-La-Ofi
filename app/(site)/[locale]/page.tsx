@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
 import { Declaracion } from "@/components/home/Declaracion";
 import { EmpresasHome } from "@/components/home/EmpresasHome";
+import { EncargosVinoHome } from "@/components/home/EncargosVinoHome";
 import { EspaciosPaneles } from "@/components/home/EspaciosPaneles";
 import { LetrasScroll } from "@/components/home/LetrasScroll";
 import { IntroOfi } from "@/components/home/IntroOfi";
 import { HoyEnLaOfi } from "@/components/home/HoyEnLaOfi";
 import { PlatosQueApetecen } from "@/components/home/PlatosQueApetecen";
 import { Ubicacion } from "@/components/home/Ubicacion";
-import { PromoCava } from "@/components/vinos/PromoCava";
 import { getDictionary } from "@/i18n/dictionaries";
 import { estadoAhora, resolverHorario } from "@/lib/horario";
 import { href, type Locale } from "@/lib/i18n";
-import { CAVA_DE_REGALO, ENCARGOS_VINO } from "@/lib/lanzamiento";
+import { ENCARGOS_VINO } from "@/lib/lanzamiento";
 import { getCartaContent, getMenuDiaContent } from "@/lib/restaurant/content";
 import { getCierres, getHorario } from "@/lib/restaurant/queries";
 import { pageMetadata } from "@/lib/seo";
@@ -49,8 +49,8 @@ export default async function HomePage({ params }: Params) {
       <Declaracion />
       <LetrasScroll />
       <EspaciosPaneles locale={locale} />
-      <HoyEnLaOfi locale={locale} menu={menu} horario={resuelto} fundido fundidoAbajo={Boolean(ENCARGOS_VINO && CAVA_DE_REGALO)} />
-      {ENCARGOS_VINO ? <PromoCava href={href(locale, "/vinos/encargar")} /> : null}
+      <HoyEnLaOfi locale={locale} menu={menu} horario={resuelto} fundido fundidoAbajo={ENCARGOS_VINO} />
+      {ENCARGOS_VINO ? <EncargosVinoHome carta={carta} encargarHref={href(locale, "/vinos/encargar")} vinosHref={href(locale, "/vinos")} /> : null}
       <PlatosQueApetecen locale={locale} carta={carta} />
       <EmpresasHome locale={locale} />
       <Ubicacion t={t} horario={resuelto} />
