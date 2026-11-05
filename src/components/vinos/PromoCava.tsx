@@ -70,55 +70,83 @@ export function PromoCava({ href, variante = "banda" }: { href?: string; variant
     );
   }
 
+  // «banda» (portada): sale del negro en que se apaga la foto del menú del día (HoyEnLaOfi
+  // fundidoAbajo) y se despide hacia el crema de la sección de abajo. La foto no tiene bordes:
+  // se funde por los cuatro lados (.cava-mascara-banda), con un halo dorado y unas burbujas.
   return (
-    <section aria-labelledby="promo-cava" className="relative isolate overflow-hidden bg-[#0f0d0a] text-crema">
-      {/* La foto a sangre: arriba en el móvil, a la derecha en escritorio, fundida con el oscuro. */}
-      <div className="cava relative h-[26rem] overflow-hidden sm:h-[32rem] md:absolute md:inset-y-0 md:right-[max(0px,calc((100vw-90rem)/2))] md:h-auto md:w-[min(58%,40rem)]">
-        <Image src={descorche} alt="" fill sizes="(min-width: 768px) 60vw, 100vw" placeholder="blur" className="cava-foto object-cover object-[50%_38%] md:object-[50%_60%]" />
-        <span aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-[#0f0d0a] via-[#0f0d0a]/10 to-[#0f0d0a]/40 md:bg-[linear-gradient(90deg,#0f0d0a_0%,rgb(15_13_10/0.35)_30%,transparent_55%,rgb(15_13_10/0.85)_88%,#0f0d0a_100%)]" />
-        <span aria-hidden="true" className="absolute inset-x-0 top-0 hidden h-32 bg-gradient-to-b from-[#0f0d0a]/80 to-transparent md:block" />
-        <span aria-hidden="true" className="absolute inset-x-0 bottom-0 hidden h-32 bg-gradient-to-t from-[#0f0d0a]/80 to-transparent md:block" />
+    <section aria-labelledby="promo-cava" className="relative isolate overflow-hidden bg-[#0f0d0a] pb-40 text-crema sm:pb-56">
+      {/* Halo cálido detrás de la botella. */}
+      <span aria-hidden="true" className="pointer-events-none absolute left-1/2 top-24 -z-10 h-[34rem] w-[34rem] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgb(226_185_138/0.16),rgb(226_185_138/0.05)_55%,transparent)] md:left-auto md:right-[max(4%,calc((100vw-90rem)/2+8rem))] md:top-1/2 md:h-[44rem] md:w-[44rem] md:-translate-y-[55%] md:translate-x-0" />
+
+      <div className="relative md:absolute md:inset-y-0 md:right-[max(0px,calc((100vw-90rem)/2))] md:w-[min(60%,50rem)]">
+        <div aria-hidden="true" className="cava cava-mascara-banda relative mx-auto h-[30rem] max-w-xl overflow-hidden sm:h-[36rem] md:absolute md:inset-x-0 md:top-0 md:bottom-24 md:h-auto md:max-w-none">
+          <Image src={descorche} alt="" fill sizes="(min-width: 768px) 55vw, 100vw" placeholder="blur" className="cava-foto object-cover object-[55%_45%] md:object-[60%_55%]" />
+        </div>
+        <div aria-hidden="true" className="burbujas pointer-events-none absolute inset-x-0 bottom-[38%] top-[12%] mx-auto max-w-xl md:bottom-[30%] md:max-w-none">
+          {BURBUJAS.map(([x, t, d, s], n) => (
+            <span key={n} style={{ left: `${x}%`, animationDelay: `${t}s`, animationDuration: `${d}s`, width: s, height: s }} />
+          ))}
+        </div>
       </div>
 
-      <div className="container-wide relative -mt-24 pb-16 sm:-mt-28 sm:pb-20 md:mt-0 md:flex md:min-h-[44rem] md:items-center md:py-24">
-        <div className="max-w-xl">
+      <div className="container-wide relative -mt-40 sm:-mt-48 md:mt-0 md:flex md:min-h-[46rem] md:items-center md:pb-10 md:pt-6">
+        <div className="max-w-[34rem]">
           <p className="flex items-center gap-4 text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[#E2B98A]">
             <span aria-hidden="true" className="h-px w-10 bg-[#E2B98A]/60" />
             Navidad en La Ofi
           </p>
-          <h2 id="promo-cava" className="mt-6 font-display text-[clamp(3rem,6.5vw,5.75rem)] font-light leading-[0.92] tracking-tight">
+          <h2 id="promo-cava" className="mt-6 font-display text-[clamp(3.25rem,7vw,6.25rem)] font-light leading-[0.9] tracking-tight [text-shadow:0_2px_30px_rgb(15_13_10/0.8)]">
             Un cava
             <br />
-            <em className="text-[#E2B98A]">de regalo</em>
+            <em className="bg-gradient-to-r from-[#F1D3A8] via-[#E2B98A] to-[#B98B58] bg-clip-text pr-2 text-transparent [text-shadow:none]">de regalo</em>
           </h2>
-          <p className="mt-7 max-w-md text-lg leading-relaxed text-crema/70">
+          <p className="mt-7 max-w-md text-lg leading-relaxed text-crema/75">
             Encarga tus vinos para las comidas y cenas de Navidad y brinda con nosotros: con tu encargo te llevas una botella de cava.
           </p>
 
-          <dl className="mt-9 grid max-w-md grid-cols-2 border-y border-white/10">
-            <div className="py-5 pr-6">
-              <dt className="text-[0.68rem] uppercase tracking-[0.2em] text-crema/50">Encargo de más de</dt>
-              <dd className="mt-1.5 font-display text-4xl font-light tabular-nums">{umbral}</dd>
+          {/* La condición, como una etiqueta: el importe a un lado y el regalo al otro. */}
+          <div className="mt-9 inline-flex items-stretch rounded-2xl bg-white/[0.04] ring-1 ring-[#E2B98A]/25 backdrop-blur-sm">
+            <div className="px-5 py-4 sm:px-6">
+              <p className="text-[0.62rem] uppercase tracking-[0.22em] text-crema/55">Encargo de más de</p>
+              <p className="mt-1 font-display text-[2.4rem] font-light leading-none tabular-nums">{umbral}</p>
             </div>
-            <div className="border-l border-white/10 py-5 pl-6">
-              <dt className="text-[0.68rem] uppercase tracking-[0.2em] text-crema/50">Te regalamos</dt>
-              <dd className="mt-1.5 font-display text-4xl font-light">
+            <div aria-hidden="true" className="flex items-center text-[#E2B98A]/70">
+              <Icon name="arrow" className="h-4 w-4" />
+            </div>
+            <div className="px-5 py-4 sm:px-6">
+              <p className="text-[0.62rem] uppercase tracking-[0.22em] text-crema/55">Te regalamos</p>
+              <p className="mt-1 font-display text-[2.4rem] font-light leading-none">
                 1 <em className="text-[#E2B98A]">cava</em>
-              </dd>
+              </p>
             </div>
-          </dl>
+          </div>
 
           <div className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-4">
             {href ? (
-              <Link href={href} className="btn bg-[#E2B98A] px-7 text-carbon hover:bg-crema">
+              <Link href={href} className="btn bg-[#E2B98A] px-7 text-carbon shadow-[0_10px_40px_-10px_rgb(226_185_138/0.6)] hover:bg-crema">
                 Hacer mi encargo
                 <Icon name="arrow" className="h-4 w-4" />
               </Link>
             ) : null}
-            <p className="text-sm text-crema/50">Lo recoges y pagas en La Ofi, al precio de la carta.</p>
+            <p className="max-w-[16rem] text-sm leading-snug text-crema/55">Lo recoges y pagas en La Ofi, al precio de la carta.</p>
           </div>
         </div>
       </div>
+
+      {/* Despedida hacia el crema de la sección de abajo, como la entrada del menú del día. */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-[linear-gradient(180deg,rgb(250_245_236/0)_0%,rgb(250_245_236/0.06)_22%,rgb(250_245_236/0.28)_48%,rgb(250_245_236/0.7)_76%,#FAF5EC_100%)] sm:h-64" />
     </section>
   );
 }
+
+/** Burbujas que suben despacio sobre la foto: [izquierda %, retraso s, duración s, tamaño]. */
+const BURBUJAS: [number, number, number, string][] = [
+  [52, 0, 9, "5px"],
+  [58, 2.5, 11, "3px"],
+  [47, 4, 10, "4px"],
+  [63, 1.2, 12, "6px"],
+  [55, 6, 9.5, "3px"],
+  [44, 7.5, 13, "5px"],
+  [67, 3.6, 10.5, "4px"],
+  [50, 9, 11.5, "3px"],
+];

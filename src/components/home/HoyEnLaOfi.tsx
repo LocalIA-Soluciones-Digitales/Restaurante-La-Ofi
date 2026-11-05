@@ -20,19 +20,23 @@ export function HoyEnLaOfi({
   menu,
   horario,
   fundido = false,
+  fundidoAbajo = false,
 }: {
   locale: Locale;
   menu: ContentState<MenuDiaView>;
   horario: HorarioResuelto;
   /** La foto sale del crema de la sección de arriba con un degradado largo. */
   fundido?: boolean;
+  /** Abajo, la foto se apaga hacia el negro del anuncio del cava que va debajo. */
+  fundidoAbajo?: boolean;
 }) {
   
   return (
-    <section id="hoy" aria-labelledby="hoy-title" className={`relative isolate scroll-mt-16 overflow-hidden bg-carbon pb-20 text-crema sm:pb-28 ${fundido ? "pt-52 sm:pt-72" : "pt-20 sm:pt-28"}`}>
+    <section id="hoy" aria-labelledby="hoy-title" className={`relative isolate scroll-mt-16 overflow-hidden bg-carbon text-crema ${fundidoAbajo ? "pb-40 sm:pb-56" : "pb-20 sm:pb-28"} ${fundido ? "pt-52 sm:pt-72" : "pt-20 sm:pt-28"}`}>
       <Photo img="comedorRatan" sizes="100vw" mobileBelow={0} decorative imgClassName="motion-safe:animate-kenburns" />
       <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-carbon/75 via-carbon/40 to-carbon/85" />
       {fundido ? <div aria-hidden="true" className="absolute inset-x-0 top-0 h-56 bg-gradient-to-b from-crema via-crema/60 to-crema/0 sm:h-72" /> : null}
+      {fundidoAbajo ? <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-b from-[#0f0d0a]/0 via-[#0f0d0a]/70 to-[#0f0d0a] sm:h-72" /> : null}
 
       <div className="container-wide relative flex flex-col items-center text-center">
         <p className="kicker text-crema/75">Hoy en La Ofi · Lunes a viernes</p>

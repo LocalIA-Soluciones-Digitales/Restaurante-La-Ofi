@@ -759,6 +759,40 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .cava .cava-foto { animation: none; }
+  .burbujas { display: none; }
+}
+
+/* PromoCava «banda» (portada): la foto sin bordes, fundida con el negro por los cuatro lados.
+   En el móvil va arriba y se apaga hacia abajo, donde empieza el texto. */
+.cava-mascara-banda {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent), linear-gradient(180deg, transparent, #000 14%, #000 55%, transparent 92%);
+  mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent), linear-gradient(180deg, transparent, #000 14%, #000 55%, transparent 92%);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+@media (min-width: 768px) {
+  .cava-mascara-banda {
+    -webkit-mask-image: linear-gradient(90deg, transparent 4%, #000 40%, #000 66%, transparent 98%), linear-gradient(180deg, transparent, #000 24%, #000 70%, transparent);
+    mask-image: linear-gradient(90deg, transparent 4%, #000 40%, #000 66%, transparent 98%), linear-gradient(180deg, transparent, #000 24%, #000 70%, transparent);
+  }
+}
+
+/* Las burbujas del cava: suben, se mecen un poco y se apagan. */
+.burbujas span {
+  position: absolute;
+  bottom: 0;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 35% 35%, rgb(255 244 222 / 0.9), rgb(226 185 138 / 0.35) 60%, transparent 70%);
+  box-shadow: 0 0 6px rgb(226 185 138 / 0.35);
+  opacity: 0;
+  animation: burbuja 10s ease-in infinite;
+}
+@keyframes burbuja {
+  0% { transform: translate(0, 0); opacity: 0; }
+  12% { opacity: 0.85; }
+  50% { transform: translate(6px, -11rem); }
+  80% { opacity: 0.6; }
+  100% { transform: translate(-4px, -22rem); opacity: 0; }
 }
 
 
