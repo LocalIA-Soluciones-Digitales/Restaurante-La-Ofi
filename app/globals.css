@@ -761,3 +761,18 @@
   .cava .cava-foto { animation: none; }
 }
 
+
+/* PromoCava «integrado»: la foto se funde con el papel por los cuatro bordes (dos máscaras
+   cruzadas). En el móvil va arriba y a todo el ancho; desde sm, a la derecha del texto. */
+.cava-mascara {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent), linear-gradient(180deg, transparent, #000 16%, #000 58%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent), linear-gradient(180deg, transparent, #000 16%, #000 58%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+@media (min-width: 640px) {
+  .cava-mascara {
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 38%, #000 88%, transparent), linear-gradient(180deg, transparent, #000 24%, #000 76%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 38%, #000 88%, transparent), linear-gradient(180deg, transparent, #000 24%, #000 76%, transparent);
+  }
+}

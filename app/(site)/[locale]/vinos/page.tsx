@@ -100,57 +100,34 @@ const PASOS = [
 function ComoEncargar({ tiendaHref }: { tiendaHref: string }) {
   return (
     <section id="encargar" aria-labelledby="encargar-title" className="scroll-mt-20 bg-[#F6F0E5] text-carbon sm:pb-20">
-      {/* Móvil: una tarjeta oscura y compacta, para llegar antes a los vinos. */}
-      <div className="container-wide pt-2 sm:hidden">
-        <div className="rounded-3xl bg-carbon p-6 text-crema shadow-lift">
-          <p className="kicker text-[#E2B98A]">Navidad · Para llevar</p>
-          <p className="mt-2 font-display text-[1.9rem] font-light leading-[1.05]">
-            Lleva a casa lo mejor de <em className="text-[#E2B98A]">nuestra bodega</em>
-          </p>
-          <ol className="mt-5 grid grid-cols-3 gap-2 text-center text-[0.78rem] leading-tight text-crema/80">
-            {["Eliges las botellas", "Te avisamos", "Recoges y pagas"].map((t, i) => (
-              <li key={t} className="rounded-xl bg-white/[0.06] px-1.5 py-3">
-                <span className="mx-auto mb-1.5 grid h-6 w-6 place-items-center rounded-full bg-[#E2B98A] font-display text-sm text-carbon">{i + 1}</span>
-                {t}
-              </li>
-            ))}
-          </ol>
-          <div className="mt-4">
-            <PromoCava variante="tarjeta" />
-          </div>
-          <Link href={tiendaHref} className="btn mt-5 w-full bg-[#E2B98A] text-carbon hover:bg-crema">
-            <Icon name="wine" className="h-4 w-4" />
-            Hacer mi encargo
-            <Icon name="arrow" className="h-4 w-4" />
-          </Link>
-          <p className="mt-3 text-center text-xs text-crema/55">Al precio de la carta · Sin pago online</p>
-        </div>
-      </div>
-      <div className="container-wide hidden gap-10 py-12 sm:grid lg:grid-cols-12 lg:gap-14 lg:pb-6 lg:pt-14">
+      <div className="container-wide grid gap-10 pb-10 pt-8 sm:py-12 lg:grid-cols-12 lg:gap-14 lg:pb-6 lg:pt-14">
         <div className="lg:col-span-5">
           <p className="kicker text-madera-oscura">Navidad · Encargos para llevar</p>
           <h2 id="encargar-title" className="mt-3 font-display text-[clamp(2.5rem,4.5vw,3.75rem)] font-light leading-[0.98] tracking-tight">
             Lleva a casa lo mejor de <em className="text-madera-oscura">nuestra bodega</em>
           </h2>
-          <p className="mt-5 max-w-md text-lg leading-relaxed text-carbon-muted">
+          <p className="mt-4 max-w-md leading-relaxed text-carbon-muted sm:mt-5 sm:text-lg">
             Encarga las botellas para tus comidas y cenas de Navidad, al mismo precio que en la carta. Te las dejamos preparadas y
             pasas a recogerlas por La Ofi.
           </p>
-          <Link href={tiendaHref} className="btn mt-7 bg-carbon px-6 text-crema hover:bg-[#1f1c18]">
+          <Link href={tiendaHref} className="btn mt-6 w-full bg-carbon px-6 text-crema hover:bg-[#1f1c18] sm:mt-7 sm:w-auto">
             <Icon name="wine" className="h-4 w-4" />
             Hacer mi encargo
             <Icon name="arrow" className="h-4 w-4" />
           </Link>
         </div>
         <div className="flex flex-col gap-10 lg:col-span-7 lg:gap-12">
-          <ol className="grid gap-8 sm:grid-cols-3 sm:gap-6">
-          {PASOS.map((p, i) => (
-            <li key={p.titulo} className="border-t border-carbon/80 pt-4">
-              <p className="font-display text-sm tabular-nums text-madera-oscura">{String(i + 1).padStart(2, "0")}</p>
-              <p className="mt-2 font-display text-2xl leading-tight">{p.titulo}</p>
-              <p className="mt-2 text-[0.95rem] leading-relaxed text-carbon-muted">{p.texto}</p>
-            </li>
-          ))}
+          {/* Móvil: los pasos en filas (número a la izquierda); desde sm, en tres columnas. */}
+          <ol className="grid sm:grid-cols-3 sm:gap-6">
+            {PASOS.map((p, i) => (
+              <li key={p.titulo} className="grid grid-cols-[2.25rem_1fr] border-t border-carbon/80 py-4 sm:block sm:pb-0">
+                <p className="pt-1 font-display text-sm tabular-nums text-madera-oscura sm:pt-0">{String(i + 1).padStart(2, "0")}</p>
+                <div>
+                  <p className="font-display text-xl leading-tight sm:mt-2 sm:text-2xl">{p.titulo}</p>
+                  <p className="mt-1.5 text-[0.95rem] leading-relaxed text-carbon-muted sm:mt-2">{p.texto}</p>
+                </div>
+              </li>
+            ))}
           </ol>
           {/* Debajo de los pasos, el cava de regalo fundido con el papel. */}
           <PromoCava variante="integrado" />

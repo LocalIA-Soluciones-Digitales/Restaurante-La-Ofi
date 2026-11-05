@@ -20,15 +20,14 @@ export function PromoCava({ href, variante = "banda" }: { href?: string; variant
   const umbral = euros(CAVA_DE_REGALO.masDeCentimos);
 
   // «integrado»: en /vinos, bajo los pasos de «cómo encargar». Sin tarjeta: el
-  // texto va sobre el papel y la foto se funde con él por los cuatro bordes (dos máscaras cruzadas).
+  // texto va sobre el papel y la foto se funde con él (.cava-mascara en globals.css); en el móvil, la foto arriba.
   if (variante === "integrado") {
-    const mascara = "linear-gradient(90deg, transparent, #000 38%, #000 88%, transparent), linear-gradient(180deg, transparent, #000 24%, #000 76%, transparent)";
     return (
-      <aside aria-labelledby="promo-cava" className="relative isolate min-h-[17rem] lg:min-h-[19rem]">
-        <div aria-hidden="true" className="cava absolute inset-y-[-2.5rem] right-0 lg:right-[-2rem] -z-10 w-[64%] overflow-hidden" style={{ maskImage: mascara, WebkitMaskImage: mascara, maskComposite: "intersect", WebkitMaskComposite: "source-in" }}>
-          <Image src={descorche} alt="" fill sizes="(min-width: 1024px) 30vw, 60vw" placeholder="blur" className="cava-foto object-cover object-[50%_58%]" />
+      <aside aria-labelledby="promo-cava" className="relative isolate sm:min-h-[17rem] lg:min-h-[19rem]">
+        <div aria-hidden="true" className="cava cava-mascara relative -mx-4 -z-10 h-64 overflow-hidden sm:absolute sm:inset-y-[-2.5rem] sm:right-0 sm:mx-0 sm:h-auto sm:w-[64%] lg:right-[-2rem]">
+          <Image src={descorche} alt="" fill sizes="(min-width: 1024px) 30vw, (min-width: 640px) 60vw, 100vw" placeholder="blur" className="cava-foto object-cover object-[50%_58%]" />
         </div>
-        <div className="flex min-h-[17rem] max-w-[23rem] flex-col justify-center lg:min-h-[19rem]">
+        <div className="-mt-4 flex max-w-[23rem] flex-col justify-center sm:mt-0 sm:min-h-[17rem] lg:min-h-[19rem]">
           <p className="flex items-center gap-2.5 text-[0.68rem] font-semibold uppercase tracking-[0.24em] text-madera-oscura">
             <Icon name="gift" className="h-4 w-4" />
             Regalo de Navidad
