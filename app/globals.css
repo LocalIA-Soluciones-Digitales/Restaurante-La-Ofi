@@ -749,64 +749,33 @@
   }
 }
 
-/* Botella de cava que se descorcha (PromoCava): tiembla, salta el corcho, espuma y burbujas. */
-.cava .cava-botella {
-  transform-box: fill-box;
-  transform-origin: 50% 100%;
-  animation: cava-botella 5s ease-in-out infinite;
+/* La foto del descorche (PromoCava): zoom lento, brillo dorado que respira y burbujas. */
+.cava .cava-foto {
+  animation: cava-zoom 14s ease-in-out infinite alternate;
 }
-.cava .cava-corcho {
-  transform-box: fill-box;
-  transform-origin: 50% 100%;
-  animation: cava-corcho 5s cubic-bezier(0.2, 0.7, 0.3, 1) infinite;
-}
-.cava .cava-espuma {
-  transform-box: fill-box;
-  transform-origin: 50% 100%;
-  opacity: 0;
-  animation: cava-espuma 5s ease-out infinite;
+.cava .cava-brillo {
+  background: radial-gradient(40% 30% at 50% 28%, rgb(246 227 194 / 0.35), transparent 70%);
+  mix-blend-mode: screen;
+  animation: cava-respira 4s ease-in-out infinite;
 }
 .cava .cava-burbuja {
   opacity: 0;
-  animation: cava-burbuja 1.8s ease-out infinite;
+  animation: cava-burbuja 4.4s ease-out infinite;
 }
-.cava .cava-halo {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: cava-halo 5s ease-in-out infinite;
+@keyframes cava-zoom {
+  from { transform: scale(1); }
+  to { transform: scale(1.08) translateY(-1.5%); }
 }
-@keyframes cava-botella {
-  0%, 26%, 50%, 100% { transform: rotate(0); }
-  30% { transform: rotate(-2.2deg); }
-  34% { transform: rotate(2.2deg); }
-  38% { transform: rotate(-2deg); }
-  42% { transform: rotate(1.6deg); }
-  46% { transform: rotate(-0.8deg); }
-}
-@keyframes cava-corcho {
-  0%, 44% { transform: translate(0, 0) rotate(0); opacity: 1; }
-  48% { transform: translate(0, -5px) rotate(-4deg); opacity: 1; }
-  62% { transform: translate(-26px, -110px) rotate(-75deg); opacity: 1; }
-  74% { transform: translate(-36px, -150px) rotate(-120deg); opacity: 0; }
-  96% { transform: translate(-36px, -150px) rotate(-120deg); opacity: 0; }
-  100% { transform: translate(0, 0) rotate(0); opacity: 0; }
-}
-@keyframes cava-espuma {
-  0%, 48% { opacity: 0; transform: scale(0.2); }
-  53% { opacity: 1; transform: scale(1); }
-  78% { opacity: 0; transform: scale(1.35) translateY(-14px); }
-  100% { opacity: 0; transform: scale(0.2); }
+@keyframes cava-respira {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
 }
 @keyframes cava-burbuja {
   0% { opacity: 0; transform: translateY(0); }
-  20% { opacity: 0.9; }
-  100% { opacity: 0; transform: translateY(-110px); }
-}
-@keyframes cava-halo {
-  0%, 45%, 100% { opacity: 0.55; transform: scale(1); }
-  55% { opacity: 1; transform: scale(1.08); }
+  15% { opacity: 0.9; }
+  100% { opacity: 0; transform: translateY(-220px) translateX(6px); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .cava .cava-botella, .cava .cava-corcho, .cava .cava-halo { animation: none; }
-  .cava .cava-espuma, .cava .cava-burbuja { animation: none; opacity: 0; }
+  .cava .cava-foto, .cava .cava-brillo { animation: none; }
+  .cava .cava-burbuja { animation: none; opacity: 0; }
 }
