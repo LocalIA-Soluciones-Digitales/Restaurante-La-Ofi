@@ -71,6 +71,10 @@ export function ConfiguracionPanel({ ajustes, horario, ticketbai }: { ajustes: A
     capacidad: rec.capacidad == null ? "" : String(rec.capacidad),
     antelacion_min: Number(rec.antelacion_min ?? 20),
     dias: (rec.dias as number[]) ?? [1, 2, 3, 4, 5],
+    // Para llevar solo el menú del día, encargado entre pedir_desde y pedir_hasta (20261105200000).
+    solo_menu_dia: rec.solo_menu_dia === true,
+    pedir_desde: (rec.pedir_desde as string) ?? "09:00",
+    pedir_hasta: (rec.pedir_hasta as string) ?? "12:00",
   });
   const pag = val("pagos");
   const [pagos, setPagos] = useState({ online: Boolean(pag.online), en_local: pag.en_local !== false });
@@ -153,7 +157,7 @@ export function ConfiguracionPanel({ ajustes, horario, ticketbai }: { ajustes: A
         </button>
       </Seccion>
 
-      <Seccion titulo="Pedidos para recoger" texto="Franjas de recogida del día y cuántos pedidos caben en cada una (un pedido de grupo cuenta como uno).">
+      <Seccion titulo="Pedidos para recoger" texto="Cuándo se encarga, franjas de recogida del día y cuántos pedidos caben en cada una (un pedido de grupo cuenta como uno). El vino va aparte, en Encargos.">
         <label className="flex items-center gap-2 text-sm font-semibold">
           <input type="checkbox" checked={recogida.activa} onChange={(e) => setRecogida({ ...recogida, activa: e.target.checked })} className="h-5 w-5" />
           Aceptar pedidos para recoger
@@ -162,6 +166,25 @@ export function ConfiguracionPanel({ ajustes, horario, ticketbai }: { ajustes: A
           <input type="checkbox" checked={recogida.segun_horario} onChange={(e) => setRecogida({ ...recogida, segun_horario: e.target.checked })} className="h-5 w-5" />
           Mismo horario que el local
         </label>
+        <label className="flex items-center gap-2 text-sm font-semibold">
+          <input type="checkbox" checked={recogida.solo_menu_dia} onChange={(e) => setRecogida({ ...recogida, solo_menu_dia: e.target.checked })} className="h-5 w-5" />
+          Solo el menú del día, para recoger el mismo día
+        </label>
+        {recogida.solo_menu_dia ? (
+          <div className="grid gap-2">
+            <p className="text-sm opacity-80">Nada de la carta. Se encarga entre estas horas y se recoge en las franjas de abajo, ese mismo día.</p>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              <label className="grid gap-1 text-xs">
+                Se encarga desde
+                <input type="time" value={recogida.pedir_desde} onChange={(e) => setRecogida({ ...recogida, pedir_desde: e.target.value })} className={input} />
+              </label>
+              <label className="grid gap-1 text-xs">
+                Hasta
+                <input type="time" value={recogida.pedir_hasta} onChange={(e) => setRecogida({ ...recogida, pedir_hasta: e.target.value })} className={input} />
+              </label>
+            </div>
+          </div>
+        ) : null}
         {recogida.segun_horario ? (
           <p className="text-sm opacity-80">Se puede recoger mientras está abierto, según el horario de arriba: {resumenHorario(dias)}.</p>
         ) : null}
@@ -169,7 +192,7 @@ export function ConfiguracionPanel({ ajustes, horario, ticketbai }: { ajustes: A
           {recogida.segun_horario ? null : (
             <>
               <label className="grid gap-1 text-xs">
-                Desde
+                Se recoge desde
                 <input type="time" value={recogida.desde} onChange={(e) => setRecogida({ ...recogida, desde: e.target.value })} className={input} />
               </label>
               <label className="grid gap-1 text-xs">

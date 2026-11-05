@@ -12,7 +12,7 @@ export default async function PedidosPage() {
   if (!r.ok) return <Aviso>{r.error}</Aviso>;
   return (
     <>
-      <Cabecera titulo="Pedidos" texto="Los pedidos para recoger de hoy. Un botón por paso: acéptalo, avisa cuando esté listo y entrégalo al cliente. Debajo, los encargados para otros días." />
+      <Cabecera titulo="Pedidos" texto="Los menús del día encargados para recoger hoy (se encargan de 9:00 a 12:00 y se recogen de 13:00 a 15:00). Un botón por paso: acéptalo, avisa cuando esté listo y entrégalo al cliente." />
       <PedidosRecogida inicial={r.data.filter((p) => p.tipo === "RECOGIDA")} />
     </>
   );
