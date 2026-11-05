@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
+import { RuedaNumeros } from "@/components/ui/RuedaNumeros";
 import { hoyEnMadrid } from "@/lib/format";
-import { type Cierre, type Semana, horaDeMinutos, horasRecogida, minutosDe, normalizarHora, rangoRecogida } from "@/lib/horario";
+import { type Cierre, type Semana, horaDeMinutos, horasRecogida, minutosDe, rangoRecogida } from "@/lib/horario";
 
 const campo =
   "flex h-12 w-full items-center gap-2 rounded-xl border border-carbon/15 bg-white px-4 text-left text-base text-carbon transition-colors hover:border-carbon/30 focus-within:border-carbon aria-expanded:border-carbon data-[abierto=true]:border-carbon";
@@ -36,11 +37,14 @@ export function primerDiaRecogida(semana: Semana, cierres: readonly Cierre[], ma
   return hoy;
 }
 
+const PASO_MIN = 5;
+const dos = (n: number) => String(n).padStart(2, "0");
+
 /**
  * Día y hora de recogida en dos campos. El día abre un calendario del mes en el que solo
  * se tocan los días con el local abierto (horario y cierres puntuales), hasta `maxDias`.
- * La hora se escribe a mano («1830», «18:30») o se elige en un desplegable con las horas
- * en que está abierto ese día. `hora` llega vacía mientras lo escrito no valga.
+ * La hora abre dos ruedas, horas y minutos (de 5 en 5), como el reloj del móvil: solo las
+ * horas en que está abierto ese día, y si la combinación se sale del horario se ajusta sola.
  */
 export function SelectorFechaHora({
   semana,
@@ -62,14 +66,13 @@ export function SelectorFechaHora({
   const ultimo = masDias(hoy, maxDias);
   const abre = (d: string) => d >= hoy && d <= ultimo && rangoRecogida(semana, cierres, d) !== null;
   const rango = rangoRecogida(semana, cierres, fecha);
-  const horas = useMemo(() => horasRecogida(semana, cierres, fecha), [semana, cierres, fecha]);
+  // Lo que se puede elegir ese día, en minutos y a múltiplos de 5.
+  const minimo = rango ? Math.ceil(rango.desde / PASO_MIN) * PASO_MIN : 0;
+  const maximo = rango ? Math.floor(rango.hasta / PASO_MIN) * PASO_MIN : 0;
 
   const [abierto, setAbierto] = useState<"dia" | "hora" | null>(null);
-  const [texto, setTexto] = useState(hora);
   const [aviso, setAviso] = useState<string | null>(null);
   const caja = useRef<HTMLDivElement>(null);
-  const lista = useRef<HTMLDivElement>(null);
-  useEffect(() => setTexto(hora), [hora]);
 
   useEffect(() => {
     if (!abierto) return;
@@ -91,12 +94,10 @@ export function SelectorFechaHora({
     };
   }, [abierto]);
 
-  // Al abrir un desplegable, que se vea entero (dentro de un panel con scroll) y, en las
-  // horas, la elegida a la vista.
+  // Al abrir un desplegable, que se vea entero (dentro de un panel con scroll).
   useEffect(() => {
     if (!abierto) return;
-    caja.current?.querySelector<HTMLElement>("[role='dialog'], [role='listbox']")?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-    if (abierto === "hora") lista.current?.querySelector<HTMLElement>("[aria-selected='true']")?.scrollIntoView({ block: "nearest" });
+    caja.current?.querySelector<HTMLElement>("[data-desplegable]")?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }, [abierto]);
 
   const [mes, setMes] = useState(fecha.slice(0, 7));
@@ -120,30 +121,22 @@ export function SelectorFechaHora({
     onCambio({ fecha: d, hora: sigue });
   };
 
-  const elegirHora = (h: string) => {
-    setAbierto(null);
+  /** Pone la hora (en minutos), ajustada al horario de ese día. */
+  const ponerMinutos = (m: number) => {
     setAviso(null);
-    setTexto(h);
-    onCambio({ fecha, hora: h });
+    onCambio({ fecha, hora: horaDeMinutos(Math.min(maximo, Math.max(minimo, m))) });
   };
 
-  const confirmarTexto = () => {
-    if (!texto.trim()) {
-      setAviso(null);
-      if (hora) onCambio({ fecha, hora: "" });
-      return;
-    }
-    const h = normalizarHora(texto);
-    if (!h) {
-      setAviso("Escribe la hora así: 18:30.");
-      onCambio({ fecha, hora: "" });
-      return;
-    }
-    setTexto(h);
-    const m = motivo(h, fecha);
-    setAviso(m);
-    onCambio({ fecha, hora: m ? "" : h });
+  const abrirHora = () => {
+    if (abierto === "hora") return setAbierto(null);
+    // Sin hora todavía: de salida, la primera a la que se puede pasar.
+    if (!hora && rango) ponerMinutos(minimo);
+    setAbierto("hora");
   };
+
+  const actual = hora ? minutosDe(hora) : minimo;
+  const valoresHora = Array.from({ length: Math.floor(maximo / 60) - Math.floor(minimo / 60) + 1 }, (_, k) => dos(Math.floor(minimo / 60) + k));
+  const valoresMin = Array.from({ length: 60 / PASO_MIN }, (_, k) => dos(k * PASO_MIN));
 
   const etiquetaDia = fecha === hoy ? `Hoy, ${DIA_BOTON.format(comoFecha(fecha)).replace(".", "")}` : mayuscula(DIA_BOTON.format(comoFecha(fecha)));
 
@@ -171,7 +164,7 @@ export function SelectorFechaHora({
           </button>
 
           {abierto === "dia" ? (
-            <div role="dialog" aria-label="Elige el día de recogida" className={`${panel} left-0 w-[20rem] max-w-[calc(100vw-3rem)]`}>
+            <div data-desplegable role="dialog" aria-label="Elige el día de recogida" className={`${panel} left-0 w-[20rem] max-w-[calc(100vw-3rem)]`}>
               <div className="mb-2 flex items-center justify-between gap-2 pl-1">
                 <p className="text-sm font-semibold first-letter:uppercase" aria-live="polite">
                   {MES_ANO.format(comoFecha(`${mes}-01`))}
@@ -233,78 +226,40 @@ export function SelectorFechaHora({
           ) : null}
         </div>
 
-        {/* Hora: se escribe o se elige en el desplegable */}
+        {/* Hora: dos ruedas, horas y minutos */}
         <div className="relative grid gap-1 text-sm">
-          <label htmlFor={`${id}-hora`} className="font-semibold">
+          <span id={`${id}-hora`} className="font-semibold">
             Hora
-          </label>
-          <div className={campo} data-abierto={abierto === "hora"}>
-            <input
-              id={`${id}-hora`}
-              type="text"
-              inputMode="numeric"
-              autoComplete="off"
-              placeholder="hh:mm"
-              value={texto}
-              disabled={!rango}
-              role="combobox"
-              aria-expanded={abierto === "hora"}
-              aria-controls={`${id}-horas`}
-              aria-invalid={Boolean(aviso)}
-              onChange={(e) => setTexto(e.target.value.replace(/[^0-9:.,h ]/gi, "").slice(0, 5))}
-              onFocus={() => setAbierto("hora")}
-              onBlur={confirmarTexto}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  confirmarTexto();
-                  setAbierto(null);
-                } else if (e.key === "ArrowDown") {
-                  e.preventDefault();
-                  setAbierto("hora");
-                  lista.current?.querySelector<HTMLElement>("[aria-selected='true'], [role='option']")?.focus();
-                }
-              }}
-              className="min-w-0 flex-1 bg-transparent font-semibold tabular-nums placeholder:font-normal placeholder:text-carbon-muted/60 focus:outline-none disabled:opacity-50"
-            />
-            <button
-              type="button"
-              tabIndex={-1}
-              disabled={!rango}
-              onClick={() => setAbierto((a) => (a === "hora" ? null : "hora"))}
-              aria-label="Ver las horas"
-              className="-mr-1 grid h-8 w-8 shrink-0 place-items-center rounded-full text-carbon-muted hover:bg-arena disabled:opacity-40"
-            >
-              <Icon name="clock" className="h-4 w-4" />
-            </button>
-          </div>
+          </span>
+          <button
+            type="button"
+            aria-labelledby={`${id}-hora`}
+            aria-haspopup="dialog"
+            aria-expanded={abierto === "hora"}
+            disabled={!rango}
+            onClick={abrirHora}
+            className={`${campo} justify-between disabled:opacity-50`}
+          >
+            <span className={`truncate font-semibold tabular-nums ${hora ? "" : "font-normal text-carbon-muted/70"}`}>{hora || "Elegir"}</span>
+            <Icon name="clock" className="h-4 w-4 shrink-0 text-carbon-muted" />
+          </button>
 
-          {abierto === "hora" && horas.length > 0 ? (
-            <div
-              ref={lista}
-              id={`${id}-horas`}
-              role="listbox"
-              aria-label="Horas de recogida"
-              // Que tocar una hora no dispare el blur del campo antes de elegirla.
-              onPointerDown={(e) => e.preventDefault()}
-              className={`${panel} right-0 w-[17rem] max-w-[calc(100vw-3rem)]`}
-            >
-              <p className="mb-2 px-1 text-sm font-semibold">{fecha === hoy ? "Hoy" : mayuscula(DIA_LARGO.format(comoFecha(fecha)))}</p>
-              <div className="grid max-h-60 grid-cols-3 gap-1.5 overflow-y-auto overscroll-contain pr-0.5">
-                {horas.map((h) => (
-                  <button
-                    key={h}
-                    type="button"
-                    role="option"
-                    aria-selected={h === hora}
-                    onClick={() => elegirHora(h)}
-                    className="h-10 rounded-xl border border-carbon/15 bg-white text-sm font-semibold tabular-nums transition-colors hover:border-carbon/40 focus:border-carbon focus:outline-none aria-selected:border-carbon aria-selected:bg-carbon aria-selected:text-crema"
-                  >
-                    {h}
-                  </button>
-                ))}
+          {abierto === "hora" && rango ? (
+            <div data-desplegable role="dialog" aria-label="Elige la hora de recogida" className={`${panel} right-0 w-[16rem] max-w-[calc(100vw-3rem)]`}>
+              <p className="mb-1 px-1 text-sm font-semibold">{fecha === hoy ? "Hoy" : mayuscula(DIA_LARGO.format(comoFecha(fecha)))}</p>
+              <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1">
+                <RuedaNumeros etiqueta="Horas" valores={valoresHora} valor={dos(Math.floor(actual / 60))} onCambio={(h) => ponerMinutos(Number(h) * 60 + (actual % 60))} />
+                <span aria-hidden="true" className="font-display text-2xl font-semibold text-carbon">
+                  :
+                </span>
+                <RuedaNumeros etiqueta="Minutos" valores={valoresMin} valor={dos(actual % 60)} onCambio={(m) => ponerMinutos(Math.floor(actual / 60) * 60 + Number(m))} />
               </div>
-              <p className="mt-2 px-1 text-xs text-carbon-muted">O escríbela tú en el campo.</p>
+              <p className="mt-2 px-1 text-xs text-carbon-muted">
+                Abierto de {horaDeMinutos(rango.desde)} a {horaDeMinutos(rango.hasta)}.
+              </p>
+              <button type="button" onClick={() => setAbierto(null)} className="btn mt-3 w-full bg-carbon text-crema hover:bg-[#1f1c18]">
+                Listo · {hora || horaDeMinutos(minimo)}
+              </button>
             </div>
           ) : null}
         </div>

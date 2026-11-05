@@ -273,7 +273,7 @@ function PanelEncargo({
   const enviar = async () => {
     if (!recogida.hora) {
       setError("Elige a qué hora pasarás a recogerlo.");
-      recogidaRef.current?.querySelector<HTMLInputElement>("input")?.focus();
+      recogidaRef.current?.querySelector<HTMLButtonElement>("button[aria-labelledby$='-hora']")?.click();
       return;
     }
     setEnviando(true);
