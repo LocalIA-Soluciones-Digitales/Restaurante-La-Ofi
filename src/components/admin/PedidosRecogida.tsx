@@ -149,7 +149,7 @@ export function PedidosRecogida({ inicial }: { inicial: PedidoKds[] }) {
 
   const avanzar = (p: PedidoKds, estado: "ACCEPTED" | "READY" | "DELIVERED") =>
     hacer(p, async () => {
-      const r = await avanzarPedido<PedidoKds>(p.id, estado, null);
+      const r = await avanzarPedido<PedidoKds>(p.id, estado, null, p.estado);
       if (r.ok && estado === "READY") sonarAviso("listo");
       return r;
     });
@@ -181,9 +181,10 @@ export function PedidosRecogida({ inicial }: { inicial: PedidoKds[] }) {
     });
   };
 
-  const fila = (p: PedidoKds) => (
+  const fila = (p: PedidoKds, encargo = false) => (
     <FilaPedido
       p={p}
+      encargo={encargo}
       abierto={abierto === p.id}
       onAbrir={() => setAbierto(abierto === p.id ? null : p.id)}
       ocupado={ocupado === p.id || aceptando}
@@ -314,7 +315,9 @@ export function PedidosRecogida({ inicial }: { inicial: PedidoKds[] }) {
             <h2 id="pedidos-proximos" className="font-display text-2xl">
               Encargados para otros días
             </h2>
-            <p className="text-sm text-carbon-muted dark:text-crema/60">Pasan a la lista de arriba (y a cocina) el día de su recogida.</p>
+            <p className="text-sm text-carbon-muted dark:text-crema/60">
+              Confírmalos y al cliente le llega un email. El día de la recogida pasan a la lista de arriba (y a cocina) para prepararlos y entregarlos.
+            </p>
           </div>
           {porDiaRecogida(proximos).map((d) => (
             <div key={d.fecha} className="grid gap-2">
@@ -323,7 +326,7 @@ export function PedidosRecogida({ inicial }: { inicial: PedidoKds[] }) {
                 {d.pedidos.map((p) => (
                   <li key={p.id} className="grid grid-cols-[3.4rem_minmax(0,1fr)] items-start sm:grid-cols-[4.5rem_minmax(0,1fr)]">
                     <span className="pt-3 text-center font-display text-lg tabular-nums">{p.recogida_en ? HORA.format(new Date(p.recogida_en)) : "—"}</span>
-                    {fila(p)}
+                    {fila(p, true)}
                   </li>
                 ))}
               </ul>
@@ -353,6 +356,7 @@ export function PedidosRecogida({ inicial }: { inicial: PedidoKds[] }) {
  */
 function FilaPedido({
   p,
+  encargo = false,
   abierto,
   onAbrir,
   ocupado,
@@ -363,6 +367,8 @@ function FilaPedido({
   onBorrar,
 }: {
   p: PedidoKds;
+  /** Encargo de otro día: solo se confirma; Listo y Cobrar, el día de la recogida. */
+  encargo?: boolean;
   abierto: boolean;
   onAbrir: () => void;
   ocupado: boolean;
@@ -374,7 +380,11 @@ function FilaPedido({
 }) {
   const paso = pasoDe(p);
   const s = paso
-    ? PASOS[paso]
+    ? encargo
+      ? p.estado === "RECEIVED"
+        ? { ...PASOS.nuevos, corto: "Por confirmar" }
+        : { ...PASOS.listos, corto: p.estado === "READY" ? "Listo" : "Confirmado" }
+      : PASOS[paso]
     : { banda: "bg-carbon/20", texto: "", corto: `${p.estado === "CANCELLED" ? "Cancelado" : "Entregado"}${p.recogida_en ? ` · ${HORA.format(new Date(p.recogida_en))}` : ""}` };
   const pagado = p.payment_status === "PAID";
   const [cobrando, setCobrando] = useState(false);
@@ -396,7 +406,13 @@ function FilaPedido({
             {p.notas ? <Icon name="edit" className="h-3 w-3 shrink-0" /> : null}
           </span>
         </button>
-        {paso === "nuevos" ? (
+        {encargo ? (
+          p.estado === "RECEIVED" ? (
+            <button type="button" disabled={ocupado} onClick={() => onAvanzar("ACCEPTED")} className={lleno}>
+              Confirmar
+            </button>
+          ) : null
+        ) : paso === "nuevos" ? (
           <button type="button" disabled={ocupado} onClick={() => onAvanzar("ACCEPTED")} className={lleno}>
             Aceptar
           </button>
@@ -446,6 +462,7 @@ function FilaPedido({
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs text-carbon-muted dark:text-crema/60">
               #{p.numero_dia} · {pagado ? "pagado" : "paga al recoger"}
+              {encargo && !p.email ? " · sin email: confírmaselo por teléfono" : ""}
             </span>
             {p.email ? (
               <a href={`mailto:${p.email}`} className="truncate text-xs text-carbon-muted underline underline-offset-2 dark:text-crema/60">

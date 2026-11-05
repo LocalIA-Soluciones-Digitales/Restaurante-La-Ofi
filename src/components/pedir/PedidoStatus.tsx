@@ -69,7 +69,11 @@ export function PedidoStatus({ inicial, pago }: { inicial: PedidoPublico; pago: 
             ? "Este pedido se ha cancelado. Si tienes dudas, pregunta en barra."
             : p.estado === "DELIVERED"
               ? "Entregado. ¡Que aproveche!"
-              : p.estado === "READY"
+              : p.recogida_en && fechaMadrid(p.recogida_en) > fechaMadrid(new Date())
+                ? p.estado === "RECEIVED"
+                  ? `Encargado para ${cuandoRecogida(p.recogida_en)}. Lo confirmaremos en breve.`
+                  : `Encargo confirmado para ${cuandoRecogida(p.recogida_en)}.`
+                : p.estado === "READY"
                 ? p.tipo === "MESA"
                   ? "¡Listo! Te lo llevamos enseguida."
                   : "¡Listo! Pasa a recogerlo por la barra."

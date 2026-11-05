@@ -12,7 +12,7 @@ import { SITE } from "@/lib/site";
 export const emailActivo = () => Boolean(process.env.SMTP_USER && process.env.SMTP_PASS);
 
 let transporte: Transporter | null = null;
-function smtp() {
+export function smtp() {
   transporte ??= nodemailer.createTransport({
     host: process.env.SMTP_HOST || "smtp.gmail.com",
     port: Number(process.env.SMTP_PORT || 465),
@@ -22,7 +22,7 @@ function smtp() {
   return transporte;
 }
 
-const escapar = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
+export const escapar = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
 
 /** Los enlaces del texto, clicables. */
 const conEnlaces = (s: string) => escapar(s).replace(/https?:\/\/\S+?(?=[.,]?(\s|$))/g, (u) => `<a href="${u}" style="color:#1E3557">${u}</a>`);

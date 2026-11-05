@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { inicioDe } from "@/lib/admin/roles";
 import { obtenerSesionAdmin, supabaseStaff } from "@/lib/admin/session";
+import type { PedidoKds } from "@/lib/admin/types";
+import { avisoDePedido, enviarAvisoPedido } from "@/lib/pedidos/email";
 import type { ResultadoAccion } from "@/lib/pedidos/types";
 import { emailActivo, enviarAvisoReserva } from "@/lib/reservas/email";
 import type { AvisoReserva, ReservaAvisable } from "@/lib/reservas/mensajes";
@@ -168,8 +170,19 @@ export async function colaCocina<T>(historial = false) {
   return staff<T[]>("laofi_admin_cocina", { p_historial: historial });
 }
 
-export async function avanzarPedido<T>(pedidoId: string, estado: string, estacion: "cocina" | "barra" | null) {
-  return staff<T>("laofi_admin_avanzar", { p_pedido: pedidoId, p_estado: estado, p_estacion: estacion });
+/**
+ * Pasa un pedido (o las líneas de una estación) al estado dado. Con `anterior` (el estado
+ * que veía el panel), si es para recoger y el cliente dejó email, se le avisa sin hacer
+ * esperar al panel: «encargo confirmado» al aceptar uno de otro día y «listo» al terminarlo.
+ */
+export async function avanzarPedido<T>(pedidoId: string, estado: string, estacion: "cocina" | "barra" | null, anterior?: string) {
+  const r = await staff<T>("laofi_admin_avanzar", { p_pedido: pedidoId, p_estado: estado, p_estacion: estacion });
+  if (r.ok && anterior && emailActivo()) {
+    const p = r.data as unknown as PedidoKds;
+    const aviso = avisoDePedido(p, anterior);
+    if (aviso) after(() => enviarAvisoPedido(aviso, p).then(() => undefined));
+  }
+  return r;
 }
 
 export async function cancelarPedido(pedidoId: string) {

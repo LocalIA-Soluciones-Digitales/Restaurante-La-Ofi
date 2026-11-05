@@ -136,7 +136,7 @@ export function KitchenBoard({ inicial }: { inicial: PedidoKds[] }) {
         // Entregado desde «Todos» quita la comanda; desde una estación, solo sus líneas (el resto sigue en la otra).
         .filter((x) => !(x.id === p.id && estado === "DELIVERED" && !estacion)),
     );
-    const r = await avanzarPedido<PedidoKds>(p.id, estado, estacion);
+    const r = await avanzarPedido<PedidoKds>(p.id, estado, estacion, p.estado);
     if (!r.ok) {
       setError(r.error);
       return void recargar();
