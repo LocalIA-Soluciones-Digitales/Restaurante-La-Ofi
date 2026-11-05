@@ -15,9 +15,52 @@ const euros = (c: number) => `${c / 100} €`;
  * El anuncio del cava. «banda»: sección a todo el ancho (portada y /vinos).
  * «tarjeta»: compacta, para la cabecera de la tienda de encargos.
  */
-export function PromoCava({ href, variante = "banda" }: { href?: string; variante?: "banda" | "tarjeta" }) {
+export function PromoCava({ href, variante = "banda" }: { href?: string; variante?: "banda" | "tarjeta" | "panel" }) {
   if (!CAVA_DE_REGALO) return null;
   const umbral = euros(CAVA_DE_REGALO.masDeCentimos);
+
+  // «panel»: dentro de una sección clara (/vinos, tras «cómo encargar»), como una pieza
+  // oscura con esquinas redondeadas: el regalo es el extra del encargo, no otra sección.
+  if (variante === "panel") {
+    return (
+      <div className="cava relative isolate overflow-hidden rounded-3xl bg-[#0f0d0a] text-crema shadow-lift sm:rounded-[2rem]">
+        <div className="relative h-56 overflow-hidden sm:h-72 md:absolute md:inset-y-0 md:right-0 md:h-auto md:w-[48%]">
+          <Image src={descorche} alt="" fill sizes="(min-width: 768px) 45vw, 100vw" placeholder="blur" className="cava-foto object-cover object-[50%_40%] md:object-[50%_60%]" />
+          <span aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-[#0f0d0a] via-[#0f0d0a]/20 to-transparent md:bg-[linear-gradient(90deg,#0f0d0a_0%,rgb(15_13_10/0.55)_28%,transparent_60%)]" />
+        </div>
+        <div className="relative -mt-16 px-6 pb-8 sm:px-10 sm:pb-10 md:mt-0 md:max-w-[56%] md:py-14 md:pl-12 lg:py-16 lg:pl-16">
+          <p className="flex items-center gap-3 text-[0.68rem] font-semibold uppercase tracking-[0.24em] text-[#E2B98A]">
+            <Icon name="gift" className="h-4 w-4" />
+            Regalo de Navidad
+          </p>
+          <h3 className="mt-4 font-display text-[clamp(2.4rem,4.6vw,4rem)] font-light leading-[0.95] tracking-tight">
+            Un cava <em className="text-[#E2B98A]">de regalo</em>
+          </h3>
+          <p className="mt-4 max-w-md leading-relaxed text-crema/70 sm:text-lg">
+            Con tu encargo de más de <span className="text-crema">{umbral}</span> te llevas una botella de cava para brindar con los tuyos.
+          </p>
+          <dl className="mt-7 grid max-w-sm grid-cols-2 border-y border-white/10">
+            <div className="py-4 pr-5">
+              <dt className="text-[0.64rem] uppercase tracking-[0.2em] text-crema/50">Encargo de más de</dt>
+              <dd className="mt-1 font-display text-3xl font-light tabular-nums">{umbral}</dd>
+            </div>
+            <div className="border-l border-white/10 py-4 pl-5">
+              <dt className="text-[0.64rem] uppercase tracking-[0.2em] text-crema/50">Te regalamos</dt>
+              <dd className="mt-1 font-display text-3xl font-light">
+                1 <em className="text-[#E2B98A]">cava</em>
+              </dd>
+            </div>
+          </dl>
+          {href ? (
+            <Link href={href} className="btn mt-7 bg-[#E2B98A] px-6 text-carbon hover:bg-crema">
+              Hacer mi encargo
+              <Icon name="arrow" className="h-4 w-4" />
+            </Link>
+          ) : null}
+        </div>
+      </div>
+    );
+  }
 
   if (variante === "tarjeta") {
     return (

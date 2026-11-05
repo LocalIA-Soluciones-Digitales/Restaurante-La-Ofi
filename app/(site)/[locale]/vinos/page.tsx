@@ -72,7 +72,6 @@ export default async function VinosPage({ params }: Params) {
 
       {vinos.length ? (
         <>
-          {encargos ? <PromoCava href={href(locale, "/vinos/encargar")} /> : null}
           {encargos ? <ComoEncargar tiendaHref={href(locale, "/vinos/encargar")} /> : null}
           <CartaBodega secciones={vinos} cabecera={false} />
         </>
@@ -116,6 +115,9 @@ function ComoEncargar({ tiendaHref }: { tiendaHref: string }) {
               </li>
             ))}
           </ol>
+          <div className="mt-4">
+            <PromoCava variante="tarjeta" />
+          </div>
           <Link href={tiendaHref} className="btn mt-5 w-full bg-[#E2B98A] text-carbon hover:bg-crema">
             <Icon name="wine" className="h-4 w-4" />
             Hacer mi encargo
@@ -124,7 +126,7 @@ function ComoEncargar({ tiendaHref }: { tiendaHref: string }) {
           <p className="mt-3 text-center text-xs text-crema/55">Al precio de la carta · Sin pago online</p>
         </div>
       </div>
-      <div className="container-wide hidden gap-10 border-b border-tinta-line py-12 sm:grid lg:grid-cols-12 lg:gap-14 lg:py-14">
+      <div className="container-wide hidden gap-10 py-12 sm:grid lg:grid-cols-12 lg:gap-14 lg:pb-16 lg:pt-14">
         <div className="lg:col-span-5">
           <p className="kicker text-madera-oscura">Navidad · Encargos para llevar</p>
           <h2 id="encargar-title" className="mt-3 font-display text-[clamp(2.5rem,4.5vw,3.75rem)] font-light leading-[0.98] tracking-tight">
@@ -149,6 +151,10 @@ function ComoEncargar({ tiendaHref }: { tiendaHref: string }) {
             </li>
           ))}
         </ol>
+      </div>
+      {/* El cava de regalo, como el extra del encargo: una pieza oscura sobre el mismo papel. */}
+      <div className="container-wide hidden sm:block">
+        <PromoCava href={tiendaHref} variante="panel" />
       </div>
     </section>
   );
