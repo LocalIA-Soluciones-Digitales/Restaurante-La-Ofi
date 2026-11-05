@@ -35,7 +35,7 @@ export function EncargosVinoHome({
   return (
     <section
       aria-labelledby="encargos-vino"
-      className="relative isolate overflow-hidden bg-[#2a1216] pb-40 text-crema sm:pb-56"
+      className="relative isolate overflow-hidden bg-[#0f0d0a] pb-40 text-crema sm:pb-56"
     >
       {/* Halo cálido detrás de la botella. */}
       <span
@@ -79,7 +79,7 @@ export function EncargosVinoHome({
 
           {umbral ? (
             <div className="relative -mt-24 flex justify-center sm:-mt-28 lg:absolute lg:bottom-16 lg:left-0 lg:mt-0 lg:block">
-              <div className="flex max-w-[22rem] items-center gap-4 rounded-2xl bg-[#1c0a0d]/75 p-4 pr-6 ring-1 ring-[#E2B98A]/35 backdrop-blur-md shadow-[0_20px_60px_-20px_rgb(0_0_0/0.8)] sm:p-5 sm:pr-7">
+              <div className="flex max-w-[22rem] items-center gap-4 rounded-2xl bg-[#14110d]/75 p-4 pr-6 ring-1 ring-[#E2B98A]/35 backdrop-blur-md shadow-[0_20px_60px_-20px_rgb(0_0_0/0.8)] sm:p-5 sm:pr-7">
                 <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#E2B98A] text-carbon">
                   <Icon name="gift" className="h-5 w-5" />
                 </span>
