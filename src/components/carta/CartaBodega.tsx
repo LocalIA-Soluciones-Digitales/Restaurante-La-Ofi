@@ -58,7 +58,7 @@ function Vino({ vino, conGrupo = false }: { vino: CartaItem; conGrupo?: boolean 
   const { grupo, detalle } = partes(vino.descripcion);
   const sub = conGrupo ? [grupo, detalle].filter(Boolean).join(" · ") : detalle;
   return (
-    <li className="py-3 lg:py-2.5">
+    <li className="py-2.5">
       <p className="flex items-baseline justify-between gap-6">
         <span className="font-display text-[1.2rem] leading-tight text-carbon lg:text-[1.3rem]">{vino.nombre}</span>
         <span className="shrink-0 font-display text-[1.2rem] tabular-nums text-carbon">
@@ -184,41 +184,14 @@ export function CartaBodega({ secciones, cabecera = true }: { secciones: CartaSe
         ) : null}
 
         {deLaCasa.length > 0 ? (
-          <div className="pt-10 lg:hidden">
-            <p className="kicker text-madera-oscura">Vinos de la casa</p>
-            <p className="mt-1 text-sm text-carbon-muted">Los que elegimos para acompañar la carta.</p>
-            <ul className="-mx-4 mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:-mx-6 sm:px-6">
-              {deLaCasa.map((v) => {
-                const { grupo, detalle } = partes(v.descripcion);
-                return (
-                  <li key={v.id} className="flex w-[78%] max-w-xs shrink-0 snap-start flex-col rounded-2xl bg-carbon p-5 text-crema">
-                    <span className="inline-flex items-center gap-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-[#E2B98A]">
-                      <Icon name="star" className="h-3 w-3" />
-                      {grupo ?? "De la casa"}
-                    </span>
-                    <p className="mt-3 font-display text-[1.6rem] leading-tight">{v.nombre}</p>
-                    {detalle ? <p className="mt-1 font-display text-[0.95rem] italic leading-snug text-crema/60">{detalle}</p> : null}
-                    <p className="mt-auto pt-5 font-display text-[1.6rem] leading-none tabular-nums">
-                      {precio(v)}
-                      <span className="ml-1 text-base text-crema/60">€</span>
-                      <span className="ml-2 font-sans text-[0.6rem] uppercase tracking-[0.16em] text-crema/50">la botella</span>
-                    </p>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ) : null}
-
-        {deLaCasa.length > 0 ? (
-          <div className="mx-auto hidden max-w-3xl pt-20 text-center lg:block">
-            <p className="flex items-center justify-center gap-4 font-display text-2xl italic text-madera-oscura">
+          <div className="mx-auto max-w-3xl pt-12 text-center lg:pt-20">
+            <p className="flex items-center justify-center gap-4 font-display text-[1.6rem] italic text-madera-oscura lg:text-2xl">
               <span aria-hidden="true" className="h-px w-12 bg-madera-oscura/40" />
               Vinos de la casa
               <span aria-hidden="true" className="h-px w-12 bg-madera-oscura/40" />
             </p>
             <p className="mt-2 text-sm text-carbon-muted">Los que elegimos para acompañar la carta.</p>
-            <ul className="mt-6 grid gap-x-14 text-left sm:grid-cols-2">
+            <ul className="mt-5 grid gap-x-14 text-left sm:grid-cols-2 lg:mt-6">
               {deLaCasa.map((v) => (
                 <Vino key={v.id} vino={v} conGrupo />
               ))}
@@ -231,20 +204,21 @@ export function CartaBodega({ secciones, cabecera = true }: { secciones: CartaSe
             key={s.id}
             id={`bodega-${s.slug}`}
             aria-labelledby={`bodega-${s.slug}-titulo`}
-            className="mt-12 grid scroll-mt-32 gap-5 lg:mt-20 lg:scroll-mt-36 lg:grid-cols-12 lg:gap-14 lg:border-t lg:border-tinta-line lg:pt-14"
+            className={`mt-4 grid scroll-mt-32 gap-7 border-tinta-line lg:mt-20 lg:scroll-mt-36 lg:grid-cols-12 lg:gap-14 lg:border-t lg:pt-14 ${n === 0 && deLaCasa.length === 0 ? "mt-9" : "border-t pt-9"}`}
           >
             {/* El tipo, fijo mientras se recorren sus vinos. */}
             <header className="lg:col-span-4">
-              {/* Móvil: el tipo en una línea con su color y cuántos hay, y la nota debajo. */}
+              {/* Móvil: como en escritorio, el número, el tipo en cursiva y su filete de color. */}
               <div className="lg:hidden">
-                <div className="flex items-center gap-3">
-                  <span aria-hidden="true" className="h-9 w-1.5 rounded-full" style={{ background: tipo(s).color }} />
-                  <p aria-hidden="true" className="flex-1 font-display text-[2.4rem] font-light italic leading-none tracking-tight">
-                    {tipo(s).titulo}
-                  </p>
-                  <span className="text-xs uppercase tracking-[0.14em] text-carbon-muted">{s.items.length} vinos</span>
-                </div>
-                {tipo(s).nota ? <p className="mt-2 text-[0.95rem] text-carbon-muted">{tipo(s).nota} Precio por botella.</p> : null}
+                <p className="flex items-baseline justify-between font-display text-sm tabular-nums text-carbon-muted">
+                  {String(n + 1).padStart(2, "0")}
+                  <span className="font-sans text-[0.68rem] uppercase tracking-[0.16em]">{s.items.length} vinos</span>
+                </p>
+                <p aria-hidden="true" className="mt-1 font-display text-[2.6rem] font-light italic leading-none tracking-tight">
+                  {tipo(s).titulo}
+                </p>
+                <span aria-hidden="true" className="mt-4 block h-[3px] w-12 rounded-full" style={{ background: tipo(s).color }} />
+                {tipo(s).nota ? <p className="mt-4 text-[0.95rem] leading-relaxed text-carbon-muted">{tipo(s).nota} Precio por botella.</p> : null}
               </div>
               <div className="lg:sticky lg:top-40">
                 <p className="hidden font-display text-sm tabular-nums text-carbon-muted lg:block">{String(n + 1).padStart(2, "0")}</p>
@@ -265,16 +239,13 @@ export function CartaBodega({ secciones, cabecera = true }: { secciones: CartaSe
               {porDenominacion(s.items).map((g) => (
                 <div
                   key={g.grupo ?? "otras"}
-                  className="mb-3 break-inside-avoid rounded-2xl bg-white/75 px-4 pb-1 pt-4 shadow-[0_1px_2px_rgb(43_39_34/0.04)] ring-1 ring-tinta-line lg:mb-9 lg:rounded-none lg:bg-transparent lg:p-0 lg:shadow-none lg:ring-0"
+                  className="mb-8 break-inside-avoid lg:mb-9"
                 >
                   <h4 className="flex items-center gap-3 text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-madera-oscura">
                     {g.grupo ?? "Otras"}
-                    <span aria-hidden="true" className="ml-auto text-[0.68rem] font-normal tracking-normal text-carbon-muted lg:hidden">
-                      {g.vinos.length}
-                    </span>
-                    <span aria-hidden="true" className="hidden h-px flex-1 bg-tinta-line lg:block" />
+                    <span aria-hidden="true" className="h-px flex-1 bg-tinta-line" />
                   </h4>
-                  <ul className="mt-1 divide-y divide-tinta-line lg:divide-y-0">
+                  <ul className="mt-1.5">
                     {g.vinos.map((v) => (
                       <Vino key={v.id} vino={v} />
                     ))}
