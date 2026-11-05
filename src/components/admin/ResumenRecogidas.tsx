@@ -256,7 +256,7 @@ export function ResumenRecogidas() {
 
       {error ? <Aviso>{error}</Aviso> : null}
 
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
         <Tarjeta tipo="menu" lista={menus} unidad={["plato", "platos"]} cargando={!todas} />
         <Tarjeta tipo="vino" lista={vinos} unidad={["botella", "botellas"]} cargando={!todas} />
       </div>
@@ -298,37 +298,42 @@ function Tarjeta({ tipo, lista, unidad, cargando }: { tipo: "menu" | "vino"; lis
   const importe = lista.reduce((a, r) => a + r.importe, 0);
   const cuenta = (p: Paso) => lista.filter((r) => r.paso === p).length;
   const pasos: { paso: Paso; label: string }[] = [
-    { paso: "pendiente", label: tipo === "menu" ? "Sin aceptar" : "Sin confirmar" },
-    { paso: "curso", label: tipo === "menu" ? "En marcha" : "Confirmados" },
+    // Las mismas palabras que las pestañas de Pedidos y Encargos de vino (y caben en el móvil).
+    { paso: "pendiente", label: "Nuevos" },
+    { paso: "curso", label: "Preparando" },
     { paso: "listo", label: "Listos" },
     { paso: "entregado", label: "Entregados" },
   ];
+  // En el móvil van las dos a la vez, una al lado de la otra: más compactas.
   return (
-    <Link href={t.href} className={`${card} group flex flex-col p-4 transition-shadow hover:shadow-lift sm:p-5`}>
-      <span className="flex items-center gap-2.5">
-        <span className={`grid h-9 w-9 place-items-center rounded-xl ${t.chip}`}>
+    <Link href={t.href} className={`${card} group flex min-w-0 flex-col p-3 transition-shadow hover:shadow-lift sm:p-5`}>
+      <span className="flex min-w-0 items-center gap-2 sm:gap-2.5">
+        <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg sm:h-9 sm:w-9 sm:rounded-xl ${t.chip}`}>
           <Icon name={t.icon} className="h-4 w-4" />
         </span>
-        <span className="font-semibold">{t.label} para recoger</span>
-        <Icon name="arrow" className="ml-auto h-4 w-4 text-carbon-muted transition-transform group-hover:translate-x-0.5 dark:text-crema/60" />
+        <span className="min-w-0 text-sm font-semibold leading-tight sm:text-base">
+          {t.label}
+          <span className="hidden sm:inline"> para recoger</span>
+        </span>
+        <Icon name="arrow" className="ml-auto hidden h-4 w-4 shrink-0 text-carbon-muted transition-transform group-hover:translate-x-0.5 sm:block dark:text-crema/60" />
       </span>
-      <span className="mt-4 flex items-baseline gap-2">
-        <span className="font-display text-5xl tabular-nums leading-none">{cargando ? "–" : unidades}</span>
-        <span className="text-carbon-muted dark:text-crema/65">{unidades === 1 ? unidad[0] : unidad[1]}</span>
+      <span className="mt-3 flex items-baseline gap-1.5 sm:mt-4 sm:gap-2">
+        <span className="font-display text-4xl tabular-nums leading-none sm:text-5xl">{cargando ? "–" : unidades}</span>
+        <span className="text-sm text-carbon-muted sm:text-base dark:text-crema/65">{unidades === 1 ? unidad[0] : unidad[1]}</span>
       </span>
-      <span className="mt-1.5 text-sm text-carbon-muted dark:text-crema/60">
-        {lista.length ? `${plural(lista.length, "encargo", "encargos")} · ${formatCentimos(importe)}` : "Sin encargos este día"}
+      <span className="mt-1 text-xs text-carbon-muted sm:mt-1.5 sm:text-sm dark:text-crema/60">
+        {lista.length ? `${plural(lista.length, "encargo", "encargos")} · ${formatCentimos(importe)}` : "Sin encargos"}
       </span>
-      <span className="mt-4 grid grid-cols-2 gap-1.5 border-t border-carbon/[0.07] pt-3 sm:grid-cols-4 dark:border-crema/10">
+      <span className="mt-3 grid grid-cols-2 gap-1 border-t border-carbon/[0.07] pt-2 sm:mt-4 sm:gap-1.5 sm:pt-3 lg:grid-cols-4 dark:border-crema/10">
         {pasos.map((p) => {
           const n = cuenta(p.paso);
           return (
-            <span key={p.paso} className={`rounded-lg px-2 py-1.5 ${n && p.paso === "pendiente" ? "bg-terracota/10 dark:bg-terracota/20" : ""}`}>
+            <span key={p.paso} className={`min-w-0 rounded-lg px-1.5 py-1 sm:px-2 sm:py-1.5 ${n && p.paso === "pendiente" ? "bg-terracota/10 dark:bg-terracota/20" : ""}`}>
               <span className="flex items-center gap-1.5">
                 <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${PASO[p.paso].punto}`} />
-                <span className={`font-display text-lg tabular-nums leading-none ${n && p.paso === "pendiente" ? "text-terracota" : ""}`}>{n}</span>
+                <span className={`font-display text-base tabular-nums leading-none sm:text-lg ${n && p.paso === "pendiente" ? "text-terracota" : ""}`}>{n}</span>
               </span>
-              <span className="mt-0.5 block truncate text-[0.7rem] text-carbon-muted dark:text-crema/60">{p.label}</span>
+              <span className="mt-0.5 block truncate text-[0.65rem] text-carbon-muted sm:text-[0.7rem] dark:text-crema/60">{p.label}</span>
             </span>
           );
         })}
