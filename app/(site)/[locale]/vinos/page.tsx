@@ -126,7 +126,7 @@ function ComoEncargar({ tiendaHref }: { tiendaHref: string }) {
           <p className="mt-3 text-center text-xs text-crema/55">Al precio de la carta · Sin pago online</p>
         </div>
       </div>
-      <div className="container-wide hidden gap-10 py-12 sm:grid lg:grid-cols-12 lg:gap-14 lg:pb-16 lg:pt-14">
+      <div className="container-wide hidden gap-10 py-12 sm:grid lg:grid-cols-12 lg:gap-14 lg:pb-6 lg:pt-14">
         <div className="lg:col-span-5">
           <p className="kicker text-madera-oscura">Navidad · Encargos para llevar</p>
           <h2 id="encargar-title" className="mt-3 font-display text-[clamp(2.5rem,4.5vw,3.75rem)] font-light leading-[0.98] tracking-tight">
@@ -142,7 +142,10 @@ function ComoEncargar({ tiendaHref }: { tiendaHref: string }) {
             <Icon name="arrow" className="h-4 w-4" />
           </Link>
         </div>
-        <ol className="grid gap-8 sm:grid-cols-3 sm:gap-6 lg:col-span-7 lg:self-end">
+        <div className="flex flex-col gap-8 lg:col-span-7 lg:gap-10">
+          {/* El cava de regalo en el hueco sobre los pasos, fundido con el papel. */}
+          <PromoCava variante="integrado" />
+          <ol className="grid gap-8 sm:grid-cols-3 sm:gap-6">
           {PASOS.map((p, i) => (
             <li key={p.titulo} className="border-t border-carbon/80 pt-4">
               <p className="font-display text-sm tabular-nums text-madera-oscura">{String(i + 1).padStart(2, "0")}</p>
@@ -150,11 +153,8 @@ function ComoEncargar({ tiendaHref }: { tiendaHref: string }) {
               <p className="mt-2 text-[0.95rem] leading-relaxed text-carbon-muted">{p.texto}</p>
             </li>
           ))}
-        </ol>
-      </div>
-      {/* El cava de regalo, como el extra del encargo: una pieza oscura sobre el mismo papel. */}
-      <div className="container-wide hidden sm:block">
-        <PromoCava href={tiendaHref} variante="panel" />
+          </ol>
+        </div>
       </div>
     </section>
   );
