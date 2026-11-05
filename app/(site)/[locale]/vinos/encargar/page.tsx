@@ -8,7 +8,7 @@ import { ENCARGOS_VINO } from "@/lib/lanzamiento";
 import { getCartaContent } from "@/lib/restaurant/content";
 import { getCierres, getHorario } from "@/lib/restaurant/queries";
 import { pageMetadata } from "@/lib/seo";
-import { esSeccionDeVino } from "@/lib/vinos";
+import { esPorCopa, esSeccionDeVino } from "@/lib/vinos";
 
 export const revalidate = 300;
 
@@ -31,7 +31,8 @@ export default async function EncargarVinosPage({ params }: Params) {
   // El horario y los cierres, para elegir cuándo se pasa a recogerlo.
   const [carta, horarioBd, cierres] = await Promise.all([getCartaContent(), getHorario(), getCierres()]);
   const horario = resolverHorario(horarioBd, cierres);
-  const vinos = carta.status === "empty" ? [] : carta.data.filter((s) => s.items.length > 0 && esSeccionDeVino(s));
+  // Los que se sirven por copa (dulces y generosos) no se encargan.
+  const vinos = carta.status === "empty" ? [] : carta.data.filter((s) => s.items.length > 0 && esSeccionDeVino(s) && !esPorCopa(s));
   if (vinos.length === 0) redirect(href(locale, "/vinos"));
   return (
     <EncargoVinos secciones={vinos} locale={locale} privacidadHref={href(locale, "/privacidad")} semana={horario.semana} cierres={horario.cierres}>

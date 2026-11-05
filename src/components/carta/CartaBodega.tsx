@@ -6,7 +6,7 @@ import { Photo } from "@/components/media/Photo";
 import { Icon } from "@/components/ui/Icon";
 import { formatCentimos } from "@/lib/format";
 import type { CartaItem, CartaSeccion } from "@/lib/restaurant/types";
-import { ordenar, TEXTO_BODEGA, tipo } from "@/lib/vinos";
+import { ordenar, precioPor, TEXTO_BODEGA, tipo } from "@/lib/vinos";
 
 /**
  * «D.O. Rueda · Verdejo 100 %» → { grupo: "D.O. Rueda", detalle: "Verdejo 100 %" }.
@@ -218,7 +218,7 @@ export function CartaBodega({ secciones, cabecera = true }: { secciones: CartaSe
                   {tipo(s).titulo}
                 </p>
                 <span aria-hidden="true" className="mt-4 block h-[3px] w-12 rounded-full" style={{ background: tipo(s).color }} />
-                {tipo(s).nota ? <p className="mt-4 text-[0.95rem] leading-relaxed text-carbon-muted">{tipo(s).nota} Precio por botella.</p> : null}
+                {tipo(s).nota ? <p className="mt-4 text-[0.95rem] leading-relaxed text-carbon-muted">{tipo(s).nota} {precioPor(s)}.</p> : null}
               </div>
               <div className="lg:sticky lg:top-40">
                 <p className="hidden font-display text-sm tabular-nums text-carbon-muted lg:block">{String(n + 1).padStart(2, "0")}</p>
@@ -230,7 +230,7 @@ export function CartaBodega({ secciones, cabecera = true }: { secciones: CartaSe
                 </h3>
                 <span aria-hidden="true" className="mt-5 hidden h-[3px] w-14 rounded-full lg:block" style={{ background: tipo(s).color }} />
                 {tipo(s).nota ? <p className="mt-5 hidden max-w-xs text-carbon-muted lg:block">{tipo(s).nota}</p> : null}
-                <p className="mt-4 hidden text-xs uppercase tracking-[0.16em] text-carbon-muted lg:block">Precio por botella</p>
+                <p className="mt-4 hidden text-xs uppercase tracking-[0.16em] text-carbon-muted lg:block">{precioPor(s)}</p>
               </div>
             </header>
 

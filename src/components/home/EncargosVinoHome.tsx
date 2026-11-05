@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
 import { CAVA_DE_REGALO } from "@/lib/lanzamiento";
 import type { CartaSeccion, ContentState } from "@/lib/restaurant/types";
-import { esSeccionDeVino, ordenar, tipo } from "@/lib/vinos";
+import { esPorCopa, esSeccionDeVino, ordenar, tipo } from "@/lib/vinos";
 import descorche from "../../../public/images/promo/cava-descorche.webp";
 
 // Los encargos de vino en la portada (Navidad): qué es (la bodega para llevar), qué hay
@@ -27,7 +27,7 @@ export function EncargosVinoHome({
   vinosHref: string;
 }) {
   const secciones =
-    carta.status === "empty" ? [] : ordenar(carta.data.filter(esSeccionDeVino));
+    carta.status === "empty" ? [] : ordenar(carta.data.filter((s) => esSeccionDeVino(s) && !esPorCopa(s)));
   const umbral = CAVA_DE_REGALO
     ? `${CAVA_DE_REGALO.masDeCentimos / 100} €`
     : null;

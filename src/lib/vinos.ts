@@ -15,6 +15,11 @@ export const TIPO: Record<string, { titulo: string; color: string; nota: string 
 };
 export const tipo = (s: CartaSeccion) => TIPO[s.slug] ?? { titulo: s.nombre, color: "#B08A55", nota: "" };
 
+/** Los dulces y generosos se sirven por copa: su precio es por copa y no se encargan para llevar. */
+export const SECCIONES_POR_COPA = ["vinos-dulces"];
+export const esPorCopa = (s: Pick<CartaSeccion, "slug">) => SECCIONES_POR_COPA.includes(s.slug);
+export const precioPor = (s: Pick<CartaSeccion, "slug">) => (esPorCopa(s) ? "Precio por copa" : "Precio por botella");
+
 /** Lo que es la bodega, sin contar referencias: cambia con la carta. */
 export const TEXTO_BODEGA =
   "Una selección de distintas denominaciones y variedades: de los tintos de Rioja, Ribera y Toro a los blancos de Rueda, el txakoli y los cavas y champagnes. Precio por botella; pregúntanos por los vinos por copa.";
