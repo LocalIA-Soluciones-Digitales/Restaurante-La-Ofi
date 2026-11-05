@@ -76,6 +76,18 @@ export const AYUDA: Record<string, AyudaSeccion> = {
       "«Historial de hoy» recupera comandas ya servidas o canceladas.",
     ],
   },
+  "/admin/resumen": {
+    resumen: "Lo que se recoge en barra cada día: los platos del día para llevar y las botellas de vino encargadas, con su hora y en qué paso está cada encargo.",
+    pasos: [
+      "Elige el día en la semana: el número de debajo es cuántos encargos se recogen (con un punto rojo si alguno espera respuesta).",
+      "Las dos tarjetas dicen cuántos platos y cuántas botellas hay que preparar, y cuántos están sin aceptar, en marcha, listos o entregados.",
+      "Toca una tarjeta o un encargo para ir a Pedidos o a Encargos de vino y aceptarlo, prepararlo o cobrarlo allí.",
+    ],
+    consejos: [
+      "La franja roja de arriba avisa de los encargos que aún esperan respuesta, de hoy o de los próximos días.",
+      "Se actualiza solo cuando entra o cambia un encargo.",
+    ],
+  },
   "/admin/reservas": {
     resumen: "Las reservas del día por horas y en línea de tiempo por mesa: alta, edición, asignación de mesas y seguimiento.",
     pasos: [

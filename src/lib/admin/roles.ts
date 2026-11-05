@@ -20,21 +20,24 @@ export interface Seccion {
   grupo: "servicio" | "gestion" | "ajustes";
 }
 
-// De momento el encargado (Carlos) solo ve lo que usa: reservas, pedidos para recoger
-// («Pedidos», no la pantalla de cocina), encargos de vino, menú del día, carta y eventos. No trabaja con
-// mesas, TPV ni caja.
+// De momento el encargado (Carlos) solo ve lo que usa: el resumen de lo que se recoge,
+// pedidos para recoger («Pedidos», no la pantalla de cocina), encargos de vino, menú del
+// día, carta y eventos. Ni reservas (comedor, despacho y eventos aún no están abiertos),
+// ni mesas, TPV o caja.
 const TODOS = ["admin", "encargado", "camarero", "cocina"] as const;
 const SALA = ["admin", "camarero"] as const;
 const SERVICIO = ["admin", "encargado", "camarero"] as const;
+const RESERVAS = ["admin", "camarero"] as const;
 const GESTION = ["admin", "encargado"] as const;
 const ADMIN = ["admin"] as const;
 
 export const SECCIONES: Seccion[] = [
   { href: "/admin", label: "Hoy", icon: "grid", roles: ["admin", "camarero", "cocina"], grupo: "servicio" },
+  { href: "/admin/resumen", label: "Resumen", icon: "clock", roles: GESTION, grupo: "servicio" },
   { href: "/admin/salon", label: "Salón", icon: "users", roles: SALA, grupo: "servicio" },
   { href: "/admin/tpv", label: "TPV", icon: "cash", roles: SALA, grupo: "servicio" },
   { href: "/admin/cocina", label: "Cocina y barra", icon: "flame", roles: ["admin", "camarero", "cocina"], grupo: "servicio" },
-  { href: "/admin/reservas", label: "Reservas", icon: "calendar", roles: SERVICIO, grupo: "servicio" },
+  { href: "/admin/reservas", label: "Reservas", icon: "calendar", roles: RESERVAS, grupo: "servicio" },
   { href: "/admin/pedidos", label: "Pedidos", icon: "bag", roles: SERVICIO, grupo: "servicio" },
   { href: "/admin/encargos", label: "Encargos de vino", icon: "wine", roles: SERVICIO, grupo: "servicio" },
   { href: "/admin/menu-del-dia", label: "Menú del día", icon: "sun", roles: GESTION, grupo: "gestion" },
@@ -56,9 +59,9 @@ export function puedeVer(rol: Rol | null | undefined, href: string): boolean {
   return s ? s.roles.includes(rol) : rol === "admin";
 }
 
-/** Primera sección útil de cada rol (cocina entra directa al KDS; el encargado, a reservas). */
+/** Primera sección útil de cada rol (cocina entra directa al KDS; el encargado, al resumen). */
 export function inicioDe(rol: Rol): string {
   if (rol === "cocina") return "/admin/cocina";
-  if (rol === "encargado") return "/admin/reservas";
+  if (rol === "encargado") return "/admin/resumen";
   return "/admin";
 }
