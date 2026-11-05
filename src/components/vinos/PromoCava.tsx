@@ -5,32 +5,14 @@ import { CAVA_DE_REGALO } from "@/lib/lanzamiento";
 import descorche from "../../../public/images/promo/cava-descorche.webp";
 
 // La promoción de Navidad (CAVA_DE_REGALO): un cava de regalo con los encargos de vino de más
-// de 50 €. La foto del descorche (imagen generada, ilustrativa) se mueve despacio, con un brillo
-// dorado y burbujas que suben (CSS en globals.css, quieta con prefers-reduced-motion).
-// Va en la portada, en /vinos y en la tienda de encargos.
+// de 50 €. Como un anuncio editorial: la foto del descorche (imagen generada, ilustrativa) a
+// sangre, fundida con el oscuro, y solo un zoom muy lento (globals.css, quieto con
+// prefers-reduced-motion). Va en la portada, en /vinos y en la tienda de encargos.
 
 const euros = (c: number) => `${c / 100} €`;
 
-/** La foto del descorche, viva: zoom lento, brillo y burbujas. `className` fija el marco. */
-function FotoCava({ className = "", sizes }: { className?: string; sizes: string }) {
-  return (
-    <div className={`cava relative isolate overflow-hidden ${className}`}>
-      <Image src={descorche} alt="" fill sizes={sizes} placeholder="blur" className="cava-foto object-cover object-[50%_40%]" />
-      <span aria-hidden="true" className="cava-brillo absolute inset-0" />
-      {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
-        <span
-          key={i}
-          aria-hidden="true"
-          className="cava-burbuja absolute bottom-[38%] rounded-full border border-[#F6E3C2]/80"
-          style={{ left: `${44 + ((i * 13) % 14)}%`, width: `${4 + (i % 3) * 2}px`, height: `${4 + (i % 3) * 2}px`, animationDelay: `${i * 0.55}s` }}
-        />
-      ))}
-    </div>
-  );
-}
-
 /**
- * El anuncio del cava. «banda»: sección oscura a todo el ancho (portada y /vinos).
+ * El anuncio del cava. «banda»: sección a todo el ancho (portada y /vinos).
  * «tarjeta»: compacta, para la cabecera de la tienda de encargos.
  */
 export function PromoCava({ href, variante = "banda" }: { href?: string; variante?: "banda" | "tarjeta" }) {
@@ -39,15 +21,18 @@ export function PromoCava({ href, variante = "banda" }: { href?: string; variant
 
   if (variante === "tarjeta") {
     return (
-      <div className="relative isolate flex items-center gap-4 overflow-hidden rounded-3xl bg-[#14110d]/85 p-3 pr-5 shadow-[0_30px_60px_-30px_rgb(0_0_0/0.8)] ring-1 ring-[#E2B98A]/40 backdrop-blur sm:gap-5">
-        <FotoCava className="h-32 w-28 shrink-0 rounded-2xl sm:h-40 sm:w-32" sizes="128px" />
-        <div className="min-w-0">
-          <p className="kicker text-[0.65rem] text-[#E2B98A]">Regalo de Navidad</p>
-          <p className="mt-1.5 font-display text-[1.6rem] font-light leading-[1.05] text-crema sm:text-[1.9rem]">
+      <div className="relative isolate flex items-stretch overflow-hidden rounded-2xl bg-[#14110d]/90 ring-1 ring-white/10 backdrop-blur">
+        <div className="relative w-28 shrink-0 overflow-hidden sm:w-36">
+          <Image src={descorche} alt="" fill sizes="144px" placeholder="blur" className="object-cover object-[50%_35%]" />
+          <span aria-hidden="true" className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#14110d]/90" />
+        </div>
+        <div className="min-w-0 py-4 pl-4 pr-5 sm:py-5 sm:pl-5">
+          <p className="text-[0.62rem] font-semibold uppercase tracking-[0.22em] text-[#E2B98A]">Regalo de Navidad</p>
+          <p className="mt-2 font-display text-[1.55rem] font-light leading-[1.05] text-crema sm:text-[1.8rem]">
             Un cava <em className="text-[#E2B98A]">de regalo</em>
           </p>
-          <p className="mt-1.5 text-sm leading-snug text-crema/75">
-            Si tu encargo pasa de <b className="text-crema">{umbral}</b>, te lo llevas con tus vinos.
+          <p className="mt-2 text-sm leading-snug text-crema/70">
+            Con tu encargo de más de <span className="text-crema">{umbral}</span>.
           </p>
         </div>
       </div>
@@ -55,31 +40,51 @@ export function PromoCava({ href, variante = "banda" }: { href?: string; variant
   }
 
   return (
-    <section aria-labelledby="promo-cava" className="relative isolate overflow-hidden bg-[#14110d] text-crema">
-      <div aria-hidden="true" className="absolute inset-0 -z-10 bg-[radial-gradient(55%_80%_at_75%_50%,rgb(226_185_138/0.16),transparent_70%)]" />
-      <div className="container-wide grid items-center gap-8 py-12 sm:py-16 md:grid-cols-12 md:gap-12 lg:py-20">
-        <FotoCava
-          className="aspect-[4/3] rounded-3xl shadow-[0_40px_80px_-40px_rgb(0_0_0/0.9)] ring-1 ring-[#E2B98A]/20 md:order-2 md:col-span-5 md:aspect-[4/5]"
-          sizes="(min-width: 768px) 40vw, 100vw"
-        />
-        <div className="md:order-1 md:col-span-7">
-          <p className="kicker text-[#E2B98A]">Navidad · Encargos de vino para llevar</p>
-          <h2 id="promo-cava" className="mt-4 font-display text-[clamp(2.75rem,6vw,5rem)] font-light leading-[0.95] tracking-tight">
-            Un cava de regalo <em className="text-[#E2B98A]">para brindar</em>
-          </h2>
-          <p className="mt-5 max-w-xl text-lg leading-relaxed text-crema/80">
-            Encarga tus vinos para las comidas y cenas de Navidad: si tu encargo pasa de <b className="text-crema">{umbral}</b>, te regalamos una botella de
-            cava. La recoges con el resto en La Ofi.
+    <section aria-labelledby="promo-cava" className="relative isolate overflow-hidden bg-[#0f0d0a] text-crema">
+      {/* La foto a sangre: arriba en el móvil, a la derecha en escritorio, fundida con el oscuro. */}
+      <div className="cava relative h-[26rem] overflow-hidden sm:h-[32rem] md:absolute md:inset-y-0 md:right-[max(0px,calc((100vw-90rem)/2))] md:h-auto md:w-[min(58%,40rem)]">
+        <Image src={descorche} alt="" fill sizes="(min-width: 768px) 60vw, 100vw" placeholder="blur" className="cava-foto object-cover object-[50%_38%] md:object-[50%_60%]" />
+        <span aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-[#0f0d0a] via-[#0f0d0a]/10 to-[#0f0d0a]/40 md:bg-[linear-gradient(90deg,#0f0d0a_0%,rgb(15_13_10/0.35)_30%,transparent_55%,rgb(15_13_10/0.85)_88%,#0f0d0a_100%)]" />
+        <span aria-hidden="true" className="absolute inset-x-0 top-0 hidden h-32 bg-gradient-to-b from-[#0f0d0a]/80 to-transparent md:block" />
+        <span aria-hidden="true" className="absolute inset-x-0 bottom-0 hidden h-32 bg-gradient-to-t from-[#0f0d0a]/80 to-transparent md:block" />
+      </div>
+
+      <div className="container-wide relative -mt-24 pb-16 sm:-mt-28 sm:pb-20 md:mt-0 md:flex md:min-h-[44rem] md:items-center md:py-24">
+        <div className="max-w-xl">
+          <p className="flex items-center gap-4 text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[#E2B98A]">
+            <span aria-hidden="true" className="h-px w-10 bg-[#E2B98A]/60" />
+            Navidad en La Ofi
           </p>
-          <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-4">
+          <h2 id="promo-cava" className="mt-6 font-display text-[clamp(3rem,6.5vw,5.75rem)] font-light leading-[0.92] tracking-tight">
+            Un cava
+            <br />
+            <em className="text-[#E2B98A]">de regalo</em>
+          </h2>
+          <p className="mt-7 max-w-md text-lg leading-relaxed text-crema/70">
+            Encarga tus vinos para las comidas y cenas de Navidad y brinda con nosotros: con tu encargo te llevas una botella de cava.
+          </p>
+
+          <dl className="mt-9 grid max-w-md grid-cols-2 border-y border-white/10">
+            <div className="py-5 pr-6">
+              <dt className="text-[0.68rem] uppercase tracking-[0.2em] text-crema/50">Encargo de más de</dt>
+              <dd className="mt-1.5 font-display text-4xl font-light tabular-nums">{umbral}</dd>
+            </div>
+            <div className="border-l border-white/10 py-5 pl-6">
+              <dt className="text-[0.68rem] uppercase tracking-[0.2em] text-crema/50">Te regalamos</dt>
+              <dd className="mt-1.5 font-display text-4xl font-light">
+                1 <em className="text-[#E2B98A]">cava</em>
+              </dd>
+            </div>
+          </dl>
+
+          <div className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-4">
             {href ? (
-              <Link href={href} className="btn bg-[#E2B98A] px-6 text-carbon hover:bg-crema">
-                <Icon name="gift" className="h-4 w-4" />
+              <Link href={href} className="btn bg-[#E2B98A] px-7 text-carbon hover:bg-crema">
                 Hacer mi encargo
                 <Icon name="arrow" className="h-4 w-4" />
               </Link>
             ) : null}
-            <p className="text-sm text-crema/60">Al precio de la carta · Sin pago online</p>
+            <p className="text-sm text-crema/50">Lo recoges y pagas en La Ofi, al precio de la carta.</p>
           </div>
         </div>
       </div>

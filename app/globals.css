@@ -749,33 +749,15 @@
   }
 }
 
-/* La foto del descorche (PromoCava): zoom lento, brillo dorado que respira y burbujas. */
+/* La foto del descorche (PromoCava): solo un zoom muy lento, casi imperceptible. */
 .cava .cava-foto {
-  animation: cava-zoom 14s ease-in-out infinite alternate;
-}
-.cava .cava-brillo {
-  background: radial-gradient(40% 30% at 50% 28%, rgb(246 227 194 / 0.35), transparent 70%);
-  mix-blend-mode: screen;
-  animation: cava-respira 4s ease-in-out infinite;
-}
-.cava .cava-burbuja {
-  opacity: 0;
-  animation: cava-burbuja 4.4s ease-out infinite;
+  animation: cava-zoom 24s ease-in-out infinite alternate;
 }
 @keyframes cava-zoom {
   from { transform: scale(1); }
-  to { transform: scale(1.08) translateY(-1.5%); }
-}
-@keyframes cava-respira {
-  0%, 100% { opacity: 0.35; }
-  50% { opacity: 1; }
-}
-@keyframes cava-burbuja {
-  0% { opacity: 0; transform: translateY(0); }
-  15% { opacity: 0.9; }
-  100% { opacity: 0; transform: translateY(-220px) translateX(6px); }
+  to { transform: scale(1.06); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .cava .cava-foto, .cava .cava-brillo { animation: none; }
-  .cava .cava-burbuja { animation: none; opacity: 0; }
+  .cava .cava-foto { animation: none; }
 }
+
