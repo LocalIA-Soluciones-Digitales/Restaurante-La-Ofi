@@ -65,7 +65,7 @@ export function MenuDelDia({
   const menu = state.data;
   return (
     <article className={hoja}>
-      <p className="kicker text-brasa">{menu.platos.length > 0 ? "Plato del día" : "Menú del día"}</p>
+      <p className="kicker text-brasa">Menú del día</p>
       <p className="mt-2 font-display text-2xl italic text-carbon first-letter:uppercase sm:text-[1.75rem]">
         {menu.fecha ? formatearFechaLarga(menu.fecha) : "De lunes a viernes"}
       </p>

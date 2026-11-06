@@ -49,7 +49,8 @@ function menuDiaView(menu: MenuDia): MenuDiaView {
   ].filter((x): x is string => Boolean(x));
   return {
     fecha: menu.fecha,
-    precioCentimos: menu.precio_centimos,
+    // Si el encargado no pone precio, el del menú del día en el local: 9,90 €.
+    precioCentimos: menu.precio_centimos ?? 990,
     incluye,
     notas: menu.notas,
     actualizadoEn: menu.updated_at ?? null,

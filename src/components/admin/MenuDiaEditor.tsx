@@ -31,7 +31,7 @@ interface MenuBd {
 
 /**
  * «Plato único»: un plato a elegir entre varias opciones (lo habitual en La Ofi;
- * la web lo muestra como «Plato del día · A elegir»). «Primero y segundo»: menú
+ * la web lo muestra como «Menú del día · A elegir»). «Primero y segundo»: menú
  * clásico, con los platos agrupados por tipo.
  */
 type Modo = "unico" | "completo";
@@ -318,7 +318,7 @@ export function MenuDiaEditor() {
             </section>
           );
         })}
-        {modo === "unico" ? <p className="text-xs opacity-70">En la web sale como «Plato del día · A elegir». Pulsa Intro para añadir otra opción.</p> : null}
+        {modo === "unico" ? <p className="text-xs opacity-70">En la web sale como «Menú del día · A elegir» (sin precio, 9,90 €). Pulsa Intro para añadir otra opción.</p> : null}
         <input value={notas} onChange={(e) => setNotas(e.target.value)} placeholder="Notas (p. ej. «De lunes a viernes, mediodía»)" className={input} />
         <label className="flex items-center gap-2 text-sm font-semibold">
           <input type="checkbox" checked={disponible} onChange={(e) => setDisponible(e.target.checked)} className="h-5 w-5" />
