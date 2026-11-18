@@ -327,12 +327,21 @@ export function MenuDiaEditor() {
       </fieldset>
 
       {aviso ? <Aviso tono={aviso.tono}>{aviso.texto}</Aviso> : null}
+      {/* Hueco para que el botón fijo (más abajo) no tape el final del formulario. */}
+      <div aria-hidden="true" className="h-24" />
       {/* Fondo opaco bajo el botón fijo: desactivado (semitransparente) dejaba ver los campos de debajo. */}
-      <div className="sticky bottom-0 -mx-4 bg-gradient-to-t from-crema from-60% to-transparent px-4 pb-4 pt-6 dark:from-noche sm:mx-0 sm:px-0">
-        <button type="button" onClick={() => void publicar()} disabled={cargando || guardando || !platos.some((p) => p.nombre.trim())} className={`${botonPrimario} min-h-14 w-full text-base shadow-lift`}>
-          <Icon name="check" className="h-5 w-5" />
-          {guardando ? "Publicando…" : "Publicar menú"}
-        </button>
+      <div className="fixed inset-x-0 bottom-0 z-20 bg-gradient-to-t from-crema from-60% to-transparent px-4 pb-4 pt-6 dark:from-noche sm:px-6 lg:pl-60">
+        <div className="mx-auto max-w-2xl">
+          <button
+            type="button"
+            onClick={() => void publicar()}
+            disabled={cargando || guardando || !platos.some((p) => p.nombre.trim())}
+            className={`${botonPrimario} min-h-14 w-full text-base shadow-lift`}
+          >
+            <Icon name="check" className="h-5 w-5" />
+            {guardando ? "Publicando…" : "Publicar menú"}
+          </button>
+        </div>
       </div>
     </div>
   );
