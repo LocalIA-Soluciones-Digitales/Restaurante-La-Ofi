@@ -22,12 +22,13 @@ export interface Seccion {
 
 // De momento el encargado (Carlos) solo ve lo que usa: el resumen de lo que se recoge,
 // pedidos para recoger («Pedidos», no la pantalla de cocina), encargos de vino, menú del
-// día, carta y eventos. Ni reservas (comedor, despacho y eventos aún no están abiertos),
-// ni mesas, TPV o caja.
+// día, carta y eventos. También Reservas, pero solo para los presupuestos y grupos que le
+// piden por WhatsApp/Instagram (sin la vista «Por mesas»: comedor y despacho aún no están
+// abiertos). Ni mesas, TPV o caja.
 const TODOS = ["admin", "encargado", "camarero", "cocina"] as const;
 const SALA = ["admin", "camarero"] as const;
 const SERVICIO = ["admin", "encargado", "camarero"] as const;
-const RESERVAS = ["admin", "camarero"] as const;
+const RESERVAS = ["admin", "camarero", "encargado"] as const;
 const GESTION = ["admin", "encargado"] as const;
 const ADMIN = ["admin"] as const;
 
